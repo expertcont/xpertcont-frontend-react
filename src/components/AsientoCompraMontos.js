@@ -1,5 +1,5 @@
-import {Grid,Card,TextField,Select,MenuItem,InputLabel, FormControl, useMediaQuery} from '@mui/material'
-import React, { useState,useEffect} from 'react';
+import {Grid,Card,TextField,Select,MenuItem} from '@mui/material'
+import React, {useState,useEffect} from 'react';
 
 const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
     //Usamos variables para control de errores
@@ -14,7 +14,6 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
     const [igv003, setIgv003] = useState('');
     const [monto_otros, setMontoOtros] = useState('');
     const [monto_total, setMontoTotal] = useState('');
-    const [updateTrigger, setUpdateTrigger] = useState({});
 
     const handleBase001Change = (e) => {
         const baseAnterior = base001;
@@ -133,10 +132,9 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
 
     //Aqui se leen parametros en caso lleguen
     useEffect( ()=> {
-        //cargar variables
-        console.log("cargando desde form principal",formData);
+        //
 
-    },[updateTrigger]);
+    },[]);
 
   return (
     <div>

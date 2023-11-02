@@ -1,4 +1,4 @@
-import {Grid,Card,TextField,Select, InputLabel, FormControl, useMediaQuery, MenuItem} from '@mui/material'
+import {Grid,Card,TextField,Select, InputLabel, FormControl, MenuItem} from '@mui/material'
 import React, { useState } from 'react';
 
 const AsientoCompraImportacion = ({ formData, isSmallScreen, onFormDataChange }) => {

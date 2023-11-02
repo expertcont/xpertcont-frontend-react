@@ -52,7 +52,7 @@ export default function CuentaList() {
   }, 'dark');
 
   //experimento
-  const [updateTrigger, setUpdateTrigger] = useState({});
+  //const [updateTrigger, setUpdateTrigger] = useState({});
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
@@ -149,7 +149,7 @@ export default function CuentaList() {
       selector: 'cuentas',
       width: '70px',
       cell: (row) => {
-        return row.cuentas!='0'
+        return row.cuentas!=='0'
          ? <PlaylistAddCheckIcon style={{ color: 'skyblue' }} /> : <CloseIcon style={{ color: 'orange' }} />;
       },
     },    
@@ -186,10 +186,10 @@ export default function CuentaList() {
     setRegistrosdet(resultadosBusqueda);
 }
 
-const handleModificar = (row) => {
+/*const handleModificar = (row) => {
   // Aquí puedes agregar la lógica para modificar la fila seleccionada
   console.log(`Modificar fila ${row.numero}`);
-};
+};*/
 
 //////////////////////////////////////////////////////////
   useEffect( ()=> {
@@ -204,7 +204,7 @@ const handleModificar = (row) => {
         console.log('dale campeon');
       }
       
-  },[updateTrigger,isAuthenticated, user])
+  },[isAuthenticated, user])
   //////////////////////////////////////////////////////////
 
  return (

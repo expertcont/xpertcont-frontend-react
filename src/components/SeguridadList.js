@@ -1,7 +1,6 @@
 import React from 'react';
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Modal,Button,Grid,Card,CardContent, useMediaQuery, Typography, Select, MenuItem} from "@mui/material";
-import { useNavigate,useParams } from "react-router-dom";
 //import DeleteIcon from '@mui/icons-material/Delete';
 //import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -225,7 +224,7 @@ export default function SeguridadList() {
   const [registrosdet,setRegistrosdet] = useState([]);
   const [switchValues, setSwitchValues] = useState([]);//Copia para clickeo
 
-  const {user, isAuthenticated } = useAuth0();
+  const {user} = useAuth0();
   const [regdet,setRegdet] = useState({ //Para envio minimo en Post
     id_empresa:'1',
     id_usuario:'',
@@ -343,17 +342,17 @@ export default function SeguridadList() {
   }
 
  
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   //Para recibir parametros desde afuera
-  const params = useParams();
+  //const params = useParams();
 
-  const eliminarRegistroDet = async (id_registro) => {
+  /*const eliminarRegistroDet = async (id_registro) => {
     await fetch(`${back_host}/producto/${id_registro}`, {
       method:"DELETE"
     });
     //setRegistrosdet(registrosdet.filter(registrosdet => registrosdet.id_producto !== id_registro));
     //console.log(data);
-  }
+  }*/
 
   //////////////////////////////////////////////////////////
   useEffect( ()=> {

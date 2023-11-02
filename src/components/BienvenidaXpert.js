@@ -1,6 +1,6 @@
 import React from 'react';
 import logo from '../Logo02.png'; // Importa el logo
-import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Select,MenuItem,InputLabel,Box,FormControl, List,ListItem,ListItemText,Dialog,DialogContent,DialogTitle} from '@mui/material'
+import {Grid,Card,Select,MenuItem,CardContent,Typography,Button} from '@mui/material'
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import {useState,useEffect} from 'react';
 import axios from 'axios';

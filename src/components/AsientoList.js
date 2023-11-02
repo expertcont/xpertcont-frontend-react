@@ -17,7 +17,7 @@ import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import '../App.css';
 import 'styled-components';
 
-import { utils, writeFile } from 'xlsx';
+//import { utils, writeFile } from 'xlsx';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 //import Tooltip from '@mui/material/Tooltip';
@@ -59,12 +59,12 @@ export default function AsientoList() {
     },
   }, 'dark');
   ///////////////////////////////////////////////////
-  function exportToExcel(data) {
+  /*function exportToExcel(data) {
     const worksheet = utils.json_to_sheet(data);
     const workbook = utils.book_new();
     utils.book_append_sheet(workbook, worksheet, 'Datos');
     writeFile(workbook, 'datos.xlsx');
-  }
+  }*/
 
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
@@ -119,9 +119,9 @@ export default function AsientoList() {
 		setSelectedRows(state.selectedRows);
 	}, []);
 
-  const handleRecarga = () => {
+  /*const handleRecarga = () => {
     setUpdateTrigger(Math.random());//experimento
-  };
+  };*/
 
   const handleUpdate = (num_asiento) => {
     //var num_asiento;

@@ -52,7 +52,6 @@ export default function ContabilidadList() {
   }, 'dark');
 
   //experimento
-  const [updateTrigger, setUpdateTrigger] = useState({});
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
@@ -221,7 +220,7 @@ const handleModificar = (row) => {
         console.log('dale campeon');
       }
       
-  },[updateTrigger,isAuthenticated, user])
+  },[isAuthenticated, user])
   //////////////////////////////////////////////////////////
 
  return (

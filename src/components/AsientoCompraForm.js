@@ -1,24 +1,23 @@
-import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Select, MenuItem, InputLabel, Box, FormControl, useMediaQuery} from '@mui/material'
+import {Grid,Card,Typography,Button,CircularProgress,useMediaQuery} from '@mui/material'
 import React, { useState,useEffect} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import axios from 'axios';
+//import axios from 'axios';
 //import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
 //import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
 //import DeleteIcon from '@mui/icons-material/Delete';
 //import IconButton from '@mui/material/IconButton';
 //import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 //import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
-import swal from 'sweetalert';
+//import swal from 'sweetalert';
 //
 //import Switch from '@mui/material/Switch';
 //import FormGroup from '@mui/material/FormGroup';
 //import FormControlLabel from '@mui/material/FormControlLabel';
 //import FormLabel from '@mui/material/FormLabel';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 //
 
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
-import logo from '../alsa.png';
+//import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+//import logo from '../alsa.png';
 import AsientoRazonSocial from './AsientoRazonSocial';
 import AsientoComprobante from './AsientoComprobante';
 import AsientoCompraImportacion from './AsientoCompraImportacion';
@@ -28,21 +27,8 @@ export default function AsientoCompraForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
-  const theme = createTheme({
-    components: {
-      MuiTextField: {
-        styleOverrides: {
-          root: {
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'gray', // Cambia 'red' al color que desees
-            },
-          },
-        },
-      },
-    },
-  });  
   ////////////////////////////////////////////////////////////////////////////////////////
-  const createPdf = async () => {
+  /*const createPdf = async () => {
     const pdfDoc = await PDFDocument.create()
     const page = pdfDoc.addPage();
     const { width, height } = page.getSize();
@@ -91,12 +77,6 @@ export default function AsientoCompraForm() {
       });
 
       page.drawText(person.cantidad.toString(), { x: x + 200, y: textY, size: fontSize, font });
-      /*page.drawLine({
-        start: { x: x + 200, y: textY - textHeight / 2 },
-        end: { x: x + 200 + 50, y: textY - textHeight / 2 },
-        thickness: 1,
-        color: rgb(0, 0, 0),
-      });*/
 
       row++;
     });
@@ -112,15 +92,15 @@ export default function AsientoCompraForm() {
 
     // Hacemos clic en el enlace para descargar el archivo
     link.click();
-  }
+  }*/
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
    
-  const [cliente_select,setClienteSelect] = useState([]);
+  //const [cliente_select,setClienteSelect] = useState([]);
   //const [moneda_select,setMonedaSelect] = useState([]);
 
-  const [registrosdet,setRegistrosdet] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().substr(0, 10));
+  //const [registrosdet,setRegistrosdet] = useState([]);
+  //const [selectedDate, setSelectedDate] = useState(new Date().toISOString().substr(0, 10));
 
   var fecha_actual="";
   const iniciaFechaActual = ()=>{
@@ -253,7 +233,7 @@ export default function AsientoCompraForm() {
     
   },[params.cod]);
 
-  const cargaClienteCombo = () =>{
+  /*const cargaClienteCombo = () =>{
     axios
     .get(`${back_host}/correntista`)
     .then((response) => {
@@ -262,7 +242,7 @@ export default function AsientoCompraForm() {
     .catch((error) => {
         console.log(error);
     });
-  }
+  }*/
 
   //Rico evento change
   const handleChange = (newFormData) => {
@@ -345,14 +325,14 @@ export default function AsientoCompraForm() {
     setEditando(true);
   };
   
-  const mostrarRegistroDetalle = async (cod,serie,num,elem) => {
+  /*const mostrarRegistroDetalle = async (cod,serie,num,elem) => {
     const res = await fetch(`${back_host}/registrodet/${cod}/${serie}/${num}/${elem}`);
     const dataDet = await res.json();
     setRegistrosdet(dataDet);
     setEditando(true);
-  };
+  };*/
 
-  const eliminarRegistroDetalleItem = async (cod,serie,num,elem,item) => {
+  /*const eliminarRegistroDetalleItem = async (cod,serie,num,elem,item) => {
     await fetch(`${back_host}/registrodet/${cod}/${serie}/${num}/${elem}/${item}`, {
       method:"DELETE"
     });
@@ -364,9 +344,9 @@ export default function AsientoCompraForm() {
                                                         registrosdet.item !== item                                                        
     ));
     //console.log(data);
-  }
+  }*/
 
-  const confirmaEliminacionDet = (cod,serie,num,elem,item)=>{
+  /*const confirmaEliminacionDet = (cod,serie,num,elem,item)=>{
     swal({
       title:"Eliminar Detalle de registro",
       text:"Seguro ?",
@@ -383,7 +363,7 @@ export default function AsientoCompraForm() {
           });
       }
     })
-  }
+  }*/
 
   //Body para Modal de Busqueda Incremental de Pedidos
 

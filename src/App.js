@@ -1,5 +1,5 @@
 import {BrowserRouter,Routes,Route} from "react-router-dom";
-import {Container,useMediaQuery} from "@mui/material";
+import {Container} from "@mui/material";
 import NavBar from "./components/NavBar";
 import CorrentistaForm from "./components/CorrentistaForm";
 import CorrentistaList from "./components/CorrentistaList";
@@ -20,9 +20,7 @@ function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
   //los props llegan desde BienvenidaExpert.js
   
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
-  const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const {user, isAuthenticated } = useAuth0();
 
   //const [periodo_trabajo, setPeriodoTrabajo] = useState("");
