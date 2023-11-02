@@ -54,7 +54,7 @@ export default function ContabilidadList() {
   //experimento
 
   const [selectedRows, setSelectedRows] = useState([]);
-  const [toggleCleared, setToggleCleared] = useState(false);
+  //const [toggleCleared, setToggleCleared] = useState(false);
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
@@ -81,7 +81,7 @@ export default function ContabilidadList() {
 
       </>
 		);
-	}, [registrosdet, selectedRows, toggleCleared]);
+	}, [registrosdet, selectedRows]);
 
   const actions = (
     	<IconButton color="primary" 
@@ -148,7 +148,7 @@ export default function ContabilidadList() {
       selector: 'cuentas',
       width: '70px',
       cell: (row) => {
-        return row.cuentas!='0'
+        return row.cuentas!=='0'
          ? <PlaylistAddCheckIcon 
             onClick={() => handleEditarPlanClick(row.documento_id)}
             style={{ cursor: 'pointer', 
@@ -255,7 +255,7 @@ const handleModificar = (row) => {
       contextActions={contextActions}
       actions={actions}
 			onSelectedRowsChange={handleRowSelected}
-			clearSelectedRows={toggleCleared}
+			//clearSelectedRows={toggleCleared}
       //pagination
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}

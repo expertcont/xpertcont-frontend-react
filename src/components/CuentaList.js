@@ -55,7 +55,7 @@ export default function CuentaList() {
   //const [updateTrigger, setUpdateTrigger] = useState({});
 
   const [selectedRows, setSelectedRows] = useState([]);
-  const [toggleCleared, setToggleCleared] = useState(false);
+  //const [toggleCleared, setToggleCleared] = useState(false);
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
@@ -82,7 +82,7 @@ export default function CuentaList() {
 
       </>
 		);
-	}, [registrosdet, selectedRows, toggleCleared]);
+	}, [registrosdet, selectedRows]);
 
   const actions = (
     	<IconButton color="primary" 
@@ -239,7 +239,7 @@ export default function CuentaList() {
       contextActions={contextActions}
       actions={actions}
 			onSelectedRowsChange={handleRowSelected}
-			clearSelectedRows={toggleCleared}
+			//clearSelectedRows={toggleCleared}
       //pagination
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}

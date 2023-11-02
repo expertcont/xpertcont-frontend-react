@@ -209,8 +209,10 @@ export default function AsientoCompraForm() {
     setCargando(false);
     
     setEditando(true);
-    //Obtener json respuesta, para extraer cod,serie,num y elemento
-    navigate(`/asiento/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.id_libro}`);
+    //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
+    navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${data.num_asiento}/edit`);
+    //recordatorio de navegacion al mismo formulario, pero en modo Edicion, num_asiento lo obtenemos de respuesta de insercion
+    //<Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
   };
   
   //Aqui se leen parametros en caso lleguen

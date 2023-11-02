@@ -35,7 +35,6 @@ export default function NavBar(props) {
   const [permisoGuias, setPermisoGuias] = useState(false);
   const [permisoCorrentistas, setPermisoCorrentistas] = useState(false);
   const [permisoZonasVenta, setPermisoZonasVenta] = useState(false);
-  const [permisoZonasEntrega, setPermisoZonasEntrega] = useState(false);
   const [permisoProductos, setPermisoProductos] = useState(false);
   const [permisoSeguridad, setPermisoSeguridad] = useState(false);
 
@@ -152,13 +151,9 @@ export default function NavBar(props) {
         }
         tienePermiso = permisosData.some(permiso => permiso.id_menu === '06');
         if (tienePermiso) {
-          setPermisoZonasEntrega(true);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '07');
-        if (tienePermiso) {
           setPermisoProductos(true);
         }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '08');
+        tienePermiso = permisosData.some(permiso => permiso.id_menu === '07');
         if (tienePermiso) {
           setPermisoSeguridad(true);
         }

@@ -297,7 +297,7 @@ export default function AsientoList() {
 
   const eliminarRegistroSeleccionado = async (cod,serie,num,elem,item) => {
     //En ventas solo se eliminan, detalle-cabecera
-    if (valorVista=="resumen"){
+    if (valorVista==="resumen"){
       //borrar maestro-detalle
       //console.log(`${back_host}/venta/${cod}/${serie}/${num}/${elem}`);
       await fetch(`${back_host}/venta/${cod}/${serie}/${num}/${elem}`, {

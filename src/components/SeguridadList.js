@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { Modal,Button,Grid,Card,CardContent, useMediaQuery, Typography, Select, MenuItem} from "@mui/material";
 //import DeleteIcon from '@mui/icons-material/Delete';
 //import UpdateIcon from '@mui/icons-material/UpdateSharp';
@@ -218,8 +218,8 @@ export default function SeguridadList() {
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
 
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [toggleCleared, setToggleCleared] = useState(false);
+  //const [selectedRows, setSelectedRows] = useState([]);
+  //const [toggleCleared, setToggleCleared] = useState(false);
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [switchValues, setSwitchValues] = useState([]);//Copia para clickeo
@@ -234,9 +234,9 @@ export default function SeguridadList() {
   //const [ocargaDet,setocargaDet] = useState({});
   const [usuario_select,setUsuarioSelect] = useState([]);
 
-  const handleRowSelected = useCallback(state => {
+  /*const handleRowSelected = useCallback(state => {
 		setSelectedRows(state.selectedRows);
-	}, []);
+	}, []);*/
   
 
   //////////////////////////////////////////////////////////
@@ -471,8 +471,8 @@ export default function SeguridadList() {
       data={registrosdet}
       //contextActions={contextActions}
       //actions={actions}
-      onSelectedRowsChange={handleRowSelected}
-      clearSelectedRows={toggleCleared}
+      //onSelectedRowsChange={handleRowSelected}
+      //clearSelectedRows={toggleCleared}
       dense={true}
 
       selectableRowsComponent={Checkbox} // Pass the function only
