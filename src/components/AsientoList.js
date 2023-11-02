@@ -20,7 +20,7 @@ import 'styled-components';
 import { utils, writeFile } from 'xlsx';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import Tooltip from '@mui/material/Tooltip';
+//import Tooltip from '@mui/material/Tooltip';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
@@ -67,7 +67,7 @@ export default function AsientoList() {
   }
 
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
 

@@ -2,18 +2,18 @@ import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Selec
 import React, { useState,useEffect} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import axios from 'axios';
-import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
-import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
-import DeleteIcon from '@mui/icons-material/Delete';
-import IconButton from '@mui/material/IconButton';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
+//import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
+//import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
+//import DeleteIcon from '@mui/icons-material/Delete';
+//import IconButton from '@mui/material/IconButton';
+//import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+//import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
 import swal from 'sweetalert';
 //
-import Switch from '@mui/material/Switch';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormLabel from '@mui/material/FormLabel';
+//import Switch from '@mui/material/Switch';
+//import FormGroup from '@mui/material/FormGroup';
+//import FormControlLabel from '@mui/material/FormControlLabel';
+//import FormLabel from '@mui/material/FormLabel';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 //
 
@@ -23,12 +23,10 @@ import AsientoRazonSocial from './AsientoRazonSocial';
 import AsientoComprobante from './AsientoComprobante';
 import AsientoCompraImportacion from './AsientoCompraImportacion';
 import AsientoCompraMontos from './AsientoCompraMontos';
-//import AsientoCompraBases from './AsientoCompraBases';
-//import AsientoCompraImpuestos from './AsientoCompraImpuestos';
 
 export default function AsientoCompraForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const theme = createTheme({
     components: {

@@ -1,14 +1,12 @@
-import {Grid,TextField,Select,MenuItem,InputLabel} from '@mui/material'
 import {BrowserRouter,Routes,Route} from "react-router-dom";
 import {Container,useMediaQuery} from "@mui/material";
 import NavBar from "./components/NavBar";
 import CorrentistaForm from "./components/CorrentistaForm";
 import CorrentistaList from "./components/CorrentistaList";
-import axios from 'axios';
 import SeguridadList from "./components/SeguridadList";
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import Inicio from "./components/Inicio";
-import { useState,useEffect } from 'react';
+import { useEffect } from 'react';
 
 import AsientoCompraForm from './components/AsientoCompraForm';
 import AsientoList from './components/AsientoList';
@@ -22,7 +20,7 @@ function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
   //los props llegan desde BienvenidaExpert.js
   
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const {user, isAuthenticated } = useAuth0();

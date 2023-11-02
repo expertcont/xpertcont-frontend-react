@@ -9,7 +9,7 @@ import LoginLogoutBoton from "./LoginLogoutBoton" //new
 
 
 const BienvenidaXpert = ({ onStartClick }) => {
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const {user, isAuthenticated } = useAuth0();
   const [estudios_select,setEstudioSelect] = useState([]);
 

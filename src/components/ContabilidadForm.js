@@ -7,7 +7,7 @@ import Tooltip from '@mui/material/Tooltip';
 
 export default function ContabilidadForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const [contabilidad,setContabilidad] = useState({
       id_usuario:'',
       documento_id:'',

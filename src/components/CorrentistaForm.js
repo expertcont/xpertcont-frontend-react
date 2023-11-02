@@ -7,7 +7,7 @@ import axios from 'axios';
 
 export default function CorrentistaForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://alsa-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //Select(Combos) para llenar, desde tabla
   const [vendedor_select,setVendedorSelect] = useState([]);
   const [zona_select,setZonaSelect] = useState([]);

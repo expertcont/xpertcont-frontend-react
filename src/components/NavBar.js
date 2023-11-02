@@ -22,7 +22,7 @@ import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego 
 import { useEffect } from "react"
 
 export default function NavBar(props) {
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
   const navigate  = useNavigate();
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const [selectedButton, setSelectedButton] = useState(null);

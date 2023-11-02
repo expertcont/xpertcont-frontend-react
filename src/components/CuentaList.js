@@ -25,7 +25,7 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 export default function CuentaList() {
   const {user, isAuthenticated } = useAuth0();
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production.up.railway.app";
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
   createTheme('solarized', {
     text: {
       //primary: '#268bd2',

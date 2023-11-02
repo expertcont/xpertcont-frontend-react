@@ -21,7 +21,7 @@ import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego 
 
 export default function CorrentistaList() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://alsa-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app/";
   createTheme('solarized', {
     text: {
       //primary: '#268bd2',

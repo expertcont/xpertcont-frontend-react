@@ -2,8 +2,8 @@ import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { Modal,Button,Grid,Card,CardContent, useMediaQuery, Typography, Select, MenuItem} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
-import DeleteIcon from '@mui/icons-material/Delete';
-import UpdateIcon from '@mui/icons-material/UpdateSharp';
+//import DeleteIcon from '@mui/icons-material/Delete';
+//import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import InputAdornment from '@mui/material/InputAdornment';
 import FindIcon from '@mui/icons-material/FindInPage';
 import Tooltip from '@mui/material/Tooltip';
@@ -190,7 +190,7 @@ export default function SeguridadList() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
 
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
-  const back_host = process.env.BACK_HOST || "https://alsa-backend-js-production.up.railway.app";  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   createTheme('solarized', {
     text: {
       //primary: '#268bd2',
