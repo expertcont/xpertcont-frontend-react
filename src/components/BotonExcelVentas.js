@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Spinner } from "reactstrap";
 import * as XLSX from "xlsx";
 import { Button } from "@mui/material";
-import ExcelJS from "exceljs"; // Importa la biblioteca exceljs en lugar: Caso Doc Contable
+//import ExcelJS from "exceljs"; // Importa la biblioteca exceljs en lugar: Caso Doc Contable
 
 const BotonExcelVentas = ({ registrosdet }) => {
   const [loading, setLoading] = useState(false);
@@ -86,31 +86,6 @@ const BotonExcelVentas = ({ registrosdet }) => {
       creandoArchivoEstilizado(dataFinal);
       setLoading(false);
     }, 1000);
-  };
-
-  const creandoArchivo = (dataFinal) => {
-    const libro = XLSX.utils.book_new();
-
-    const hoja = XLSX.utils.json_to_sheet(dataFinal, { skipHeader: true });
-
-    hoja["!merges"] = [
-      XLSX.utils.decode_range("A1:G1"),
-      XLSX.utils.decode_range("A2:G2"),
-    ];
-
-    let propiedades = [];
-
-    longitudes.forEach((col) => {
-      propiedades.push({
-        width: col,
-      });
-    });
-
-    hoja["!cols"] = propiedades;
-
-    XLSX.utils.book_append_sheet(libro, hoja, "Productos");
-
-    XLSX.writeFile(libro, "ProductosEstilizado.xlsx");
   };
 
   const creandoArchivoEstilizado = (dataFinal) => {
