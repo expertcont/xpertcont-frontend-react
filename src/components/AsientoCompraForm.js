@@ -229,7 +229,7 @@ export default function AsientoCompraForm() {
     setRegistro({...registro, documento_id:params.documento_id});
     setRegistro({...registro, id_libro:params.id_libro});
     setRegistro({...registro, id_invitado:params.id_invitado});
-
+    setRegistro({...registro, id_invitado:params.id_invitado});
     //console.log('invitado: ',params.id_invitado);
     console.log('registro despues de set invitado: ',registro);
     
