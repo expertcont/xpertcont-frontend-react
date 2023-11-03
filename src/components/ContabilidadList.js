@@ -247,7 +247,7 @@ const handleModificar = (row) => {
 
 
     <Datatable
-      title="Panel 01: Contabilidades Michi aprendiendo"
+      title="Panel 01: Contabilidades Michi aprende"
       theme="solarized"
       columns={columnas}
       data={registrosdet}
