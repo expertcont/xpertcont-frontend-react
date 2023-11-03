@@ -247,7 +247,7 @@ const handleModificar = (row) => {
 
 
     <Datatable
-      title="Panel 01: Contabilidades"
+      title="Panel 01: Contabilidades Michi aprendiendo"
       theme="solarized"
       columns={columnas}
       data={registrosdet}
@@ -268,37 +268,3 @@ const handleModificar = (row) => {
   </>
   );
 }
-
-
-/*
-
-const App = () => {
-  const [registrosdet, setRegistrosdet] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch('https://alsa-backend-js-production.up.railway.app/ocargadetguiaspendientes');
-      const data = await response.json();
-      setRegistrosdet(data);
-    };
-    fetchData();
-  }, []);
-
-  const handleModificar = (row) => {
-    // Aquí puedes agregar la lógica para modificar la fila seleccionada
-    console.log(`Modificar fila ${row.numero}`);
-  };
-
-  return (
-    <DataTable
-      title="Listado de guías pendientes"
-      columns={columns}
-      data={registrosdet}
-      highlightOnHover
-      pointerOnHover
-    />
-  );
-};
-
-export default App;
-*/
