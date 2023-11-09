@@ -133,7 +133,7 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
     //Aqui se leen parametros en caso lleguen
     useEffect( ()=> {
         //
-
+        console.log("useEffect desde AsientoCompraMontos.js");
     },[]);
 
   return (
@@ -318,8 +318,8 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                             />
                             <Select
                                     labelId="moneda_select"
-                                    //id={formData.tipo_op}
-                                    value={formData.tipo_op}
+                                    //id={formData.r_moneda}
+                                    value={formData.r_moneda}
                                     size='small'
                                     name="r_moneda"
                                     fullWidth

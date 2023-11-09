@@ -126,8 +126,8 @@ export default function AsientoList() {
   const handleUpdate = (num_asiento) => {
     //var num_asiento;
     //num_asiento = selectedRows.map(r => r.num_asiento);
-    console.log("libro:", id_libro);
-    console.log("asiento:", num_asiento);
+    //console.log("libro:", id_libro);
+    //console.log("asiento:", num_asiento);
 
     if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
       console.log("Estás usando un dispositivo móvil!!");

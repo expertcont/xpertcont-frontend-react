@@ -61,7 +61,7 @@ export const VentasColumnas = [
   },
   {//11
     name: 'Tp',
-    selector: 'r_id_documento',
+    selector: 'r_id_doc',
     sortable: true,
   },
   {//12
@@ -254,7 +254,7 @@ export const ComprasColumnas = [
   },
   {//12
     name: 'D',
-    selector: 'r_id_documento',
+    selector: 'r_id_doc',
     width: '50px',
     sortable: true,
   },

@@ -1,9 +1,11 @@
-import {Grid,Card,TextField} from '@mui/material'
-import React from 'react';
+import {Grid,Card,TextField,Select, InputLabel, FormControl, MenuItem} from '@mui/material'
+import React, { useState,useEffect} from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import axios from 'axios';
+import Tooltip from '@mui/material/Tooltip';
 
 const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
-    
+    const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
     const theme = createTheme({
     components: {
         MuiTextField: {
@@ -21,6 +23,23 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
     const handleChange = (name, value) => {
         onFormDataChange({ ...formData, [name]: value });
     };
+    
+    const [comprobante_select,setComprobanteSelect] = useState([]);
+    const cargaComprobanteSelect = () =>{
+        axios
+        .get(`${back_host}/comprobante/c`)
+        .then((response) => {
+            setComprobanteSelect(response.data);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+    };
+
+    useEffect( ()=> {
+        //cargar datos generales
+        cargaComprobanteSelect();
+    },[]);
 
   return (
     <div>
@@ -40,19 +59,37 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                 alignItems={isSmallScreen ? 'center' : 'center'}
                 justifyContent={isSmallScreen ? 'center' : 'center'}
             >
-                <TextField variant="outlined" 
-                        label="COD"
-                        sx={{ display:'block',
-                                margin:'.5rem 0',
-                            }}
-                        name="r_cod"
+
+                <FormControl fullWidth>
+                <InputLabel id="simple-select-label" 
+                            inputProps={{ style:{color:'white'} }}
+                            InputLabelProps={{ style:{color:'white'} }}
+                            sx={{mt:1, color:'#5DADE2'}}
+                >COD</InputLabel>
+                <Tooltip title={formData.r_cod ? 'COMPROBANTE = ' + formData.r_cod : ''}
+                >
+                <Select
+                        labelId="comprobante_select"
+                        //id={formData.tipo_op}
+                        value={formData.r_cod}
                         size='small'
+                        name="r_cod"
                         fullWidth
-                        value={formData.r_cod} 
+                        sx={{display:'block',
+                        margin:'.5rem 0', color:"white"}}
+                        label="Cod"
                         onChange={(e) => handleChange('r_cod', e.target.value)}
-                        inputProps={{ style:{color:'white'} }}
-                        InputLabelProps={{ style:{color:'skyblue'} }}
-                />
+                    >
+                        {   
+                            comprobante_select.map(elemento => (
+                            <MenuItem key={elemento.cod} value={elemento.cod}>
+                            {elemento.nombre}
+                            </MenuItem>)) 
+                        }
+                </Select>
+                </Tooltip>
+                </FormControl>
+
                 <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
                     direction={isSmallScreen ? 'column' : 'row'}
                     alignItems={isSmallScreen ? 'center' : 'center'}

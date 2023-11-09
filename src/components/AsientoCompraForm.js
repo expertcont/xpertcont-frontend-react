@@ -28,101 +28,17 @@ export default function AsientoCompraForm() {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   ////////////////////////////////////////////////////////////////////////////////////////
-  /*const createPdf = async () => {
-    const pdfDoc = await PDFDocument.create()
-    const page = pdfDoc.addPage();
-    const { width, height } = page.getSize();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-    // Add logo to the top of the page
-    //const logoImage = pdfDoc.embedPng(logo);
-    const pngImage = await pdfDoc.embedPng(logo);
-    const pngDims = pngImage.scale(0.5)
-
-    page.drawImage(pngImage, {
-      //x: page.getWidth() / 2 - pngDims.width / 2 + 75,
-      //y: page.getHeight() / 2 - pngDims.height + 250,
-      x: 1,
-      y: 780,
-      width: pngDims.width,
-      height: pngDims.height,
-    })
-
-    const fontSize = 12;
-    const lineHeight = fontSize * 1.2;
-    const margin = 50;
-    const x = margin;
-    const y = height - margin - lineHeight - 10;
-
-    // Draw column headers
-    page.drawText('Nombre', { x, y, size: fontSize });
-    page.drawText('Zona', { x: x + 200, y, size: fontSize });
-
-    // Draw table data
-    let row = 1;
-    registrosdet.forEach((person) => {
-      const text = `${person.descripcion}`;
-      const textWidth = font.widthOfTextAtSize(text, fontSize);
-      const textHeight = font.heightAtSize(fontSize);
-      const textX = x;
-      const textY = y - lineHeight * row;
-
-      page.drawText(text, { x: textX, y: textY, size: fontSize, font });
-      page.drawLine({
-        start: { x: textX, y: textY - textHeight / 2 + 2},
-        end: { x: textX + 300, y: textY - textHeight / 2 + 2 },
-        thickness: 1,
-        color: rgb(0, 0, 0),
-        opacity: 0.5
-      });
-
-      page.drawText(person.cantidad.toString(), { x: x + 200, y: textY, size: fontSize, font });
-
-      row++;
-    });
- 
-    const pdfBytes = await pdfDoc.saveAsBase64({ dataUri: true });
-
-    // Creamos un enlace para descargar el archivo
-    const link = document.createElement('a');
-    link.href = pdfBytes;
-    link.download = 'mi-documento.pdf';
-    link.target = '_blank'; // Abrir el PDF en una nueva pestaña
-    document.body.appendChild(link);
-
-    // Hacemos clic en el enlace para descargar el archivo
-    link.click();
-  }*/
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
    
-  //const [cliente_select,setClienteSelect] = useState([]);
-  //const [moneda_select,setMonedaSelect] = useState([]);
-
-  //const [registrosdet,setRegistrosdet] = useState([]);
-  //const [selectedDate, setSelectedDate] = useState(new Date().toISOString().substr(0, 10));
-
-  var fecha_actual="";
-  const iniciaFechaActual = ()=>{
-    var strFecha=""
-    let nPos=0;
-    const fecha = new Date(); //ok fecha y hora actual
-    strFecha = fecha.toISOString(); //formato texto
-    nPos = strFecha.indexOf('T');
-    fecha_actual = strFecha.substr(0,nPos);
-    //console.log(fecha_actual);
-    setRegistro(prevState => ({ ...prevState, comprobante_original_fecemi: fecha_actual }));
-  }
-
   const [registro,setRegistro] = useState({
       
-      id_anfitrion:'',
-      documento_id:'',
-      periodo:'',
-      id_libro:'',
-      id_invitado:'',
+      //id_anfitrion:'',
+      //documento_id:'',
+      //periodo:'',
+      //id_libro:'',
+      //id_invitado:'',
 
-      fecha_asiento:'',
       glosa:'COMPRA',
       debe:'0',
       haber:'0',
@@ -130,6 +46,7 @@ export default function AsientoCompraForm() {
       haber_me:'0',
       asiento_mayorizado:'0',
       ctrl_crea_us:'',
+      r_id_doc:'',
       r_documento_id:'',
       r_razon_social:'',
 
@@ -145,12 +62,12 @@ export default function AsientoCompraForm() {
       r_numero_ref:'',
       fecemi_ref:'',
 
-      r_base001:'',
+      r_base001:'0',
       r_base002:'',
       r_base003:'',
       r_base004:'',
       
-      r_igv001:'',
+      r_igv001:'0',
       r_igv002:'',
       r_igv003:'',
 
@@ -161,9 +78,9 @@ export default function AsientoCompraForm() {
       r_moneda:'PEN',
       r_tc:'',
 
-      r_ibss:'',
-      r_ib_pais:'',
-      r_ib_aduana:'',
+      r_idbss:'',
+      r_id_pais:'',
+      r_id_aduana:'',
       r_ano_dam:'',
 
       r_contrato_id:'',
@@ -190,12 +107,19 @@ export default function AsientoCompraForm() {
 
     //Cambiooo para controlar Edicion
     if (editando){
-      await fetch(`${back_host}/registro/${params.cod}/${params.serie}/${params.num}/${params.elem}`, {
+      await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.periodo}/${params.documento_id}/${params.id_libro}/${params.num_asiento}`, {
         method: "PUT",
         body: JSON.stringify(registro),
         headers: {"Content-Type":"application/json"}
       });
     }else{
+      setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
+      setRegistro(prevState => ({ ...prevState, periodo: params.periodo }));
+      setRegistro(prevState => ({ ...prevState, documento_id: params.documento_id }));
+      setRegistro(prevState => ({ ...prevState, id_libro: params.id_libro }));
+      setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
+
+      setRegistro(prevState => ({ ...prevState, ctrl_crea_us: params.id_invitado }));
       console.log(`${back_host}/asiento`);
       console.log(registro);
       const res = await fetch(`${back_host}/asiento`, {
@@ -218,33 +142,20 @@ export default function AsientoCompraForm() {
   //Aqui se leen parametros en caso lleguen
   useEffect( ()=> {
     if (params.num_asiento){
-      mostrarRegistro(params.id_anfitrion,params.periodo,params.documento_id,params.id_libro,params.num_asiento);
-      //mostrarRegistroDetalle(params.id_anfitrion,params.id_invitado,params.periodo,params.documento_id,params.id_libro);
+        mostrarRegistro(params.id_anfitrion,params.periodo,params.documento_id,params.id_libro,params.num_asiento);
     }
-    iniciaFechaActual();
     //cargar datos generales en asiento
     //fusionar al arreglo registro, el campo id_invitado: 'valor', otro_campo:'valor dif'
-    setRegistro({...registro, id_anfitrion:params.id_anfitrion});
-    setRegistro({...registro, periodo:params.periodo});
-    setRegistro({...registro, documento_id:params.documento_id});
-    setRegistro({...registro, id_libro:params.id_libro});
-    setRegistro({...registro, id_invitado:params.id_invitado});
-    setRegistro({...registro, id_invitado:params.id_invitado});
-    //console.log('invitado: ',params.id_invitado);
-    console.log('registro despues de set invitado: ',registro);
-    
-  },[params.cod]);
+    setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
+    setRegistro(prevState => ({ ...prevState, periodo: params.periodo }));
+    setRegistro(prevState => ({ ...prevState, documento_id: params.documento_id }));
+    setRegistro(prevState => ({ ...prevState, id_libro: params.id_libro }));
+    setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
 
-  /*const cargaClienteCombo = () =>{
-    axios
-    .get(`${back_host}/correntista`)
-    .then((response) => {
-        setClienteSelect(response.data);
-    })
-    .catch((error) => {
-        console.log(error);
-    });
-  }*/
+    console.log('registro final useEffect AsientoCompraForm: ',registro);
+    
+  },[params.num_asiento]);
+
 
   //Rico evento change
   const handleChange = (newFormData) => {
@@ -278,6 +189,7 @@ export default function AsientoCompraForm() {
           id_libro:params.id_libro,
           num_asiento:num_asiento,
 
+          r_id_doc:data.r_id_doc,
           r_documento_id:data.r_documento_id,
           r_razon_social:data.r_razon_social,
 
@@ -309,9 +221,9 @@ export default function AsientoCompraForm() {
           r_moneda:data.r_moneda,
           r_tc:data.r_tc,
 
-          r_ibss:data.r_ibss,
-          r_ib_pais:data.r_ib_pais,
-          r_ib_aduana:data.r_ib_aduana,
+          r_idbss:data.r_idbss,
+          r_id_pais:data.r_id_pais,
+          r_id_aduana:data.r_id_aduana,
           r_ano_dam:data.r_ano_dam,
 
           r_contrato_id:data.r_contrato_id,
@@ -323,7 +235,7 @@ export default function AsientoCompraForm() {
           r_cuenta10:data.r_cuenta10,
 
           });
-    //console.log(data);
+    console.log("data mostrar registro: ",data);
     setEditando(true);
   };
   
@@ -397,7 +309,6 @@ export default function AsientoCompraForm() {
       <Grid item xs={9} >
         <form onSubmit={handleSubmit} >
             <AsientoRazonSocial formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-
             </AsientoRazonSocial>
         </form>
       </Grid>
@@ -410,30 +321,20 @@ export default function AsientoCompraForm() {
         justifyContent={isSmallScreen ? 'center' : 'center'}
       >
           <Grid item xs={3} >
-            <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            
-            </AsientoComprobante>
+              <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
+              </AsientoComprobante>
           </Grid>
 
           <Grid item xs={2} >
             <AsientoCompraImportacion formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            
             </AsientoCompraImportacion>
           </Grid>
 
           <Grid item xs={4} >
             <AsientoCompraMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            
             </AsientoCompraMontos>
           </Grid>
 
-          {/*
-          <Grid item xs={2} >
-            <AsientoCompraImpuestos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            
-            </AsientoCompraImpuestos>
-          </Grid>
-          */}
       </Grid>
 
           <Grid container spacing={0.5} style={{ marginTop: "-15px" }}
