@@ -8,6 +8,7 @@ import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego 
 import Inicio from "./components/Inicio";
 import { useEffect } from 'react';
 
+import AsientoVentaForm from './components/AsientoVentaForm';
 import AsientoCompraForm from './components/AsientoCompraForm';
 import AsientoList from './components/AsientoList';
 import ContabilidadList from './components/ContabilidadList';
@@ -15,26 +16,12 @@ import ContabilidadForm from './components/ContabilidadForm';
 import CuentaList from './components/CuentaList';
 import CuentaForm from './components/CuentaForm';
 
-
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
   //los props llegan desde BienvenidaExpert.js
   
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const {user, isAuthenticated } = useAuth0();
-
-  //const [periodo_trabajo, setPeriodoTrabajo] = useState("");
-  //const [periodo_select,setPeriodosSelect] = useState([]);
-
-  //const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
-  //const [contabilidad_select,setContabilidadesSelect] = useState([]);
-  /*const libros_select = [
-    { id_libro: '014', nombre: 'VENTAS'},
-    { id_libro: '008', nombre: 'COMPRAS'},
-    { id_libro: '001', nombre: 'CAJA'},
-    { id_libro: '005', nombre: 'DIARIO'},
-    // INFO ESTATICA
-  ];*/
 
 
   //Aqui se leen parametros en caso lleguen
@@ -68,6 +55,9 @@ function App(props) {
           <Route path="/asiento/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AsientoList />} />
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoCompraForm />} />
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
+
+          <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoVentaForm />} />
+          <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoVentaForm />} /> 
 
           <Route path="/contabilidades/:id_usuario" element={<ContabilidadList />} />
           <Route path="/contabilidad/new" element={<ContabilidadForm />} />

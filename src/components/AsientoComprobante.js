@@ -138,7 +138,7 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                             //format="yyyy/MM/dd"
                             value={formData.fecemi} 
                             onChange={(e) => handleChange('fecemi', e.target.value)}
-                            inputProps={{ style:{color:'white'} }}
+                            inputProps={{ style:{color:'white', textAlign: 'center'} }}
                             InputLabelProps={{ style:{color:'skyblue'} }}
                 />
 
@@ -153,7 +153,7 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                         //format="yyyy/MM/dd"
                         value={formData.fecvcto} 
                         onChange={(e) => handleChange('fecvcto', e.target.value)}
-                        inputProps={{ style:{color:'white'} }}
+                        inputProps={{ style:{color:'white',textAlign: 'center'} }}
                         InputLabelProps={{ style:{color:'skyblue'} }}
                 />
                 
@@ -221,7 +221,7 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                         //format="yyyy/MM/dd"
                         value={formData.fecemi_ref} 
                         onChange={(e) => handleChange('fecemi_ref', e.target.value)}
-                        inputProps={{ style:{color:'white'} }}
+                        inputProps={{ style:{color:'white',textAlign: 'center'} }}
                         InputLabelProps={{ style:{color:'skyblue'} }}
                 />
                 </ThemeProvider>

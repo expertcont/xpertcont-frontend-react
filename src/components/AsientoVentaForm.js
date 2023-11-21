@@ -20,10 +20,9 @@ import {useNavigate, useParams} from 'react-router-dom';
 //import logo from '../alsa.png';
 import AsientoRazonSocial from './AsientoRazonSocial';
 import AsientoComprobante from './AsientoComprobante';
-import AsientoCompraImportacion from './AsientoCompraImportacion';
-import AsientoCompraMontos from './AsientoCompraMontos';
+import AsientoVentaMontos from './AsientoVentaMontos';
 
-export default function AsientoCompraForm() {
+export default function AsientoVentaForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -39,7 +38,7 @@ export default function AsientoCompraForm() {
       //id_libro:'',
       //id_invitado:'',
 
-      glosa:'COMPRA',
+      glosa:'VENTA',
       debe:'0',
       haber:'0',
       debe_me:'0',
@@ -62,7 +61,7 @@ export default function AsientoCompraForm() {
       r_numero_ref:'',
       fecemi_ref:'',
 
-      r_base001:'0',
+      r_base001:'',
       r_base002:'',
       r_base003:'',
       r_base004:'',
@@ -107,8 +106,8 @@ export default function AsientoCompraForm() {
 
     //Cambiooo para controlar Edicion
     if (editando){
-      console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
-      console.log(registro);
+      //console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+      //console.log(registro);
       await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`, {
         method: "PUT",
         body: JSON.stringify(registro),
@@ -127,8 +126,8 @@ export default function AsientoCompraForm() {
       setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
 
       setRegistro(prevState => ({ ...prevState, ctrl_crea_us: params.id_invitado }));
-      console.log(`${back_host}/asiento`);
-      console.log(registro);
+      //console.log(`${back_host}/asiento`);
+      //console.log(registro);
       const res = await fetch(`${back_host}/asiento`, {
         method: "POST",
         body: JSON.stringify(registro),
@@ -306,7 +305,7 @@ export default function AsientoCompraForm() {
             }}
         >
           <Typography variant='h6' color='white' textAlign='center'>
-              {editando ? ("Editar Asiento : " + params.num_asiento + " ") : ("Libro Compras")}
+              {editando ? ("Editar Asiento : " + params.num_asiento + " ") : ("Libro Ventas")}
           </Typography>
         </Card>
       </Grid>
@@ -326,19 +325,14 @@ export default function AsientoCompraForm() {
         alignItems={isSmallScreen ? 'center' : 'center'}
         justifyContent={isSmallScreen ? 'center' : 'center'}
       >
-          <Grid item xs={3} >
+          <Grid item xs={4.5} >
               <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
               </AsientoComprobante>
           </Grid>
 
-          <Grid item xs={2} >
-            <AsientoCompraImportacion formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            </AsientoCompraImportacion>
-          </Grid>
-
-          <Grid item xs={4} >
-            <AsientoCompraMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            </AsientoCompraMontos>
+          <Grid item xs={4.5} >
+            <AsientoVentaMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
+            </AsientoVentaMontos>
           </Grid>
 
       </Grid>

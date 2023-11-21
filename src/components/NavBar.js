@@ -14,12 +14,14 @@ import { blueGrey } from '@mui/material/colors';
 import Tooltip from '@mui/material/Tooltip';
 import NextWeekIcon from '@mui/icons-material/NextWeek';
 import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpdateGood';
+import UpdateIcon from '@mui/icons-material/Update';
 
 import React, { useState } from 'react';
 import LoginPerfil from "./LoginPerfil" //new
 import LoginLogoutBoton from "./LoginLogoutBoton" //new
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import { useEffect } from "react"
+//import { Button } from "reactstrap";
 
 export default function NavBar(props) {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
@@ -43,10 +45,11 @@ export default function NavBar(props) {
 
   const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
-
-  const handleClick = (buttonId) => {
+  
+    const handleClick = (buttonId) => {
     setSelectedButton(buttonId);
   }
+
   const handleChange = e => {
     //Para todos los demas casos ;)
     if (e.target.name==="periodo"){
@@ -76,6 +79,19 @@ export default function NavBar(props) {
       /////////////////////////////
     }
   }, [isAuthenticated, user]);
+
+  /*useEffect(() => {
+    console.log('Navigating...');
+  console.log('idAnfitrion:', props.idAnfitrion);
+  console.log('idInvitado:', props.idInvitado);
+  console.log('periodo_trabajo:', periodo_trabajo);
+  console.log('contabilidad_trabajo:', contabilidad_trabajo);
+    
+    //navigate(`/`);
+    // La función navigate se ejecutará cada vez que cambie uno de estos valores
+    navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+  }, [navigate, props.idAnfitrion, props.idInvitado, periodo_trabajo, contabilidad_trabajo]);
+  */
 
   //////////////////////////////////////////////////////////
   const cargaPeriodosAnfitrion = () =>{
@@ -232,30 +248,6 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoOCarga ?
-                    (
-                    <Tooltip title="REPORTES Contables">
-                    <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono03' ? 'primary.main' : blueGrey[300],
-                          flexGrow:1
-                        }}
-                                component="label" size="large"
-                                onClick = {()=> {
-                                  navigate(`/ocargadet/${props.fecha_ini}/${props.fecha_proceso}`);
-                                  handleClick('icono03');
-                                                }
-                                }
-                    >
-                    <InsertChartIcon />
-                      
-                    </IconButton>
-                    </Tooltip>
-                    ):(
-                      <span></span>
-                    )
-                    }
-
                     { permisoGuias ?
                     (
                     <Tooltip title="Panel 01 CONTABILIDADES">
@@ -384,53 +376,6 @@ export default function NavBar(props) {
 
             </Toolbar>
 
-            <Grid container spacing={0}
-          direction={isSmallScreen ? 'column' : 'row'}
-          alignItems={isSmallScreen ? 'center' : 'center'}
-          justifyContent={isSmallScreen ? 'center' : 'center'}
-      >
-          <Grid item xs={1.5} sm={1.5}>
-              <Select
-                    labelId="periodo"
-                    //id={periodo_select.periodo}
-                    size='small'
-                    value={periodo_trabajo}
-                    name="periodo"
-                    sx={{display:'block',
-                    margin:'.1rem 0', color:"skyblue", fontSize: '13px' }}
-                    label="Periodo Cont"
-                    onChange={handleChange}
-                    >
-                    {   
-                        periodo_select.map(elemento => (
-                        <MenuItem key={elemento.periodo} value={elemento.periodo}>
-                          {elemento.periodo}
-                        </MenuItem>)) 
-                    }
-              </Select>
-          </Grid>
-          <Grid item xs={4} sm={4}>
-              <Select
-                    labelId="contabilidad_select"
-                    //id={contabilidad_select.documento_id}
-                    size='small'
-                    value={contabilidad_trabajo}
-                    name="contabilidad"
-                    sx={{display:'block',
-                    margin:'.1rem 0', color:"white", fontSize: '13px' }}
-                    label="Contabilidad"
-                    onChange={handleChange}
-                    >
-                    {   
-                        contabilidad_select.map(elemento => (
-                        <MenuItem key={elemento.documento_id} value={elemento.documento_id}>
-                          {elemento.razon_social}
-                        </MenuItem>)) 
-                    }
-              </Select>
-          </Grid>
-
-      </Grid>
 
         </Container>
     </Box>
