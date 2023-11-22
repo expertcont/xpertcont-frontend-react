@@ -131,7 +131,7 @@ const AsientoFileInput = ({datosCarga}) => {
       ) : (
         <div>
           <Typography variant="caption" color="textSecondary">
-            Haz click para seleccionar un archivo (Carga Masiva)
+            Importar Archivo
           </Typography>
           <IconButton color="black" 
           >

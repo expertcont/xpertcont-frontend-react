@@ -255,13 +255,13 @@ export const ComprasColumnas = [
   {//12
     name: 'D',
     selector: 'r_id_doc',
-    width: '50px',
+    width: '40px',
     sortable: true,
   },
   {//13
     name: 'Ruc',
     selector: 'r_documento_id',
-    width: '120px',
+    width: '110px',
     sortable: true,
   },
   {//14

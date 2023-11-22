@@ -23,6 +23,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import ClearIcon from '@mui/icons-material/Clear';
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
@@ -128,6 +129,22 @@ export default function AsientoList() {
             style={{
               cursor: 'pointer',
               color: 'skyblue',
+              transition: 'color 0.3s ease',
+            }}
+          />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: '40px',
+      cell: (row) => (
+          <ClearIcon
+            onClick={() => handleUpdate(row.num_asiento)}
+            style={{
+              cursor: 'pointer',
+              color: 'orange',
               transition: 'color 0.3s ease',
             }}
           />
@@ -253,27 +270,40 @@ export default function AsientoList() {
   let actions;
   if (pVenta0101) {
     actions = (
-      <IconButton color="primary" onClick={() => {
-        if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-          //Validamos libro a registrar
-          if (id_libro === "008") {
-            navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-          }
-          if (id_libro === "014") {
-            navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-          }
-        } else {
-          //navigate(`/ventamovil/new`);
-          if (id_libro === "008") {
-            navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-          }
-          if (id_libro === "014") {
-            navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-          }
-        }
-      }}>
-        <Add />
-      </IconButton>
+      <div>
+        <Grid container spacing={0}
+              direction={'row'}
+              alignItems={'center'}
+              justifyContent={'center'}
+        >
+          <Grid item xs={10.5} >
+              <AsientoFileInput datosCarga={datosCarga}></AsientoFileInput>
+          </Grid>
+          <Grid item xs={1.5} >
+              <IconButton color="primary" onClick={() => {
+                if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
+                  //Validamos libro a registrar
+                  if (id_libro === "008") {
+                    navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                  }
+                  if (id_libro === "014") {
+                    navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                  }
+                } else {
+                  //navigate(`/ventamovil/new`);
+                  if (id_libro === "008") {
+                    navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                  }
+                  if (id_libro === "014") {
+                    navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                  }
+                }
+              }}>
+                <Add />
+              </IconButton>
+          </Grid>
+        </Grid>
+      </div>
     );
   } else {
     actions = null; // Opcionalmente, puedes asignar null u otro valor cuando la condición no se cumple
@@ -378,8 +408,8 @@ export default function AsientoList() {
   const filtrar=(strBusca)=>{
       var resultadosBusqueda = [];
       resultadosBusqueda = tabladet.filter((elemento) => {
-        if (elemento.razon_social.toString().toLowerCase().includes(strBusca.toLowerCase())
-         || elemento.documento_id.toString().toLowerCase().includes(strBusca.toLowerCase())
+        if (elemento.r_razon_social.toString().toLowerCase().includes(strBusca.toLowerCase())
+         || elemento.r_documento_id.toString().toLowerCase().includes(strBusca.toLowerCase())
          || elemento.comprobante.toString().toLowerCase().includes(strBusca.toLowerCase())
           ){
               return elemento;
@@ -576,7 +606,7 @@ export default function AsientoList() {
                                    sx={{display:'block',
                                         margin:'.0rem 0'}}
                                    name="busqueda"
-                                   placeholder='RUC  Razon Social   Comprobante'
+                                   placeholder='Ruc   Razon Social   Comprobante'
                                    onChange={actualizaValorFiltro}
                                    inputProps={{ style:{color:'white'} }}
                                    InputProps={{
@@ -597,10 +627,10 @@ export default function AsientoList() {
     <Grid item xs={1.1} >    
       <Button variant='contained' 
               fullWidth
-              color='warning'
+              color='primary'
               sx={{display:'block',margin:'.0rem 0'}}
               >
-      PDF-R
+      SIRE
       </Button>
     </Grid>
 
@@ -618,11 +648,13 @@ export default function AsientoList() {
       <ToggleButton value="compras">SIRE-Compras</ToggleButton>
       <ToggleButton value="caja">L-Caja</ToggleButton>
       <ToggleButton value="diario">L-Diario</ToggleButton>
+      
     </ToggleButtonGroup>      
     </div>
-
     
+    {/* 
     <AsientoFileInput datosCarga={datosCarga}></AsientoFileInput>
+    */}
 
     <Datatable
       //title="Registro - Pedidos"
@@ -642,6 +674,8 @@ export default function AsientoList() {
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
+
+      
     >
     </Datatable>
 

@@ -133,7 +133,7 @@ const BotonExcelVentas = ({ registrosdet }) => {
         sx={{display:'block',
         margin:'.0rem 0'}}
         onClick={handleDownload}>        
-        EXCEL
+        EXPORT
         </Button>
       ) : (
         <Button color="success" disabled>
