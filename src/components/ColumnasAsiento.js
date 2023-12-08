@@ -2,7 +2,7 @@
 //import { ArrowDownward } from '@mui/icons-material';
 
 export const VentasColumnas = [
-  {//01 campos default ocultos
+  /*{//01 campos default ocultos
     name: 'Emisor',
     selector: 'documento_id',
     sortable: true,
@@ -28,18 +28,20 @@ export const VentasColumnas = [
     sortable: true,
     width: '0px',
     hidden:true
-  },
+  },*/
   {//05
     name: 'Emision',
     selector: 'r_fecemi',
+    width: '100px',
     sortable: true,
   },
   {//06
     name: 'Vcto',
     selector: 'fecvcto',
+    width: '100px',
     sortable: true,
   },
-  {//07
+  /*{//07
     name: 'Doc',
     selector: 'r_cod',
     sortable: true,
@@ -53,20 +55,29 @@ export const VentasColumnas = [
     name: 'Num',
     selector: 'r_numero',
     sortable: true,
+  },*/
+  {//07-08-10
+    name: 'Comprobante',
+    selector: 'comprobante', //campo unido
+    width: '150px',
+    sortable: true,
   },
   {//10
     name: 'NumF',
     selector: 'r_numero2',
+    width: '90px',
     sortable: true,
   },
   {//11
     name: 'Tp',
     selector: 'r_id_doc',
+    width: '40px',
     sortable: true,
   },
   {//12
     name: 'Ruc',
     selector: 'r_documento_id',
+    width: '110px',
     sortable: true,
   },
   {//13
@@ -76,12 +87,12 @@ export const VentasColumnas = [
   },
   {//14
     name: 'Valor Export',
-    selector: 'r_base001',
+    selector: 'export',
     sortable: true,
   },
   {//15
     name: 'Base Gravada',
-    selector: 'r_base002',
+    selector: 'base',
     sortable: true,
   },
   {//16 Preguntar a contadores, aplicacion de este campo
@@ -91,7 +102,7 @@ export const VentasColumnas = [
   },
   {//17
     name: 'IGV',
-    selector: 'r_igv002',
+    selector: 'igv',
     sortable: true,
   },
   {//18 Preguntar a contadores, aplicacion de este campo
@@ -101,12 +112,12 @@ export const VentasColumnas = [
   },
   {//19
     name: 'Exonerado',
-    selector: 'r_base003',
+    selector: 'exonera',
     sortable: true,
   },
   {//20
     name: 'Inafecto',
-    selector: 'r_base004',
+    selector: 'inafecta',
     sortable: true,
   },
   {//21
@@ -171,7 +182,7 @@ export const VentasColumnas = [
   },
   {//33
     name: 'ID.PROY',
-    selector: 'r_numero_ref',
+    selector: 'r_contrato_id',
     sortable: true,
   },
 
@@ -233,7 +244,6 @@ export const ComprasColumnas = [
     width: '90px',
     sortable: true,
   },*/
-
   {//07-08-10
     name: 'Comprobante',
     selector: 'comprobante', //campo unido

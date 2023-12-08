@@ -3,7 +3,7 @@ import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SendIcon from '@mui/icons-material/Send';
+import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import TaskIcon from '@mui/icons-material/Task';
 
 const AsientoFileInput = ({datosCarga}) => {
@@ -34,36 +34,45 @@ const AsientoFileInput = ({datosCarga}) => {
       formData.append('archivoExcel', selectedFile);
       formData.append('datosCarga', JSON.stringify(datosCarga));
       console.log(datosCarga);
-      //console.log(formData);
-      /*const formDataObj = {};
-      for (const [key, value] of formData) {
-        formDataObj[key] = value;
-      }
-      console.log('Contenido de formData:', formDataObj);*/
+
+      // Obtén el nombre del archivo
+      const fileName = selectedFile.name;
+          
+      // Obtén la extensión del archivo
+      const fileExtension = fileName.split('.').pop().toLowerCase();
 
       // Aquí puedes agregar la lógica para enviar el archivo a un API.
       try {
         // Realiza la llamada a la API
         if (datosCarga.id_libro = '014'){
-          await fetch(`${back_host}/asientoexcelventas`, {
-            method: 'POST',
-            body: formData,
-          });
+          if (fileExtension === 'xls') {
+            await fetch(`${back_host}/asientoexcelventas`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
+          if (fileExtension === 'txt') {
+            await fetch(`${back_host}/asientosireventas`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
         }
+
         if (datosCarga.id_libro = '008'){
-          await fetch(`${back_host}/asientoexcelcompras`, {
-            method: 'POST',
-            body: formData,
-          });
+          if (fileExtension === 'xls') {
+            await fetch(`${back_host}/asientoexcelcompras`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
+          if (fileExtension === 'txt') {
+            await fetch(`${back_host}/asientosirecompras`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
         }
-        /*if (res.ok) {
-          // Maneja la respuesta de la API, si es necesario
-          const data = await res.json();
-          console.log('Respuesta de la API:', data);
-        } else {
-          // Maneja el caso en que la respuesta no sea exitosa
-          console.error('Error al enviar la solicitud a la API:', res.status, res.statusText);
-        }*/
       } catch (error) {
         // Manejo de errores
         console.error('Error al enviar la solicitud a la API:', error);
@@ -85,11 +94,12 @@ const AsientoFileInput = ({datosCarga}) => {
       elevation={3}
       style={{
         padding: '0px',
-        border: '2px dashed #aaa',
+        border: '1px dashed #aaa',
         position: 'relative',
-        textAlign: 'center',
-        backgroundColor:'skyblue',
+        textAlign: 'left',
+        backgroundColor:'#1e272e',
         cursor: 'pointer', // Cambia el cursor al pasar sobre el área del recuadro
+        height:'33px'
       }}
       onClick={handleClick}
     >
@@ -112,31 +122,30 @@ const AsientoFileInput = ({datosCarga}) => {
             <DeleteIcon fontSize="medium" />
           </IconButton>
 
-          <Typography variant="caption" color="textSecondary">
+
+          <Typography variant="caption" color="white">
             {selectedFile.name}
           </Typography>
-          <IconButton color="success" 
-          >
-            <TaskIcon fontSize="medium" />
-          </IconButton>
-          <IconButton color="success" 
+          
+          <IconButton color="primary" 
                       onClick={(e) => {
                         e.stopPropagation(); // Detiene la propagación del evento
                         handleUpload();
                       }}
           >
-            <SendIcon fontSize="medium" />
+            <SystemUpdateAltIcon fontSize="medium" />
           </IconButton>
         </div>
       ) : (
         <div>
-          <Typography variant="caption" color="textSecondary">
-            Importar Archivo
-          </Typography>
           <IconButton color="black" 
           >
             <TaskIcon fontSize="medium" />
           </IconButton>
+
+          <Typography variant="caption" color="white">
+            Importar 
+          </Typography>
         </div>
       )}
     </Paper>

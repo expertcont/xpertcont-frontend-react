@@ -1,6 +1,7 @@
 import {Grid,Card,Typography,Button,CircularProgress,useMediaQuery} from '@mui/material'
 import React, { useState,useEffect} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
+import swal2 from 'sweetalert2'
 //import axios from 'axios';
 //import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
 //import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
@@ -43,7 +44,7 @@ export default function AsientoVentaForm() {
       haber:'0',
       debe_me:'0',
       haber_me:'0',
-      asiento_mayorizado:'0',
+      mayorizado:'0',
       ctrl_crea_us:'',
       r_id_doc:'',
       r_documento_id:'',
@@ -126,8 +127,10 @@ export default function AsientoVentaForm() {
       setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
 
       setRegistro(prevState => ({ ...prevState, ctrl_crea_us: params.id_invitado }));
+      registro.ctrl_crea_us = params.id_invitado;
+      
       //console.log(`${back_host}/asiento`);
-      //console.log(registro);
+      console.log('ANTES DE GRABAR: ',registro);
       const res = await fetch(`${back_host}/asiento`, {
         method: "POST",
         body: JSON.stringify(registro),
@@ -310,7 +313,6 @@ export default function AsientoVentaForm() {
         </Card>
       </Grid>
       
-
       <Grid item xs={9} >
         <form onSubmit={handleSubmit} >
             <AsientoRazonSocial formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
@@ -324,45 +326,99 @@ export default function AsientoVentaForm() {
         direction={isSmallScreen ? 'column' : 'row'}
         alignItems={isSmallScreen ? 'center' : 'center'}
         justifyContent={isSmallScreen ? 'center' : 'center'}
-      >
-          <Grid item xs={4.5} >
-              <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-              </AsientoComprobante>
-          </Grid>
+    >
+        <Grid item xs={4.5} >
+            <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
+            </AsientoComprobante>
+        </Grid>
 
-          <Grid item xs={4.5} >
-            <AsientoVentaMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            </AsientoVentaMontos>
-          </Grid>
+        <Grid item xs={4.5} >
+          <AsientoVentaMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
+          </AsientoVentaMontos>
+        </Grid>
+    </Grid>
 
-      </Grid>
 
-          <Grid container spacing={0.5} style={{ marginTop: "-15px" }}
+    <Grid container spacing={0.5} style={{ marginTop: "0px" }}
+      direction={isSmallScreen ? 'column' : 'row'}
+      alignItems={isSmallScreen ? 'center' : 'center'}
+      justifyContent={isSmallScreen ? 'center' : 'center'}
+    >
+      <Grid item xs={9} >
+        <Card
+            style={{
+              background:'#1e272e',
+              //width: '750px', // Aquí estableces el ancho
+              marginTop: "0px",
+              //margin:'auto',
+              borderRadius: '10px',
+              padding:'1rem'
+            }}
+        >
+          <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
             direction={isSmallScreen ? 'column' : 'row'}
             alignItems={isSmallScreen ? 'center' : 'center'}
-            //justifyContent={isSmallScreen ? 'center' : 'center'}
-          >
-              <Grid item xs={2}>
-                  <Button variant='contained' 
-                          color='primary' 
-                          type='submit'
-                          sx={{display:'block',
-                          margin:'.5rem 0'}}
-                          disabled={
-                                    !registro.r_documento_id || 
-                                    !registro.r_razon_social || 
-                                    !registro.r_monto_total
-                                    }
-                          >
-                          { cargando ? (
-                          <CircularProgress color="inherit" size={24} />
-                          ) : (
-                            editando ?
-                          'Modificar' : 'Grabar')
-                          }
-                  </Button>
-              </Grid>
+            justifyContent={isSmallScreen ? 'center' : 'center'}
+            >
+                <Grid item xs={1.5} >
+                    <Button variant='contained' 
+                            color='primary' 
+                            type='submit'
+                            sx={{display:'block',
+                            margin:'.5rem 0'}}
+                            disabled={
+                                      !registro.r_documento_id || 
+                                      !registro.r_razon_social || 
+                                      !registro.r_monto_total
+                                      }
+                            >
+                            { cargando ? (
+                            <CircularProgress color="inherit" size={24} />
+                            ) : (
+                              editando ?
+                            'Modificar' : 'Grabar')
+                            }
+                    </Button>
+                </Grid>
+
+                <Grid item xs={1.6} >
+                    <Button variant='contained' 
+                            color='warning' 
+                            sx={{display:'block',
+                            margin:'.5rem 0'}}
+                            onClick={ ()=>{
+                              navigate(-1, { replace: true });
+                              //window.location.reload();
+                              }
+                            }
+                            >
+                        Anterior
+                    </Button>
+                </Grid>
+
+                <Grid item xs={2} >
+                    <Button variant='contained' 
+                            color='secondary' 
+                            sx={{display:'block',
+                            margin:'.5rem 0'}}
+                            onClick={() => {
+                              swal2.fire({
+                                text: "Funcionalidad en diseño pendiente",
+                              });
+                              }
+                            }
+      
+                            >
+                        Cuentas
+                    </Button>
+                </Grid>
+
           </Grid>
+        </Card>
+      </Grid>
+      
+    </Grid>
+
     </form>
       {/* /////////////////////////////////////////////////////////////// */}
       

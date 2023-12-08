@@ -33,11 +33,15 @@ export default function NavBar(props) {
   const [permisos, setPermisos] = useState([]); //Menu
 
   const [permisoVentas, setPermisoVentas] = useState(false);
-  const [permisoOCarga, setPermisoOCarga] = useState(false);
-  const [permisoGuias, setPermisoGuias] = useState(false);
-  const [permisoCorrentistas, setPermisoCorrentistas] = useState(false);
-  const [permisoZonasVenta, setPermisoZonasVenta] = useState(false);
-  const [permisoProductos, setPermisoProductos] = useState(false);
+  const [permisoCompras, setPermisoCompras] = useState(false);
+  const [permisoCaja, setPermisoCaja] = useState(false);
+  const [permisoDiario, setPermisoDiario] = useState(false);
+  const [permisoReportes, setPermisoReportes] = useState(false);
+
+  const [permisoContabilidades, setPermisoContabilidades] = useState(false);
+  const [permisoTipoCambio, setPermisoTipoCambio] = useState(false);
+  const [permisoCorrentista, setPermisoCorrentista] = useState(false);
+  const [permisoCentroCosto, setPermisoCentroCosto] = useState(false);
   const [permisoSeguridad, setPermisoSeguridad] = useState(false);
 
   const [periodo_trabajo, setPeriodoTrabajo] = useState("");
@@ -128,55 +132,82 @@ export default function NavBar(props) {
 
   //////////////////////////////////////////////////////////
   const cargaPermisosMenu = async()=>{
-      console.log(`https://alsa-backend-js-production.up.railway.app/seguridad/${user.email}`);
-      //Realiza la consulta a la API de permisos, puro Menu (obtenerTodosMenu)
-      fetch(`https://alsa-backend-js-production.up.railway.app/seguridad/${user.email}`, {
-        method: 'GET',
-        //headers: {
-        //  'Authorization': 'TOKEN_DE_AUTORIZACION' // Si es necesario
-        // }
-      })
-      .then(response => response.json())
-      .then(permisosData => {
-        // Guarda los permisos en el estado
-        setPermisos(permisosData);
-    
-        let tienePermiso;
-        // Verifica si existe el permiso de acceso 'ventas'
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '01');
-        if (tienePermiso) {
-          setPermisoVentas(true);
-          //console.log("permisos Ventas: ", user.email, permisoVentas);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '02');
-        if (tienePermiso) {
-          setPermisoOCarga(true);
-          //console.log("permisos Ocarga: ", user.email);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '03');
-        if (tienePermiso) {
-          setPermisoGuias(true);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '04');
-        if (tienePermiso) {
-          setPermisoCorrentistas(true);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '05');
-        if (tienePermiso) {
-          setPermisoZonasVenta(true);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '06');
-        if (tienePermiso) {
-          setPermisoProductos(true);
-        }
-        tienePermiso = permisosData.some(permiso => permiso.id_menu === '07');
-        if (tienePermiso) {
-          setPermisoSeguridad(true);
-        }
-      })
-      .catch(error => {
-        console.log('Error al obtener los permisos:', error);
-      });
+      //Si es el usuario anfitrion, tiene acceso a todo
+      if (props.idAnfitrion === props.idInvitado){
+        setPermisoVentas(true);
+        setPermisoCompras(true);
+        setPermisoCaja(true);
+        setPermisoDiario(true);
+        setPermisoReportes(true);
+        setPermisoContabilidades(true);
+        setPermisoTipoCambio(true);
+        setPermisoCorrentista(true);
+        setPermisoCentroCosto(true);
+        setPermisoSeguridad(true);
+      }
+      else {
+        console.log(`${back_host}/seguridadmenu/${props.idAnfitrion}/${props.idInvitado}`);
+        //Realiza la consulta a la API de permisos, puro Menu (obtenerTodosMenu)
+        fetch(`${back_host}/seguridadmenu/${props.idAnfitrion}/${props.idInvitado}`, {
+          method: 'GET',
+          //headers: {
+          //  'Authorization': 'TOKEN_DE_AUTORIZACION' // Si es necesario
+          // }
+        })
+        .then(response => response.json())
+        .then(permisosData => {
+          // Guarda los permisos en el estado
+          setPermisos(permisosData);
+      
+          let tienePermiso;
+          // Verifica si existe el permiso de acceso 'ventas'
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '01');
+          if (tienePermiso) {
+            setPermisoVentas(true);
+            //console.log("permisos Ventas: ", user.email, permisoVentas);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '02');
+          if (tienePermiso) {
+            setPermisoCompras(true);
+            //console.log("permisos Ocarga: ", user.email);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '03');
+          if (tienePermiso) {
+            setPermisoCaja(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '04');
+          if (tienePermiso) {
+            setPermisoDiario(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '05');
+          if (tienePermiso) {
+            setPermisoReportes(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '06');
+          if (tienePermiso) {
+            setPermisoContabilidades(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '07');
+          if (tienePermiso) {
+            setPermisoTipoCambio(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '08');
+          if (tienePermiso) {
+            setPermisoCorrentista(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '09');
+          if (tienePermiso) {
+            setPermisoCentroCosto(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_menu === '10');
+          if (tienePermiso) {
+            setPermisoSeguridad(true);
+          }
+        })
+        .catch(error => {
+          console.log('Error al obtener los permisos:', error);
+        });
+      }
   }
 
   return (
@@ -248,7 +279,7 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoGuias ?
+                    { permisoContabilidades ?
                     (
                     <Tooltip title="Panel 01 CONTABILIDADES">
                     <IconButton  
@@ -273,7 +304,7 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoCorrentistas ?
+                    { permisoTipoCambio ?
                     (
                     <Tooltip title="Panel 02 TIPO-CAMBIO">
                     <IconButton  
@@ -298,7 +329,7 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoZonasVenta ?
+                    { permisoCorrentista ?
                     (
                     <Tooltip title="PANEL 03 RUC HABITUALES">
                     <IconButton  
@@ -323,7 +354,7 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoProductos ?
+                    { permisoCentroCosto ?
                     (
                     <Tooltip title="Panel 04 CENTRO COSTOS">
                     <IconButton  
@@ -357,7 +388,7 @@ export default function NavBar(props) {
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
-                                  navigate(`/seguridad`);
+                                  navigate(`/seguridad/${props.idAnfitrion}`);
                                   handleClick('icono09');
                                                 }
                                 }

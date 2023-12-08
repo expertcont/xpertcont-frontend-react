@@ -84,7 +84,7 @@ function App(props) {
 
           <Route path="/" element={<Inicio />} />
 
-          <Route path="/seguridad" element={<SeguridadList />} />          
+          <Route path="/seguridad/:id_anfitrion" element={<SeguridadList />} />          
           {/*Edit Route */}
         </Routes>
       </Container>

@@ -66,8 +66,8 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
       datosjson = await res.json();
       console.log(datosjson);
       if (documento_id.length===11) {
-        setIdDocBusca('06');
-        formData.r_id_doc = '06';
+        setIdDocBusca('6');
+        formData.r_id_doc = '6';
         if (datosjson.success){
           setRazonSocialBusca(datosjson.data.nombre_o_razon_social);
           formData.r_razon_social = datosjson.data.nombre_o_razon_social;    
@@ -79,8 +79,8 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
       }
       else {
         //el nombre del json cambia cuando es dni
-        setIdDocBusca('01');
-        formData.r_id_doc = '01';
+        setIdDocBusca('1');
+        formData.r_id_doc = '1';
         if (datosjson.success){
           setRazonSocialBusca(datosjson.data.nombre_completo);
           formData.r_razon_social = datosjson.data.nombre_completo;    
