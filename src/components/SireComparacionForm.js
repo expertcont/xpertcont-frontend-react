@@ -2,15 +2,10 @@ import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
-import DeleteIcon from '@mui/icons-material/Delete';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import FindIcon from '@mui/icons-material/FindInPage';
 import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import Add from '@mui/icons-material/Add';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 
 import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
@@ -25,21 +20,17 @@ import 'styled-components';
 //import axios from 'axios';
 
 //import { utils, writeFile } from 'xlsx';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Tooltip from '@mui/material/Tooltip';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
+import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
+import LibraryAddRoundedIcon from '@mui/icons-material/LibraryAddRounded';
+import LibraryAddCheckRoundedIcon from '@mui/icons-material/LibraryAddCheckRounded';
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from './BotonExcelVentas';
-import { ComprasColumnas } from './ColumnasAsiento';
-import { VentasColumnas } from './ColumnasAsiento';
-import { CajaColumnas } from './ColumnasAsiento';
-import { DiarioColumnas } from './ColumnasAsiento';
-import AsientoFileInput from './AsientoFileInput';
 
-export default function AsientoList() {
+export default function SireComparacionForm() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -109,64 +100,8 @@ export default function AsientoList() {
   const [contabilidad_nombre, setContabilidadNombre] = useState("");
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
 
-  const handleChange = e => {
-    //Para todos los demas casos ;)
-    if (e.target.name==="periodo"){
-      setPeriodoTrabajo(e.target.value);
-      //En cada cambio, actualizar ultimo periodo seleccionado 
-      sessionStorage.setItem('periodo_trabajo', e.target.value);
-      //console.log('handleChange periodo_trabajo', e.target.value);
-    }
-    if (e.target.name==="contabilidad"){
-      setContabilidadTrabajo(e.target.value);
-      //En cada cambio, actualizar ultima contabilidad seleccionada
-      sessionStorage.setItem('contabilidad_trabajo', e.target.value);
-      
-      //filtramos su nombre para historial
-      const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
-      sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
-    }
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
-  }
-  
   // Agrega íconos al inicio de cada columna
-    let columnasComunes;
-  /*const columnasComunes = [
-    {
-      name: '',
-      width: '40px',
-      cell: (row) => (
-        pVenta0101 ? (
-          <DriveFileRenameOutlineIcon
-            onClick={() => handleUpdate(row.num_asiento)}
-            style={{
-              cursor: 'pointer',
-              color: 'skyblue',
-              transition: 'color 0.3s ease',
-            }}
-          />
-        ) : null
-      ),
-      allowOverflow: true,
-      button: true,
-    },
-    {
-      name: '',
-      width: '40px',
-      cell: (row) => (
-          <DeleteIcon
-            onClick={() => handleDelete(row.num_asiento)}
-            style={{
-              cursor: 'pointer',
-              color: 'orange',
-              transition: 'color 0.3s ease',
-            }}
-          />
-      ),
-      allowOverflow: true,
-      button: true,
-    },
-  ];*/
+  let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
   const [permisos, setPermisos] = useState([]); //Menu
   const [permisoVentas, setPermisoVentas] = useState(false);
@@ -222,103 +157,23 @@ export default function AsientoList() {
     if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
       console.log("Estás usando un dispositivo móvil!!");
       //Validamos libro a mostrar
-      if (id_libro === "008") {
-        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
+      if (params.id_libro === "008") {
+        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
       }
-      if (id_libro === "014") {
-        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
+      if (params.id_libro === "014") {
+        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
       }
     } else {
       console.log("No estás usando un móvil");
-      if (id_libro === "008") {
-        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
+      if (params.id_libro === "008") {
+        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
       }
-      if (id_libro === "014") {
-        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
+      if (params.id_libro === "014") {
+        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
       }
     }    
   };
-  const handleDelete = (num_asiento) => {
-    console.log(num_asiento);
-    
-    confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro,num_asiento);
-  };
-  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento)=>{
-    await swal({
-      title:"Eliminar Asiento",
-      text:"Seguro ?",
-      icon:"warning",
-      buttons:["No","Si"]
-    }).then(respuesta=>{
-        if (respuesta){
-          //console.log(cod,serie,num,elem,item);
-          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento);
-          setToggleCleared(!toggleCleared);
-          setRegistrosdet(registrosdet.filter(
-                          registrosdet => registrosdet.num_asiento !== sAsiento
-                          ));
-          setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
-              setUpdateTrigger(Math.random());//experimento
-          }, 200);
-                        
-          swal({
-            text:"Venta se ha eliminado con exito",
-            icon:"success",
-            timer:"2000"
-          });
-      }
-    })
-  }
-  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento) => {
-    console.log(`${back_host}/asiento/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${sAsiento}`);
-    //En ventas solo se eliminan, detalle-cabecera
-      await fetch(`${back_host}/asiento/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${sAsiento}`, {
-        method:"DELETE"
-      });
-  }
-  const handleDeleteOrigen = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro) => {
-    const { value: selectedOrigen } = await swal2.fire({
-      title: 'Eliminar registros',
-      //text: 'Selecciona el origen para la eliminación masiva:',
-      input: 'select',
-      icon: 'warning',
-      //color: 'orange',
-      inputOptions: {
-        EXCEL: 'EXCEL',
-        SIRE: 'SIRE',
-        MANUAL: 'MANUAL',
-        // Agrega las opciones según los valores de "origen" de tu tabla
-      },
-      inputPlaceholder: 'Selecciona el origen',
-      showCancelButton: true,
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar',
-      inputValidator: (value) => {
-        return new Promise((resolve) => {
-          if (value === '') {
-            resolve('Debes seleccionar un origen');
-          } else {
-            resolve();
-          }
-        });
-      },
-    });
 
-    // Si el usuario hace clic en "Eliminar" y selecciona un origen
-    if (selectedOrigen) {
-      // Aquí puedes realizar la lógica para eliminar registros masivamente con el origen seleccionado
-      //console.log('Eliminar registros con origen:', selectedOrigen);
-      await fetch(`${back_host}/asientomasivo/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${selectedOrigen}`, {
-        method:"DELETE"
-      });
-
-      setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
-        setUpdateTrigger(Math.random());//experimento
-      }, 200);
-      console.log('eliminadooooo todo, ahora debemos recargar en 2do useeffect');
-      cargaRegistro(valorVista,periodo_trabajo,contabilidad_trabajo);
-    }
-  };
   const calcularSumatoria = (columna) => {
     return registrosdet.reduce((acumulador, fila) => {
       const valorColumna = fila[columna];
@@ -460,29 +315,18 @@ export default function AsientoList() {
   const handleActualizaImportaOK = () => {
     
     console.log('valorVista,periodo_trabajo,contabilidad_trabajo:', valorVista,periodo_trabajo,contabilidad_trabajo);
-    cargaRegistro(valorVista,periodo_trabajo,contabilidad_trabajo);
+    cargaRegistro();
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
     // Puedes realizar otras operaciones con la cantidad de filas si es necesario
   };
   
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
-  const cargaRegistro = async (strHistorialValorVista,strHistorialPeriodo,strHistorialContabilidad) => {
+  const cargaRegistro = async () => {
     var response;
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
-    //Pero asi es mas facil, porque todo esta en valorVista ... muaaaaaa
-    //console.log(`${back_host}/asiento/${valorVista}/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}`);
-    //console.log(`${back_host}/asiento/${valorVista}/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-    if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-        response = await fetch(`${back_host}/asiento/${valorVista}/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-    }
-    else{
-        //usamos los historiales
-        //console.log("historiales cargaRegistro");
-        console.log(`${back_host}/asiento/${strHistorialValorVista}/${params.id_anfitrion}/${params.id_invitado}/${strHistorialPeriodo}/${strHistorialContabilidad}`);
-        response = await fetch(`${back_host}/asiento/${strHistorialValorVista}/${params.id_anfitrion}/${params.id_invitado}/${strHistorialPeriodo}/${strHistorialContabilidad}`);
-    }
-    
+    response = await fetch(`${back_host}/asientosirecompara/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}`);
+
     const data = await response.json();
     setRegistrosdet(data);
     setTabladet(data); //Copia para tratamiento de filtrado
@@ -498,31 +342,6 @@ export default function AsientoList() {
   const actualizaValorFiltro = e => {
     setValorBusqueda(e.target.value);
     filtrar(e.target.value);
-  }
-  const actualizaValorVista = (e) => {
-    setValorVista(e.target.value);
-    let idLibro;    
-    idLibro = 
-            e.target.value === 'ventas' ? '014'
-          : e.target.value === 'compras' ? '008'
-          : e.target.value === 'caja' ? '001'
-          : '005';
-    setValorLibro(idLibro);
-    //grabar datos sesionStorage id_libro y valorVista
-    sessionStorage.setItem('id_libro', idLibro);
-    sessionStorage.setItem('valorVista', e.target.value);
-    //console.log("sessionStorage.setItem('id_libro', id_libro): ", idLibro);
-    //console.log("sessionStorage.setItem('valorVista', valorVista): ", e.target.value);
-
-    //cargamos valores para envio
-    setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: idLibro }));
-    setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-
-    //Lo dejaremos terminar el evento de cambio o change
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
   const filtrar=(strBusca)=>{
       var resultadosBusqueda = [];
@@ -657,18 +476,7 @@ export default function AsientoList() {
   useEffect( ()=> {
       // Realiza acciones cuando isAuthenticated cambia
       //Verificar historial periodo 
-      console.log('1ero useeffect periodo_trabajo: ',periodo_trabajo);
-      const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo');
-      console.log("st_periodo_trabajo: ", st_periodo_trabajo);
-      cargaPeriodosAnfitrion(st_periodo_trabajo);
-      setPeriodoTrabajo(st_periodo_trabajo);
-
-      //Verifica historial contabilidad
-      const st_contabilidad_trabajo = sessionStorage.getItem('contabilidad_trabajo');
-      const st_contabilidad_nombre = sessionStorage.getItem('contabilidad_nombre');
-      cargaContabilidadesAnfitrion(st_contabilidad_trabajo,st_contabilidad_nombre);
-      setContabilidadTrabajo(st_contabilidad_trabajo);
-      
+     
       /////////////////////////////
       //NEW codigo para autenticacion y permisos de BD
       if (isAuthenticated && user && user.email) {
@@ -678,77 +486,24 @@ export default function AsientoList() {
 
   useEffect( ()=> {
       //Carga por cada cambio de seleccion en toggleButton
-      console.log('2do useeffect periodo_trabajo: ',periodo_trabajo);
-
-      //Verifica historial id_libro
-      const st_id_libro = sessionStorage.getItem('id_libro');
-      const st_valorVista = sessionStorage.getItem('valorVista'); //para el toggleButton
-
-      if (st_id_libro) {
-        //Establecer valor historial al toggleButton
-        setValorLibro(st_id_libro);
-        setValorVista(st_valorVista);
-      }
-
-      if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      cargaPermisosMenuComando('01'); //Por default, la 1era vez
-      setValorVista('ventas'); //Por default, la 1era vez
-      }else{
-      setValorVista(st_valorVista);
-      }
-      if (st_valorVista === 'ventas') {cargaPermisosMenuComando('01');}
-      if (st_valorVista === 'compras') {cargaPermisosMenuComando('02');}
-      if (st_valorVista === 'caja') {cargaPermisosMenuComando('03');}
-      if (st_valorVista === 'diario') {cargaPermisosMenuComando('04');}
+      console.log('2do useeffect');
 
       //fcuando carga x primera vez, sale vacio ... arreglar esto
-      cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo);
+      cargaRegistro();
 
   },[updateTrigger]) //Aumentamos
 
   useEffect( ()=> {
     //Carga de Registros con permisos
-    console.log('3ero useeffect periodo_trabajo: ',periodo_trabajo);
+    console.log('3ero useeffect ');
+    cargaPermisosMenuComando();
 
-    const st_id_libro = sessionStorage.getItem('id_libro');
-    const st_valorVista = sessionStorage.getItem('valorVista'); //para el toggleButton
-    console.log('3ero useeffect st_id_libro: ',st_id_libro);
-    if (st_id_libro) {
-      //Establecer valor historial al toggleButton
-      setValorLibro(st_id_libro);
-      setValorVista(st_valorVista);
-    }
-
-    const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo'); //parametro necesario
-    const st_contabilidad_trabajo = sessionStorage.getItem('contabilidad_trabajo'); //parametro necesario
-
-    //Secundario despues de seleccion en toggleButton
-    let columnasEspecificas;
-    if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      columnasEspecificas = VentasColumnas;
-    }else{
-      columnasEspecificas = 
-          st_valorVista === 'ventas' ? VentasColumnas
-        : st_valorVista === 'compras' ? ComprasColumnas
-        : st_valorVista === 'caja' ? CajaColumnas
-        : DiarioColumnas;
-    }
-
-    //console.log('permisosComando pVenta0103 cargado: ',pVenta0103);
-    //console.log('permisosComando pCompra0203 cargado: ',pCompra0203);
-    cargaColumnasComunes();        
+    cargaColumnasComunes();
     //console.log('columnas comunes: ', columnasComunes);
-    setColumnas([...columnasComunes, ...columnasEspecificas]);
+    setColumnas([...columnasComunes]);
     
     //cuando carga x primera vez, sale vacio ... arreglar esto
-    cargaRegistro(st_valorVista,st_periodo_trabajo,st_contabilidad_trabajo);
-
-    //Datos listos en caso de volver por aqui, para envio
-    setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: st_periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
-    setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
+    cargaRegistro();
 
   },[permisosComando, pVenta0101, pCompra0201, pCaja0301, pDiario0401, valorVista]) //Solo cuando este completo estado
 
@@ -762,8 +517,9 @@ export default function AsientoList() {
         name: '',
         width: '40px',
         cell: (row) => (
-          (pVenta0102 || pCompra0202 || pCaja0302 || pDiario0402) ? (
-            <DriveFileRenameOutlineIcon
+          ((pVenta0102 || pCompra0202 || pCaja0302 || pDiario0402) && row.resultado==='SIRE - XPERT' ) ? (
+            <Tooltip title='Clonar Registro Sire'>
+            <LibraryAddRoundedIcon
               onClick={() => handleUpdate(row.num_asiento)}
               style={{
                 cursor: 'pointer',
@@ -771,75 +527,98 @@ export default function AsientoList() {
                 transition: 'color 0.3s ease',
               }}
             />
+          </Tooltip>
           ) : null
         ),
         allowOverflow: true,
         button: true,
       },
-      {
-        name: '',
+      {//origen
+        name: 'Origen',
+        selector: 'resultado',
+        width: '110px',
+        sortable: true,
+      },
+      {//05
+        name: 'Emision',
+        selector: 'r_fecemi',
+        width: '100px',
+        sortable: true,
+      },
+      {//06
+        name: 'Vcto',
+        selector: 'fecvcto',
+        width: '100px',
+        sortable: true,
+      },
+      {//07-08-10
+        name: 'Comprobante',
+        selector: 'comprobante', //campo unido
+        width: '150px',
+        sortable: true,
+      },
+      {//11
+        name: 'Tp',
+        selector: 'r_id_doc',
         width: '40px',
-        cell: (row) => (
-          (pVenta0103 || pCompra0203 || pCaja0303 || pDiario0403) ? (
-            <DeleteIcon
-              onClick={() => handleDelete(row.num_asiento)}
-              style={{
-                cursor: 'pointer',
-                color: 'orange',
-                transition: 'color 0.3s ease',
-              }}
-            />
-          ) : null
-        ),
-        allowOverflow: true,
-        button: true,
+        sortable: true,
       },
+      {//12
+        name: 'Ruc',
+        selector: 'r_documento_id',
+        width: '110px',
+        sortable: true,
+      },
+      {//13
+        name: 'Razon Social',
+        selector: 'r_razon_social',
+        width: '210px',
+        sortable: true,
+      },
+      {//26
+        name: 'TOTAL',
+        selector: 'r_monto_total',
+        width: '100px',
+        sortable: true,
+      },
+      {//27 PEN o USD
+        name: 'MONEDA',
+        selector: 'r_moneda',
+        width: '90px',
+        sortable: true,
+      },
+      {//28
+        name: 'TC',
+        selector: 'r_tc',
+        width: '70px',
+        sortable: true,
+      },
+      {//29
+        name: 'REF.Emision',
+        selector: 'r_fecemi_ref',
+        width: '110px',
+        sortable: true,
+      },
+      {//30
+        name: 'REF.TP',
+        selector: 'r_cod_ref',
+        width: '110px',
+        sortable: true,
+      },
+      {//31
+        name: 'REF.SERIE',
+        selector: 'r_serie_ref',
+        width: '110px',
+        sortable: true,
+      },
+      {//32
+        name: 'REF.NUM',
+        selector: 'r_numero_ref',
+        width: '110px',
+        sortable: true,
+      },
+
     ];
-  }
-  const cargaPeriodosAnfitrion = (strHistorialPeriodo) =>{
-    axios
-    .get(`${back_host}/usuario/periodos/${params.id_anfitrion}`)
-    .then((response) => {
-      setPeriodosSelect(response.data);
-      if (strHistorialPeriodo === '' || strHistorialPeriodo === null){
-        //Establecer 1er elemento en select
-        if (response.data.length > 0) {
-          setPeriodoTrabajo(response.data[0].periodo); 
-          sessionStorage.setItem('periodo_trabajo',response.data[0].periodo);
-        }
-      }
-      else{//Establecer elemento historial
-        setPeriodoTrabajo(strHistorialPeriodo); 
-        console.log('periodo_trabajo: ', periodo_trabajo);
-        console.log('strHistorialPeriodo: ', strHistorialPeriodo);
-      }
-    })
-    .catch((error) => {
-        console.log(error);
-    });
-  }
-  const cargaContabilidadesAnfitrion = (strHistorialContabilidad,strHistorialContabilidadNombre) =>{
-    axios
-    //Aqui debemos agregar restriccion de contabilidad por(usuario auxiliar)
-    .get(`${back_host}/usuario/contabilidades/${params.id_anfitrion}/${params.id_invitado}`)
-    .then((response) => {
-      setContabilidadesSelect(response.data);
-      if (strHistorialContabilidad === '' || strHistorialContabilidad === null){
-        //Establecer 1er elemento en select
-        if (response.data.length > 0) {
-          setContabilidadTrabajo(response.data[0].documento_id); 
-          setContabilidadNombre(response.data[0].razon_social); 
-          sessionStorage.setItem('contabilidad_trabajo',response.data[0].documento_id);
-        }
-      }
-      else{//Establecer elemento historial
-        setContabilidadTrabajo(strHistorialContabilidad); 
-        setContabilidadNombre(strHistorialContabilidadNombre); 
-      }
-    })
-    .catch((error) => {
-        console.log(error);
-    });
   }
 
   const cargaPermisosMenu = async()=>{
@@ -893,6 +672,39 @@ export default function AsientoList() {
     }
   }
   //////////////////////////////////////////////////////////
+  const originalColor = '#1e272e';
+  const conditionalRowStyles = [
+    {
+      when: row => row.resultado==='SIRE - XPERT',
+      style: {
+        backgroundColor: aclararColor(originalColor,120),
+      },
+    },
+  ];
+  function aclararColor(hex, percent) {
+    // Parsear el color hexadecimal a componentes RGB
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+  
+    // Calcular el porcentaje de aclarado
+    let factor = 1 + percent / 100;
+  
+    // Ajustar los componentes RGB
+    r = Math.round(r * factor);
+    g = Math.round(g * factor);
+    b = Math.round(b * factor);
+  
+    // Asegurar que los valores estén en el rango [0, 255]
+    r = Math.min(255, r);
+    g = Math.min(255, g);
+    b = Math.min(255, b);
+  
+    // Convertir los componentes RGB de nuevo a formato hexadecimal
+    const nuevoHex = `#${(r).toString(16).padStart(2, '0')}${(g).toString(16).padStart(2, '0')}${(b).toString(16).padStart(2, '0')}`;
+  
+    return nuevoHex;
+  }
 
 
  return (
@@ -902,53 +714,6 @@ export default function AsientoList() {
         //alignItems={isSmallScreen ? 'center' : 'center'}
         justifyContent={isSmallScreen ? 'center' : 'center'}
   >
-
-      <Grid container spacing={0}
-          direction={isSmallScreen ? 'column' : 'row'}
-          alignItems={isSmallScreen ? 'center' : 'center'}
-          justifyContent={isSmallScreen ? 'center' : 'center'}
-      >
-          <Grid item xs={1.5} sm={1.5}>
-              <Select
-                    labelId="periodo"
-                    //id={periodo_select.periodo}
-                    size='small'
-                    value={periodo_trabajo}
-                    name="periodo"
-                    sx={{display:'block',
-                    margin:'.1rem 0', color:"skyblue", fontSize: '13px' }}
-                    label="Periodo Cont"
-                    onChange={handleChange}
-                    >
-                    {   
-                        periodo_select.map(elemento => (
-                        <MenuItem key={elemento.periodo} value={elemento.periodo}>
-                          {elemento.periodo}
-                        </MenuItem>)) 
-                    }
-              </Select>
-          </Grid>
-          <Grid item xs={4} sm={4}>
-              <Select
-                    labelId="contabilidad_select"
-                    //id={contabilidad_select.documento_id}
-                    size='small'
-                    value={contabilidad_trabajo}
-                    name="contabilidad"
-                    sx={{display:'block',
-                    margin:'.1rem 0', color:"white", fontSize: '13px' }}
-                    label="Contabilidad"
-                    onChange={handleChange}
-                    >
-                    {   
-                        contabilidad_select.map(elemento => (
-                        <MenuItem key={elemento.documento_id} value={elemento.documento_id}>
-                          {elemento.razon_social}
-                        </MenuItem>)) 
-                    }
-              </Select>
-          </Grid>
-      </Grid>
 
       <Grid item xs={11} >
           <TextField fullWidth variant="outlined" color="success" size="small"
@@ -977,114 +742,18 @@ export default function AsientoList() {
 
   </Grid>
 
-  <div>
-  <ToggleButtonGroup
-    color="success"
-    value={valorVista}
-    exclusive
-    onChange={actualizaValorVista}
-    aria-label="Platform"
-  >
-    { permisoVentas ?
-      (    
-      <ToggleButton value="ventas">L-Ventas</ToggleButton>
-      ):(
-      <span></span>
-      )
-    }
-
-    { permisoCompras ?
-      (    
-    <ToggleButton value="compras">L-Compras</ToggleButton>
-    ):(
-      <span></span>
-      )
-    }
-
-    { permisoCaja ?
-    (
-    <ToggleButton value="caja">L-Caja</ToggleButton>
-    ):(
-      <span></span>
-      )
-    }
-
-    { permisoDiario ?
-    (
-    <ToggleButton value="diario">L-Diario</ToggleButton>
-    ):(
-      <span></span>
-      )
-    }
-
-  </ToggleButtonGroup>      
-  </div>
-    
   <Grid container spacing={0}
       direction={isSmallScreen ? 'column' : 'row'}
       alignItems={isSmallScreen ? 'center' : 'left'}
       justifyContent={isSmallScreen ? 'center' : 'left'}
   >
-      <Grid item xs={1} >
-      
-          <IconButton color="primary" 
-                          style={{ padding: '0px'}}
-                          //style={{ padding: '0px', color: 'skyblue' }}
-                          onClick={() => {
-                            if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-                              //Validamos libro a registrar
-                              if (id_libro === "008") {
-                                navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                              if (id_libro === "014") {
-                                navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                            } else {
-                              //navigate(`/ventamovil/new`);
-                              if (id_libro === "008") {
-                                navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                              if (id_libro === "014") {
-                                navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                            }
-                          }}
-          >
-                <CreateNewFolderIcon style={{ fontSize: '40px' }}/>
-          </IconButton>
-
-      </Grid>
-
-      <Grid item xs={1.2} >    
-        { (pVenta0104 || pCompra0204 || pCaja0304 || pDiario0404) ? (
-        <Button variant='contained' 
-                fullWidth
-                //color='error'
-                startIcon={<DeleteSweepIcon />}
-                style={{ justifyContent: 'flex-start',backgroundColor:'skyblue',color:'black' }}
-                onClick={() => 
-                  handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
-                }
-                >
-        ELIMINA
-        </Button>
-        ):(
-          <div></div>
-        )
-        }
-      </Grid>
-
-      <Grid item xs={8.4}>
-          <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
-      </Grid>
 
       <Grid item xs={0.4} >    
 
           <IconButton color="primary" 
                       style={{ padding: '0px' }}
                       onClick={() => {
-                        //handleMensajeTotales();
-                        navigate(`/sirecomparacion/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
+                        handleMensajeTotales();
                         }
                       }
           >
@@ -1093,24 +762,11 @@ export default function AsientoList() {
 
       </Grid>
 
-      <Grid item xs={1} >    
-        <Button variant='contained' 
-                fullWidth
-                color='primary'
-                sx={{display:'block',margin:'.0rem 0'}}
-                onClick={() => {
-                  convertirATextoSire();
-                  }
-                }
-                >
-        SIRE
-        </Button>
-      </Grid>
 
   </Grid>
 
   <Datatable
-      //title="Registro - Pedidos"
+      title="SIRE Comparativo"
       theme="solarized"
       columns={columnas}
       data={registrosdet}
@@ -1121,12 +777,13 @@ export default function AsientoList() {
       onSelectedRowsChange={handleRowSelected}
       clearSelectedRows={toggleCleared}
       pagination
-      paginationPerPage={30}
-      paginationRowsPerPageOptions={[30, 50, 100]}
+      paginationPerPage={15}
+      paginationRowsPerPageOptions={[15, 50, 100]}
 
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
+      conditionalRowStyles={conditionalRowStyles} 
   >
   </Datatable>
 

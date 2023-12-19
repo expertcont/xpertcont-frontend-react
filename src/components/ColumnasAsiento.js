@@ -29,6 +29,12 @@ export const VentasColumnas = [
     width: '0px',
     hidden:true
   },*/
+  {//origen
+    name: 'Origen',
+    selector: 'origen',
+    width: '90px',
+    sortable: true,
+  },
   {//05
     name: 'Emision',
     selector: 'r_fecemi',
@@ -214,6 +220,12 @@ export const ComprasColumnas = [
     sortable: true,
     width: '90px',
   },*/
+  {//origen
+    name: 'Origen',
+    selector: 'origen',
+    width: '90px',
+    sortable: true,
+  },
   {//05
     name: 'Emision',
     selector: 'r_fecemi',

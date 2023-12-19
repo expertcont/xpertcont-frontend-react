@@ -1,19 +1,44 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import TaskIcon from '@mui/icons-material/Task';
+import Swal from 'sweetalert2';
+import CompareIcon from '@mui/icons-material/Compare';
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges';
+import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
+import Tooltip from '@mui/material/Tooltip';
 
-const AsientoFileInput = ({datosCarga}) => {
+const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileType, setSelectedFileType] = useState(null);  //(xlsx) or (txt)
   const fileInputRef = useRef(null);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     setSelectedFile(file);
+    
+    // Obtén el nombre del archivo, para actualizar tipo y modificar color y mensaje de importacion
+    const fileName = file.name;
+    // Obtén la extensión del archivo
+    const fileExtension = fileName.split('.').pop().toLowerCase();
+    //setSelectedFileType(fileExtension);
+    if (fileExtension === 'xlsx' || fileExtension === 'txt') {
+      setSelectedFile(file);
+      setSelectedFileType(fileExtension);
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Formato de archivo no válido',
+        text: 'Solo se permiten archivos xlsx o txt.',
+      });
+      handleDelete();
+      return;
+    }
+
   };
 
   const handleDelete = () => {
@@ -29,11 +54,11 @@ const AsientoFileInput = ({datosCarga}) => {
     // Aquí puedes realizar la lógica de carga del archivo, como enviarlo a un servidor.
     // Por ahora, solo mostraremos la información del archivo seleccionado en la consola.
     if (selectedFile) {
+      
       // Construye un objeto FormData con el archivo y el registro
       const formData = new FormData();
       formData.append('archivoExcel', selectedFile);
       formData.append('datosCarga', JSON.stringify(datosCarga));
-      console.log(datosCarga);
 
       // Obtén el nombre del archivo
       const fileName = selectedFile.name;
@@ -44,14 +69,17 @@ const AsientoFileInput = ({datosCarga}) => {
       // Aquí puedes agregar la lógica para enviar el archivo a un API.
       try {
         // Realiza la llamada a la API
-        if (datosCarga.id_libro = '014'){
-          if (fileExtension === 'xls') {
+        if (datosCarga.id_libro === '014'){
+          console.log('filtramos ventas');
+          if (fileExtension === 'xlsx') {
+            console.log('filtramos excel ventas');
             await fetch(`${back_host}/asientoexcelventas`, {
               method: 'POST',
               body: formData,
             });
           }
           if (fileExtension === 'txt') {
+            console.log('filtramos sire ventas');
             await fetch(`${back_host}/asientosireventas`, {
               method: 'POST',
               body: formData,
@@ -59,27 +87,35 @@ const AsientoFileInput = ({datosCarga}) => {
           }
         }
 
-        if (datosCarga.id_libro = '008'){
-          if (fileExtension === 'xls') {
+        if (datosCarga.id_libro === '008'){
+          console.log('filtramos compras');
+          if (fileExtension === 'xlsx') {
+            console.log('filtramos excel compras');
             await fetch(`${back_host}/asientoexcelcompras`, {
               method: 'POST',
               body: formData,
             });
           }
           if (fileExtension === 'txt') {
+            console.log('filtramos sire compras');
             await fetch(`${back_host}/asientosirecompras`, {
               method: 'POST',
               body: formData,
             });
           }
         }
-      } catch (error) {
+
+        onActualizaImportaOK(); //activamos envento en formulario principal
+      } 
+      catch (error) {
         // Manejo de errores
         console.error('Error al enviar la solicitud a la API:', error);
       }
-    } else {
+    } 
+    else {
       console.log('No se ha seleccionado ningún archivo.');
     }
+
   };
 
   const handleClick = () => {
@@ -88,6 +124,11 @@ const AsientoFileInput = ({datosCarga}) => {
       fileInputRef.current.click();
     }
   };
+
+  useEffect( ()=> {
+    // Realiza acciones cuando isAuthenticated cambia
+    //console.log('selectedFileType:', selectedFileType);
+  },[selectedFileType]) //Aumentamos IsAuthenticated y user
 
   return (
     <Paper
@@ -127,14 +168,17 @@ const AsientoFileInput = ({datosCarga}) => {
             {selectedFile.name}
           </Typography>
           
-          <IconButton color="primary" 
-                      onClick={(e) => {
-                        e.stopPropagation(); // Detiene la propagación del evento
-                        handleUpload();
-                      }}
-          >
-            <SystemUpdateAltIcon fontSize="medium" />
-          </IconButton>
+          <Tooltip title='Importar Libro'>
+            <IconButton color={selectedFileType==='xlsx' ? ('success'):('primary')} 
+                        onClick={(e) => {
+                          e.stopPropagation(); // Detiene la propagación del evento
+                          handleUpload();
+                        }}
+            > 
+              <SystemUpdateAltIcon fontSize="medium" />
+            </IconButton>
+          </Tooltip>
+
         </div>
       ) : (
         <div>

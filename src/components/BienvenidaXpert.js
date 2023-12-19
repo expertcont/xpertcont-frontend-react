@@ -125,7 +125,6 @@ const BienvenidaXpert = ({ onStartClick }) => {
 
                       <Button variant='contained' 
                                               color='primary' 
-                                              //onClick={onStartClick}
                                               onClick={() => {
                                                 // Devolvemos los props actualizados
                                                 onStartClick(idAnfitrionSeleccionado, user.email);
