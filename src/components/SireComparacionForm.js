@@ -158,18 +158,18 @@ export default function SireComparacionForm() {
       console.log("Estás usando un dispositivo móvil!!");
       //Validamos libro a mostrar
       if (params.id_libro === "008") {
-        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
+        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/clonar`);
       }
       if (params.id_libro === "014") {
-        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
+        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/clonar`);
       }
     } else {
       console.log("No estás usando un móvil");
       if (params.id_libro === "008") {
-        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
+        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/clonar`);
       }
       if (params.id_libro === "014") {
-        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/edit`);
+        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${num_asiento}/clonar`);
       }
     }    
   };
@@ -542,12 +542,6 @@ export default function SireComparacionForm() {
       {//05
         name: 'Emision',
         selector: 'r_fecemi',
-        width: '100px',
-        sortable: true,
-      },
-      {//06
-        name: 'Vcto',
-        selector: 'fecvcto',
         width: '100px',
         sortable: true,
       },

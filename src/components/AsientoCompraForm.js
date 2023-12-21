@@ -1,20 +1,9 @@
 import {Grid,Card,Typography,Button,CircularProgress,useMediaQuery} from '@mui/material'
 import React, { useState,useEffect} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useLocation} from 'react-router-dom';
 import swal2 from 'sweetalert2'
 //import axios from 'axios';
-//import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
-//import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
-//import DeleteIcon from '@mui/icons-material/Delete';
-//import IconButton from '@mui/material/IconButton';
-//import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-//import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
 //import swal from 'sweetalert';
-//
-//import Switch from '@mui/material/Switch';
-//import FormGroup from '@mui/material/FormGroup';
-//import FormControlLabel from '@mui/material/FormControlLabel';
-//import FormLabel from '@mui/material/FormLabel';
 //
 
 //import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
@@ -97,17 +86,20 @@ export default function AsientoCompraForm() {
   
   const [cargando,setCargando] = useState(false);
   const [editando,setEditando] = useState(false);
-  
+  const [clickGuardar,setClickGuardar] = useState(false);
+
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
 
   const handleSubmit = async(e) => {
     e.preventDefault();
     setCargando(true);
     var data;
+    const clonarTermino = location.pathname.includes('clonar');
 
     //Cambiooo para controlar Edicion
-    if (editando){
+    if (editando && !clonarTermino){
       console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
       console.log(registro);
       await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`, {
@@ -140,9 +132,11 @@ export default function AsientoCompraForm() {
       //nuevo
       data = await res.json();
       //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
-      navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${data.num_asiento}/edit`);
-      //recordatorio de navegacion al mismo formulario, pero en modo Edicion, num_asiento lo obtenemos de respuesta de insercion
-      //<Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
+      //navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${data.num_asiento}/edit`);
+      registro.num_asiento = data.num_asiento;
+      setRegistro(prevState => ({ ...prevState, num_asiento: data.num_asiento }));
+      //desactivar boton guardar
+      setClickGuardar(true);
     }
     setCargando(false);
     setEditando(true);
@@ -309,7 +303,7 @@ export default function AsientoCompraForm() {
             }}
         >
           <Typography variant='h6' color='white' textAlign='center'>
-              {editando ? ("Editar Asiento : " + params.num_asiento + " ") : ("Libro Compras")}
+              {editando ? ("Editar Asiento : " + (params.num_asiento || registro.num_asiento ) + " ") : ("Libro Compras")}
           </Typography>
         </Card>
       </Grid>
@@ -377,7 +371,8 @@ export default function AsientoCompraForm() {
                             disabled={
                                       !registro.r_documento_id || 
                                       !registro.r_razon_social || 
-                                      !registro.r_monto_total
+                                      !registro.r_monto_total ||
+                                      clickGuardar
                                       }
                             >
                             { cargando ? (

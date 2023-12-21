@@ -54,11 +54,14 @@ function App(props) {
                Agregar desde Form Orden (un registro01 con Numero Orden)   */ }
 
           <Route path="/asiento/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AsientoList />} />
+          
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoCompraForm />} />
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
+          <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/clonar" element={<AsientoCompraForm />} /> 
 
           <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoVentaForm />} />
           <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoVentaForm />} /> 
+          <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/clonar" element={<AsientoVentaForm />} /> 
 
           <Route path="/contabilidades/:id_usuario" element={<ContabilidadList />} />
           <Route path="/contabilidad/new" element={<ContabilidadForm />} />

@@ -369,8 +369,19 @@ export default function AsientoList() {
             <p style="margin: 2px 0;">${registrosdet.length}</p>
           </div>
         </div>
-      `                       
+      `,
+      showDenyButton: true, // Mostrar botón "Cancelar"
+      confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
+      denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          console.log("Usuario genero SIRE Ventas RVIE");
+          convertirATextoSire();
+        } else if (result.isDenied || result.isDismissed) {
+          console.log("Usuario canceló el mensaje");
+        }
       });
+  
     }
     if (id_libro==='008'){
       swal2.fire({
@@ -406,11 +417,22 @@ export default function AsientoList() {
             <p style="margin: 2px 0;">${registrosdet.length}</p>
           </div>
         </div>
-      `                       
+      `,
+      showDenyButton: true, // Mostrar botón "Cancelar"
+      confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
+      denyButtonText: 'Cancelar' // Texto del botón "Cancelar"      
+      }).then((result) => {
+        if (result.isConfirmed) {
+          console.log("Usuario genero SIRE Compras RCE");
+          convertirATextoSire();
+        } else if (result.isDenied || result.isDismissed) {
+          console.log("Usuario canceló el mensaje");
+        }
       });
+  
     }
-    
   };
+
   const convertirATextoSire = async() => {
     var texto;
     if (id_libro==='008'){
@@ -420,6 +442,7 @@ export default function AsientoList() {
       }).join('\n');
     }
     if (id_libro==='014'){
+      cargaSireVentas();
       texto = sireventas.map(item => {
         return Object.values(item).join('|');
       }).join('\n');
@@ -445,13 +468,15 @@ export default function AsientoList() {
     URL.revokeObjectURL(url);
   };
   const cargaSireCompras = async () => {
+    console.log(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
     const response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
     
     const data = await response.json();
     setSireCompras(data);
   }
   const cargaSireVentas = async () => {
-    const response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
+    console.log(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
+    const response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
     
     const data = await response.json();
     setSireVentas(data);
@@ -1083,7 +1108,6 @@ export default function AsientoList() {
           <IconButton color="primary" 
                       style={{ padding: '0px' }}
                       onClick={() => {
-                        //handleMensajeTotales();
                         navigate(`/sirecomparacion/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
                         }
                       }
@@ -1099,7 +1123,7 @@ export default function AsientoList() {
                 color='primary'
                 sx={{display:'block',margin:'.0rem 0'}}
                 onClick={() => {
-                  convertirATextoSire();
+                  handleMensajeTotales();
                   }
                 }
                 >
