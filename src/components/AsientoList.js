@@ -10,7 +10,7 @@ import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import Add from '@mui/icons-material/Add';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
-import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
+import AddBoxIcon from '@mui/icons-material/AddBox';
 
 import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
@@ -434,19 +434,35 @@ export default function AsientoList() {
   };
 
   const convertirATextoSire = async() => {
-    var texto;
+    //Solo actualizamos estados, y el useeffect se encarga de completar proceso
+    let response;
+    let nombreArchivoSire;
+    const partes = periodo_trabajo.split('-');
+    const periodoAno = partes[0];
+    const periodoMes = partes[1];
+
     if (id_libro==='008'){
-      cargaSireCompras();
-      texto = sirecompras.map(item => {
-        return Object.values(item).join('|');
-      }).join('\n');
+      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'OIM2'+'.TXT';
+      response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
     }
     if (id_libro==='014'){
-      cargaSireVentas();
-      texto = sireventas.map(item => {
-        return Object.values(item).join('|');
-      }).join('\n');
+      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00140400'+'02'+'OIM2'+'.TXT';
+      response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
     }
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Datos obtenidos:", data);
+      procesaArchivoTexto(data, nombreArchivoSire);
+    } else {
+      console.error("Error al obtener datos. Código de respuesta:", response.status);
+    }    
+  };
+  const procesaArchivoTexto = (datostexto,nombreArchivoSire) =>{
+    var texto;
+
+    texto = datostexto.map(item => {
+      return Object.values(item).join('|');
+    }).join('\n');
 
     // Crear un blob con los datos de texto
     const blob = new Blob([texto], { type: 'text/plain' });
@@ -457,7 +473,7 @@ export default function AsientoList() {
     // Crear un enlace invisible para descargar el archivo
     const enlaceDescarga = document.createElement('a');
     enlaceDescarga.href = url;
-    enlaceDescarga.download = 'datos.txt';
+    enlaceDescarga.download = nombreArchivoSire;
 
     // Simular un clic en el enlace para iniciar la descarga
     document.body.appendChild(enlaceDescarga);
@@ -466,21 +482,8 @@ export default function AsientoList() {
     // Limpiar después de la descarga
     document.body.removeChild(enlaceDescarga);
     URL.revokeObjectURL(url);
-  };
-  const cargaSireCompras = async () => {
-    console.log(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-    const response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-    
-    const data = await response.json();
-    setSireCompras(data);
   }
-  const cargaSireVentas = async () => {
-    console.log(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-    const response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-    
-    const data = await response.json();
-    setSireVentas(data);
-  }
+
   // Función que se pasa como prop al componente.js
   const handleActualizaImportaOK = () => {
     
@@ -777,6 +780,7 @@ export default function AsientoList() {
 
   },[permisosComando, pVenta0101, pCompra0201, pCaja0301, pDiario0401, valorVista]) //Solo cuando este completo estado
 
+
   //////////////////////////////////////////////////////////
   const cargaColumnasComunes = () =>{
     //Verificar que el resto de permisos de otros libros siempre esten FALSE
@@ -1053,8 +1057,8 @@ export default function AsientoList() {
       <Grid item xs={1} >
       
           <IconButton color="primary" 
-                          style={{ padding: '0px'}}
-                          //style={{ padding: '0px', color: 'skyblue' }}
+                          //style={{ padding: '0px'}}
+                          style={{ padding: '0px', color: 'skyblue' }}
                           onClick={() => {
                             if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
                               //Validamos libro a registrar
@@ -1075,7 +1079,7 @@ export default function AsientoList() {
                             }
                           }}
           >
-                <CreateNewFolderIcon style={{ fontSize: '40px' }}/>
+                <AddBoxIcon style={{ fontSize: '40px' }}/>
           </IconButton>
 
       </Grid>

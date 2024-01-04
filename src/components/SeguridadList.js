@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState } from "react"
 import { Modal,Button,Grid,Card,CardContent, useMediaQuery, Typography, Select, MenuItem} from "@mui/material";
-import { useParams } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 //import DeleteIcon from '@mui/icons-material/Delete';
 //import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -31,6 +31,7 @@ export default function SeguridadList() {
     id_usuario2:'', //new 
     id_usuario:'' //email existente
   })
+  const [usuarioInvitado, setUsuarioInvitado] = useState(""); //Para select
   
   const modalStyles={
     //position:'absolute',
@@ -97,8 +98,9 @@ export default function SeguridadList() {
 
   const EliminaPermisos = async() => {
     console.log("eliminar todos los permisos email");
-    console.log(regdet.id_usuario);
-    await fetch(`${back_host}/seguridadeliminar/${params.id_anfitrion}/${regdet.id_invitado}`, {
+    console.log(usuarioInvitado);
+    console.log(`${back_host}/seguridadeliminar/${params.id_anfitrion}/${usuarioInvitado}`);
+    await fetch(`${back_host}/seguridadeliminar/${params.id_anfitrion}/${usuarioInvitado}`, {
       method: "DELETE"
     });
     //setUpdateTrigger(Math.random());//experimento
@@ -337,41 +339,43 @@ export default function SeguridadList() {
   const handleChange = e => {
     //setRegdet({...regdet, [e.target.name]: e.target.value});
     setRegdet(prevRegdet => ({ ...prevRegdet, [e.target.name]: e.target.value }));    
+    console.log(e.target.value);
+    if (e.target.name==='id_invitado'){
+      setUsuarioInvitado(e.target.value);
+    }
+
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
  
-  //const navigate = useNavigate();
+  const navigate = useNavigate();
   //Para recibir parametros desde afuera
   const params = useParams();
 
-  /*const eliminarRegistroDet = async (id_registro) => {
-    await fetch(`${back_host}/producto/${id_registro}`, {
-      method:"DELETE"
-    });
-    //setRegistrosdet(registrosdet.filter(registrosdet => registrosdet.id_producto !== id_registro));
-    //console.log(data);
-  }*/
-
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
-      console.log("user.email : ", user.email);
+      
       cargaRegistro();
-      cargaUsuarioCombo();  
+      
       //const initialValues = registrosdet.map((registro) => registro.id_permiso);
       //setSwitchValues(initialValues);
 
-      console.log("hola fiera");
+      console.log("useEffect updateTrigger");
       console.log(regdet.id_usuario);
   },[updateTrigger])
 
   useEffect(() => {
-    
+    console.log("useEffect registrosdet");
     if (registrosdet && registrosdet.length > 0) {
       const initialValues = registrosdet.map((registro) => registro.id_permiso);
       setSwitchValues(initialValues);
     }
-    //console.log("hola fiera 2do");
   }, [registrosdet]);  
+
+  useEffect(() => {
+    console.log("useEffect unico para cargar Select Usuarios");
+    cargaUsuarioCombo();  
+  }, []);  
+
   //////////////////////////////////////////////////////////
   const cargaUsuarioCombo = () =>{
     console.log(`${back_host}/seguridademail/${params.id_anfitrion}`);
@@ -379,7 +383,11 @@ export default function SeguridadList() {
     .get(`${back_host}/seguridademail/${params.id_anfitrion}`)
     .then((response) => {
         setUsuarioSelect(response.data);
-        console.log(response.data);
+        //Establecer 1er elemento en select//////////////////////
+        if (response.data.length > 0) {
+          setUsuarioInvitado(response.data[0].id_invitado); 
+        }
+        /////////////////////////////////////////////////////////
     })
     .catch((error) => {
         console.log(error);
@@ -438,11 +446,11 @@ export default function SeguridadList() {
         //alignItems={isSmallScreen ? 'center' : 'center'}
         justifyContent={isSmallScreen ? 'center' : 'center'}
   >
-    <Grid item xs={10} >
+    <Grid item xs={9} >
       <Select
         labelId="usuario"
-        id={regdet.id_invitado}
-        value={regdet.id_invitado}
+        //id={regdet.id_invitado}
+        value={usuarioInvitado}
         name="id_invitado"
         size='small'
         sx={{display:'block',
@@ -462,15 +470,32 @@ export default function SeguridadList() {
       </Select>
     </Grid>
 
-    <Grid item xs={0.9} >
+    <Grid item xs={1} >
+      <Tooltip title='Contabilidades Autorizadas'>
+        <Button variant='contained' 
+                fullWidth
+                color='secondary'
+                sx={{display:'block',margin:'.0rem 0'}}
+                onClick = { () => {
+                  //console.log(`/seguridad/contabilidades/${params.id_anfitrion}/${usuarioInvitado}`);
+                  navigate(`/seguridad/contabilidades/${params.id_anfitrion}/${usuarioInvitado}`);
+                  }
+                }
+
+                >
+        CONTAB.
+        </Button>
+      </Tooltip>
+    </Grid>
+
+    <Grid item xs={1} >
       <Tooltip title='Registra Nuevo Email'>
         <Button variant='contained' 
                 fullWidth
                 color='primary'
                 sx={{display:'block',margin:'.0rem 0'}}
                 onClick = { () => {
-                  //ocargaDetModal.e_monto = ocargaDet.e_monto01;
-                  datosModal.id_usuario = regdet.id_usuario;
+                  datosModal.id_usuario = regdet.id_invitado;
                   setAbierto(true);
                   }
                 }
@@ -481,7 +506,7 @@ export default function SeguridadList() {
       </Tooltip>
     </Grid>
 
-    <Grid item xs={1.1} >    
+    <Grid item xs={1} >    
       <Tooltip title='Eliminar todos los permisos Email'>
         <Button variant='contained' 
                 fullWidth

@@ -16,6 +16,7 @@ import ContabilidadForm from './components/ContabilidadForm';
 import CuentaList from './components/CuentaList';
 import CuentaForm from './components/CuentaForm';
 import SireComparacionForm from "./components/SireComparacionForm";
+import SeguridadContabilidad from "./components/SeguridadContabilidad";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -63,9 +64,9 @@ function App(props) {
           <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoVentaForm />} /> 
           <Route path="/asientov/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/clonar" element={<AsientoVentaForm />} /> 
 
-          <Route path="/contabilidades/:id_usuario" element={<ContabilidadList />} />
-          <Route path="/contabilidad/new" element={<ContabilidadForm />} />
-          <Route path="/contabilidad/:id_usuario/:documento_id/edit" element={<ContabilidadForm />} />
+          <Route path="/contabilidades/:id_anfitrion/:id_invitado" element={<ContabilidadList />} />
+          <Route path="/contabilidad/:id_anfitrion/new" element={<ContabilidadForm />} />
+          <Route path="/contabilidad/:id_anfitrion/:documento_id/edit" element={<ContabilidadForm />} />
           
           <Route path="/cuentas/:id_usuario/:documento_id" element={<CuentaList />} />
           <Route path="/cuenta/:id_usuario/:documento_id/new" element={<CuentaForm />} />
@@ -85,9 +86,10 @@ function App(props) {
           <Route path="/correntista/new" element={<CorrentistaForm />} />
           <Route path="/correntista/:id/edit" element={<CorrentistaForm />} /> 
 
-          <Route path="/" element={<Inicio />} />
+          <Route path="/:id_anfitrion/:id_invitado" element={<Inicio />} />
 
           <Route path="/seguridad/:id_anfitrion" element={<SeguridadList />} />          
+          <Route path="/seguridad/contabilidades/:id_anfitrion/:id_invitado" element={<SeguridadContabilidad />} />          
           <Route path="/sirecomparacion/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro" element={<SireComparacionForm />} /> 
 
           {/*Edit Route */}

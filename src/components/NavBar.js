@@ -114,6 +114,7 @@ export default function NavBar(props) {
     });
   }
   const cargaContabilidadesAnfitrion = () =>{
+    //console.log(`${back_host}/usuario/contabilidades/${props.idAnfitrion}/${props.idInvitado}`);
     axios
     //Aqui debemos agregar restriccion de contabilidad por(usuario auxiliar)
     .get(`${back_host}/usuario/contabilidades/${props.idAnfitrion}/${props.idInvitado}`)
@@ -122,6 +123,7 @@ export default function NavBar(props) {
         //Establecer 1er elemento en select//////////////////////
         if (response.data.length > 0) {
           setContabilidadTrabajo(response.data[0].documento_id); 
+          //console.log(response.data[0].documento_id);
         }
         /////////////////////////////////////////////////////////
     })
@@ -221,7 +223,7 @@ export default function NavBar(props) {
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
-                                  navigate(`/`);
+                                  navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
                                   handleClick('icono00');
                                                 }
                                 }
@@ -235,7 +237,7 @@ export default function NavBar(props) {
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
-                                  navigate(`/`);
+                                  navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
                                                 }
                                 }
                     >
@@ -248,7 +250,7 @@ export default function NavBar(props) {
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
-                                  navigate(`/`);
+                                  navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
                                   handleClick('icono01');
                                                 }
                                 }
@@ -266,6 +268,7 @@ export default function NavBar(props) {
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
+                                    console.log(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                                     navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                                     handleClick('icono02');
                                                 }
@@ -288,7 +291,7 @@ export default function NavBar(props) {
                         }}
                                 component="label" size="large" color="success"
                                 onClick = {()=> {
-                                  navigate(`/contabilidades/${props.idAnfitrion}`);
+                                  navigate(`/contabilidades/${props.idAnfitrion}/${props.idInvitado}`);
                                   handleClick('icono04');
                                                 }
                                 }

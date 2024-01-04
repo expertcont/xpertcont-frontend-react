@@ -1,6 +1,6 @@
 import {Grid,Card,Typography,Button,CircularProgress,useMediaQuery} from '@mui/material'
 import React, { useState,useEffect} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useLocation} from 'react-router-dom';
 import swal2 from 'sweetalert2'
 //import axios from 'axios';
 //import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
@@ -96,17 +96,21 @@ export default function AsientoVentaForm() {
   
   const [cargando,setCargando] = useState(false);
   const [editando,setEditando] = useState(false);
-  
+  const [clonando,setClonando] = useState(false);
+  const [clickGuardar,setClickGuardar] = useState(false);
+
   const navigate = useNavigate();
   const params = useParams();
+  const location = useLocation();
 
   const handleSubmit = async(e) => {
     e.preventDefault();
     setCargando(true);
     var data;
+    const clonarTermino = location.pathname.includes('clonar');
 
     //Cambiooo para controlar Edicion
-    if (editando){
+    if (editando && !clonarTermino){
       //console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
       //console.log(registro);
       await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`, {
@@ -116,9 +120,9 @@ export default function AsientoVentaForm() {
       });
       setCargando(false);
       //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
-      navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${params.num_asiento}/edit`);
-      //recordatorio de navegacion al mismo formulario, pero en modo Edicion, num_asiento lo obtenemos de respuesta de insercion
-      //<Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
+      //navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${params.num_asiento}/edit`);
+      //desactivar boton guardar
+      setClickGuardar(true);
     }else{
       setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
       setRegistro(prevState => ({ ...prevState, periodo: params.periodo }));
@@ -139,9 +143,12 @@ export default function AsientoVentaForm() {
       //nuevo
       data = await res.json();
       //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
-      navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${data.num_asiento}/edit`);
-      //recordatorio de navegacion al mismo formulario, pero en modo Edicion, num_asiento lo obtenemos de respuesta de insercion
-      //<Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
+      //navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${data.num_asiento}/edit`);
+      registro.num_asiento = data.num_asiento;
+      setRegistro(prevState => ({ ...prevState, num_asiento: data.num_asiento }));
+      //desactivar boton guardar
+      setClickGuardar(true);
+
     }
     setCargando(false);
     setEditando(true);
@@ -245,6 +252,8 @@ export default function AsientoVentaForm() {
           });
     console.log("data mostrar registro: ",data);
     setEditando(true);
+    //Habilitar clonando con consulta de parte del pathname
+    setClonando(location.pathname.includes('clonar'));
   };
   
   /*const mostrarRegistroDetalle = async (cod,serie,num,elem) => {
@@ -308,8 +317,17 @@ export default function AsientoVentaForm() {
             }}
         >
           <Typography variant='h6' color='white' textAlign='center'>
-              {editando ? ("Editar Asiento : " + params.num_asiento + " ") : ("Libro Ventas")}
+              {(editando && !clonando) ? (
+                "Editar Asiento : " + (params.num_asiento || registro.num_asiento ) + " "
+              ) : (
+                clonando ? (
+                  "Clonar Asiento : " + (params.num_asiento || registro.num_asiento ) + " "
+                ) : (
+                  "Libro Ventas"
+                )
+              )}
           </Typography>
+
         </Card>
       </Grid>
       
@@ -369,7 +387,8 @@ export default function AsientoVentaForm() {
                             disabled={
                                       !registro.r_documento_id || 
                                       !registro.r_razon_social || 
-                                      !registro.r_monto_total
+                                      !registro.r_monto_total ||
+                                      clickGuardar
                                       }
                             >
                             { cargando ? (

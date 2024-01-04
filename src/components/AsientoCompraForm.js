@@ -86,6 +86,7 @@ export default function AsientoCompraForm() {
   
   const [cargando,setCargando] = useState(false);
   const [editando,setEditando] = useState(false);
+  const [clonando,setClonando] = useState(false);
   const [clickGuardar,setClickGuardar] = useState(false);
 
   const navigate = useNavigate();
@@ -109,9 +110,9 @@ export default function AsientoCompraForm() {
       });
       setCargando(false);
       //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
-      navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${params.num_asiento}/edit`);
-      //recordatorio de navegacion al mismo formulario, pero en modo Edicion, num_asiento lo obtenemos de respuesta de insercion
-      //<Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
+      //navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${params.num_asiento}/edit`);
+      //desactivar boton guardar
+      setClickGuardar(true);
     }else{
       setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
       setRegistro(prevState => ({ ...prevState, periodo: params.periodo }));
@@ -162,21 +163,7 @@ export default function AsientoCompraForm() {
 
   //Rico evento change
   const handleChange = (newFormData) => {
-    //var index;
-    //var sTexto;
     console.log(newFormData);
-    
-    /*if (nameTarget === "r_documento_id") {
-      const arrayCopia = cliente_select.slice();
-      index = arrayCopia.map(elemento => elemento.documento_id).indexOf(valueTarget);
-      sTexto = arrayCopia[index].razon_social;
-      setRegistro({...registro, [nameTarget]: valueTarget, razon_social:sTexto});
-      return;
-    }*/
-
-    
-    //setRegistro({...registro, [nameTarget]: valueTarget});
-    //newFormData = {...registro, [nameTarget]: valueTarget} //rico arreglo estilo js
     setRegistro(newFormData);
   }
 
@@ -240,6 +227,8 @@ export default function AsientoCompraForm() {
           });
     console.log("data mostrar registro: ",data);
     setEditando(true);
+    //Habilitar clonando con consulta de parte del pathname
+    setClonando(location.pathname.includes('clonar'));
   };
   
   /*const mostrarRegistroDetalle = async (cod,serie,num,elem) => {
@@ -302,9 +291,19 @@ export default function AsientoCompraForm() {
               padding:'1rem'
             }}
         >
+
           <Typography variant='h6' color='white' textAlign='center'>
-              {editando ? ("Editar Asiento : " + (params.num_asiento || registro.num_asiento ) + " ") : ("Libro Compras")}
+              {(editando && !clonando) ? (
+                "Editar Asiento : " + (params.num_asiento || registro.num_asiento ) + " "
+              ) : (
+                clonando ? (
+                  "Clonar Asiento : " + (params.num_asiento || registro.num_asiento ) + " "
+                ) : (
+                  "Libro Compras"
+                )
+              )}
           </Typography>
+
         </Card>
       </Grid>
       
