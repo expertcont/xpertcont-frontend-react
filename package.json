@@ -35,7 +35,7 @@
     "web-vitals": "^3.3.1",
     "xlsx": "^0.18.5"
   },
-  "homepage": "https://alsasrl.com.pe/carguio/",
+  
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

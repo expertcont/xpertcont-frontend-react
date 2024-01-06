@@ -9,8 +9,10 @@ import FindIcon from '@mui/icons-material/FindInPage';
 import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import Add from '@mui/icons-material/Add';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import AddBoxIcon from '@mui/icons-material/AddBox';
+
+import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
+import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 
 import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
@@ -38,6 +40,7 @@ import { VentasColumnas } from './ColumnasAsiento';
 import { CajaColumnas } from './ColumnasAsiento';
 import { DiarioColumnas } from './ColumnasAsiento';
 import AsientoFileInput from './AsientoFileInput';
+import { saveAs } from 'file-saver';
 
 export default function AsientoList() {
   //Control de useffect en retroceso de formularios
@@ -920,7 +923,37 @@ export default function AsientoList() {
           console.log('Error al obtener los permisos:', error);
         });
     }
-  }
+  };
+
+  const handleDescargarExcelVacio = async () => {
+    // Question view id_libro
+    let filePath;
+    let fileName;
+    console.log(id_libro);
+    if (id_libro==='014'){
+      filePath = '/reg_ventas_xpertcont.xlsx';
+      // Nombre del archivo para la descarga
+      fileName = 'reg_ventas_xpertcont.xlsx';
+    }
+    if (id_libro==='008'){
+      filePath = '/reg_compras_xpertcont.xlsx';
+      // Nombre del archivo para la descarga
+      fileName = 'reg_compras_xpertcont.xlsx';
+    }
+
+    // URL completa del archivo
+    const fileUrl = process.env.PUBLIC_URL + filePath;
+
+    try {
+      // Realizar la solicitud para obtener el archivo usando axios
+      const response = await axios.get(fileUrl, { responseType: 'blob' });
+
+      // Utilizar file-saver para descargar el archivo
+      saveAs(response.data, fileName);
+    } catch (error) {
+      console.error('Error al descargar el archivo:', error);
+    }
+  };
   //////////////////////////////////////////////////////////
 
 
@@ -1054,8 +1087,7 @@ export default function AsientoList() {
       alignItems={isSmallScreen ? 'center' : 'left'}
       justifyContent={isSmallScreen ? 'center' : 'left'}
   >
-      <Grid item xs={1} >
-      
+      <Grid item xs={0.5} >
           <IconButton color="primary" 
                           //style={{ padding: '0px'}}
                           style={{ padding: '0px', color: 'skyblue' }}
@@ -1081,29 +1113,48 @@ export default function AsientoList() {
           >
                 <AddBoxIcon style={{ fontSize: '40px' }}/>
           </IconButton>
-
       </Grid>
-
       <Grid item xs={1.2} >    
         { (pVenta0104 || pCompra0204 || pCaja0304 || pDiario0404) ? (
-        <Button variant='contained' 
-                fullWidth
-                //color='error'
-                startIcon={<DeleteSweepIcon />}
-                style={{ justifyContent: 'flex-start',backgroundColor:'skyblue',color:'black' }}
-                onClick={() => 
-                  handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
-                }
-                >
-        ELIMINA
-        </Button>
+
+          <Tooltip title='Eliminar Masivo' >
+          <IconButton color="warning" 
+                          //style={{ padding: '0px'}}
+                          style={{ padding: '0px', color: 'skyblue' }}
+                          onClick={() => {
+                            handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
+                          }}
+          >
+                <FolderDeleteIcon style={{ fontSize: '40px' }}/>
+          </IconButton>
+          </Tooltip>
+
         ):(
           <div></div>
         )
         }
       </Grid>
 
-      <Grid item xs={8.4}>
+      <Grid item xs={0.5} >
+        <div></div>
+      </Grid>
+
+      <Grid item xs={0.5} >
+          <Tooltip title='Descarga Formato Excel Vacio' >
+          <IconButton color="success" 
+                          //style={{ padding: '0px'}}
+                          style={{ padding: '0px', color: 'skyblue' }}
+                          onClick={() => {
+                                handleDescargarExcelVacio();
+                          }}
+          >
+                <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
+          </IconButton>
+          </Tooltip>
+      </Grid>
+
+
+      <Grid item xs={7.9}>
           <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
       </Grid>
 
