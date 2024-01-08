@@ -336,7 +336,7 @@ export default function AsientoList() {
   const handleMensajeTotales = () => {
     if (id_libro==='014'){
       swal2.fire({
-        title: "Totales SIRE Ventas 14.01",
+        title: "Totales SIRE Ventas RVIE",
         html: `
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
           <div style="text-align: left;">
@@ -388,7 +388,7 @@ export default function AsientoList() {
     }
     if (id_libro==='008'){
       swal2.fire({
-        title: "Totales SIRE Compras 08.01",
+        title: "Totales SIRE Compras RCE",
         html: `
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
           <div style="text-align: left;">
@@ -555,7 +555,7 @@ export default function AsientoList() {
     //Lo dejaremos terminar el evento de cambio o change
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
-  const filtrar=(strBusca)=>{
+  /*const filtrar=(strBusca)=>{
       var resultadosBusqueda = [];
       resultadosBusqueda = tabladet.filter((elemento) => {
         if (elemento.r_razon_social.toString().toLowerCase().includes(strBusca.toLowerCase())
@@ -566,8 +566,25 @@ export default function AsientoList() {
           }
       });
       setRegistrosdet(resultadosBusqueda);
-  }
-
+  }*/
+  const filtrar = (strBusca) => {
+    var resultadosBusqueda = tabladet.filter((elemento) => {
+      //verifica nulls para evitar error de busqueda
+      const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
+      const documentoId = elemento.r_documento_id?.toString().toLowerCase() || '';
+      const comprobante = elemento.comprobante?.toString().toLowerCase() || '';
+  
+      if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase())) {
+        return elemento;
+      }
+      return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
+    });
+  
+    resultadosBusqueda = resultadosBusqueda.filter(Boolean); // Filtra los elementos nulos
+  
+    setRegistrosdet(resultadosBusqueda);
+  };
+  
   const cargaPermisosMenuComando = async(idMenu)=>{
     if (params.id_anfitrion === params.id_invitado){
       setPVenta0101(true); //nuevo
@@ -1012,31 +1029,37 @@ export default function AsientoList() {
           </Grid>
       </Grid>
 
-      <Grid item xs={11} >
-          <TextField fullWidth variant="outlined" color="success" size="small"
-                                      label="FILTRAR"
-                                      sx={{display:'block',
-                                            margin:'.0rem 0'}}
-                                      name="busqueda"
-                                      placeholder='Ruc   Razon Social   Comprobante'
-                                      onChange={actualizaValorFiltro}
-                                      inputProps={{ style:{color:'white'} }}
-                                      InputProps={{
-                                          startAdornment: (
-                                            <InputAdornment position="start">
-                                              <FindIcon />
-                                            </InputAdornment>
-                                          ),
-                                          style:{color:'white'} 
-                                      }}
-          />
+      <Grid container spacing={0}
+          direction={isSmallScreen ? 'row' : 'row'}
+          alignItems={isSmallScreen ? 'center' : 'center'}
+          justifyContent={isSmallScreen ? 'center' : 'center'}
+      >
+          <Grid item xs={isSmallScreen ? 1 : 0.5} >
+            <Tooltip title='EXPORTAR HOJA XLS' >
+              <BotonExcelVentas registrosdet={registrosdet} 
+              />
+            </Tooltip>
+          </Grid>
+          <Grid item xs={isSmallScreen ? 11 : 11.5} >
+              <TextField fullWidth variant="outlined" color="success" size="small"
+                                          //label="FILTRAR"
+                                          sx={{display:'block',
+                                                margin:'.0rem 0'}}
+                                          name="busqueda"
+                                          placeholder='Ruc   Razon Social   Comprobante'
+                                          onChange={actualizaValorFiltro}
+                                          inputProps={{ style:{color:'white'} }}
+                                          InputProps={{
+                                              startAdornment: (
+                                                <InputAdornment position="start">
+                                                  <FindIcon />
+                                                </InputAdornment>
+                                              ),
+                                              style:{color:'white'} 
+                                          }}
+              />
+          </Grid>
       </Grid>
-
-      <Grid item xs={1} >
-        <BotonExcelVentas registrosdet={registrosdet} 
-        />          
-      </Grid>
-
   </Grid>
 
   <div>
@@ -1083,108 +1106,141 @@ export default function AsientoList() {
   </div>
     
   <Grid container spacing={0}
-      direction={isSmallScreen ? 'column' : 'row'}
+      direction={isSmallScreen ? 'row' : 'row'}
       alignItems={isSmallScreen ? 'center' : 'left'}
-      justifyContent={isSmallScreen ? 'center' : 'left'}
+      justifyContent={isSmallScreen ? 'left' : 'left'}
   >
-      <Grid item xs={0.5} >
-          <IconButton color="primary" 
-                          //style={{ padding: '0px'}}
-                          style={{ padding: '0px', color: 'skyblue' }}
+
+        <Grid item xs={isSmallScreen ? 1 : 0.5} >
+          <Tooltip title='AGREGAR NUEVO' >
+            <IconButton color="primary" 
+                            //style={{ padding: '0px'}}
+                            style={{ padding: '0px', color: 'skyblue' }}
+                            onClick={() => {
+                              if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
+                                //Validamos libro a registrar
+                                if (id_libro === "008") {
+                                  navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                }
+                                if (id_libro === "014") {
+                                  navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                }
+                              } else {
+                                //navigate(`/ventamovil/new`);
+                                if (id_libro === "008") {
+                                  navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                }
+                                if (id_libro === "014") {
+                                  navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                }
+                              }
+                            }}
+            >
+                  <AddBoxIcon style={{ fontSize: '40px' }}/>
+            </IconButton>
+          </Tooltip>
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 1 : 0.5}  >    
+          { (pVenta0104 || pCompra0204 || pCaja0304 || pDiario0404) ? (
+
+            <Tooltip title='ELIMINAR MASIVO' >
+            <IconButton color="warning" 
+                            //style={{ padding: '0px'}}
+                            style={{ padding: '0px', color: 'skyblue' }}
+                            onClick={() => {
+                              handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
+                            }}
+            >
+                  <FolderDeleteIcon style={{ fontSize: '40px' }}/>
+            </IconButton>
+            </Tooltip>
+
+          ):(
+            <div></div>
+          )
+          }
+        </Grid>
+
+
+        <Grid item xs={isSmallScreen ? 1 : 0.5} >
+            <Tooltip title='DESCARGA XLS VACIO' >
+            <IconButton color="success" 
+                            //style={{ padding: '0px'}}
+                            style={{ padding: '0px', color: 'skyblue' }}
+                            onClick={() => {
+                                  handleDescargarExcelVacio();
+                            }}
+            >
+                  <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
+            </IconButton>
+            </Tooltip>
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 1 : 0.5} >    
+          {(id_libro==='014' || id_libro==='008') ? 
+            (
+            <Tooltip title='SIRE vs SISTEMA' >
+              <IconButton color="primary" 
+                          style={{ padding: '0px' }}
                           onClick={() => {
-                            if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-                              //Validamos libro a registrar
-                              if (id_libro === "008") {
-                                navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                              if (id_libro === "014") {
-                                navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                            } else {
-                              //navigate(`/ventamovil/new`);
-                              if (id_libro === "008") {
-                                navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
-                              if (id_libro === "014") {
-                                navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                              }
+                            navigate(`/sirecomparacion/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
                             }
-                          }}
-          >
-                <AddBoxIcon style={{ fontSize: '40px' }}/>
-          </IconButton>
-      </Grid>
-      <Grid item xs={1.2} >    
-        { (pVenta0104 || pCompra0204 || pCaja0304 || pDiario0404) ? (
+                          }
+              >
+                    <FindInPageIcon style={{ fontSize: '40px' }}/>
+              </IconButton>
+            </Tooltip>
+            ):
+            (
+              <div></div>
+            )
+          }
+        </Grid>
 
-          <Tooltip title='Eliminar Masivo' >
-          <IconButton color="warning" 
-                          //style={{ padding: '0px'}}
-                          style={{ padding: '0px', color: 'skyblue' }}
-                          onClick={() => {
-                            handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
-                          }}
-          >
-                <FolderDeleteIcon style={{ fontSize: '40px' }}/>
-          </IconButton>
-          </Tooltip>
-
-        ):(
-          <div></div>
-        )
-        }
-      </Grid>
-
-      <Grid item xs={0.5} >
-        <div></div>
-      </Grid>
-
-      <Grid item xs={0.5} >
-          <Tooltip title='Descarga Formato Excel Vacio' >
-          <IconButton color="success" 
-                          //style={{ padding: '0px'}}
-                          style={{ padding: '0px', color: 'skyblue' }}
-                          onClick={() => {
-                                handleDescargarExcelVacio();
-                          }}
-          >
-                <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
-          </IconButton>
-          </Tooltip>
-      </Grid>
-
-
-      <Grid item xs={7.9}>
-          <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
-      </Grid>
-
-      <Grid item xs={0.4} >    
-
-          <IconButton color="primary" 
-                      style={{ padding: '0px' }}
+        <Grid item xs={isSmallScreen ? 1 : 0.7}>    
+          <Tooltip title='GENERAR REEMPLAZO' >
+            {(id_libro==='014' || id_libro==='008') ? 
+            (
+              <Button variant='contained' 
+                      fullWidth
+                      color='primary'
+                      sx={{display:'block',margin:'.0rem 0'}}
                       onClick={() => {
-                        navigate(`/sirecomparacion/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
+                        handleMensajeTotales();
                         }
                       }
-          >
-                <FindInPageIcon style={{ fontSize: '40px' }}/>
-          </IconButton>
-
-      </Grid>
-
-      <Grid item xs={1} >    
-        <Button variant='contained' 
-                fullWidth
-                color='primary'
-                sx={{display:'block',margin:'.0rem 0'}}
-                onClick={() => {
-                  handleMensajeTotales();
+                      >
+                  {(id_libro==='014') ? 
+                  (
+                    'RVIE'
+                  ):
+                  (
+                    'RCE'
+                  )
                   }
-                }
-                >
-        SIRE
-        </Button>
-      </Grid>
+                  
+              </Button>
+            )
+            :
+            (
+              <div></div>
+            )
+            }
+          </Tooltip>
+        </Grid>
+
+    <Grid item xs={isSmallScreen ? 12 : 9.3}>
+      {(id_libro==='014' || id_libro==='008') ? 
+        (
+        <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
+        )
+        :
+        (
+          <div></div>
+        )
+      }
+    </Grid>
 
   </Grid>
 
@@ -1200,8 +1256,8 @@ export default function AsientoList() {
       onSelectedRowsChange={handleRowSelected}
       clearSelectedRows={toggleCleared}
       pagination
-      paginationPerPage={30}
-      paginationRowsPerPageOptions={[30, 50, 100]}
+      paginationPerPage={15}
+      paginationRowsPerPageOptions={[15, 50, 100]}
 
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  

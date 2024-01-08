@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Spinner } from "reactstrap";
 import * as XLSX from "xlsx";
-import { Button } from "@mui/material";
+import { Button,IconButton } from "@mui/material";
+import ViewCompactIcon from '@mui/icons-material/ViewCompact';
+import Tooltip from '@mui/material/Tooltip';
 //import ExcelJS from "exceljs"; // Importa la biblioteca exceljs en lugar: Caso Doc Contable
 
 const BotonExcelVentas = ({ registrosdet }) => {
@@ -127,14 +129,25 @@ const BotonExcelVentas = ({ registrosdet }) => {
     <>
       {!loading ? (
 
-        <Button variant='contained' 
-        color='success' 
-        fullWidth
-        sx={{display:'block',
-        margin:'.0rem 0'}}
-        onClick={handleDownload}>        
-        EXPORT
-        </Button>
+        //<Button variant='contained' 
+        //color='success' 
+        //fullWidth
+        //sx={{display:'block',
+        //margin:'.0rem 0'}}
+        //onClick={handleDownload}>        
+        //</>EXPORT
+        //</Button>
+      <Tooltip title='EXPORTAR HOJA XLS' >
+        <IconButton color="success" 
+                        //style={{ padding: '0px'}}
+                        style={{ padding: '0px', color: 'green' }}
+                        onClick={() => {
+                              handleDownload();
+                        }}
+        >
+              <ViewCompactIcon style={{ fontSize: '40px' }}/>
+        </IconButton>
+      </Tooltip>
       ) : (
         <Button color="success" disabled>
           <Spinner size="sm">Loading...</Spinner>

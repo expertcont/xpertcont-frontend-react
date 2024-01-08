@@ -43,7 +43,7 @@ export const VentasColumnas = [
   },
   {//06
     name: 'Vcto',
-    selector: 'fecvcto',
+    selector: 'r_fecvcto',
     width: '100px',
     sortable: true,
   },
