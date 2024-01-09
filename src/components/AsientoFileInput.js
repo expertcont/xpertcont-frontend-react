@@ -134,13 +134,13 @@ const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
     <Paper
       elevation={3}
       style={{
-        padding: '0px',
+        padding: '3px',
         border: '1px dashed #aaa',
         position: 'relative',
         textAlign: 'left',
         backgroundColor:'#1e272e',
         cursor: 'pointer', // Cambia el cursor al pasar sobre el área del recuadro
-        height:'33px'
+        height:'30px'
       }}
       onClick={handleClick}
     >

@@ -91,7 +91,7 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                 </FormControl>
 
                 <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
-                    direction={isSmallScreen ? 'column' : 'row'}
+                    direction={isSmallScreen ? 'row' : 'row'}
                     alignItems={isSmallScreen ? 'center' : 'center'}
                     justifyContent={isSmallScreen ? 'center' : 'center'}
                 >
@@ -112,7 +112,8 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                     </Grid>
                     <Grid item xs={7} >
                     <TextField variant="outlined" 
-                            label="NUMERO"
+                            //label="NUMERO"
+                            placeholder="NUMERO"
                             sx={{ display:'block',
                                     margin:'.5rem 0',
                                 }}
@@ -135,7 +136,6 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                             size='small'
                             fullWidth
                             type="date"
-                            //format="yyyy/MM/dd"
                             value={formData.fecemi} 
                             onChange={(e) => handleChange('fecemi', e.target.value)}
                             inputProps={{ style:{color:'white', textAlign: 'center'} }}
@@ -159,7 +159,7 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
                 
                 <ThemeProvider theme={theme}>
                 <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
-                    direction={isSmallScreen ? 'column' : 'row'}
+                    direction={isSmallScreen ? 'row' : 'row'}
                     alignItems={isSmallScreen ? 'center' : 'center'}
                     justifyContent={isSmallScreen ? 'center' : 'center'}
                 >

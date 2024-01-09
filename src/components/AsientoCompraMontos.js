@@ -1,4 +1,4 @@
-import {Grid,Card,TextField,Select,MenuItem} from '@mui/material'
+import {Grid,Card,TextField,Select,MenuItem, Typography} from '@mui/material'
 import React, {useState,useEffect} from 'react';
 
 const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
@@ -183,8 +183,10 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
   return (
     <div>
         <Grid container spacing={0} 
+            direction={isSmallScreen ? 'row' : 'row'}
+            //alignItems={isSmallScreen ? 'center' : 'left'}
+            //justifyContent={isSmallScreen ? 'center' : 'left'}
             style={{ marginTop: "0px" }}
-            direction={isSmallScreen ? 'column' : 'row'}
         >
             <Grid xs={6}>
                 <Card
@@ -200,7 +202,7 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                 }}
                 >
                     <Grid container spacing={0.1} style={{ marginTop: "-5px" }}
-                        direction={isSmallScreen ? 'column' : 'column'}
+                        direction={isSmallScreen ? 'row' : 'column'}
                         alignItems={isSmallScreen ? 'center' : 'left'}
                         //justifyContent={isSmallScreen ? 'center' : 'center'}
                     >
@@ -304,7 +306,7 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                     }}
                 >
                         <Grid container spacing={0.1} style={{ marginTop: "-5px" }}
-                        direction={isSmallScreen ? 'column' : 'column'}
+                        direction={isSmallScreen ? 'row' : 'column'}
                         alignItems={isSmallScreen ? 'center' : 'center'}
                         //justifyContent={isSmallScreen ? 'center' : 'center'}
                         >

@@ -341,16 +341,16 @@ export default function AsientoVentaForm() {
     
     <form onSubmit={handleSubmit} >
     <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
-        direction={isSmallScreen ? 'column' : 'row'}
+        direction={isSmallScreen ? 'row' : 'row'}
         alignItems={isSmallScreen ? 'center' : 'center'}
         justifyContent={isSmallScreen ? 'center' : 'center'}
     >
-        <Grid item xs={4.5} >
+        <Grid item xs={isSmallScreen ? 9 : 4.5} >
             <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
             </AsientoComprobante>
         </Grid>
 
-        <Grid item xs={4.5} >
+        <Grid item xs={isSmallScreen ? 9 : 4.5} >
           <AsientoVentaMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
           </AsientoVentaMontos>
         </Grid>
@@ -374,11 +374,11 @@ export default function AsientoVentaForm() {
             }}
         >
           <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
-            direction={isSmallScreen ? 'column' : 'row'}
+            direction={isSmallScreen ? 'row' : 'row'}
             alignItems={isSmallScreen ? 'center' : 'center'}
             justifyContent={isSmallScreen ? 'center' : 'center'}
             >
-                <Grid item xs={1.5} >
+                <Grid item xs={isSmallScreen ? 4 : 1.5} >
                     <Button variant='contained' 
                             color='primary' 
                             type='submit'
@@ -400,7 +400,7 @@ export default function AsientoVentaForm() {
                     </Button>
                 </Grid>
 
-                <Grid item xs={1.6} >
+                <Grid item xs={isSmallScreen ? 4 : 1.6} >
                     <Button variant='contained' 
                             color='warning' 
                             sx={{display:'block',
@@ -415,7 +415,7 @@ export default function AsientoVentaForm() {
                     </Button>
                 </Grid>
 
-                <Grid item xs={2} >
+                <Grid item xs={isSmallScreen ? 4 : 2} >
                     <Button variant='contained' 
                             color='secondary' 
                             sx={{display:'block',

@@ -1029,37 +1029,6 @@ export default function AsientoList() {
           </Grid>
       </Grid>
 
-      <Grid container spacing={0}
-          direction={isSmallScreen ? 'row' : 'row'}
-          alignItems={isSmallScreen ? 'center' : 'center'}
-          justifyContent={isSmallScreen ? 'center' : 'center'}
-      >
-          <Grid item xs={isSmallScreen ? 1 : 0.5} >
-            <Tooltip title='EXPORTAR HOJA XLS' >
-              <BotonExcelVentas registrosdet={registrosdet} 
-              />
-            </Tooltip>
-          </Grid>
-          <Grid item xs={isSmallScreen ? 11 : 11.5} >
-              <TextField fullWidth variant="outlined" color="success" size="small"
-                                          //label="FILTRAR"
-                                          sx={{display:'block',
-                                                margin:'.0rem 0'}}
-                                          name="busqueda"
-                                          placeholder='Ruc   Razon Social   Comprobante'
-                                          onChange={actualizaValorFiltro}
-                                          inputProps={{ style:{color:'white'} }}
-                                          InputProps={{
-                                              startAdornment: (
-                                                <InputAdornment position="start">
-                                                  <FindIcon />
-                                                </InputAdornment>
-                                              ),
-                                              style:{color:'white'} 
-                                          }}
-              />
-          </Grid>
-      </Grid>
   </Grid>
 
   <div>
@@ -1162,7 +1131,6 @@ export default function AsientoList() {
           }
         </Grid>
 
-
         <Grid item xs={isSmallScreen ? 1 : 0.5} >
             <Tooltip title='DESCARGA XLS VACIO' >
             <IconButton color="success" 
@@ -1175,6 +1143,13 @@ export default function AsientoList() {
                   <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
             </IconButton>
             </Tooltip>
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 1 : 0.5} >
+          <Tooltip title='EXPORTAR LIBRO XLS' >
+            <BotonExcelVentas registrosdet={registrosdet} 
+            />
+          </Tooltip>
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1 : 0.5} >    
@@ -1198,7 +1173,7 @@ export default function AsientoList() {
           }
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1 : 0.7}>    
+        <Grid item xs={isSmallScreen ? 2 : 0.7}>    
           <Tooltip title='GENERAR REEMPLAZO' >
             {(id_libro==='014' || id_libro==='008') ? 
             (
@@ -1230,7 +1205,7 @@ export default function AsientoList() {
           </Tooltip>
         </Grid>
 
-    <Grid item xs={isSmallScreen ? 12 : 9.3}>
+    <Grid item xs={isSmallScreen ? 12 : 8.8}>
       {(id_libro==='014' || id_libro==='008') ? 
         (
         <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
@@ -1241,6 +1216,27 @@ export default function AsientoList() {
         )
       }
     </Grid>
+
+    <Grid item xs={isSmallScreen ? 12 : 12} >
+        <TextField fullWidth variant="outlined" color="success" size="small"
+                                    //label="FILTRAR"
+                                    sx={{display:'block',
+                                          margin:'.0rem 0'}}
+                                    name="busqueda"
+                                    placeholder='Filtro:  Ruc   Razon Social   Comprobante'
+                                    onChange={actualizaValorFiltro}
+                                    inputProps={{ style:{color:'white'} }}
+                                    InputProps={{
+                                        startAdornment: (
+                                          <InputAdornment position="start">
+                                            <FindIcon />
+                                          </InputAdornment>
+                                        ),
+                                        style:{color:'white'} 
+                                    }}
+        />
+    </Grid>
+
 
   </Grid>
 

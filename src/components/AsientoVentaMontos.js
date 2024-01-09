@@ -184,7 +184,7 @@ const AsientoVentaMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
     <div>
         <Grid container spacing={0} 
             style={{ marginTop: "0px" }}
-            direction={isSmallScreen ? 'column' : 'row'}
+            direction={isSmallScreen ? 'row' : 'row'}
         >
             <Grid xs={6}>
                 <Card

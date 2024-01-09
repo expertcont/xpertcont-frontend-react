@@ -107,11 +107,11 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
             }}
         >
             <Grid container spacing={0.5} style={{ marginTop: "-5px" }}
-            direction={isSmallScreen ? 'column' : 'row'}
+            direction={isSmallScreen ? 'row' : 'row'}
             alignItems={isSmallScreen ? 'center' : 'center'}
             justifyContent={isSmallScreen ? 'center' : 'center'}
             >
-                <Grid item xs={2} >
+                <Grid item xs={isSmallScreen ? 5.5 : 2} >
                 <TextField variant="outlined" 
                             label="DOC IDENTIDAD"
                             sx={{display:'block',
@@ -124,7 +124,7 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
                             InputLabelProps={{ style:{color:'skyblue'} }}
                 />
                 </Grid>
-                <Grid item xs={0.5} >
+                <Grid item xs={isSmallScreen ? 1 : 0.5} >
                   <IconButton color="warning" aria-label="upload picture" component="label" size="small"
                                 //sx={{display:'block',
                                 //margin:'1rem 0'}}
@@ -139,7 +139,7 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
                   </IconButton>
                 </Grid>
 
-                <Grid item xs={2} >
+                <Grid item xs={isSmallScreen ? 4 : 2} >
                     <FormControl fullWidth>
                     <InputLabel id="simple-select-label" 
                                 inputProps={{ style:{color:'white'} }}
@@ -168,7 +168,7 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
                     </FormControl>
                 </Grid>
 
-                <Grid item xs={7.5} >
+                <Grid item xs={isSmallScreen ? 10.5 : 7.5} >
                 <TextField variant="outlined" 
                             label="RAZON SOCIAL"
                             fullWidth
