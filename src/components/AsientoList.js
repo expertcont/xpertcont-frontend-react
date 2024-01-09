@@ -1080,7 +1080,7 @@ export default function AsientoList() {
       justifyContent={isSmallScreen ? 'left' : 'left'}
   >
 
-        <Grid item xs={isSmallScreen ? 1 : 0.5} >
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='AGREGAR NUEVO' >
             <IconButton color="primary" 
                             //style={{ padding: '0px'}}
@@ -1110,7 +1110,7 @@ export default function AsientoList() {
           </Tooltip>
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1 : 0.5}  >    
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
           { (pVenta0104 || pCompra0204 || pCaja0304 || pDiario0404) ? (
 
             <Tooltip title='ELIMINAR MASIVO' >
@@ -1131,7 +1131,7 @@ export default function AsientoList() {
           }
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1 : 0.5} >
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
             <Tooltip title='DESCARGA XLS VACIO' >
             <IconButton color="success" 
                             //style={{ padding: '0px'}}
@@ -1145,14 +1145,14 @@ export default function AsientoList() {
             </Tooltip>
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1 : 0.5} >
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='EXPORTAR LIBRO XLS' >
             <BotonExcelVentas registrosdet={registrosdet} 
             />
           </Tooltip>
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1 : 0.5} >    
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
           {(id_libro==='014' || id_libro==='008') ? 
             (
             <Tooltip title='SIRE vs SISTEMA' >
