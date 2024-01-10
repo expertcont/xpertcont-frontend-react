@@ -474,9 +474,13 @@ export default function SeguridadList() {
       <Tooltip title='Contabilidades Autorizadas'>
         <Button variant='contained' 
                 fullWidth
-                color='secondary'
-                sx={{display:'block',margin:'.0rem 0'}}
-                style={{ color: 'skyblue' }}
+                color='primary'
+                sx={{display:'block',margin:'.0rem 0', 
+                backgroundColor:'skyblue',
+                '&:hover': {
+                  backgroundColor: 'skyblue', // Cambia esto al color deseado al pasar el mouse
+                },
+                }}
                 onClick = { () => {
                   //console.log(`/seguridad/contabilidades/${params.id_anfitrion}/${usuarioInvitado}`);
                   navigate(`/seguridad/contabilidades/${params.id_anfitrion}/${usuarioInvitado}`);
