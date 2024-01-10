@@ -476,6 +476,7 @@ export default function SeguridadList() {
                 fullWidth
                 color='secondary'
                 sx={{display:'block',margin:'.0rem 0'}}
+                style={{ color: 'skyblue' }}
                 onClick = { () => {
                   //console.log(`/seguridad/contabilidades/${params.id_anfitrion}/${usuarioInvitado}`);
                   navigate(`/seguridad/contabilidades/${params.id_anfitrion}/${usuarioInvitado}`);
