@@ -106,6 +106,7 @@ export default function NavBar(props) {
       //Establecer 1er elemento en select//////////////////////
       if (response.data.length > 0) {
         setPeriodoTrabajo(response.data[0].periodo); 
+        console.log('setPeriodoTrabajo: ',response.data[0].periodo);
       }
       /////////////////////////////////////////////////////////
     })
@@ -123,7 +124,7 @@ export default function NavBar(props) {
         //Establecer 1er elemento en select//////////////////////
         if (response.data.length > 0) {
           setContabilidadTrabajo(response.data[0].documento_id); 
-          //console.log(response.data[0].documento_id);
+          console.log('setContabilidadTrabajo: ',response.data[0].documento_id);
         }
         /////////////////////////////////////////////////////////
     })
@@ -268,6 +269,7 @@ export default function NavBar(props) {
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
+                                    //cuidado estamos enviando el periodo y el ruc de la contabilidad inicial del anfitrion
                                     console.log(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                                     navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                                     handleClick('icono02');

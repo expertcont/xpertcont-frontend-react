@@ -703,19 +703,37 @@ export default function AsientoList() {
 
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
+      
       // Realiza acciones cuando isAuthenticated cambia
       //Verificar historial periodo 
-      console.log('1ero useeffect periodo_trabajo: ',periodo_trabajo);
       const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo');
-      console.log("st_periodo_trabajo: ", st_periodo_trabajo);
-      cargaPeriodosAnfitrion(st_periodo_trabajo);
-      setPeriodoTrabajo(st_periodo_trabajo);
+      
+      //New Cargar Lista, con sugerencia de foco inicial
+      if (st_periodo_trabajo===null || st_periodo_trabajo===''){
+          //en caso no haya periodos ni ruc registrados, no tiene porque cargar
+        cargaPeriodosAnfitrion(params.periodo);
+        setPeriodoTrabajo(params.periodo);
+      }else{
+        //en caso haya periodos y rucs, debe respetar el ambiente de trabajo anterior
+        //cuidado con eliminar un ruc, el ambiente de trabajo podria desaparecer y generar bug ... ****
+        cargaPeriodosAnfitrion(st_periodo_trabajo);
+        setPeriodoTrabajo(st_periodo_trabajo);
+      }
 
       //Verifica historial contabilidad
       const st_contabilidad_trabajo = sessionStorage.getItem('contabilidad_trabajo');
       const st_contabilidad_nombre = sessionStorage.getItem('contabilidad_nombre');
-      cargaContabilidadesAnfitrion(st_contabilidad_trabajo,st_contabilidad_nombre);
-      setContabilidadTrabajo(st_contabilidad_trabajo);
+      //New Cargar Lista, con sugerencia de foco inicial
+      if (st_contabilidad_trabajo===null || st_contabilidad_nombre===''){
+        //en caso no haya periodos ni ruc registrados, no tiene porque cargar
+        cargaContabilidadesAnfitrion(params.documento_id,st_contabilidad_nombre);
+        setContabilidadTrabajo(params.documento_id);
+      }else{
+        //en caso haya periodos y rucs, debe respetar el ambiente de trabajo anterior
+        //cuidado con eliminar un ruc, el ambiente de trabajo podria desaparecer y generar bug ... ****
+        cargaContabilidadesAnfitrion(st_contabilidad_trabajo,st_contabilidad_nombre);
+        setContabilidadTrabajo(st_contabilidad_trabajo);
+      }
       
       /////////////////////////////
       //NEW codigo para autenticacion y permisos de BD
@@ -730,7 +748,7 @@ export default function AsientoList() {
 
       //Verifica historial id_libro
       const st_id_libro = sessionStorage.getItem('id_libro');
-      const st_valorVista = sessionStorage.getItem('valorVista'); //para el toggleButton
+      const st_valorVista = (sessionStorage.getItem('valorVista') || 'ventas'); //new para el toggleButton
 
       if (st_id_libro) {
         //Establecer valor historial al toggleButton
@@ -741,6 +759,7 @@ export default function AsientoList() {
       if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
       cargaPermisosMenuComando('01'); //Por default, la 1era vez
       setValorVista('ventas'); //Por default, la 1era vez
+      //st_valorVista = 'ventas'; //new 
       }else{
       setValorVista(st_valorVista);
       }
