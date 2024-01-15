@@ -115,12 +115,14 @@ export default function AsientoList() {
   const handleChange = e => {
     //Para todos los demas casos ;)
     if (e.target.name==="periodo"){
+      console.log('cambiando en periodo');
       setPeriodoTrabajo(e.target.value);
       //En cada cambio, actualizar ultimo periodo seleccionado 
       sessionStorage.setItem('periodo_trabajo', e.target.value);
       //console.log('handleChange periodo_trabajo', e.target.value);
     }
     if (e.target.name==="contabilidad"){
+      console.log('cambiando en contabilidad');
       setContabilidadTrabajo(e.target.value);
       //En cada cambio, actualizar ultima contabilidad seleccionada
       sessionStorage.setItem('contabilidad_trabajo', e.target.value);
@@ -1018,6 +1020,7 @@ export default function AsientoList() {
                     label="Periodo Cont"
                     onChange={handleChange}
                     >
+                      <MenuItem value="default">SELECCIONA </MenuItem>
                     {   
                         periodo_select.map(elemento => (
                         <MenuItem key={elemento.periodo} value={elemento.periodo}>
@@ -1038,6 +1041,7 @@ export default function AsientoList() {
                     label="Contabilidad"
                     onChange={handleChange}
                     >
+                      <MenuItem value="default">SELECCIONA </MenuItem>
                     {   
                         contabilidad_select.map(elemento => (
                         <MenuItem key={elemento.documento_id} value={elemento.documento_id}>
