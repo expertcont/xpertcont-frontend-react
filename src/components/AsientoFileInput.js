@@ -26,7 +26,7 @@ const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
     // Obtén la extensión del archivo
     const fileExtension = fileName.split('.').pop().toLowerCase();
     //setSelectedFileType(fileExtension);
-    if (fileExtension === 'xlsx' || fileExtension === 'txt') {
+    if (fileExtension === 'xlsx' || fileExtension === 'txt' || fileExtension === 'xls') {
       setSelectedFile(file);
       setSelectedFileType(fileExtension);
     } else {
@@ -78,6 +78,15 @@ const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
               body: formData,
             });
           }
+          //new para el csv, qie esun simple xls
+          if (fileExtension === 'xls') {
+            console.log('filtramos cvs ventas');
+            await fetch(`${back_host}/asientoexcelventas`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
+
           if (fileExtension === 'txt') {
             console.log('filtramos sire ventas');
             await fetch(`${back_host}/asientosireventas`, {
@@ -96,6 +105,15 @@ const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
               body: formData,
             });
           }
+          //new para csv, es un simple xls
+          if (fileExtension === 'xls') {
+            console.log('filtramos csv compras');
+            await fetch(`${back_host}/asientoexcelcompras`, {
+              method: 'POST',
+              body: formData,
+            });
+          }
+
           if (fileExtension === 'txt') {
             console.log('filtramos sire compras');
             await fetch(`${back_host}/asientosirecompras`, {
@@ -149,7 +167,7 @@ const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
         name="archivoExcel"
         ref={fileInputRef}
         onChange={handleFileChange}
-        accept=".txt, .xlsx"
+        accept=".txt, .xlsx, .xls"
         style={{ display: 'none' }}
       />
       {selectedFile ? (
