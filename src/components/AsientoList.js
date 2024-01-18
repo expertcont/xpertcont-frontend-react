@@ -41,11 +41,89 @@ import { CajaColumnas } from './ColumnasAsiento';
 import { DiarioColumnas } from './ColumnasAsiento';
 import AsientoFileInput from './AsientoFileInput';
 import { saveAs } from 'file-saver';
+import AsientoMensajeTotales from './AsientoMensajeTotales';
 
 export default function AsientoList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  //Seccion Dialog
+  const [isDialogOpen, setDialogOpen] = useState(false);
+  const handleCancel = () => {
+    console.log('Operación cancelada');
+    setDialogOpen(false);
+  };
+  const handleAccept = (buttonValue) => {
+    console.log(`Operación aceptada con el botón: ${buttonValue}`);
+    if (buttonValue==='aceptar1') {
+      console.log(calcularSumatoriaMoneda('r_monto_total','PEN'));
+      procesarSire('PEN')
+    }
+    if (buttonValue==='aceptar2') {
+        console.log(calcularSumatoriaMoneda('r_monto_total','USD'));
+        //Mostrar Totales Previos
+        procesarSire('USD')
+    }
+    if (buttonValue==='aceptar3') {
+      //procesarVacio
+  }
+
+    setDialogOpen(false);
+  };
+  const procesarSire=(r_moneda) =>{
+    //Mostrar Totales Previos
+    if (id_libro==='014'){
+      swal2.fire({
+        title: "Totales SIRE Ventas RVIE - "+ r_moneda,
+        html: armaMensajeTotalesVenta(r_moneda),
+        showDenyButton: true, // Mostrar botón "Cancelar"
+        confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
+        denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
+        }).then((result) => {
+          if (result.isConfirmed) {
+            convertirATextoSire(r_moneda);
+          } else if (result.isDenied || result.isDismissed) {
+            console.log("Usuario canceló el mensaje");
+          }
+        });
+    }
+    if (id_libro==='008'){
+      swal2.fire({
+        title: "Totales SIRE Compras RCE - " + r_moneda,
+        html: armaMensajeTotalesCompra(r_moneda),
+        showDenyButton: true, // Mostrar botón "Cancelar"
+        confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
+        denyButtonText: 'Cancelar' // Texto del botón "Cancelar"      
+        }).then((result) => {
+          if (result.isConfirmed) {
+            convertirATextoSire(r_moneda);
+          } else if (result.isDenied || result.isDismissed) {
+            console.log("Usuario canceló el mensaje");
+          }
+        });
+    }
+  }
+
+  const [buttons, setButtons] = useState([
+    { text: 'PEN', value: 'aceptar1' },
+    { text: 'USD', value: 'aceptar2' },
+    { text: 'CERO', value: 'aceptar3' }
+  ]); 
+
+  const getButtonColor = (buttonValue) => {
+    switch (buttonValue) {
+      case 'aceptar1':
+        return 'info'; 
+      case 'aceptar2':
+        return 'success';
+      case 'aceptar3':
+        return 'inherit';
+      default:
+        return 'inherit'; // Color predeterminado
+    }
+  };  
+  //Fin Seccion Dialog
+
   createTheme('solarized', {
     text: {
       //primary: '#268bd2',
@@ -324,135 +402,153 @@ export default function AsientoList() {
       cargaRegistro(valorVista,periodo_trabajo,contabilidad_trabajo);
     }
   };
-  const calcularSumatoria = (columna) => {
+  
+  const calcularSumatoriaMoneda = (columna, filtro) => {
     return registrosdet.reduce((acumulador, fila) => {
-      const valorColumna = fila[columna];
-      // Verificar si el valor no es nulo y es numérico antes de sumarlo
-      if (valorColumna !== null && !isNaN(valorColumna)) {
-        return acumulador + parseFloat(valorColumna);
-      } else {
-        return acumulador;
+      // Verificar si el valor del campo de filtro coincide
+      if (fila['r_moneda'] === filtro) {
+        const valorColumna = fila[columna];
+        // Verificar si el valor no es nulo y es numérico antes de sumarlo
+        if (valorColumna !== null && !isNaN(valorColumna)) {
+          return acumulador + parseFloat(valorColumna);
+        }
       }
+      return acumulador;
     }, 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+  };  
+  const calcularSumatoriaFilasMoneda = (filtro) => {
+    return registrosdet.reduce((acumulador, fila) => {
+      // Verificar si el valor del campo de filtro coincide
+      if (fila['r_moneda'] === filtro) {
+          return acumulador + 1;
+      }
+      return acumulador;
+    }, 0);
+  };  
+
+  const armaMensajeTotalesVenta = (r_moneda) => {
+    let strMensaje;
+    strMensaje =  `
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
+      <div style="text-align: left;">
+        <p style="margin: 2px 0;">Exportacion:</p>
+        <p style="margin: 2px 0;">Base Imponible:</p>
+        <p style="margin: 2px 0;">Descuentos Base:</p>
+        <p style="margin: 2px 0;">Exonerado:</p>
+        <p style="margin: 2px 0;">Inafecta:</p>
+        <p style="margin: 2px 0;">ISC:</p>
+        <p style="margin: 2px 0;">IGV:</p>
+        <p style="margin: 2px 0;">Descuentos IGV:</p>
+        <p style="margin: 2px 0;">Base IVAP:</p>
+        <p style="margin: 2px 0;">IVAP:</p>
+        <p style="margin: 2px 0;">ICBP:</p>
+        <p style="margin: 2px 0;">Otros:</p>
+        <p style="margin: 2px 0;">Total:</p>
+        <p style="margin: 2px 0;">Filas Validas:</p>
+      </div>
+      <div style="text-align: left;">
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('export',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('base',r_moneda)}</p>
+        <p style="margin: 2px 0;">0.00</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('exonera',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('inafecta',r_moneda)}</p>
+        <p style="margin: 2px 0;">0.00</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('igv',r_moneda)}</p>
+        <p style="margin: 2px 0;">0.00</p>
+        <p style="margin: 2px 0;">0.00</p>
+        <p style="margin: 2px 0;">0.00</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_icbp',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_otros',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_total',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda(r_moneda)}</p>
+      </div>
+    </div>
+    `;
+    return strMensaje;
   };
+
+  const armaMensajeTotalesCompra = (r_moneda) => {
+    let strMensaje;
+    strMensaje =  `
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
+      <div style="text-align: left;">
+        <p style="margin: 2px 0;">Base(A):</p>
+        <p style="margin: 2px 0;">Igv(A):</p>
+        <p style="margin: 2px 0;">Base(B):</p>
+        <p style="margin: 2px 0;">Igv(B):</p>
+        <p style="margin: 2px 0;">Base(C):</p>
+        <p style="margin: 2px 0;">Igv(C):</p>
+        <p style="margin: 2px 0;">No Gravadas:</p>
+        <p style="margin: 2px 0;">ISC:</p>
+        <p style="margin: 2px 0;">ICBP:</p>
+        <p style="margin: 2px 0;">Otros:</p>
+        <p style="margin: 2px 0;">Total:</p>
+        <p style="margin: 2px 0;">Filas Validas:</p>
+      </div>
+      <div style="text-align: left;">
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base001',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_igv001',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base002',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_igv002',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base003',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_igv003',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base004',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_isc',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_icbp',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_otros',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_total',r_moneda)}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda(r_moneda)}</p>
+      </div>
+    </div>
+    `;
+    return strMensaje;
+  };
+  
   const handleMensajeTotales = () => {
-    if (id_libro==='014'){
-      swal2.fire({
-        title: "Totales SIRE Ventas RVIE",
-        html: `
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
-          <div style="text-align: left;">
-            <p style="margin: 2px 0;">Exportacion:</p>
-            <p style="margin: 2px 0;">Base Imponible:</p>
-            <p style="margin: 2px 0;">Descuentos Base:</p>
-            <p style="margin: 2px 0;">Exonerado:</p>
-            <p style="margin: 2px 0;">Inafecta:</p>
-            <p style="margin: 2px 0;">ISC:</p>
-            <p style="margin: 2px 0;">IGV:</p>
-            <p style="margin: 2px 0;">Descuentos IGV:</p>
-            <p style="margin: 2px 0;">Base IVAP:</p>
-            <p style="margin: 2px 0;">IVAP:</p>
-            <p style="margin: 2px 0;">ICBP:</p>
-            <p style="margin: 2px 0;">Otros:</p>
-            <p style="margin: 2px 0;">Total:</p>
-            <p style="margin: 2px 0;">Filas Validas:</p>
-          </div>
-          <div style="text-align: left;">
-            <p style="margin: 2px 0;">${calcularSumatoria('export')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('base')}</p>
-            <p style="margin: 2px 0;">0.00</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('exonera')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('inafecta')}</p>
-            <p style="margin: 2px 0;">0.00</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('igv')}</p>
-            <p style="margin: 2px 0;">0.00</p>
-            <p style="margin: 2px 0;">0.00</p>
-            <p style="margin: 2px 0;">0.00</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_icbp')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_otros')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_total')}</p>
-            <p style="margin: 2px 0;">${registrosdet.length}</p>
-          </div>
-        </div>
-      `,
-      showDenyButton: true, // Mostrar botón "Cancelar"
-      confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
-      denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
-      }).then((result) => {
-        if (result.isConfirmed) {
-          console.log("Usuario genero SIRE Ventas RVIE");
-          convertirATextoSire();
-        } else if (result.isDenied || result.isDismissed) {
-          console.log("Usuario canceló el mensaje");
-        }
-      });
-  
-    }
-    if (id_libro==='008'){
-      swal2.fire({
-        title: "Totales SIRE Compras RCE",
-        html: `
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
-          <div style="text-align: left;">
-            <p style="margin: 2px 0;">Base(A):</p>
-            <p style="margin: 2px 0;">Igv(A):</p>
-            <p style="margin: 2px 0;">Base(B):</p>
-            <p style="margin: 2px 0;">Igv(B):</p>
-            <p style="margin: 2px 0;">Base(C):</p>
-            <p style="margin: 2px 0;">Igv(C):</p>
-            <p style="margin: 2px 0;">No Gravadas:</p>
-            <p style="margin: 2px 0;">ISC:</p>
-            <p style="margin: 2px 0;">ICBP:</p>
-            <p style="margin: 2px 0;">Otros:</p>
-            <p style="margin: 2px 0;">Total:</p>
-            <p style="margin: 2px 0;">Filas Validas:</p>
-          </div>
-          <div style="text-align: left;">
-            <p style="margin: 2px 0;">${calcularSumatoria('r_base001')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_igv001')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_base002')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_igv002')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_base003')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_igv003')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_base004')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_isc')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_icbp')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_otros')}</p>
-            <p style="margin: 2px 0;">${calcularSumatoria('r_monto_total')}</p>
-            <p style="margin: 2px 0;">${registrosdet.length}</p>
-          </div>
-        </div>
-      `,
-      showDenyButton: true, // Mostrar botón "Cancelar"
-      confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
-      denyButtonText: 'Cancelar' // Texto del botón "Cancelar"      
-      }).then((result) => {
-        if (result.isConfirmed) {
-          console.log("Usuario genero SIRE Compras RCE");
-          convertirATextoSire();
-        } else if (result.isDenied || result.isDismissed) {
-          console.log("Usuario canceló el mensaje");
-        }
-      });
-  
+    if (isDialogOpen) {
+      setDialogOpen(false);
+    }else{
+      
+      //Calcular sumatorias y habilitar Botones
+      const soles = calcularSumatoriaMoneda('r_monto_total','PEN');
+      const dolares = calcularSumatoriaMoneda('r_monto_total','USD');
+      //console.log(soles,dolares);
+
+      // Eliminar el botón 'PEN' si soles es igual a '0.00'
+      if (soles === '0.00') {
+        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'PEN'));
+      }
+      // Eliminar el botón 'USD' si dolares es igual a '0.00'
+      if (dolares === '0.00') {
+        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'USD'));
+      }
+      // Eliminar el botón 'CERO' si tanto soles como dolares no son iguales a '0.00'
+      if (soles !== '0.00' && dolares !== '0.00') {
+        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'CERO'));
+      }      
+      //console.log(buttons);
+      setDialogOpen(true);
     }
   };
 
-  const convertirATextoSire = async() => {
+  const convertirATextoSire = async(moneda) => {
     //Solo actualizamos estados, y el useeffect se encarga de completar proceso
     let response;
     let nombreArchivoSire;
+    let codM;
     const partes = periodo_trabajo.split('-');
     const periodoAno = partes[0];
     const periodoMes = partes[1];
+    if (moneda==='PEN') {codM = '1';}
+    if (moneda==='USD') {codM = '2';}
 
     if (id_libro==='008'){
-      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'OIM2'+'.TXT';
-      response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
+      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'11'+ codM + '2'+'.TXT';
+      response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}/${moneda}`);
     }
     if (id_libro==='014'){
-      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00140400'+'02'+'OIM2'+'.TXT';
-      response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
+      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00140400'+'02'+'11'+ codM + '2'+'.TXT';
+      response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}/${moneda}`);
     }
     if (response.ok) {
       const data = await response.json();
@@ -1217,7 +1313,6 @@ export default function AsientoList() {
                     'RCE'
                   )
                   }
-                  
               </Button>
             )
             :
@@ -1227,6 +1322,21 @@ export default function AsientoList() {
             }
           </Tooltip>
         </Grid>
+        
+        {/* El componente del cuadro de diálogo */}
+        {isDialogOpen && (
+        
+        <Grid item xs={isSmallScreen ? 12 : 8.8}>
+            <AsientoMensajeTotales
+            title="Selecciona una opción"
+            buttons={buttons}
+            getButtonColor={getButtonColor}
+            onCancel={handleCancel}
+            onAccept={handleAccept}
+          />
+        </Grid>
+
+        )}
 
     <Grid item xs={isSmallScreen ? 12 : 8.8}>
       {(id_libro==='014' || id_libro==='008') ? 
