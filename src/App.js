@@ -17,6 +17,7 @@ import CuentaList from './components/CuentaList';
 import CuentaForm from './components/CuentaForm';
 import SireComparacionForm from "./components/SireComparacionForm";
 import SeguridadContabilidad from "./components/SeguridadContabilidad";
+import AsientoListPrev from "./components/AsientoListPrev";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -91,6 +92,7 @@ function App(props) {
           <Route path="/seguridad/:id_anfitrion" element={<SeguridadList />} />          
           <Route path="/seguridad/contabilidades/:id_anfitrion/:id_invitado" element={<SeguridadContabilidad />} />          
           <Route path="/sirecomparacion/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro" element={<SireComparacionForm />} /> 
+          <Route path="/asientogenerador/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro" element={<AsientoListPrev />} /> 
 
           {/*Edit Route */}
         </Routes>

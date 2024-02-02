@@ -10,6 +10,9 @@ import UpdateIcon from '@mui/icons-material/UpdateSharp';
 import Add from '@mui/icons-material/Add';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
+import BoltIcon from '@mui/icons-material/Bolt';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
+import DownloadIcon from '@mui/icons-material/Download';
 
 import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
@@ -906,7 +909,8 @@ export default function AsientoList() {
     setColumnas([...columnasComunes, ...columnasEspecificas]);
     
     //cuando carga x primera vez, sale vacio ... arreglar esto
-    cargaRegistro(st_valorVista,st_periodo_trabajo,st_contabilidad_trabajo);
+    //cargaRegistro(st_valorVista,st_periodo_trabajo,st_contabilidad_trabajo); //anterior falla 1era vez
+    cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo); //new cambio
 
     //Datos listos en caso de volver por aqui, para envio
     setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
@@ -1265,6 +1269,20 @@ export default function AsientoList() {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
+          <Tooltip title='GENERAR ASIENTOS' >
+          <IconButton color="inherit" 
+                            style={{ padding: '0px'}}
+                            //style={{ padding: '0px', color: 'skyblue' }}
+                            onClick={() => {
+                              navigate(`/asientogenerador/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
+                            }}
+            >
+              <PlaylistAddCheckIcon style={{ fontSize: '40px' }}/>
+            </IconButton>
+          </Tooltip>
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='EXPORTAR LIBRO XLS' >
             <BotonExcelVentas registrosdet={registrosdet} 
             />
@@ -1338,7 +1356,7 @@ export default function AsientoList() {
 
         )}
 
-    <Grid item xs={isSmallScreen ? 12 : 8.8}>
+    <Grid item xs={isSmallScreen ? 12 : 8.3}>
       {(id_libro==='014' || id_libro==='008') ? 
         (
         <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
