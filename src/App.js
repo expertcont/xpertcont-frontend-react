@@ -18,6 +18,8 @@ import CuentaForm from './components/CuentaForm';
 import SireComparacionForm from "./components/SireComparacionForm";
 import SeguridadContabilidad from "./components/SeguridadContabilidad";
 import AsientoListPrev from "./components/AsientoListPrev";
+import AsientoDetalleList from "./components/AsientoDetalleList";
+import AsientoDetalleForm from "./components/AsientoDetalleForm";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -55,6 +57,9 @@ function App(props) {
                Agregar Clonado desde Panel (un registro01 con Numero Orden y datos adicionales)
                Agregar desde Form Orden (un registro01 con Numero Orden)   */ }
 
+          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento/:item/edit" element={<AsientoDetalleForm />} />
+          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento" element={<AsientoDetalleList />} />
+          
           <Route path="/asiento/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AsientoList />} />
           
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoCompraForm />} />

@@ -421,9 +421,11 @@ export default function AsientoVentaForm() {
                             sx={{display:'block',
                             margin:'.5rem 0'}}
                             onClick={() => {
-                              swal2.fire({
+                              /*swal2.fire({
                                 text: "Funcionalidad en diseño pendiente",
-                              });
+                              });*/
+                              console.log(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
                               }
                             }
       

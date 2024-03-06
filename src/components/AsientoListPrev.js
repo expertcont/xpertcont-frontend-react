@@ -1,6 +1,6 @@
 import React from 'react';
-import { useEffect, useState, useMemo, useCallback } from "react"
-import { Grid, Button,useMediaQuery,Select, MenuItem, Typography} from "@mui/material";
+import { useEffect, useState, useMemo, useCallback,useRef } from "react"
+import { Grid,Button,useMediaQuery,Select, MenuItem, Typography,Dialog,DialogContent,DialogTitle,List,ListItem,ListItemText} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
 import UpdateIcon from '@mui/icons-material/UpdateSharp';
@@ -76,45 +76,127 @@ export default function AsientoListPrev() {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
+  const [updateCuentas, setUpdateCuentas] = useState({});
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
-  const [navegadorMovil, setNavegadorMovil] = useState(false);
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
-  const [valorVista, setValorVista] = useState("ventas");
-  const [id_libro, setValorLibro] = useState("014");
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
   const {user, isAuthenticated } = useAuth0();
   
   const [columnas, setColumnas] = useState([]);
-
-  const [periodo_trabajo, setPeriodoTrabajo] = useState("");
-  const [periodo_select,setPeriodosSelect] = useState([]);
-  
-  const [sirecompras,setSireCompras] = useState([]);
-  const [sireventas,setSireVentas] = useState([]);
-
-  const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
-  const [contabilidad_nombre, setContabilidadNombre] = useState("");
-  const [contabilidad_select,setContabilidadesSelect] = useState([]);
-
   const [bSeleccionados, setBSeleccionados] = useState(false);
+  
+  
+  const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
+  const [amarre_select,setAmarreSelect] = useState([]); //Cuentas Amarre de 6X
+  const [showModal, setShowModal] = useState(false);
+  const [showModal02, setShowModal02] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchText02, setSearchText02] = useState('');
 
+  //Variables estado para manejo de cuentas amarre contable
+  const [cuentaBase, setCuentaBase] = useState('');
+  const [cuentaBaseDesc, setCuentaBaseDesc] = useState('');
+ 
+  const [cuentaCargoDest, setCuentaCargoDest] = useState('');
+  const [cuentaCargoDestDesc, setCuentaCargoDestDesc] = useState('');
+ 
+  const [cuentaAbonoDest, setCuentaAbonoDest] = useState('');
+  const [cuentaAbonoDestDesc, setCuentaAbonoDestDesc] = useState('');
+
+  const textFieldRef = useRef(null); //foco del buscador  
+  
+  const handleCodigoKeyDown = async (event) => {
+    console.log(event.target.name);
+    if (event.target.name==="cuentaBase"){
+      if (event.key === '+') {
+          setShowModal(true);
+      }
+      if (event.key === '-') {
+        setShowModal(false);
+      }
+    }
+    if (event.target.name==="cuentaCargoDest"){
+      if (event.key === '+') {
+          setShowModal02(true);
+      }
+      if (event.key === '-') {
+        setShowModal02(false);
+      }
+    }
+
+    //console.log(event.key);
+    if (event.key === 'Enter') {
+      //Selecciona el 1er elemento de la lista, en caso no haya filtrado nada
+      
+      if (event.target.name==="cuentaBaseModal" || event.target.name==="cuentaBase"){
+        handleCuentaSelect(filteredCuentas[0].id_cuenta, filteredCuentas[0].descripcion, event.target.name);
+
+        setShowModal(false);
+      }
+      if (event.target.name==="cuentaCargoDestModal" || event.target.name==="cuentaCargoDest"){
+        handleCuentaSelect(filteredCuentas02[0].id_cuenta, filteredCuentas02[0].descripcion, event.target.name);
+
+        setShowModal02(false);
+      }
+    }
+  };
+  const handleCuentaSelect = (codigo, descripcion, sNombreCuenta) => {
+    //console.log("codigo,descripcion: ",codigo,descripcion);
+    //console.log("sNombreCuenta: ", sNombreCuenta);
+    if (sNombreCuenta==="cuentaBaseModal"){
+        setSearchText(codigo);
+
+        setCuentaBase(codigo);
+        setCuentaBaseDesc(descripcion);
+        console.log(codigo,descripcion);
+        
+        setShowModal(false);
+    }
+    if (sNombreCuenta==="cuentaCargoDestModal"){
+        setSearchText02(codigo);
+
+        setCuentaCargoDest(codigo);
+        setCuentaCargoDestDesc(descripcion);
+
+        setShowModal02(false);
+
+        //console.log(cuentaBase);
+        //actualizar el campo cuentaBase en caso este vacio
+        if (cuentaBase === "" || cuentaBase === undefined){
+          //setCuentaBase con una 6X que le corresponda y cuenta abono destino
+          actualizaAmarreContableInverso9(codigo);
+        }else{
+          actualizaAmarreContable6();
+        }
+    }
+    //console.log(venta.documento_id,venta.razon_social);
+  };
+  const handleSearchTextChange = (event) => {
+    setSearchText(event.target.value.replace('+', '').replace('-',''));
+    //setVenta({...venta, id_cuenta:event.target.value.replace('+', '').replace('-','')});
+  };
+  const handleSearchTextChange02 = (event) => {
+    setSearchText02(event.target.value.replace('+', '').replace('-',''));
+    //setVenta({...venta, id_cuenta:event.target.value.replace('+', '').replace('-','')});
+  };
+
+  const filteredCuentas = cuenta_select.filter((c) =>
+  `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchText.toLowerCase())
+  );
+  const filteredCuentas02 = cuenta_select.filter((c) =>
+  `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchText02.toLowerCase())
+  );
+    
   // Agrega íconos al inicio de cada columna
   let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
 
   // valores adicionales para Carga Archivo
-  const [datosCarga, setDatosCarga] = useState({
-    id_anfitrion: '',
-    documento_id: '',
-    periodo: '',
-    id_libro: '',
-    id_invitado: '',
-  });  
 
   const handleRowSelected = useCallback(state => {
 		setSelectedRows(state.selectedRows);
@@ -172,6 +254,24 @@ export default function AsientoListPrev() {
   //Para recibir parametros desde afuera
   const params = useParams();
 
+  const handleChange = e => {
+      //Creo que la manipulacion de cuentas, debe ser controlada. NO LIBRE
+      //NO USAREMOS ESTA SECCION HASTA NUEVO REQUERIMIENTO
+    if (e.target.name === "id_cuentabase") {
+      setCuentaBase(e.target.value);
+      return;
+    }
+    if (e.target.name === "id_cuentacargodest") {
+      setCuentaCargoDest(e.target.value);
+      return;
+    }
+    if (e.target.name === "id_cuentaabonodest") {
+      setCuentaAbonoDest(e.target.value);
+      return;
+    }
+    //setVenta({...venta, [e.target.name]: e.target.value});
+  }
+
   const actualizaValorFiltro = e => {
     setValorBusqueda(e.target.value);
     filtrar(e.target.value);
@@ -194,18 +294,84 @@ export default function AsientoListPrev() {
     setRegistrosdet(resultadosBusqueda);
   };
 
+  const cargaCuentaContable = (sCuentaFiltro) =>{
+    axios
+    .get(`${back_host}/cuentassimple/${params.id_anfitrion}/${params.documento_id}/${sCuentaFiltro}`)
+    .then((response) => {
+        setCuentaSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+  const cargaAmarreContable = (sCuentaFiltro) =>{
+    axios
+    .get(`${back_host}/cuentasamarre6/${params.id_anfitrion}/${sCuentaFiltro}`)
+    .then((response) => {
+      setCuentaSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+
+  const actualizaAmarreContable6 = () =>{
+    //console.log(`${back_host}/cuentasamarre9/${params.id_anfitrion}/${sCuentaFiltro}`);
+
+      setCuentaAbonoDest(cuenta_select[0].id_cuenta_haber);
+      setCuentaAbonoDestDesc(cuenta_select[0].descripcion_haber);
+  }
+
+  const actualizaAmarreContableInverso9 = (sCuentaFiltro) =>{
+    //console.log(`${back_host}/cuentasamarre9/${params.id_anfitrion}/${sCuentaFiltro}`);
+    axios
+    .get(`${back_host}/cuentasamarre9/${params.id_anfitrion}/${sCuentaFiltro}`)
+    .then((response) => {
+      //console.log(response.data);
+      //console.log(response.data[0].id_cuenta_debe,response.data[0].descripcion_debe);
+      setCuentaBase(response.data[0].id_cuenta_debe);
+      setCuentaBaseDesc(response.data[0].descripcion_debe);
+
+      setCuentaAbonoDest(response.data[0].id_cuenta_haber);
+      setCuentaAbonoDestDesc(response.data[0].descripcion_haber);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
 
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
       // Realiza acciones cuando isAuthenticated cambia
       //Verificar historial periodo 
-     
+      if (showModal) {
+        if (params.id_libro === '008') {
+          cargaCuentaContable('6');
+        }else{
+          cargaCuentaContable('7');
+        }
+      }
+      if (showModal02) {
+          //Pregunta si existe cuenta 6XX , buscamos amarres
+          if (cuentaBase){
+            cargaAmarreContable(cuentaBase);//6XX base elegida anteriormente
+          }else{
+            //Caso contrario filtramos la 9 libre y luego conseguimos el amarre inverso correspondiente
+            cargaCuentaContable('9');
+          }
+      }
+  
       /////////////////////////////
       //NEW codigo para autenticacion y permisos de BD
       if (isAuthenticated && user && user.email) {
         
       }
-  },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
+      //foco
+      if ((showModal || showModal02) && textFieldRef.current) {
+        textFieldRef.current.focus();
+      }
+
+  },[isAuthenticated, user, showModal, showModal02, textFieldRef.current]) //Aumentamos IsAuthenticated y user
 
   useEffect( ()=> {
       //Carga por cada cambio de seleccion en toggleButton
@@ -363,193 +529,71 @@ export default function AsientoListPrev() {
   
     return nuevoHex;
   }
-
+  function calcularTamanoJSON(objeto) {
+    // Convertimos el objeto JSON a una cadena de texto
+    var jsonString = JSON.stringify(objeto);
+    // Devolvemos la longitud de la cadena en bytes
+    return new Blob([jsonString]).size;
+  }
   const contextActions = useMemo(() => {
     if (selectedRows.length > 0) {
       setBSeleccionados(true);
     }else{
       setBSeleccionados(false);
     }
-
-
-    const handleUpdate = () => {
-			var strSeleccionado;
-      strSeleccionado = selectedRows.map(r => r.num_asiento);
-			//navigate(`/correntista/${strSeleccionado}/edit`);
-      console.log("registros seleccionados:", tabladet.length);
-      console.log("registros seleccionados:", registrosdet.length);      
-      console.log("num_asiento:", strSeleccionado);      
+    
+    const handleUpdate = async() => {
+			//var strSeleccionado;
+      //strSeleccionado = selectedRows.map(r => r.num_asiento);
+      //console.log("num_asiento:", strSeleccionado);      
 
       const elementosSeleccionados = registrosdet.filter(registro => selectedRows.some(seleccionado => seleccionado.num_asiento === registro.num_asiento));
-      console.log("Elementos seleccionados:", elementosSeleccionados);      
       // Hacer algo con los elementos seleccionados
+
+      let nombreApi = params.id_libro === '014' ? 'asientomasivoventas': 'asientomasivocompras';
+      let sRuta = params.id_libro === '014' ? 
+        `${back_host}/${nombreApi}/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${cuentaBase}`
+        : 
+        `${back_host}/${nombreApi}/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${cuentaBase}/${cuentaCargoDest}/${cuentaAbonoDest}`;
+
+      console.log("cuentaBase,cuentaCargoDest,cuentaAbonoDest: ",cuentaBase,cuentaCargoDest,cuentaAbonoDest);
+      console.log(sRuta);
+      //console.log('Tamaño bytes completo: ',calcularTamanoJSON(JSON.stringify(elementosSeleccionados)));
+      const soloNumAsientos = elementosSeleccionados.map(item => item.num_asiento);
+      const soloNumAsientosString = soloNumAsientos.join(',');
+      console.log('Tamaño bytes num_asientos: ',calcularTamanoJSON(JSON.stringify(soloNumAsientosString)));
+      //console.log(soloNumAsientosString);
+      await fetch(sRuta, {
+        method: "POST",
+        body: soloNumAsientosString, //tamaño minimo para evitar rechazo en backend railway
+        headers: {"Content-Type":"text/plain"}
+      });
+
+      /* //version envio de json, ocupa el doble de espacio
+      const soloNumAsientos = elementosSeleccionados.map(item => {
+        return { num_asiento: item.num_asiento };
+      });
+      console.log('Tamaño bytes solo num_asiento: ',calcularTamanoJSON(JSON.stringify(soloNumAsientos)));
+      //console.log(JSON.stringify(soloNumAsientos));
+      await fetch(sRuta, {
+        method: "POST",
+        body: JSON.stringify(soloNumAsientos), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+        headers: {"Content-Type":"application/json"}
+      });*/
+
+      //nuevo
+      //const data = await res.json();
+      //console.log(data);
+      
+      setUpdateTrigger(Math.random());//actualizar vista
 		};
 
 		return (
       <>
-
-        { /*(params.id_libro === '0141') ?
-        (
-            <TextField  variant="outlined" color="success" size="small"
-                  sx={{display:'block',
-                        margin:'.0rem 0'}}
-                  name="busqueda"
-                  placeholder='Cuenta 70'
-                  //onChange={actualizaValorFiltro}
-                  inputProps={{ style:{color:'white'} }}
-                  InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                        </InputAdornment>
-                      ),
-                      style:{color:'white'} 
-                  }}
-            />
-        )
-        :
-        (   <>
-            <TextField  variant="outlined" color="success" size="small"
-                  sx={{display:'block',
-                        margin:'.0rem 0'}}
-                  name="busqueda"
-                  placeholder='Cuenta 6X'
-                  //onChange={actualizaValorFiltro}
-                  inputProps={{ style:{color:'white'} }}
-                  InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                        </InputAdornment>
-                      ),
-                      style:{color:'white'} 
-                  }}
-            />
-
-            <TextField  variant="outlined" color="success" size="small"
-                  sx={{display:'block',
-                        margin:'.0rem 0'}}
-                  name="busqueda"
-                  placeholder='Cta CargoDest'
-                  //onChange={actualizaValorFiltro}
-                  inputProps={{ style:{color:'white'} }}
-                  InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                        </InputAdornment>
-                      ),
-                      style:{color:'white'} 
-                  }}
-            />
-
-            <TextField  variant="outlined" color="success" size="small"
-                  sx={{display:'block',
-                        margin:'.0rem 0'}}
-                  name="busqueda"
-                  placeholder='Cta AbonoDest'
-                  //onChange={actualizaValorFiltro}
-                  inputProps={{ style:{color:'white'} }}
-                  InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                        </InputAdornment>
-                      ),
-                      style:{color:'white'} 
-                  }}
-            />
-
-          </>
-        )*/
-        }
-      <Grid container
-            direction={isSmallScreen ? 'column' : 'column'}
-            alignItems={isSmallScreen ? 'center' : 'center'}
-            justifyContent={isSmallScreen ? 'center' : 'center'}
-      >
-          <Grid item xs={12} >
-          { (params.id_libro === '0141') ?
-            (   <>
-                <p></p>
-                <TextField  variant="outlined" color="success" size="small"
-                      sx={{display:'block',
-                            margin:'.0rem 0'}}
-                      name="busqueda"
-                      placeholder='Cuenta 70'
-                      //onChange={actualizaValorFiltro}
-                      inputProps={{ style:{color:'white'} }}
-                      InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                            </InputAdornment>
-                          ),
-                          style:{color:'white'} 
-                      }}
-                />
-                </>
-            )
-            :
-            (   <>
-                
-                <TextField  variant="outlined" color="success" size="small"
-                      sx={{display:'block',
-                            margin:'.0rem 0'}}
-                      name="busqueda"
-                      placeholder='Cuenta 6X'
-                      //onChange={actualizaValorFiltro}
-                      inputProps={{ style:{color:'white'} }}
-                      InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                            </InputAdornment>
-                          ),
-                          style:{color:'white'} 
-                      }}
-                />
-
-                <TextField  variant="outlined" color="success" size="small"
-                      sx={{display:'block',
-                            margin:'.0rem 0'}}
-                      name="busqueda"
-                      placeholder='Cta CargoDest'
-                      //onChange={actualizaValorFiltro}
-                      inputProps={{ style:{color:'white'} }}
-                      InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                            </InputAdornment>
-                          ),
-                          style:{color:'white'} 
-                      }}
-                />
-
-                <TextField  variant="outlined" color="success" size="small"
-                      sx={{display:'block',
-                            margin:'.0rem 0'}}
-                      name="busqueda"
-                      placeholder='Cta AbonoDest'
-                      //onChange={actualizaValorFiltro}
-                      inputProps={{ style:{color:'white'} }}
-                      InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                            </InputAdornment>
-                          ),
-                          style:{color:'white'} 
-                      }}
-                />
-
-              </>
-            )
-          }
-
-          </Grid>
-
-          <Grid item xs={12} >
           <Button variant='text' key="modificar" onClick={handleUpdate} color='inherit' fullWidth>
             GENERAR
           <UpdateIcon/>
           </Button>
-          </Grid>
-      </Grid>
-
       </>
 		);
 	}, [registrosdet, selectedRows, toggleCleared]);
@@ -560,28 +604,90 @@ export default function AsientoListPrev() {
 
   <Grid container spacing={0}
       direction={isSmallScreen ? 'column' : 'row'}
-      alignItems={isSmallScreen ? 'center' : 'end'}
+      alignItems={isSmallScreen ? 'center' : 'start'}
       justifyContent={isSmallScreen ? 'center' : 'end'}
   >
-      <Grid item xs={2} >
+      <Grid item xs={7} >
 
-      { (bSeleccionados && params.id_libro === '0141') ?
-        (
-            <TextField  variant="outlined" color="success" size="small"
-                  sx={{display:'block',
-                        margin:'.0rem 0'}}
-                  name="busqueda"
-                  placeholder='Cuenta 70'
-                  //onChange={actualizaValorFiltro}
-                  inputProps={{ style:{color:'white'} }}
-                  InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                        </InputAdornment>
-                      ),
-                      style:{color:'white'} 
-                  }}
-            />
+      { (params.id_libro === '014') ?
+        (   <>
+          <Grid container spacing={0}
+              direction={isSmallScreen ? 'row' : 'row'}
+              alignItems={isSmallScreen ? 'center' : 'start'}
+              justifyContent={isSmallScreen ? 'center' : 'start'}
+          > 
+            <Grid item xs={4.5} >
+                <TextField  variant="outlined" color="success" size="small"
+                      sx={{display:'block',
+                            margin:'.0rem 0'}}
+                      name="cuentaBase"
+                      value={cuentaBase}
+                      placeholder='Cuenta 70'
+                      onKeyDown={handleCodigoKeyDown} //new para busqueda
+                      //onChange={actualizaValorFiltro}
+                      inputProps={{ style:{color:'white'} }}
+                      InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                            </InputAdornment>
+                          ),
+                          style:{color:'white'} 
+                      }}
+                />
+                    {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                    <Dialog
+                      open={showModal}
+                      onClose={() => setShowModal(false)}
+                      maxWidth="md"
+                      fullWidth
+                      PaperProps={{
+                        style: {
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          marginTop: '10vh', // Ajusta este valor según tus necesidades
+                          background:'#1e272e',
+                          color:'white'
+                        },
+                      }}
+                    >
+                      <DialogTitle>Listado de Cuentas</DialogTitle>
+                        <TextField variant="standard" 
+                                    maxWidth="md"
+                                    autoFocus
+                                    size="small"
+                                    //sx={{display:'block',
+                                    //      margin:'.5rem 0'}}
+                                    sx={{mt:-1}}
+                                    name="cuentaBaseModal"
+                                    inputRef={textFieldRef} // Referencia para el TextField
+                                    value={searchText}
+                                    onChange={handleSearchTextChange} //new para busqueda
+                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                    inputProps={{ style:{color:'white',width: 140} }}
+                                    InputLabelProps={{ style:{color:'white'} }}
+                          />
+                      <DialogContent>
+                        <List>
+                          {filteredCuentas.map((c) => (
+                            <ListItem key={c.id_cuenta} onClick={() => handleCuentaSelect(c.id_cuenta, c.descripcion, "cuentaBaseModal")}>
+                              <ListItemText primary={`${c.id_cuenta} - ${c.descripcion}`} 
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </DialogContent>
+                    </Dialog>
+                    {/* FIN Seccion para mostrar Dialog tipo Modal */}
+                </Grid>    
+                    
+                <Grid item xs={6} >
+                  <Typography>{cuentaBaseDesc}</Typography>
+                </Grid>
+          </Grid>
+
+                    
+            </>
         )
         :
         (   
@@ -591,56 +697,187 @@ export default function AsientoListPrev() {
         }
 
 
-      { (bSeleccionados && params.id_libro === '014') ?
+      { (params.id_libro === '008') ?
         (
           <>
-          <TextField  variant="outlined" color="success" size="small"
-                sx={{display:'block',
-                      margin:'.0rem 0'}}
-                name="busqueda"
-                placeholder='Cuenta 6X'
-                //onChange={actualizaValorFiltro}
-                inputProps={{ style:{color:'white'} }}
-                InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                      </InputAdornment>
-                    ),
-                    style:{color:'white'} 
-                }}
-          />
+          <Grid container spacing={0}
+              direction={isSmallScreen ? 'row' : 'row'}
+              alignItems={isSmallScreen ? 'center' : 'start'}
+              justifyContent={isSmallScreen ? 'center' : 'start'}
+          > 
+              <Grid item xs={4.5} >
+              <TextField  variant="outlined" color="success" size="small"
+                    sx={{display:'block',
+                          margin:'.0rem 0'}}
+                    name="cuentaBase"
+                    placeholder='Cuenta 6X'
+                    value={cuentaBase}
+                    //onChange={actualizaValorFiltro}
+                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                    inputProps={{ style:{color:'white'} }}
+                    InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                          </InputAdornment>
+                        ),
+                        style:{color:'white'} 
+                    }}
+              />
+                    {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                    <Dialog
+                      open={showModal}
+                      onClose={() => setShowModal(false)}
+                      maxWidth="md"
+                      fullWidth
+                      PaperProps={{
+                        style: {
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          marginTop: '10vh', // Ajusta este valor según tus necesidades
+                          background:'#1e272e',
+                          color:'white'
+                        },
+                      }}
+                    >
+                      <DialogTitle>Listado de Cuentas</DialogTitle>
+                        <TextField variant="standard" 
+                                    maxWidth="md"
+                                    autoFocus
+                                    size="small"
+                                    //sx={{display:'block',
+                                    //      margin:'.5rem 0'}}
+                                    sx={{mt:-1}}
+                                    name="cuentaBaseModal"
+                                    inputRef={textFieldRef} // Referencia para el TextField
+                                    value={searchText}
+                                    onChange={handleSearchTextChange} //new para busqueda
+                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                    inputProps={{ style:{color:'white',width: 140} }}
+                                    InputLabelProps={{ style:{color:'white'} }}
+                          />
+                      <DialogContent>
+                        <List>
+                          {filteredCuentas.map((c) => (
+                            <ListItem key={c.id_cuenta} onClick={() => handleCuentaSelect(c.id_cuenta, c.descripcion, "cuentaBaseModal")}>
+                              <ListItemText primary={`${c.id_cuenta} - ${c.descripcion}`} 
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </DialogContent>
+                    </Dialog>
+                    {/* FIN Seccion para mostrar Dialog tipo Modal */}
 
-          <TextField  variant="outlined" color="success" size="small"
-                sx={{display:'block',
-                      margin:'.0rem 0'}}
-                name="busqueda"
-                placeholder='Cta CargoDest'
-                //onChange={actualizaValorFiltro}
-                inputProps={{ style:{color:'white'} }}
-                InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                      </InputAdornment>
-                    ),
-                    style:{color:'white'} 
-                }}
-          />
+              </Grid>
+              <Grid item xs={6} >
+                <Typography>{cuentaBaseDesc}</Typography>
+              </Grid>
+          </Grid>
 
-          <TextField  variant="outlined" color="success" size="small"
-                sx={{display:'block',
-                      margin:'.0rem 0'}}
-                name="busqueda"
-                placeholder='Cta AbonoDest'
-                //onChange={actualizaValorFiltro}
-                inputProps={{ style:{color:'white'} }}
-                InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                      </InputAdornment>
-                    ),
-                    style:{color:'white'} 
-                }}
-          />
+          <Grid container spacing={0}
+              direction={isSmallScreen ? 'row' : 'row'}
+              alignItems={isSmallScreen ? 'center' : 'start'}
+              justifyContent={isSmallScreen ? 'center' : 'start'}
+          > 
+              <Grid item xs={4.5} >
+              <TextField  variant="outlined" color="success" size="small"
+                    sx={{display:'block',
+                          margin:'.0rem 0'}}
+                    name="cuentaCargoDest"
+                    value={cuentaCargoDest}
+                    placeholder='Cta CargoDest'
+                    //onChange={actualizaValorFiltro}
+                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                    inputProps={{ style:{color:'white'} }}
+                    InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                          </InputAdornment>
+                        ),
+                        style:{color:'white'} 
+                    }}
+              />
+                    {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                    <Dialog
+                      open={showModal02}
+                      onClose={() => setShowModal02(false)}
+                      maxWidth="md"
+                      fullWidth
+                      PaperProps={{
+                        style: {
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          marginTop: '10vh', // Ajusta este valor según tus necesidades
+                          background:'#1e272e',
+                          color:'white'
+                        },
+                      }}
+                    >
+                      <DialogTitle>Listado de Cuentas</DialogTitle>
+                        <TextField variant="standard" 
+                                    maxWidth="md"
+                                    autoFocus
+                                    size="small"
+                                    //sx={{display:'block',
+                                    //      margin:'.5rem 0'}}
+                                    sx={{mt:-1}}
+                                    name="cuentaCargoDestModal"
+                                    inputRef={textFieldRef} // Referencia para el TextField
+                                    value={searchText02}
+                                    onChange={handleSearchTextChange02} //new para busqueda
+                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                    inputProps={{ style:{color:'white',width: 140} }}
+                                    InputLabelProps={{ style:{color:'white'} }}
+                          />
+                      <DialogContent>
+                        <List>
+                          {filteredCuentas02.map((c) => (
+                            <ListItem key={c.id_cuenta} onClick={() => handleCuentaSelect(c.id_cuenta, c.descripcion, "cuentaCargoDestModal")}>
+                              <ListItemText primary={`${c.id_cuenta} - ${c.descripcion}`} 
+                              />
+                            </ListItem>
+                          ))}
+                        </List>
+                      </DialogContent>
+                    </Dialog>
+                    {/* FIN Seccion para mostrar Dialog tipo Modal */}
+
+              </Grid>
+              <Grid item xs={6} >
+                <Typography> {cuentaCargoDestDesc}</Typography>
+              </Grid>
+          </Grid>
+
+          <Grid container spacing={0}
+              direction={isSmallScreen ? 'row' : 'row'}
+              alignItems={isSmallScreen ? 'center' : 'start'}
+              justifyContent={isSmallScreen ? 'center' : 'start'}
+          > 
+              <Grid item xs={4.5} >
+              <TextField  variant="outlined" color="success" size="small"
+                    sx={{display:'block',
+                          margin:'.0rem 0'
+                        }}
+                    name="busqueda"
+                    value={cuentaAbonoDest}
+                    placeholder='Cta AbonoDest'
+                    //onChange={actualizaValorFiltro}
+                    inputProps={{ style:{textAlign: 'right', color:'white'} }}
+                    InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                          </InputAdornment>
+                        ),
+                        style:{color:'white'} 
+                    }}
+              />
+              </Grid>
+              <Grid item xs={6} >
+                <Typography>{cuentaAbonoDestDesc}</Typography>
+              </Grid>
+          </Grid>
 
         </>
         )
@@ -659,33 +896,21 @@ export default function AsientoListPrev() {
       //title={<div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}> </div>}
       title={<div>
               <Grid container
-                    direction={isSmallScreen ? 'column' : 'column'}
+                    direction={isSmallScreen ? 'row' : 'row'}
                     alignItems={isSmallScreen ? 'center' : 'center'}
                     justifyContent={isSmallScreen ? 'center' : 'center'}
               >
-                  <Grid item xs={12} >
-                    <p></p>
-                  </Grid>
 
-                  <Grid item xs={12} >
-                    <Typography>GENERADOR ASIENTOS</Typography>
-                  </Grid>
-                  <Grid item xs={12} >
+                  <Grid item xs={0.5} >
                     <BotonExcelVentas registrosdet={registrosdet} 
                       />          
                   </Grid>
-                  <Grid item xs={12} >
-                    <p></p>
-                  </Grid>
-                  <Grid item xs={12} >
-                    <p></p>
-                  </Grid>
-                  
+                  <Grid item xs={11.5} >
                       <TextField fullWidth variant="outlined" color="success" size="small"
                                                   sx={{display:'block',
                                                         margin:'.0rem 0'}}
                                                   name="busqueda"
-                                                  placeholder='RUC - RAZON SOCIAL - SERIE'
+                                                  placeholder='GENERADOR:  Ruc  -  Razon Social  -  Serie'
                                                   onChange={actualizaValorFiltro}
                                                   inputProps={{ style:{color:'white', textAlign: 'center', textTransform: 'uppercase'} }}
                                                   InputProps={{
@@ -696,7 +921,7 @@ export default function AsientoListPrev() {
                                                       style:{color:'white'} 
                                                   }}
                       />
-                  
+                  </Grid>
               </Grid>
          </div>}
       theme="solarized"

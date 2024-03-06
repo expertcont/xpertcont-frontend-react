@@ -54,7 +54,7 @@ const AsientoFileInput = ({datosCarga,onActualizaImportaOK}) => {
     // Aquí puedes realizar la lógica de carga del archivo, como enviarlo a un servidor.
     // Por ahora, solo mostraremos la información del archivo seleccionado en la consola.
     if (selectedFile) {
-      
+      console.log(datosCarga);
       // Construye un objeto FormData con el archivo y el registro
       const formData = new FormData();
       formData.append('archivoExcel', selectedFile);
