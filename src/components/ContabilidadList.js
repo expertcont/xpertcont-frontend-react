@@ -3,6 +3,8 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { Button } from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import Add from '@mui/icons-material/Add';
 
 import IconButton from '@mui/material/IconButton';
@@ -226,7 +228,7 @@ const handleModificar = (row) => {
  return (
   <>
     <div> 
-      <TextField fullWidth variant="outlined" color="success" size="small"
+      <TextField  variant="outlined" color="success" size="small"
                                    label="FILTRAR"
                                    sx={{display:'block',
                                         margin:'.5rem 0'}}
@@ -243,6 +245,41 @@ const handleModificar = (row) => {
                                       style:{color:'white'} 
                                   }}
       />
+      <TextField  variant="outlined" color="primary" size="small"
+                                   label="OTRA COSA"
+                                   sx={{display:'block',
+                                        margin:'.5rem 0'}}
+                                   name="busqueda2"
+                                   placeholder='Razon social'
+                                   onChange={actualizaValorFiltro}
+                                   inputProps={{ style:{color:'white'} }}
+                                   InputProps={{
+                                      startAdornment: (
+                                        <InputAdornment position="start">
+                                          <FindIcon />
+                                        </InputAdornment>
+                                      ),
+                                      style:{color:'white'} 
+                                  }}
+      />
+      <TextField  variant="outlined" color="secondary" size="small"
+                                   label="nuevo"
+                                   sx={{display:'block',
+                                        margin:'.5rem 0'}}
+                                   name="busqueda2"
+                                   placeholder='Razon social'
+                                   onChange={actualizaValorFiltro}
+                                   inputProps={{ style:{color:'white'} }}
+                                   InputProps={{
+                                      startAdornment: (
+                                        <InputAdornment position="start">
+                                          <FavoriteIcon />
+                                        </InputAdornment>
+                                      ),
+                                      style:{color:'white'} 
+                                  }}
+      />
+
     </div>
 
 
