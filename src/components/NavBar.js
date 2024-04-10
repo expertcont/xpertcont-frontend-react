@@ -276,7 +276,35 @@ export default function NavBar(props) {
                                                 }
                                 }
                     >
+                      <Typography variant="subtitle2" sx={{ ml: 1 }}>
+                      A
+                      </Typography>                    
                       <GradingIcon />
+                    </IconButton>
+                    </Tooltip>
+                    ):(
+                      <span></span>
+                    )
+                    }
+
+                    { permisoCorrentista ?
+                    (
+                    <Tooltip title="REPORTES">
+                    <IconButton  
+                        sx={{
+                          color: selectedButton === 'icono06' ? 'primary.main' : blueGrey[300],flexGrow:1
+                        }}
+                        color="primary" aria-label="upload picture" component="label" size="large"
+                                onClick = {()=> {
+                                  navigate(`/reporte/${props.idAnfitrion}/${props.idInvitado}`);
+                                  handleClick('icono06');
+                                                }
+                                }
+                    >
+                      <Typography variant="subtitle2" sx={{ ml: 1 }}>
+                      R
+                      </Typography>                    
+                      <InsertChartIcon />
                     </IconButton>
                     </Tooltip>
                     ):(
@@ -334,34 +362,10 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoCorrentista ?
-                    (
-                    <Tooltip title="PANEL 03 RUC HABITUALES">
-                    <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono06' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
-                        color="primary" aria-label="upload picture" component="label" size="large"
-                                onClick = {()=> {
-                                  navigate(`/zona`);
-                                  handleClick('icono06');
-                                                }
-                                }
-                    >
-                      <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                      03
-                      </Typography>                    
-                      <GroupIcon />
-                    </IconButton>
-                    </Tooltip>
-                    ):(
-                      <span></span>
-                    )
-                    }
 
                     { permisoCentroCosto ?
                     (
-                    <Tooltip title="Panel 04 CENTRO COSTOS">
+                    <Tooltip title="Panel 03 CENTRO COSTOS">
                     <IconButton  
                         sx={{
                           color: selectedButton === 'icono08' ? 'primary.main' : blueGrey[300],flexGrow:1
@@ -374,7 +378,7 @@ export default function NavBar(props) {
                                 }
                     >
                       <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                      04
+                      03
                       </Typography>                    
                       <CenterFocusStrongIcon />
                     </IconButton>
@@ -386,7 +390,7 @@ export default function NavBar(props) {
 
                     { permisoSeguridad ?
                     (
-                    <Tooltip title="Panel 05 SEGURIDAD USUARIOS">
+                    <Tooltip title="Panel 04 SEGURIDAD USUARIOS">
                     <IconButton  
                         sx={{
                           color: selectedButton === 'icono09' ? 'primary.main' : blueGrey[300],flexGrow:1
@@ -399,7 +403,7 @@ export default function NavBar(props) {
                                 }
                     >
                       <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                      05
+                      04
                       </Typography>                    
                       <SystemSecurityUpdateGoodIcon />
                     </IconButton>

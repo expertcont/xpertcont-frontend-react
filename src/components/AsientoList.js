@@ -1194,6 +1194,8 @@ export default function AsientoList() {
       )
     }
 
+    <ToggleButton value="reporte">Reportes</ToggleButton>
+
   </ToggleButtonGroup>      
   </div>
     

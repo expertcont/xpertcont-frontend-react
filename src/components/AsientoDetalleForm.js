@@ -72,8 +72,8 @@ export default function AsientoDetalleForm() {
       r_numero_ref:'',
       r_fecemi_ref:'',
 
-      debe_nac:'',
-      haber_nac:'',
+      debe_nac:'0',
+      haber_nac:'0',
       debe_me:'',
       haber_me:'',                    
 

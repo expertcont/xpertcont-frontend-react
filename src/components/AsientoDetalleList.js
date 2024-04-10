@@ -144,10 +144,22 @@ export default function AsientoDetalleList() {
 
   const actions = (
       <>
+      <Button variant='contained' 
+              color='warning' 
+              sx={{display:'block',
+              margin:'.5rem 0'}}
+              onClick={ ()=>{
+                navigate(-1, { replace: true });
+                //window.location.reload();
+                }
+              }
+              >
+          Anterior
+      </Button>
+
       <IconButton color="primary" 
         onClick = {()=> {
-                      navigate(`/contabilidad/${params.id_anfitrion}/new`);
-                      //console.log(params.id_anfitrion);
+                     console.log('formulario para caja cuentas con saldos');
                   }
                 }
         >
@@ -156,7 +168,7 @@ export default function AsientoDetalleList() {
 
     	<IconButton color="primary" 
         onClick = {()=> {
-                      navigate(`/contabilidad/${params.id_anfitrion}/new`);
+          navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/new`);
                       //console.log(params.id_anfitrion);
                   }
                 }
@@ -325,17 +337,6 @@ export default function AsientoDetalleList() {
     }
     console.log(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/${sItem}/edit`);
     navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/${sItem}/edit`);
-  };
-  const handleEditarPlanClick = (documento_id) => {
-    // Aquí puedes agregar la lógica para copiar el contenido
-    // Por ejemplo, puedes usar el portapapeles o cualquier otra forma de copiar
-    //console.log(documento_id);
-    if (copiedRowId === documento_id) {
-      setCopiedRowId(null);
-    } else {
-      setCopiedRowId(documento_id);
-    }
-    navigate(`/cuentas/${user.email}/${documento_id}/edit`); //CuentaList.js
   };
 
   

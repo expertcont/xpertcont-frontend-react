@@ -434,7 +434,6 @@ export const CajaColumnas = [
     selector: 'r_tc',
     sortable: true,
   },
-
 ];
 
 export const DiarioColumnas = [
@@ -453,7 +452,76 @@ export const DiarioColumnas = [
     selector: 'r_tc',
     sortable: true,
   },
-
 ];
 
+export const HojaTrabColumnas = [
+  {//01
+    name: 'Cuenta',
+    selector: 'id_master',
+    sortable: true,
+  },
+  
+  {//02
+    name: 'Debe',
+    selector: 'debe',
+    sortable: true,
+  },
+  {//03
+    name: 'Haber',
+    selector: 'haber',
+    sortable: true,
+  },
+
+  {//04
+    name: 'Saldo',
+    selector: 'saldo',
+    sortable: true,
+  },
+  {//05
+    name: 'Descripcion',
+    selector: 'descripcion',
+    sortable: true,
+  },
+  {//06
+    name: 'Balance.D',
+    selector: 'balance_debe',
+    sortable: true,
+  },
+  {//07
+    name: 'Balance.H',
+    selector: 'balance_haber',
+    sortable: true,
+  },
+  {//08
+    name: 'Gestion.D',
+    selector: 'gestion_debe',
+    sortable: true,
+  },
+  {//09
+    name: 'Gestion.H',
+    selector: 'gestion_haber',
+    sortable: true,
+  },
+  {//10
+    name: 'Func.D',
+    selector: 'funcion_debe',
+    sortable: true,
+  },
+  {//11
+    name: 'Func.H',
+    selector: 'funcion_haber',
+    sortable: true,
+  },
+  {//12
+    name: 'Nat.D',
+    selector: 'naturaleza_debe',
+    sortable: true,
+  },
+  {//13
+    name: 'Nat.H',
+    selector: 'naturaleza_haber',
+    sortable: true,
+  },
+
+];
 // Define más conjuntos de columnas para las otras vistas (caja, diario, etc.) si es necesario

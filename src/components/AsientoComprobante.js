@@ -26,6 +26,7 @@ const AsientoComprobante = ({ formData, isSmallScreen, onFormDataChange }) => {
     
     const [comprobante_select,setComprobanteSelect] = useState([]);
     const cargaComprobanteSelect = () =>{
+        console.log(`${back_host}/comprobante/c`);
         axios
         .get(`${back_host}/comprobante/c`)
         .then((response) => {
