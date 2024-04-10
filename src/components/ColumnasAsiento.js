@@ -2,7 +2,7 @@
 //import { ArrowDownward } from '@mui/icons-material';
 
 export const VentasColumnas = [
-  {//01 campos default ocultos
+  /*{//01 campos default ocultos
     name: 'Emisor',
     selector: 'documento_id',
     sortable: true,
@@ -28,18 +28,26 @@ export const VentasColumnas = [
     sortable: true,
     width: '0px',
     hidden:true
+  },*/
+  {//origen
+    name: 'Origen',
+    selector: 'origen',
+    width: '90px',
+    sortable: true,
   },
   {//05
     name: 'Emision',
     selector: 'r_fecemi',
+    width: '100px',
     sortable: true,
   },
   {//06
     name: 'Vcto',
-    selector: 'fecvcto',
+    selector: 'r_fecvcto',
+    width: '100px',
     sortable: true,
   },
-  {//07
+  /*{//07
     name: 'Doc',
     selector: 'r_cod',
     sortable: true,
@@ -53,20 +61,29 @@ export const VentasColumnas = [
     name: 'Num',
     selector: 'r_numero',
     sortable: true,
+  },*/
+  {//07-08-10
+    name: 'Comprobante',
+    selector: 'comprobante', //campo unido
+    width: '150px',
+    sortable: true,
   },
   {//10
     name: 'NumF',
     selector: 'r_numero2',
+    width: '90px',
     sortable: true,
   },
   {//11
     name: 'Tp',
-    selector: 'r_id_documento',
+    selector: 'r_id_doc',
+    width: '40px',
     sortable: true,
   },
   {//12
     name: 'Ruc',
     selector: 'r_documento_id',
+    width: '110px',
     sortable: true,
   },
   {//13
@@ -76,12 +93,12 @@ export const VentasColumnas = [
   },
   {//14
     name: 'Valor Export',
-    selector: 'r_base001',
+    selector: 'export',
     sortable: true,
   },
   {//15
     name: 'Base Gravada',
-    selector: 'r_base002',
+    selector: 'base',
     sortable: true,
   },
   {//16 Preguntar a contadores, aplicacion de este campo
@@ -91,7 +108,7 @@ export const VentasColumnas = [
   },
   {//17
     name: 'IGV',
-    selector: 'r_igv002',
+    selector: 'igv',
     sortable: true,
   },
   {//18 Preguntar a contadores, aplicacion de este campo
@@ -101,12 +118,12 @@ export const VentasColumnas = [
   },
   {//19
     name: 'Exonerado',
-    selector: 'r_base003',
+    selector: 'exonera',
     sortable: true,
   },
   {//20
     name: 'Inafecto',
-    selector: 'r_base004',
+    selector: 'inafecta',
     sortable: true,
   },
   {//21
@@ -171,7 +188,7 @@ export const VentasColumnas = [
   },
   {//33
     name: 'ID.PROY',
-    selector: 'r_numero_ref',
+    selector: 'r_contrato_id',
     sortable: true,
   },
 
@@ -203,6 +220,12 @@ export const ComprasColumnas = [
     sortable: true,
     width: '90px',
   },*/
+  {//origen
+    name: 'Origen',
+    selector: 'origen',
+    width: '90px',
+    sortable: true,
+  },
   {//05
     name: 'Emision',
     selector: 'r_fecemi',
@@ -233,7 +256,6 @@ export const ComprasColumnas = [
     width: '90px',
     sortable: true,
   },*/
-
   {//07-08-10
     name: 'Comprobante',
     selector: 'comprobante', //campo unido
@@ -254,14 +276,14 @@ export const ComprasColumnas = [
   },
   {//12
     name: 'D',
-    selector: 'r_id_documento',
-    width: '50px',
+    selector: 'r_id_doc',
+    width: '40px',
     sortable: true,
   },
   {//13
     name: 'Ruc',
     selector: 'r_documento_id',
-    width: '120px',
+    width: '110px',
     sortable: true,
   },
   {//14
@@ -412,7 +434,6 @@ export const CajaColumnas = [
     selector: 'r_tc',
     sortable: true,
   },
-
 ];
 
 export const DiarioColumnas = [
@@ -431,7 +452,76 @@ export const DiarioColumnas = [
     selector: 'r_tc',
     sortable: true,
   },
-
 ];
 
+export const HojaTrabColumnas = [
+  {//01
+    name: 'Cuenta',
+    selector: 'id_master',
+    sortable: true,
+  },
+  
+  {//02
+    name: 'Debe',
+    selector: 'debe',
+    sortable: true,
+  },
+  {//03
+    name: 'Haber',
+    selector: 'haber',
+    sortable: true,
+  },
+
+  {//04
+    name: 'Saldo',
+    selector: 'saldo',
+    sortable: true,
+  },
+  {//05
+    name: 'Descripcion',
+    selector: 'descripcion',
+    sortable: true,
+  },
+  {//06
+    name: 'Balance.D',
+    selector: 'balance_debe',
+    sortable: true,
+  },
+  {//07
+    name: 'Balance.H',
+    selector: 'balance_haber',
+    sortable: true,
+  },
+  {//08
+    name: 'Gestion.D',
+    selector: 'gestion_debe',
+    sortable: true,
+  },
+  {//09
+    name: 'Gestion.H',
+    selector: 'gestion_haber',
+    sortable: true,
+  },
+  {//10
+    name: 'Func.D',
+    selector: 'funcion_debe',
+    sortable: true,
+  },
+  {//11
+    name: 'Func.H',
+    selector: 'funcion_haber',
+    sortable: true,
+  },
+  {//12
+    name: 'Nat.D',
+    selector: 'naturaleza_debe',
+    sortable: true,
+  },
+  {//13
+    name: 'Nat.H',
+    selector: 'naturaleza_haber',
+    sortable: true,
+  },
+
+];
 // Define más conjuntos de columnas para las otras vistas (caja, diario, etc.) si es necesario

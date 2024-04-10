@@ -3,17 +3,27 @@ import React, { useState,useEffect} from 'react';
 import {useNavigate, useParams, useLocation} from 'react-router-dom';
 import swal2 from 'sweetalert2'
 //import axios from 'axios';
+//import AddBoxRoundedIcon from '@mui/icons-material/AddToQueue';
+//import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
+//import DeleteIcon from '@mui/icons-material/Delete';
+//import IconButton from '@mui/material/IconButton';
+//import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+//import PictureAsPdf from '@mui/icons-material/PictureAsPdf';
 //import swal from 'sweetalert';
+//
+//import Switch from '@mui/material/Switch';
+//import FormGroup from '@mui/material/FormGroup';
+//import FormControlLabel from '@mui/material/FormControlLabel';
+//import FormLabel from '@mui/material/FormLabel';
 //
 
 //import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 //import logo from '../alsa.png';
 import AsientoRazonSocial from './AsientoRazonSocial';
 import AsientoComprobante from './AsientoComprobante';
-import AsientoCompraImportacion from './AsientoCompraImportacion';
-import AsientoCompraMontos from './AsientoCompraMontos';
+import AsientoVentaMontos from './AsientoVentaMontos';
 
-export default function AsientoCompraForm() {
+export default function AsientoVentaForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -29,7 +39,7 @@ export default function AsientoCompraForm() {
       //id_libro:'',
       //id_invitado:'',
 
-      glosa:'COMPRA',
+      glosa:'VENTA',
       debe:'0',
       haber:'0',
       debe_me:'0',
@@ -52,7 +62,7 @@ export default function AsientoCompraForm() {
       r_numero_ref:'',
       fecemi_ref:'',
 
-      r_base001:'0',
+      r_base001:'',
       r_base002:'',
       r_base003:'',
       r_base004:'',
@@ -101,8 +111,8 @@ export default function AsientoCompraForm() {
 
     //Cambiooo para controlar Edicion
     if (editando && !clonarTermino){
-      console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
-      console.log(registro);
+      //console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+      //console.log(registro);
       await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`, {
         method: "PUT",
         body: JSON.stringify(registro),
@@ -119,12 +129,12 @@ export default function AsientoCompraForm() {
       setRegistro(prevState => ({ ...prevState, documento_id: params.documento_id }));
       setRegistro(prevState => ({ ...prevState, id_libro: params.id_libro }));
       setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-      
+
       setRegistro(prevState => ({ ...prevState, ctrl_crea_us: params.id_invitado }));
       registro.ctrl_crea_us = params.id_invitado;
-
-      console.log(`${back_host}/asiento`);
-      console.log(registro);
+      
+      //console.log(`${back_host}/asiento`);
+      console.log('ANTES DE GRABAR: ',registro);
       const res = await fetch(`${back_host}/asiento`, {
         method: "POST",
         body: JSON.stringify(registro),
@@ -138,6 +148,7 @@ export default function AsientoCompraForm() {
       setRegistro(prevState => ({ ...prevState, num_asiento: data.num_asiento }));
       //desactivar boton guardar
       setClickGuardar(true);
+
     }
     setCargando(false);
     setEditando(true);
@@ -163,7 +174,21 @@ export default function AsientoCompraForm() {
 
   //Rico evento change
   const handleChange = (newFormData) => {
+    //var index;
+    //var sTexto;
     console.log(newFormData);
+    
+    /*if (nameTarget === "r_documento_id") {
+      const arrayCopia = cliente_select.slice();
+      index = arrayCopia.map(elemento => elemento.documento_id).indexOf(valueTarget);
+      sTexto = arrayCopia[index].razon_social;
+      setRegistro({...registro, [nameTarget]: valueTarget, razon_social:sTexto});
+      return;
+    }*/
+
+    
+    //setRegistro({...registro, [nameTarget]: valueTarget});
+    //newFormData = {...registro, [nameTarget]: valueTarget} //rico arreglo estilo js
     setRegistro(newFormData);
   }
 
@@ -291,7 +316,6 @@ export default function AsientoCompraForm() {
               padding:'1rem'
             }}
         >
-
           <Typography variant='h6' color='white' textAlign='center'>
               {(editando && !clonando) ? (
                 "Editar Asiento : " + (params.num_asiento || registro.num_asiento ) + " "
@@ -299,7 +323,7 @@ export default function AsientoCompraForm() {
                 clonando ? (
                   "Clonar Asiento : " + (params.num_asiento || registro.num_asiento ) + " "
                 ) : (
-                  "Libro Compras"
+                  "Libro Ventas"
                 )
               )}
           </Typography>
@@ -307,7 +331,6 @@ export default function AsientoCompraForm() {
         </Card>
       </Grid>
       
-
       <Grid item xs={9} >
         <form onSubmit={handleSubmit} >
             <AsientoRazonSocial formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
@@ -321,25 +344,19 @@ export default function AsientoCompraForm() {
         direction={isSmallScreen ? 'row' : 'row'}
         alignItems={isSmallScreen ? 'center' : 'center'}
         justifyContent={isSmallScreen ? 'center' : 'center'}
-      >
-          <Grid item xs={isSmallScreen ? 5 : 3} >
-              <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-              </AsientoComprobante>
-          </Grid>
+    >
+        <Grid item xs={isSmallScreen ? 9 : 4.5} >
+            <AsientoComprobante formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
+            </AsientoComprobante>
+        </Grid>
 
-          <Grid item xs={isSmallScreen ? 4 : 2} >
-            <AsientoCompraImportacion formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            </AsientoCompraImportacion>
-          </Grid>
+        <Grid item xs={isSmallScreen ? 9 : 4.5} >
+          <AsientoVentaMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
+          </AsientoVentaMontos>
+        </Grid>
+    </Grid>
 
-          <Grid item xs={isSmallScreen ? 9 : 4} >
-            <AsientoCompraMontos formData={registro} isSmallScreen={isSmallScreen} onFormDataChange={handleChange}>
-            </AsientoCompraMontos>
-          </Grid>
 
-      </Grid>
-
-    
     <Grid container spacing={0.5} style={{ marginTop: "0px" }}
       direction={isSmallScreen ? 'column' : 'row'}
       alignItems={isSmallScreen ? 'center' : 'center'}
@@ -404,9 +421,11 @@ export default function AsientoCompraForm() {
                             sx={{display:'block',
                             margin:'.5rem 0'}}
                             onClick={() => {
-                              swal2.fire({
+                              /*swal2.fire({
                                 text: "Funcionalidad en diseño pendiente",
-                              });
+                              });*/
+                              console.log(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
                               }
                             }
       
@@ -420,7 +439,6 @@ export default function AsientoCompraForm() {
       </Grid>
       
     </Grid>
-
 
     </form>
       {/* /////////////////////////////////////////////////////////////// */}

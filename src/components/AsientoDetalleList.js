@@ -1,11 +1,10 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Button } from "@mui/material";
+import { Grid,Button,useMediaQuery } from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import Add from '@mui/icons-material/Add';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 
 import IconButton from '@mui/material/IconButton';
 import Datatable, {createTheme} from 'react-data-table-component';
@@ -25,9 +24,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import DeleteIcon from '@mui/icons-material/Delete';
 import swal from 'sweetalert';
+import BotonExcelVentas from './BotonExcelVentas';
 
-export default function ContabilidadList() {
+
+export default function AsientoDetalleList() {
   const {user, isAuthenticated } = useAuth0();
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   createTheme('solarized', {
@@ -56,6 +58,11 @@ export default function ContabilidadList() {
   }, 'dark');
 
   //experimento
+  const [dataGrilla, setDataGrilla] = useState([
+    { id: 1, cargo: 0, abono: 0 },
+    { id: 2, cargo: 0, abono: 0 },
+    // Otros datos...
+  ]);
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
@@ -136,15 +143,39 @@ export default function ContabilidadList() {
 	}, [registrosdet, selectedRows]);
 
   const actions = (
+      <>
+      <Button variant='contained' 
+              color='warning' 
+              sx={{display:'block',
+              margin:'.5rem 0'}}
+              onClick={ ()=>{
+                navigate(-1, { replace: true });
+                //window.location.reload();
+                }
+              }
+              >
+          Anterior
+      </Button>
+
+      <IconButton color="primary" 
+        onClick = {()=> {
+                     console.log('formulario para caja cuentas con saldos');
+                  }
+                }
+        >
+        <PlaylistAddIcon />
+      </IconButton>
+
     	<IconButton color="primary" 
         onClick = {()=> {
-                      navigate(`/contabilidad/${params.id_anfitrion}/new`);
+          navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/new`);
                       //console.log(params.id_anfitrion);
                   }
                 }
       >
     		<Add />
     	</IconButton>
+      </>
   );
 
   //////////////////////////////////////////////////////////
@@ -152,19 +183,19 @@ export default function ContabilidadList() {
   //////////////////////////////////////////////////////////
   const cargaRegistro = async () => {
     var response;
-    console.log(`${back_host}/contabilidad/${params.id_anfitrion}`);
-    response = await fetch(`${back_host}/contabilidad/${params.id_anfitrion}`);
+    console.log(`${back_host}/asientodet/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+    response = await fetch(`${back_host}/asientodet/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
     const data = await response.json();
     setRegistrosdet(data);
     setTabladet(data); //Copia para tratamiento de filtrado
   }
   //////////////////////////////////////
-  const handleDelete = (documento_id) => {
-    console.log(documento_id);
+  const handleDelete = (item) => {
+    console.log(item);
     
-    confirmaEliminacion(params.id_anfitrion,documento_id);
+    confirmaEliminacion(params.id_anfitrion,params.documento_id,params.periodo,params.id_libro,params.num_asiento,item);
   };
-  const confirmaEliminacion = async(sAnfitrion,sDocumentoId)=>{
+  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sNumAsiento,sItem)=>{
     await swal({
       title:"Eliminar Contabilidad",
       text:"Seguro ?",
@@ -173,7 +204,7 @@ export default function ContabilidadList() {
     }).then(respuesta=>{
         if (respuesta){
           //console.log(cod,serie,num,elem,item);
-          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId);
+          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sNumAsiento,sItem);
           setToggleCleared(!toggleCleared);
           setRegistrosdet(registrosdet.filter(
                           registrosdet => registrosdet.documento_id !== sDocumentoId
@@ -190,9 +221,9 @@ export default function ContabilidadList() {
       }
     })
   }
-  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId) => {
-      console.log(`${back_host}/contabilidad/${sAnfitrion}/${sDocumentoId}`);
-      await fetch(`${back_host}/contabilidad/${sAnfitrion}/${sDocumentoId}`, {
+  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro,sNumAsiento,sItem) => {
+      console.log(`${back_host}/asientodet/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${sNumAsiento}/${sItem}`);
+      await fetch(`${back_host}/asientodet/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${sNumAsiento}/${sItem}`, {
         method:"DELETE"
       });
   }
@@ -204,7 +235,7 @@ export default function ContabilidadList() {
       width: '40px',
       cell: (row) => (
           <DriveFileRenameOutlineIcon
-            onClick={() => handleCopyClick(row.documento_id)}
+            onClick={() => handleCopyClick(row.item)}
             style={{
               cursor: 'pointer',
               color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
@@ -221,7 +252,7 @@ export default function ContabilidadList() {
       cell: (row) => (
         (pConta0603) ? (
           <DeleteIcon
-            onClick={() => handleDelete(row.documento_id)}
+            onClick={() => handleDelete(row.item)}
             style={{
               cursor: 'pointer',
               color: 'orange',
@@ -233,65 +264,79 @@ export default function ContabilidadList() {
       allowOverflow: true,
       button: true,
     },
+    { name:'CTA', 
+      selector:row => row.id_cuenta,
+      sortable: true,
+      width: '80px'
+      //key:true
+    },
+    { name:'DESCRIPCION', 
+      selector:row => row.descripcion,
+      sortable: true,
+      width: '210px'
+      //key:true
+    },
+    { name:'DEBE', 
+      selector:row => row.debe_nac,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'HABER', 
+      selector:row => row.haber_nac,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'DEBE $', 
+      selector:row => row.debe_me,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'HABER $', 
+      selector:row => row.haber_me,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'TC', 
+      selector:row => row.tc,
+      sortable: true,
+      width: '70px'
+      //key:true
+    },
+    { name:'DOC', 
+      selector:row => row.comprobante,
+      sortable: true,
+      width: '120px'
+      //key:true
+    },
 
     { name:'RUC', 
-      selector:row => row.documento_id,
+      selector:row => row.r_documento_id,
       sortable: true,
       width: '110px'
       //key:true
     },
     { name:'RAZON SOCIAL', 
-      selector:row => row.razon_social,
+      selector:row => row.r_razon_social,
       width: '250px',
       sortable: true
     },
-    {
-      name: 'ACTIVO',
-      selector: 'activo',
-      width: '70px',
-      cell: (row) => {
-        return row.activo ? <ThumbUpOffAlt style={{ color: 'skyblue' }} /> : <ClearIcon style={{ color: 'orange' }} />;
-      },
-    },    
-    {
-      name: 'PLAN',
-      selector: 'cuentas',
-      width: '70px',
-      cell: (row) => {
-        return row.cuentas!=='0'
-         ? <PlaylistAddCheckIcon 
-            onClick={() => handleEditarPlanClick(row.documento_id)}
-            style={{ cursor: 'pointer', 
-                     color: 'skyblue' }} /> : 
-            <CloseIcon 
-            onClick={() => handleEditarPlanClick(row.documento_id)}
-            style={{ cursor: 'pointer',
-                     color: 'orange' }} />;
-      },
-    },    
 
   ];
-  const handleCopyClick = (documento_id) => {
+  const handleCopyClick = (sItem) => {
     // Aquí puedes agregar la lógica para copiar el contenido
     // Por ejemplo, puedes usar el portapapeles o cualquier otra forma de copiar
-    console.log(documento_id);
-    if (copiedRowId === documento_id) {
+    console.log(sItem);
+    if (copiedRowId === sItem) {
       setCopiedRowId(null);
     } else {
-      setCopiedRowId(documento_id);
+      setCopiedRowId(sItem);
     }
-    navigate(`/contabilidad/${params.id_anfitrion}/${documento_id}/edit`);
-  };
-  const handleEditarPlanClick = (documento_id) => {
-    // Aquí puedes agregar la lógica para copiar el contenido
-    // Por ejemplo, puedes usar el portapapeles o cualquier otra forma de copiar
-    //console.log(documento_id);
-    if (copiedRowId === documento_id) {
-      setCopiedRowId(null);
-    } else {
-      setCopiedRowId(documento_id);
-    }
-    navigate(`/cuentas/${user.email}/${documento_id}/edit`); //CuentaList.js
+    console.log(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/${sItem}/edit`);
+    navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/${sItem}/edit`);
   };
 
   
@@ -321,6 +366,7 @@ const handleModificar = (row) => {
 
 //////////////////////////////////////////////////////////
   useEffect( ()=> {
+      console.log(params.id_anfitrion,params.documento_id,params.periodo,params.id_libro,params.num_asiento);
       cargaRegistro();
 
       //NEW codigo para autenticacion y permisos de BD
@@ -333,10 +379,22 @@ const handleModificar = (row) => {
   },[isAuthenticated, user, updateTrigger])
   //////////////////////////////////////////////////////////
 
+  const handleCellChange = (row, columnId, value) => {
+    const updatedData = registrosdet.map((item) => {
+      if (item.id_cuenta === row.id_cuenta) {
+        return { ...item, [columnId]: value };
+      }
+      return item;
+    });
+
+    setRegistrosdet(updatedData);
+    console.log('Cambios en la celda:', row, columnId, value);
+  };
+
  return (
   <>
     <div> 
-      <TextField  variant="outlined" color="success" size="small"
+      <TextField fullWidth variant="outlined" color="success" size="small"
                                    label="FILTRAR"
                                    sx={{display:'block',
                                         margin:'.5rem 0'}}
@@ -353,46 +411,29 @@ const handleModificar = (row) => {
                                       style:{color:'white'} 
                                   }}
       />
-      <TextField  variant="outlined" color="primary" size="small"
-                                   label="OTRA COSA"
-                                   sx={{display:'block',
-                                        margin:'.5rem 0'}}
-                                   name="busqueda2"
-                                   placeholder='Razon social'
-                                   onChange={actualizaValorFiltro}
-                                   inputProps={{ style:{color:'white'} }}
-                                   InputProps={{
-                                      startAdornment: (
-                                        <InputAdornment position="start">
-                                          <FindIcon />
-                                        </InputAdornment>
-                                      ),
-                                      style:{color:'white'} 
-                                  }}
-      />
-      <TextField  variant="outlined" color="secondary" size="small"
-                                   label="nuevo"
-                                   sx={{display:'block',
-                                        margin:'.5rem 0'}}
-                                   name="busqueda2"
-                                   placeholder='Razon social'
-                                   onChange={actualizaValorFiltro}
-                                   inputProps={{ style:{color:'white'} }}
-                                   InputProps={{
-                                      startAdornment: (
-                                        <InputAdornment position="start">
-                                          <FavoriteIcon />
-                                        </InputAdornment>
-                                      ),
-                                      style:{color:'white'} 
-                                  }}
-      />
-
     </div>
-
+    
 
     <Datatable
-      title="Panel 01: Contabilidades"
+      //title="Detalle Asiento ${params.num_asiento}"
+      title={<div>
+        <Grid container
+              direction={isSmallScreen ? 'row' : 'row'}
+              alignItems={isSmallScreen ? 'center' : 'center'}
+              justifyContent={isSmallScreen ? 'center' : 'center'}
+        >
+
+            <Grid item xs={11.5} >
+              {params.id_libro==='014'? 
+                'Ventas '
+                :
+                'Compras '
+              }
+              {params.periodo}   Nro As: {params.num_asiento} 
+            </Grid>
+        </Grid>
+   </div>}
+
       theme="solarized"
       columns={columnas}
       data={registrosdet}
@@ -406,7 +447,11 @@ const handleModificar = (row) => {
       sortIcon={<ArrowDownward />}
       dense={true}
       highlightOnHover //resalta la fila
-      //pointerOnHover //coloca simbolo dedito como si fuera hacer click
+      //editable={true}
+      //onRowUpdate={handleRowUpdate}
+      onCellChange={handleCellChange}    
+      editable  
+       //pointerOnHover //coloca simbolo dedito como si fuera hacer click
     >
     </Datatable>
 

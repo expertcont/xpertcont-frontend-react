@@ -37,7 +37,7 @@ function Main() {
         clientId={clientId}
         authorizationParams={{
           redirect_uri: "http://localhost:3000"
-          //redirect_uri: "https://xpertcont-frontend-react-production.up.railway.app/"
+          //redirect_uri: "https://expertcont.up.railway.app/"
         }}
       >
         {/* Renderiza la pantalla de bienvenida o la aplicación principal según el estado */}

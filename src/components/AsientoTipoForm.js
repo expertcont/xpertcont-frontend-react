@@ -4,13 +4,12 @@ import {useState,useEffect,useRef} from 'react';
 import React from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 //import Tooltip from '@mui/material/Tooltip';
-import Switch from '@mui/material/Switch';
 
-export default function ContabilidadForm() {
+export default function AsientoTipoForm({registrosFiltro}) {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const [contabilidad,setContabilidad] = useState({
-      id_anfitrion:'',
+      id_usuario:'',
       documento_id:'',
       razon_social:'',
       activo:''
@@ -28,7 +27,6 @@ export default function ContabilidadForm() {
 
   const [cargando,setCargando] = useState(false);
   const [editando,setEditando] = useState(false);
-  const [activoCont,setActivoCont] = useState(false);
   
   const navigate = useNavigate();
   const params = useParams();
@@ -39,17 +37,14 @@ export default function ContabilidadForm() {
     
     //Cambiooo para controlar Edicion
     if (editando){
-      console.log(`${back_host}/contabilidad/${params.id_anfitrion}/${params.documento_id}`);
+      console.log(`${back_host}/contabilidad/${params.id}`);
       console.log(contabilidad);
-      await fetch(`${back_host}/contabilidad/${params.id_anfitrion}/${params.documento_id}`, {
+      await fetch(`${back_host}/contabilidad/${params.id}`, {
         method: "PUT",
         body: JSON.stringify(contabilidad),
         headers: {"Content-Type":"application/json"}
       });
     }else{
-      setContabilidad(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-      contabilidad.id_anfitrion = params.id_anfitrion;
-
       console.log(`${back_host}/contabilidad`);
       console.log(contabilidad);
       await fetch(`${back_host}/contabilidad`, {
@@ -60,61 +55,35 @@ export default function ContabilidadForm() {
     }
 
     setCargando(false);
-    //navigate(`/contabilidades/${params.id_anfitrion}`);
-    navigate(-1, { replace: true });
+    navigate(`/contabilidad`);
   };
   
   //Aqui se leen parametros en caso lleguen
   useEffect( ()=> {
-    if (params.id_anfitrion && params.documento_id){
-      mostrarContabilidad(params.id_anfitrion, params.documento_id);
-      setContabilidad(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-      
+    console.log(registrosFiltro.length);
+    if (params.id_usuario && params.documento_id){
+      mostrarContabilidad(params.id_usuario, params.documento_id);
     }
   },[params.id]);
 
-  const handleChangeActivo = e => {
-    console.log(e.target.name, e.target.checked);
-
-    const { name, checked } = e.target;
-    if (name === 'activoCont') {
-      if (checked){
-        setContabilidad(prevState => ({ ...prevState, activo: '1' }));
-        setActivoCont(true);
-      }
-      else{
-        setContabilidad(prevState => ({ ...prevState, activo: '0' }));
-        setActivoCont(false);
-      }
-      
-    }
-  }
-
   //Rico evento change
   const handleChange = e => {
-    console.log(e.target.name, e.target.value);
-    const inputValue = e.target.value;
-    const valorEnMayusculas = inputValue.toUpperCase();
-    setContabilidad({...contabilidad, [e.target.name]: valorEnMayusculas});
+    setContabilidad({...contabilidad, [e.target.name]: e.target.value});
+    //console.log(e.target.name, e.target.value);
   }
 
   //funcion para mostrar data de formulario, modo edicion
-  const mostrarContabilidad = async (id_anfitrion,documento_id) => {
-    console.log(`${back_host}/contabilidad/${id_anfitrion}/${documento_id}`);
-    const res = await fetch(`${back_host}/contabilidad/${id_anfitrion}/${documento_id}`);
+  const mostrarContabilidad = async (id_usuario,documento_id) => {
+    console.log(`${back_host}/contabilidad/${id_usuario}/${documento_id}`);
+    const res = await fetch(`${back_host}/contabilidad/${id_usuario}/${documento_id}`);
     const data = await res.json();
     //Actualiza datos para enlace con controles, al momento de modo editar
     setContabilidad({
-            id_anfitrion:data.id_usuario,       
             documento_id:data.documento_id,       
             razon_social:data.razon_social, 
             activo:data.activo});
     //console.log(data);
     setEditando(true);
-    if (data.activo==='1'){
-      setActivoCont(true);
-      console.log('inicial true');
-    }
   };
 
   return (
@@ -122,7 +91,7 @@ export default function ContabilidadForm() {
           direction="column"
           alignItems="center"
           justifyContent="center">
-          
+        <Grid item xs={3}>
             <Card sx={{mt:5}}
                   style={{
                     background:'#1e272e',
@@ -134,7 +103,7 @@ export default function ContabilidadForm() {
                 </Typography>
                 <CardContent>
                     <form onSubmit={handleSubmit} >
-                      <Grid item xs={12}>
+
                         <TextField variant="outlined" 
                                    label="RUC"
                                    fullWidth
@@ -148,8 +117,6 @@ export default function ContabilidadForm() {
                                    inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
                                    InputLabelProps={{ style:{color:'white'} }}
                         />
-                      </Grid>
-                      <Grid item xs={12}>
                         <TextField variant="outlined" 
                                    label="RAZON SOCIAL"
                                    fullWidth
@@ -165,21 +132,19 @@ export default function ContabilidadForm() {
                                    inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
                                    InputLabelProps={{ style:{color:'white'} }}
                          />
-                        </Grid>
-                        
-                        <Grid item xs={12}>
-                        <Switch
-                          checked={activoCont} // Utilizamos el valor correspondiente al índice en el array
-                          fullWidth
-                          onChange={handleChangeActivo}
-                          color="primary"
-                          name="activoCont"
-                          inputProps={{ 'aria-label': 'toggle switch' }}
-                        />
-                        <Typography variant='6' color='white' textAlign='center'>
-                            {activoCont ? "Activo" : "Inactivo"}
-                        </Typography>
-                        </Grid>
+                        <TextField variant="outlined" 
+                                   label="ACTIVO"
+                                   //multiline
+                                   fullWidth
+                                   sx={{display:'block',
+                                        margin:'.5rem 0'}}
+                                   name="activo"
+                                   value={contabilidad.activo}
+                                   onChange={handleChange}
+                                   inputRef={cuartoTextFieldRef}                                   
+                                   inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
+                                   InputLabelProps={{ style:{color:'white'} }}
+                         />
 
                         <Button variant='contained' 
                                 color='primary' 
@@ -210,8 +175,8 @@ export default function ContabilidadForm() {
 
                     </form>
                 </CardContent>
-             </Card>
-          
+            </Card>
+        </Grid>
     </Grid>
   )
 }

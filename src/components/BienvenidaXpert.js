@@ -29,6 +29,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
     }
   
     const cargaEstudiosAnfitrion = () =>{
+      console.log(`${back_host}/usuario/estudios/${user.email}`);
       axios
       .get(`${back_host}/usuario/estudios/${user.email}`)
       .then((response) => {
@@ -71,7 +72,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
                     //maxWidth: '400px', // Ajusta este valor según tu preferencia
                     padding:'1rem'
                   }}
-                  >
+            >
                 <Typography variant='h5' color='white' textAlign='center'>
                     Bienvenido
                 </Typography>
@@ -118,14 +119,13 @@ const BienvenidaXpert = ({ onStartClick }) => {
                               {   
                                   estudios_select.map(elemento => (
                                   <MenuItem key={elemento.id_usuario} value={elemento.id_usuario} >
-                                    {elemento.nombres}
+                                    {elemento.razon_social}
                                   </MenuItem>)) 
                               }
                       </Select>
 
                       <Button variant='contained' 
                                               color='primary' 
-                                              //onClick={onStartClick}
                                               onClick={() => {
                                                 // Devolvemos los props actualizados
                                                 onStartClick(idAnfitrionSeleccionado, user.email);

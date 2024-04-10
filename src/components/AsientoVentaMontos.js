@@ -1,7 +1,7 @@
-import {Grid,Card,TextField,Select,MenuItem, Typography} from '@mui/material'
+import {Grid,Card,TextField,Select,MenuItem} from '@mui/material'
 import React, {useState,useEffect} from 'react';
 
-const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
+const AsientoVentaMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
     //Usamos variables para control de errores
     //Si esta mal digitado, recobra valor anterior, solo por eso
     const [base001, setBase001] = useState('');
@@ -9,9 +9,9 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
     const [base003, setBase003] = useState('');
     const [base004, setBase004] = useState('');
     const [monto_icbp, setMontoIcbp] = useState('');
-    const [igv001, setIgv001] = useState('');
-    const [igv002, setIgv002] = useState('');
-    const [igv003, setIgv003] = useState('');
+    //const [igv001, setIgv001] = useState(''); //no usamos en VENTAS
+    const [igv002, setIgv002] = useState('');//usamos para igv general (VENTAS)
+    //const [igv003, setIgv003] = useState(''); //no usamos en VENTAS
     const [monto_otros, setMontoOtros] = useState('');
     const [monto_total, setMontoTotal] = useState('');
 
@@ -26,18 +26,18 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
             setBase001(baseAnterior); //almacena valor ePeso para uso posterior
         }
         //calcula igv correspondiente
-        const igv =Number((baseValida*18/100).toFixed(2));
-        setIgv001(igv); //almacena valor ePeso para uso posterior
+        //const igv =Number((baseValida*18/100).toFixed(2));
+        //setIgv001(0); //almacena valor ePeso para uso posterior
 
         //Adiciona al total 
         let campos = Number(formData.r_base002) + Number(formData.r_base003) + Number(formData.r_base004) 
                     + Number(formData.r_igv002) + Number(formData.r_igv003) 
                     + Number(formData.r_monto_icbp) + Number(formData.r_monto_otros);
-        const total = (baseValida + igv + campos).toFixed(2);
+        const total = (baseValida + campos).toFixed(2);
         setMontoTotal(total);
         
         //Enviar datos a useState
-        let updatedData = { ...formData, ['r_base001']: baseValida, ['r_igv001']: igv, ['r_monto_total']: total };
+        let updatedData = { ...formData, ['r_base001']: baseValida, ['r_monto_total']: total };
         onFormDataChange(updatedData);    
     };
     
@@ -76,18 +76,18 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
             setBase003(baseAnterior); //almacena valor ePeso para uso posterior
         }
         //calcula igv correspondiente
-        const igv =Number((baseValida*18/100).toFixed(2));
-        setIgv003(igv); //almacena valor ePeso para uso posterior
+        //const igv =Number((baseValida*18/100).toFixed(2));
+        //setIgv003(igv); //almacena valor ePeso para uso posterior
 
         //Adiciona al total 
         let campos = Number(formData.r_base001) + Number(formData.r_base002) + Number(formData.r_base004) 
                     + Number(formData.r_igv001) + Number(formData.r_igv002) 
                     + Number(formData.r_monto_icbp) + Number(formData.r_monto_otros);
-        const total = (baseValida + igv + campos).toFixed(2);
+        const total = (baseValida + campos).toFixed(2);
         setMontoTotal(total);
 
         //Enviar datos a useState
-        let updatedData = { ...formData, ['r_base003']: baseValida, ['r_igv003']: igv, ['r_monto_total']: total };
+        let updatedData = { ...formData, ['r_base003']: baseValida, ['r_monto_total']: total };
         onFormDataChange(updatedData);    
     };
     
@@ -117,12 +117,12 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
             setMontoIcbp(value);
         }
         //nuevo ajuste de igv
-        if (name === "r_igv001") {
+        /*if (name === "r_igv001") {
             campos = Number(formData.r_base001) + Number(formData.r_base002) + Number(formData.r_base003) + Number(formData.r_base004)
             + parsedValue + Number(formData.r_igv002) +  Number(formData.r_igv003)
             + Number(formData.r_monto_icbp) + Number(formData.r_monto_otros);
             setIgv001(value);
-        }
+        }*/
         //nuevo ajuste de igv
         if (name === "r_igv002") {
             campos = Number(formData.r_base001) + Number(formData.r_base002) + Number(formData.r_base003) + Number(formData.r_base004)
@@ -131,12 +131,12 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
             setIgv002(value);
         }
         //nuevo ajuste de igv
-        if (name === "r_igv003") {
+        /*if (name === "r_igv003") {
             campos = Number(formData.r_base001) + Number(formData.r_base002) + Number(formData.r_base003) + Number(formData.r_base004)
             + Number(formData.r_igv001) +  Number(formData.r_igv002) + parsedValue
             + Number(formData.r_monto_icbp) + Number(formData.r_monto_otros);
             setIgv003(value);
-        }
+        }*/
 
         const total = (campos).toFixed(2);
         setMontoTotal(total);
@@ -183,10 +183,8 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
   return (
     <div>
         <Grid container spacing={0} 
-            direction={isSmallScreen ? 'row' : 'row'}
-            //alignItems={isSmallScreen ? 'center' : 'left'}
-            //justifyContent={isSmallScreen ? 'center' : 'left'}
             style={{ marginTop: "0px" }}
+            direction={isSmallScreen ? 'row' : 'row'}
         >
             <Grid xs={6}>
                 <Card
@@ -202,12 +200,12 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                 }}
                 >
                     <Grid container spacing={0.1} style={{ marginTop: "-5px" }}
-                        direction={isSmallScreen ? 'row' : 'column'}
+                        direction={isSmallScreen ? 'column' : 'column'}
                         alignItems={isSmallScreen ? 'center' : 'left'}
                         //justifyContent={isSmallScreen ? 'center' : 'center'}
                     >
                         <TextField variant="outlined" 
-                                    label="BASE(a)"
+                                    label="EXPORT"
                                     sx={{ display:'block',
                                         margin:'.5rem 0',
                                         }}
@@ -224,7 +222,7 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                                     InputLabelProps={{ style:{color:'skyblue'} }}
                         />
                         <TextField variant="outlined" 
-                                    label="BASE(b)"
+                                    label="AFECTA"
                                     sx={{ display:'block',
                                         margin:'.5rem 0',
                                         }}
@@ -237,7 +235,7 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                                     InputLabelProps={{ style:{color:'skyblue'} }}
                         />
                         <TextField variant="outlined" 
-                                    label="BASE(c)"
+                                    label="EXONERADO"
                                     sx={{ display:'block',
                                         margin:'.5rem 0',
                                         }}
@@ -250,7 +248,7 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                                     InputLabelProps={{ style:{color:'skyblue'} }}
                         />
                         <TextField variant="outlined" 
-                                    label="NO GRAV"
+                                    label="INAFECTA"
                                     sx={{ display:'block',
                                         margin:'.5rem 0',
                                         }}
@@ -258,19 +256,6 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                                     size='small'
                                     fullWidth
                                     value={ base004 || formData.r_base004} 
-                                    onChange={handleChangeLocal}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputLabelProps={{ style:{color:'skyblue'} }}
-                        />
-                        <TextField variant="outlined" 
-                                    label="ICBP"
-                                    sx={{ display:'block',
-                                        margin:'.5rem 0',
-                                        }}
-                                    name="r_monto_icbp"
-                                    size='small'
-                                    fullWidth
-                                    value={ monto_icbp || formData.r_monto_icbp} 
                                     onChange={handleChangeLocal}
                                     inputProps={{ style:{color:'white'} }}
                                     InputLabelProps={{ style:{color:'skyblue'} }}
@@ -306,49 +291,10 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                     }}
                 >
                         <Grid container spacing={0.1} style={{ marginTop: "-5px" }}
-                        direction={isSmallScreen ? 'row' : 'column'}
+                        direction={isSmallScreen ? 'column' : 'column'}
                         alignItems={isSmallScreen ? 'center' : 'center'}
                         //justifyContent={isSmallScreen ? 'center' : 'center'}
-                        >
-                            <TextField variant="outlined" 
-                                    label="IGV(a)"
-                                    sx={{ display:'block',
-                                            margin:'.5rem 0',
-                                        }}
-                                    name="r_igv001"
-                                    size='small'
-                                    fullWidth
-                                    value={ igv001 || formData.r_igv001} 
-                                    onChange={handleChangeLocal}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputLabelProps={{ style:{color:'skyblue'} }}
-                            />
-                            <TextField variant="outlined" 
-                                    label="IGV(b)"
-                                    sx={{ display:'block',
-                                            margin:'.5rem 0',
-                                        }}
-                                    name="r_igv002"
-                                    size='small'
-                                    fullWidth
-                                    value={ igv002 || formData.r_igv002} 
-                                    onChange={handleChangeLocal}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputLabelProps={{ style:{color:'skyblue'} }}
-                            />
-                            <TextField variant="outlined" 
-                                    label="IGV(c)"
-                                    sx={{ display:'block',
-                                            margin:'.5rem 0',
-                                        }}
-                                    name="r_igv003"
-                                    size='small'
-                                    fullWidth
-                                    value={ igv003 || formData.r_igv003} 
-                                    onChange={handleChangeLocal}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputLabelProps={{ style:{color:'skyblue'} }}
-                            />
+                        >   
                             <TextField variant="outlined" 
                                     label="OTROS"
                                     sx={{ display:'block',
@@ -361,6 +307,32 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                                     onChange={handleChangeLocal}
                                     inputProps={{ style:{color:'white'} }}
                                     InputLabelProps={{ style:{color:'skyblue'} }}
+                            />
+                            <TextField variant="outlined" 
+                                    label="IGV"
+                                    sx={{ display:'block',
+                                            margin:'.5rem 0',
+                                        }}
+                                    name="r_igv002"
+                                    size='small'
+                                    fullWidth
+                                    value={ igv002 || formData.r_igv002} 
+                                    onChange={handleChangeLocal}
+                                    inputProps={{ style:{color:'white'} }}
+                                    InputLabelProps={{ style:{color:'skyblue'} }}
+                            />
+                            <TextField variant="outlined" 
+                                        label="ICBP"
+                                        sx={{ display:'block',
+                                            margin:'.5rem 0',
+                                            }}
+                                        name="r_monto_icbp"
+                                        size='small'
+                                        fullWidth
+                                        value={ monto_icbp || formData.r_monto_icbp} 
+                                        onChange={handleChangeLocal}
+                                        inputProps={{ style:{color:'white'} }}
+                                        InputLabelProps={{ style:{color:'skyblue'} }}
                             />
                             <Select
                                     labelId="moneda_select"
@@ -402,4 +374,4 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
   );
 };
 
-export default AsientoCompraMontos;
+export default AsientoVentaMontos;
