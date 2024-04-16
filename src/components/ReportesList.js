@@ -24,7 +24,7 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from './BotonExcelVentas';
 import { HojaTrabColumnas } from './ColumnasAsiento';
-import { VentasColumnas } from './ColumnasAsiento';
+import { AnalisisCuentaColumnas } from './ColumnasAsiento';
 import { CajaColumnas } from './ColumnasAsiento';
 import { saveAs } from 'file-saver';
 
@@ -95,6 +95,22 @@ export default function AsientoList() {
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
   const [libro_select,setLibroSelect] = useState([]);
 
+  const [totalBalanceDebe, setTotalBalanceDebe] = useState(0);
+  const [totalBalanceHaber, setTotalBalanceHaber] = useState(0);
+  const [totalBalanceDiferencia, setTotalBalanceDiferencia] = useState(0);
+
+  const [totalGestionDebe, setTotalGestionDebe] = useState(0);
+  const [totalGestionHaber, setTotalGestionHaber] = useState(0);
+  const [totalGestionDiferencia, setTotalGestionDiferencia] = useState(0);
+
+  const [totalFuncionDebe, setTotalFuncionDebe] = useState(0);
+  const [totalFuncionHaber, setTotalFuncionHaber] = useState(0);
+  const [totalFuncionDiferencia, setTotalFuncionDiferencia] = useState(0);
+
+  const [totalNaturalezaDebe, setTotalNaturalezaDebe] = useState(0);
+  const [totalNaturalezaHaber, setTotalNaturalezaHaber] = useState(0);
+  const [totalNaturalezaDiferencia, setTotalNaturalezaDiferencia] = useState(0);
+
   const handleChange = e => {
     //Para todos los demas casos ;)
     if (e.target.name==="periodo_ini"){
@@ -147,25 +163,104 @@ export default function AsientoList() {
     }
     else{
         //cargar Hoja Trabajo o EEFF
-        //if (valorVista==='hojatrab') {}
-        //if (valorVista==='eeff') {}
-        //console.log(`${back_host}/reporte/hojatrabajo/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5/${sLibro}`);
-        if (sLibro==='todos'){
-          //enviamos sin parametro de libro, para que salga todos los libros en hoja de trabajo
-          response = await fetch(`${back_host}/reporte/hojatrabajo/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5`);
-        }else{
-          response = await fetch(`${back_host}/reporte/hojatrabajo/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5/${sLibro}`);
+        if (valorVista==='hojatrab') {
+            if (sLibro==='todos'){
+              //enviamos sin parametro de libro, para que salga todos los libros en hoja de trabajo
+              response = await fetch(`${back_host}/reporte/hojatrabajo/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5`);
+            }else{
+              response = await fetch(`${back_host}/reporte/hojatrabajo/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5/${sLibro}`);
+            }
+            const data = await response.json();
+            setRegistrosdet(data);
+            calcularTotalesHojaTrabajo(data);
+            console.log("totalBalanceDebe, totalBalanceHaber: ", totalBalanceDebe,totalBalanceHaber);
+    
+            setRegistrosdet([...data, 
+              { id_master: 'SubTotales', descripcion: '', 
+                debe:null,haber:null,
+                balance_debe: totalBalanceDebe, balance_haber: totalBalanceHaber,
+                gestion_debe: totalGestionDebe, gestion_haber: totalGestionHaber,
+                funcion_debe: totalFuncionDebe, funcion_haber: totalFuncionHaber,
+                naturaleza_debe: totalNaturalezaDebe, naturaleza_haber: totalNaturalezaHaber,
+              },
+              { id_master: 'Diferencias', descripcion: '', 
+                debe:null,haber:null,
+                balance_debe: (totalBalanceDebe > totalBalanceHaber) ? 
+                              null:(totalBalanceHaber-totalBalanceDebe),
+                balance_haber: (totalBalanceDebe > totalBalanceHaber) ? 
+                              (totalBalanceDebe-totalBalanceHaber):null,
+    
+                gestion_debe: (totalGestionDebe > totalGestionHaber) ? 
+                              null:(totalGestionHaber-totalGestionDebe),
+                gestion_haber: (totalGestionDebe > totalGestionHaber) ? 
+                              (totalGestionDebe-totalGestionHaber):null,
+                
+                funcion_debe: (totalFuncionDebe > totalFuncionHaber) ? 
+                              null:(totalFuncionHaber-totalFuncionDebe),
+                funcion_haber: (totalFuncionDebe > totalFuncionHaber) ? 
+                              (totalFuncionDebe-totalFuncionHaber):null,
+    
+                naturaleza_debe: (totalNaturalezaDebe > totalNaturalezaHaber) ? 
+                              null:(totalNaturalezaHaber-totalNaturalezaDebe),
+                naturaleza_haber: (totalNaturalezaDebe > totalNaturalezaHaber) ?
+                              (totalNaturalezaDebe-totalNaturalezaHaber):null,
+              },
+              { id_master: 'Totales', descripcion: '', 
+                debe:null,haber:null,
+                balance_debe: (totalBalanceDebe-totalBalanceHaber) > 0 ? (totalBalanceDebe):null,
+                balance_haber: (totalBalanceDebe-totalBalanceHaber) > 0 ? (totalBalanceDebe):totalBalanceHaber,
+    
+                gestion_debe: (totalGestionDebe-totalGestionHaber) > 0 ? (totalGestionDebe):null,
+                gestion_haber: (totalGestionDebe-totalGestionHaber) > 0 ? (totalGestionDebe):totalGestionHaber,
+    
+                funcion_debe: (totalFuncionDebe-totalFuncionHaber) > 0 ? (totalFuncionDebe):null,
+                funcion_haber: (totalFuncionDebe-totalFuncionHaber) > 0 ? (totalFuncionDebe):totalFuncionHaber,
+    
+                naturaleza_debe: (totalNaturalezaDebe-totalNaturalezaHaber) > 0 ? (totalNaturalezaDebe):null,
+                naturaleza_haber: (totalNaturalezaDebe-totalNaturalezaHaber) > 0 ? (totalNaturalezaDebe):totalNaturalezaHaber,
+              }
+    
+            ]);
+            setTabladet(data); //Copia para tratamiento de filtrado
         }
+        
+        if (valorVista==='analisis') {
+            if (sLibro==='todos'){
+              //enviamos sin parametro de libro, para que salga todos los libros en hoja de trabajo
+              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5`);
+            }else{
+              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5/${sLibro}`);
+            }
+            const data = await response.json();
+            setRegistrosdet(data);
+    
+            setTabladet(data); //Copia para tratamiento de filtrado
+        }
+        //console.log("data", data);
     }
     
-    const data = await response.json();
-    setRegistrosdet(data);
-    setTabladet(data); //Copia para tratamiento de filtrado
-    //console.log("data", data);
   }
   //////////////////////////////////////
-  
- 
+  const conditionalRowStyles = [
+    {
+      when: row => row.id_master === 'Diferencias',
+      style: {
+        color: 'skyblue', // Cambia el color de la fuente a azul claro
+      },
+    },
+    {
+      when: row => row.id_master === 'Diferencias' 
+            && (
+                  totalBalanceDiferencia !== totalGestionDiferencia 
+               || totalBalanceDiferencia !== totalFuncionDiferencia
+               || totalBalanceDiferencia !== totalNaturalezaDiferencia
+              ),
+      style: {
+        color: 'orange', // Cambia el color de la fuente a rojo
+      },
+    },
+  ];
+
   const navigate = useNavigate();
   //Para recibir parametros desde afuera
   const params = useParams();
@@ -255,6 +350,7 @@ export default function AsientoList() {
       const st_valorVista = (sessionStorage.getItem('valorVista') || 'analisis'); //new para el toggleButton
 
       //fcuando carga x primera vez, sale vacio ... arreglar esto
+      console.log('st_valorVista',st_valorVista);
       cargaRegistro(st_valorVista,periodo_ini,periodo_fin,contabilidad_trabajo,id_libro);
 
   },[updateTrigger]) //Aumentamos
@@ -278,10 +374,10 @@ export default function AsientoList() {
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
     if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      columnasEspecificas = VentasColumnas;
+      columnasEspecificas = AnalisisCuentaColumnas;
     }else{
       columnasEspecificas = 
-          st_valorVista === 'analisis' ? VentasColumnas
+          st_valorVista === 'analisis' ? AnalisisCuentaColumnas
         : st_valorVista === 'hojatrab' ? HojaTrabColumnas
         : CajaColumnas;
     }
@@ -289,6 +385,7 @@ export default function AsientoList() {
     setColumnas([...columnasEspecificas]);
     
     //cuando carga x primera vez, sale vacio ... arreglar esto
+    console.log('3ero useeffect id_libro: ',id_libro);
     cargaRegistro(st_valorVista,periodo_ini,periodo_fin,contabilidad_trabajo,id_libro); //new cambio
 
     //Datos listos en caso de volver por aqui, para envio
@@ -358,7 +455,46 @@ export default function AsientoList() {
     });
   }
 
+  const calcularTotalesHojaTrabajo = (registros) => {
+    let Tbalance_debe = 0;
+    let Tbalance_haber = 0;
+    let Tgestion_debe = 0;
+    let Tgestion_haber = 0;
+    let Tfuncion_debe = 0;
+    let Tfuncion_haber = 0;
+    let Tnaturaleza_debe = 0;
+    let Tnaturaleza_haber = 0;
 
+    registros.forEach(item => {
+      Tbalance_debe += parseFloat(item.balance_debe) || 0; // Si cargo es nulo, se considera como 0
+      Tbalance_haber += parseFloat(item.balance_haber) || 0; // Si abono es nulo, se considera como 0
+
+      Tgestion_debe += parseFloat(item.gestion_debe) || 0; // Si cargo es nulo, se considera como 0
+      Tgestion_haber += parseFloat(item.gestion_haber) || 0; // Si abono es nulo, se considera como 0
+
+      Tfuncion_debe += parseFloat(item.funcion_debe) || 0; // Si cargo es nulo, se considera como 0
+      Tfuncion_haber += parseFloat(item.funcion_haber) || 0; // Si abono es nulo, se considera como 0
+
+      Tnaturaleza_debe += parseFloat(item.naturaleza_debe) || 0; // Si cargo es nulo, se considera como 0
+      Tnaturaleza_haber += parseFloat(item.naturaleza_haber) || 0; // Si abono es nulo, se considera como 0
+    });
+
+    setTotalBalanceDebe(Number(Tbalance_debe.toFixed(2)));
+    setTotalBalanceHaber(Number(Tbalance_haber.toFixed(2)));
+    setTotalBalanceDiferencia(Math.abs(Number(Tbalance_debe.toFixed(2))-Number(Tbalance_haber.toFixed(2))));
+
+    setTotalGestionDebe(Number(Tgestion_debe.toFixed(2)));
+    setTotalGestionHaber(Number(Tgestion_haber.toFixed(2)));
+    setTotalGestionDiferencia(Math.abs(Number(Tgestion_debe.toFixed(2))-Number(Tgestion_haber.toFixed(2))));
+
+    setTotalFuncionDebe(Number(Tfuncion_debe.toFixed(2)));
+    setTotalFuncionHaber(Number(Tfuncion_haber.toFixed(2)));
+    setTotalFuncionDiferencia(Math.abs(Number(Tfuncion_debe.toFixed(2))-Number(Tfuncion_haber.toFixed(2))));
+
+    setTotalNaturalezaDebe(Number(Tnaturaleza_debe.toFixed(2)));
+    setTotalNaturalezaHaber(Number(Tnaturaleza_haber.toFixed(2)));
+    setTotalNaturalezaDiferencia(Math.abs(Number(Tnaturaleza_debe.toFixed(2))-Number(Tnaturaleza_haber.toFixed(2))));
+  };
   //////////////////////////////////////////////////////////
 
 
@@ -563,6 +699,7 @@ export default function AsientoList() {
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
+      conditionalRowStyles={conditionalRowStyles}
   >
   </Datatable>
 
