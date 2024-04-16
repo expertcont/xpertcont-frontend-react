@@ -404,9 +404,7 @@ export default function AsientoCompraForm() {
                             sx={{display:'block',
                             margin:'.5rem 0'}}
                             onClick={() => {
-                              swal2.fire({
-                                text: "Funcionalidad en diseño pendiente",
-                              });
+                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
                               }
                             }
       

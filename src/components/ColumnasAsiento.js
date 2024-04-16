@@ -460,67 +460,246 @@ export const HojaTrabColumnas = [
     selector: 'id_master',
     sortable: true,
   },
-  
   {//02
-    name: 'Debe',
-    selector: 'debe',
-    sortable: true,
-  },
-  {//03
-    name: 'Haber',
-    selector: 'haber',
-    sortable: true,
-  },
-
-  {//04
-    name: 'Saldo',
-    selector: 'saldo',
-    sortable: true,
-  },
-  {//05
     name: 'Descripcion',
     selector: 'descripcion',
     sortable: true,
   },
-  {//06
+  {//03
+    name: 'Debe',
+    selector: 'debe',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.debe !== null ? parseFloat(row.debe).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//04
+    name: 'Haber',
+    selector: 'haber',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.haber !== null ? parseFloat(row.haber).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//05
     name: 'Balance.D',
     selector: 'balance_debe',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.balance_debe !== null ? parseFloat(row.balance_debe).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
   },
-  {//07
+  {//06
     name: 'Balance.H',
     selector: 'balance_haber',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.balance_haber !== null ? parseFloat(row.balance_haber).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
   },
-  {//08
+  {//07
     name: 'Gestion.D',
     selector: 'gestion_debe',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.gestion_debe !== null ? parseFloat(row.gestion_debe).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
   },
-  {//09
+  {//08
     name: 'Gestion.H',
     selector: 'gestion_haber',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.gestion_haber !== null ? parseFloat(row.gestion_haber).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
   },
-  {//10
+  {//09
     name: 'Func.D',
     selector: 'funcion_debe',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.funcion_debe !== null ? parseFloat(row.funcion_debe).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
   },
-  {//11
+  {//10
     name: 'Func.H',
     selector: 'funcion_haber',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.funcion_haber !== null ? parseFloat(row.funcion_haber).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
   },
-  {//12
+  {//11
     name: 'Nat.D',
     selector: 'naturaleza_debe',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.naturaleza_debe !== null ? parseFloat(row.naturaleza_debe).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
   },
-  {//13
+  {//12
     name: 'Nat.H',
     selector: 'naturaleza_haber',
     sortable: true,
+    cell: row => (
+      <div>
+        {row.naturaleza_haber !== null ? parseFloat(row.naturaleza_haber).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    )
+  },
+];
+
+export const AnalisisCuentaColumnas = [
+  {//01
+    name: 'Periodo',
+    selector: 'periodo',
+    sortable: true,
+  },
+  {//01
+    name: 'Libro',
+    selector: 'nombre_corto',
+    sortable: true,
+  },
+  {//01
+    name: 'Asiento',
+    selector: 'num_asiento',
+    sortable: true,
+  },
+  {//01
+    name: 'Item',
+    selector: 'item',
+    sortable: true,
+  },
+  {//01
+    name: 'F.Conta',
+    selector: 'fecha_asiento',
+    sortable: true,
+  },
+  {//01
+    name: 'Cuenta',
+    selector: 'id_cuenta',
+    sortable: true,
+  },
+  {//01
+    name: 'ID',
+    selector: 'r_id_doc',
+    sortable: true,
+  },
+  {//01
+    name: 'Documento',
+    selector: 'r_documento_id',
+    sortable: true,
+  },
+  {//02
+    name: 'RSocial',
+    selector: 'r_razon_social',
+    sortable: true,
+  },
+  {//02
+    name: 'Glosa',
+    selector: 'r_glosa',
+    sortable: true,
+  },
+
+  {//02
+    name: 'Emision',
+    selector: 'r_fecemi',
+    sortable: true,
+  },
+  {//02
+    name: 'Vcto',
+    selector: 'r_fecvcto',
+    sortable: true,
+  },
+  {//02
+    name: 'Comprobante',
+    selector: 'r_comprobante',
+    sortable: true,
+  },
+
+  {//02
+    name: 'R.Emision',
+    selector: 'r_fecemi_ref',
+    sortable: true,
+  },
+  {//02
+    name: 'R.Vcto',
+    selector: 'r_fecvcto_ref',
+    sortable: true,
+  },
+  {//02
+    name: 'R.Comprobante',
+    selector: 'r_comprobante_ref',
+    sortable: true,
+  },
+  
+  {//03
+    name: 'Debe',
+    selector: 'debe_nac',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.debe_nac !== null ? parseFloat(row.debe_nac).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//04
+    name: 'Haber',
+    selector: 'haber_nac',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.haber_nac !== null ? parseFloat(row.haber_nac).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//04
+    name: 'TC',
+    selector: 'r_tc',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.r_tc !== null ? parseFloat(row.r_tc).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },  
+  {//03
+    name: 'Debe $',
+    selector: 'debe_me',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.debe_me !== null ? parseFloat(row.debe_me).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//04
+    name: 'Haber $',
+    selector: 'haber_nac',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.haber_me !== null ? parseFloat(row.haber_me).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
   },
 
 ];
