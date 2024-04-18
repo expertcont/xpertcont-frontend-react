@@ -227,9 +227,9 @@ export default function AsientoList() {
         if (valorVista==='analisis') {
             if (sLibro==='todos'){
               //enviamos sin parametro de libro, para que salga todos los libros en hoja de trabajo
-              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5`);
+              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}`);
             }else{
-              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/5/${sLibro}`);
+              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/${sLibro}`);
             }
             const data = await response.json();
             setRegistrosdet(data);
