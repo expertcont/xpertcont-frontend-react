@@ -10,10 +10,10 @@ import BienvenidaXpert from './components/BienvenidaXpert'; // Importa el compon
 const domain = "dev-i4ndxhhmhmbyd4tt.us.auth0.com"; //auth0 propio expertcontperu@gmail.com
 
 //Version Local
-const clientId = "sRVhE9SzcBOGmeDSncrECCLuGA88O8FQ"; //auth0 propio expertcontperu@gmail.com
+//const clientId = "sRVhE9SzcBOGmeDSncrECCLuGA88O8FQ"; //auth0 propio expertcontperu@gmail.com
 
 //Version Web
-//const clientId = "cVGIEcCJEINGNoLG9khMuXeErdZ3C8jm"; //auth0 propio expertcontperu@gmail.com
+const clientId = "cVGIEcCJEINGNoLG9khMuXeErdZ3C8jm"; //auth0 propio expertcontperu@gmail.com
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -36,8 +36,8 @@ function Main() {
         domain={domain}
         clientId={clientId}
         authorizationParams={{
-          redirect_uri: "http://localhost:3000"
-          //redirect_uri: "https://expertcont.up.railway.app/"
+          //redirect_uri: "http://localhost:3000"
+          redirect_uri: "https://expertcont.up.railway.app/"
         }}
       >
         {/* Renderiza la pantalla de bienvenida o la aplicación principal según el estado */}
