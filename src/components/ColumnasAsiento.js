@@ -572,41 +572,49 @@ export const AnalisisCuentaColumnas = [
     name: 'Periodo',
     selector: 'periodo',
     sortable: true,
+    width: '90px',
   },
   {//01
     name: 'Libro',
     selector: 'nombre_corto',
     sortable: true,
+    width: '90px',
   },
   {//01
     name: 'Asiento',
     selector: 'num_asiento',
     sortable: true,
+    width: '90px',
   },
   {//01
     name: 'Item',
     selector: 'item',
     sortable: true,
+    width: '70px',
   },
   {//01
     name: 'F.Conta',
     selector: 'fecha_asiento',
     sortable: true,
+    width: '100px',
   },
   {//01
     name: 'Cuenta',
     selector: 'id_cuenta',
     sortable: true,
+    width: '100px',
   },
   {//01
     name: 'ID',
     selector: 'r_id_doc',
     sortable: true,
+    width: '40px',
   },
   {//01
     name: 'Documento',
     selector: 'r_documento_id',
     sortable: true,
+    width: '110px',
   },
   {//02
     name: 'RSocial',
@@ -623,38 +631,45 @@ export const AnalisisCuentaColumnas = [
     name: 'Emision',
     selector: 'r_fecemi',
     sortable: true,
+    width: '100px',
   },
   {//02
     name: 'Vcto',
     selector: 'r_fecvcto',
     sortable: true,
+    width: '100px',
   },
   {//02
     name: 'Comprobante',
     selector: 'r_comprobante',
     sortable: true,
+    width: '120px',
   },
 
   {//02
     name: 'R.Emision',
     selector: 'r_fecemi_ref',
     sortable: true,
+    width: '100px',
   },
   {//02
     name: 'R.Vcto',
     selector: 'r_fecvcto_ref',
     sortable: true,
+    width: '100px',
   },
   {//02
     name: 'R.Comprobante',
     selector: 'r_comprobante_ref',
     sortable: true,
+    width: '120px',
   },
   
   {//03
     name: 'Debe',
     selector: 'debe_nac',
     sortable: true,
+    width: '100px',
     cell: row => (
       <div>
         {row.debe_nac !== null ? parseFloat(row.debe_nac).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
@@ -665,6 +680,7 @@ export const AnalisisCuentaColumnas = [
     name: 'Haber',
     selector: 'haber_nac',
     sortable: true,
+    width: '100px',
     cell: row => (
       <div>
         {row.haber_nac !== null ? parseFloat(row.haber_nac).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
@@ -675,6 +691,7 @@ export const AnalisisCuentaColumnas = [
     name: 'TC',
     selector: 'r_tc',
     sortable: true,
+    width: '100px',
     cell: row => (
       <div>
         {row.r_tc !== null ? parseFloat(row.r_tc).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
@@ -685,6 +702,7 @@ export const AnalisisCuentaColumnas = [
     name: 'Debe $',
     selector: 'debe_me',
     sortable: true,
+    width: '100px',
     cell: row => (
       <div>
         {row.debe_me !== null ? parseFloat(row.debe_me).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}

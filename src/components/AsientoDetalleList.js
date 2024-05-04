@@ -422,12 +422,21 @@ const handleModificar = (row) => {
               alignItems={isSmallScreen ? 'center' : 'center'}
               justifyContent={isSmallScreen ? 'center' : 'center'}
         >
-
             <Grid item xs={11.5} >
-              {params.id_libro==='014'? 
-                'Ventas '
+              { params.id_libro==='014'? 
+                (
+                  'Ventas '
+                )
                 :
-                'Compras '
+                ( params.id_libro==='008'? 
+                  'Compras '
+                  :
+                  ( params.id_libro==='001'? 
+                    'Caja '
+                    :
+                    'Diario '
+                  )
+                )
               }
               {params.periodo}   Nro As: {params.num_asiento} 
             </Grid>

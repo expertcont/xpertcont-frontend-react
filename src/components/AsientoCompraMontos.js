@@ -139,12 +139,14 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
         }
 
         const total = (campos).toFixed(2);
-        setMontoTotal(total);
+        if (total > 0) {
+            setMontoTotal(total);
+        }
     
         //Enviar datos a useState
         let updatedData = { ...formData, [name]: parsedValue };
         onFormDataChange(updatedData);    
-        //console.log(formData);
+        console.log(formData);
         //console.log( [name], parsedValue);
     }
     
@@ -394,6 +396,20 @@ const AsientoCompraMontos = ({ formData, isSmallScreen, onFormDataChange }) => {
                                     inputProps={{ style:{color:'white'} }}
                                     InputLabelProps={{ style:{color:'skyblue'} }}
                             />
+                            <TextField variant="outlined" 
+                                    label="RET 4TA"
+                                    sx={{ display:'block',
+                                            margin:'.0rem 0',
+                                        }}
+                                    name="retencion4ta"
+                                    fullWidth
+                                    size='small'
+                                    value={formData.retencion4ta} 
+                                    onChange={handleChangeLocal}
+                                    inputProps={{ style:{color:'white'} }}
+                                    InputLabelProps={{ style:{color:'skyblue'} }}
+                            />
+
                         </Grid>
                     </Card>
                 </Grid>

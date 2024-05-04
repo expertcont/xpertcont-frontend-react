@@ -27,6 +27,8 @@ import { HojaTrabColumnas } from './ColumnasAsiento';
 import { AnalisisCuentaColumnas } from './ColumnasAsiento';
 import { CajaColumnas } from './ColumnasAsiento';
 import { saveAs } from 'file-saver';
+import IconButton from '@mui/material/IconButton';
+import FindInPageIcon from '@mui/icons-material/FindInPage';
 
 export default function AsientoList() {
   //Control de useffect en retroceso de formularios
@@ -87,7 +89,8 @@ export default function AsientoList() {
 
   const [periodo_ini, setPeriodoIni] = useState("");
   const [periodo_fin, setPeriodoFin] = useState("");
-
+  const [idCuenta, setIdCuenta] = useState("");
+  
   const [periodo_select,setPeriodosSelect] = useState([]);
   
   const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
@@ -142,8 +145,13 @@ export default function AsientoList() {
       //En cada cambio, actualizar ultima contabilidad seleccionada
       sessionStorage.setItem('libro_trabajo', e.target.value);
     }
+    if (e.target.name==="idCuenta"){
+      console.log('cambiando cuenta');
+      setIdCuenta(e.target.value);
+    }
 
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
+    //ya no actualizamos directamente ,sino despues del boton
+    //setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
   
   const handleRowSelected = useCallback(state => {
@@ -154,6 +162,7 @@ export default function AsientoList() {
   ///////////////////////////////////////////////////////////////////////
   const cargaRegistro = async (sValorVista,sPeriodoIni,sPeriodoFin,sContabilidad,sLibro) => {
     var response;
+    let sApi;
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
     //Pero asi es mas facil, porque todo esta en valorVista ... muaaaaaa
     if (sValorVista==='' || sValorVista===undefined || sValorVista===null){
@@ -225,12 +234,18 @@ export default function AsientoList() {
         }
         
         if (valorVista==='analisis') {
-            if (sLibro==='todos'){
+            sApi = `${back_host}/reporte/analisis01/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}`;
+            if (sLibro!=='todos' && idCuenta===''){
               //enviamos sin parametro de libro, para que salga todos los libros en hoja de trabajo
-              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}`);
-            }else{
-              response = await fetch(`${back_host}/reporte/analisis/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/${sLibro}`);
+              sApi = `${back_host}/reporte/analisis02/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/${sLibro}`;
             }
+            if (sLibro!=='todos' && idCuenta!==''){
+              sApi = `${back_host}/reporte/analisis03/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/${sLibro}/${idCuenta}`;
+            }
+            if (sLibro==='todos' && idCuenta!==''){
+              sApi = `${back_host}/reporte/analisis04/${params.id_anfitrion}/${sContabilidad}/${sPeriodoIni}/${sPeriodoFin}/${idCuenta}`;
+            }
+            response = await fetch(sApi);
             const data = await response.json();
             setRegistrosdet(data);
     
@@ -632,12 +647,40 @@ export default function AsientoList() {
               </Select>
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
+        <Grid item xs={isSmallScreen ? 1.2 : 1.5} >
+            {(valorVista==='analisis') ? 
+              (
+                <TextField fullWidth variant="outlined" color="success" size="small"
+                name="idCuenta"
+                value={idCuenta}
+                placeholder='CTA'
+                onChange={handleChange}
+                inputProps={{ style:{color:'white', height: '20px',} }}
+                sx={{ display:'block',
+                      margin:'.0rem 0',
+                    }}
+                />
+              )
+              :
+              (
+                <div></div>
+              )
+            }
         </Grid>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
-
+        <Grid item xs={isSmallScreen ? 1.2 : 1.5} >    
+          <Tooltip title='ACTUALIZAR REPORTE' >
+            <IconButton color="success" 
+                            //style={{ padding: '0px'}}
+                            style={{ padding: '0px', color: 'skyblue' }}
+                            onClick={() => {
+                                  console.log('actualiza vista');
+                                  setUpdateTrigger(Math.random());//experimento para actualizar el dom
+                            }}
+            >
+                  <FindInPageIcon style={{ fontSize: '40px' }}/>
+            </IconButton>
+          </Tooltip>
         </Grid>
 
         <Grid item xs={isSmallScreen ? 2 : 0.7}>    
@@ -656,7 +699,7 @@ export default function AsientoList() {
                                       sx={{display:'block',
                                             margin:'.0rem 0'}}
                                       name="busqueda"
-                                      placeholder='Filtro:  Ruc   Razon Social   Comprobante'
+                                      placeholder='Filtro:  Ruc   Razon Social  Comprobante CCosto'
                                       onChange={actualizaValorFiltro}
                                       inputProps={{ style:{color:'white'} }}
                                       InputProps={{

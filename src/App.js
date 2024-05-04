@@ -21,6 +21,7 @@ import AsientoListPrev from "./components/AsientoListPrev";
 import AsientoDetalleList from "./components/AsientoDetalleList";
 import AsientoDetalleForm from "./components/AsientoDetalleForm";
 import ReportesList from "./components/ReportesList";
+import AsientoGenericoForm from "./components/AsientoGenericoForm";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -66,6 +67,9 @@ function App(props) {
           
           <Route path="/asiento/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AsientoList />} />
           
+          <Route path="/asientog/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoGenericoForm />} />
+          <Route path="/asientog/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoGenericoForm />} /> 
+
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoCompraForm />} />
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/edit" element={<AsientoCompraForm />} /> 
           <Route path="/asientoc/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/:num_asiento/clonar" element={<AsientoCompraForm />} /> 

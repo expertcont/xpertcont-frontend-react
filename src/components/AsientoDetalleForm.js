@@ -606,7 +606,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                              <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>PEN</Typography>
+                              <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>DEBE</Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -642,7 +642,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>PEN</Typography>
+                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>HABER</Typography>
                               </IconButton>
                             ),
                           }}                                

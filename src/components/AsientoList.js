@@ -60,31 +60,31 @@ export default function AsientoList() {
     console.log(`Operación aceptada con el botón: ${buttonValue}`);
     if (buttonValue==='aceptar1') {
       console.log(calcularSumatoriaMoneda('r_monto_total','PEN'));
-      procesarSire('PEN')
+      procesarSire('REEMPL')
     }
     if (buttonValue==='aceptar2') {
         console.log(calcularSumatoriaMoneda('r_monto_total','USD'));
         //Mostrar Totales Previos
-        procesarSire('USD')
+        procesarSire('NO.DOMIC')
     }
     if (buttonValue==='aceptar3') {
       //procesarVacio
-  }
+    }
 
     setDialogOpen(false);
   };
-  const procesarSire=(r_moneda) =>{
+  const procesarSire=(sFormato) =>{
     //Mostrar Totales Previos
     if (id_libro==='014'){
       swal2.fire({
-        title: "Totales SIRE Ventas RVIE - "+ r_moneda,
-        html: armaMensajeTotalesVenta(r_moneda),
+        title: "Ventas PEN - USD",
+        html: armaMensajeTotalesVenta(),
         showDenyButton: true, // Mostrar botón "Cancelar"
         confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
         denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
         }).then((result) => {
           if (result.isConfirmed) {
-            convertirATextoSire(r_moneda);
+            convertirATextoSire(sFormato);
           } else if (result.isDenied || result.isDismissed) {
             console.log("Usuario canceló el mensaje");
           }
@@ -92,14 +92,14 @@ export default function AsientoList() {
     }
     if (id_libro==='008'){
       swal2.fire({
-        title: "Totales SIRE Compras RCE - " + r_moneda,
-        html: armaMensajeTotalesCompra(r_moneda),
+        title: "Compras PEN - USD",
+        html: armaMensajeTotalesCompra(),
         showDenyButton: true, // Mostrar botón "Cancelar"
         confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
         denyButtonText: 'Cancelar' // Texto del botón "Cancelar"      
         }).then((result) => {
           if (result.isConfirmed) {
-            convertirATextoSire(r_moneda);
+            convertirATextoSire(sFormato);
           } else if (result.isDenied || result.isDismissed) {
             console.log("Usuario canceló el mensaje");
           }
@@ -107,9 +107,15 @@ export default function AsientoList() {
     }
   }
 
+  const initialButtons = [
+    { text: 'REEMPL', value: 'aceptar1' },
+    { text: 'NO.DOMIC', value: 'aceptar2' },
+    { text: 'CERO', value: 'aceptar3' }
+  ]; 
+
   const [buttons, setButtons] = useState([
-    { text: 'PEN', value: 'aceptar1' },
-    { text: 'USD', value: 'aceptar2' },
+    { text: 'REEMPL', value: 'aceptar1' },
+    { text: 'NO.DOMIC', value: 'aceptar2' },
     { text: 'CERO', value: 'aceptar3' }
   ]); 
 
@@ -259,7 +265,6 @@ export default function AsientoList() {
   const [permisoCompras, setPermisoCompras] = useState(false);
   const [permisoCaja, setPermisoCaja] = useState(false);
   const [permisoDiario, setPermisoDiario] = useState(false);
-  const [permisoReportes, setPermisoReportes] = useState(false);
 
   //Permisos Nivel 02 - Comandos (Buttons)
   const [pVenta0101, setPVenta0101] = useState(false); //Nuevo (Casi libre)
@@ -314,6 +319,9 @@ export default function AsientoList() {
       if (id_libro === "014") {
         navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
       }
+      if (id_libro === "001" || id_libro === "005") {
+        navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
+      }
     } else {
       console.log("No estás usando un móvil");
       if (id_libro === "008") {
@@ -321,6 +329,9 @@ export default function AsientoList() {
       }
       if (id_libro === "014") {
         navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
+      }
+      if (id_libro === "001" || id_libro === "005") {
+        navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
       }
     }    
   };
@@ -429,19 +440,19 @@ export default function AsientoList() {
     }, 0);
   };  
 
-  const armaMensajeTotalesVenta = (r_moneda) => {
+  const armaMensajeTotalesVenta = () => {
     let strMensaje;
     strMensaje =  `
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
       <div style="text-align: left;">
         <p style="margin: 2px 0;">Exportacion:</p>
-        <p style="margin: 2px 0;">Base Imponible:</p>
-        <p style="margin: 2px 0;">Descuentos Base:</p>
+        <p style="margin: 2px 0;">Base:</p>
+        <p style="margin: 2px 0;">Descuentos:</p>
         <p style="margin: 2px 0;">Exonerado:</p>
         <p style="margin: 2px 0;">Inafecta:</p>
         <p style="margin: 2px 0;">ISC:</p>
         <p style="margin: 2px 0;">IGV:</p>
-        <p style="margin: 2px 0;">Descuentos IGV:</p>
+        <p style="margin: 2px 0;">Desc IGV:</p>
         <p style="margin: 2px 0;">Base IVAP:</p>
         <p style="margin: 2px 0;">IVAP:</p>
         <p style="margin: 2px 0;">ICBP:</p>
@@ -450,30 +461,47 @@ export default function AsientoList() {
         <p style="margin: 2px 0;">Filas Validas:</p>
       </div>
       <div style="text-align: left;">
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('export',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('base',r_moneda)}</p>
-        <p style="margin: 2px 0;">0.00</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('exonera',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('inafecta',r_moneda)}</p>
-        <p style="margin: 2px 0;">0.00</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('igv',r_moneda)}</p>
-        <p style="margin: 2px 0;">0.00</p>
-        <p style="margin: 2px 0;">0.00</p>
-        <p style="margin: 2px 0;">0.00</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_icbp',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_otros',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_total',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda(r_moneda)}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('export','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('base','PEN')}</p>
+        <p style="margin: 2px 0;">S/ 0.00</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('exonera','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('inafecta','PEN')}</p>
+        <p style="margin: 2px 0;">S/ 0.00</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('igv','PEN')}</p>
+        <p style="margin: 2px 0;">S/ 0.00</p>
+        <p style="margin: 2px 0;">S/ 0.00</p>
+        <p style="margin: 2px 0;">S/ 0.00</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_icbp','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_otros','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_total','PEN')}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('PEN')}</p>
       </div>
+      <div style="text-align: left;">
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('export','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('base','USD')}</p>
+        <p style="margin: 2px 0;">$ 0.00</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('exonera','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('inafecta','USD')}</p>
+        <p style="margin: 2px 0;">$ 0.00</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('igv','USD')}</p>
+        <p style="margin: 2px 0;">$ 0.00</p>
+        <p style="margin: 2px 0;">$ 0.00</p>
+        <p style="margin: 2px 0;">$ 0.00</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_icbp','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_otros','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_total','USD')}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('USD')}</p>
+      </div>
+
     </div>
     `;
     return strMensaje;
   };
 
-  const armaMensajeTotalesCompra = (r_moneda) => {
+  const armaMensajeTotalesCompra = () => {
     let strMensaje;
     strMensaje =  `
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
       <div style="text-align: left;">
         <p style="margin: 2px 0;">Base(A):</p>
         <p style="margin: 2px 0;">Igv(A):</p>
@@ -489,19 +517,34 @@ export default function AsientoList() {
         <p style="margin: 2px 0;">Filas Validas:</p>
       </div>
       <div style="text-align: left;">
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base001',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_igv001',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base002',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_igv002',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base003',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_igv003',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_base004',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_isc',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_icbp',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_otros',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaMoneda('r_monto_total',r_moneda)}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda(r_moneda)}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base001','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_igv001','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base002','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_igv002','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base003','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_igv003','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base004','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_isc','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_icbp','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_otros','PEN')}</p>
+        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_total','PEN')}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('PEN')}</p>
       </div>
+      <div style="text-align: left;">
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base001','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_igv001','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base002','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_igv002','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base003','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_igv003','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base004','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_isc','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_icbp','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_otros','USD')}</p>
+        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_total','USD')}</p>
+        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('USD')}</p>
+      </div>
+
     </div>
     `;
     return strMensaje;
@@ -516,43 +559,68 @@ export default function AsientoList() {
       const soles = calcularSumatoriaMoneda('r_monto_total','PEN');
       const dolares = calcularSumatoriaMoneda('r_monto_total','USD');
       //console.log(soles,dolares);
+      
+      setButtons(initialButtons);
+      if (id_libro==='014') {
+        //Eliminar el botón NO.DOMIC por default
+        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'NO.DOMIC'));
 
-      // Eliminar el botón 'PEN' si soles es igual a '0.00'
-      if (soles === '0.00') {
-        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'PEN'));
+        //Eliminar el botón 'PEN' si soles es igual a '0.00'
+        if (soles === '0.00') {
+          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'REEMPL'));
+        }else{
+          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'CERO'));
+        }
       }
-      // Eliminar el botón 'USD' si dolares es igual a '0.00'
-      if (dolares === '0.00') {
-        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'USD'));
+      if (id_libro==='008') {
+        //Eliminar el botón 'PEN' si soles es igual a '0.00'
+        if (soles === '0.00') {
+          console.log('igual a cero en compras');
+          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'REEMPL'));
+          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'NO.DOMIC'));
+        }
+        //Falta verificar si existen NO.DOMIC
+
       }
-      // Eliminar el botón 'CERO' si tanto soles como dolares no son iguales a '0.00'
-      if (soles !== '0.00' && dolares !== '0.00') {
-        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'CERO'));
-      }      
+
       //console.log(buttons);
       setDialogOpen(true);
     }
   };
 
-  const convertirATextoSire = async(moneda) => {
+  const convertirATextoSire = async(sFormato) => {
+    //Debemos cambiar parametro de ingreso: REEMPLAZO o NO.DOMIC o CERO
     //Solo actualizamos estados, y el useeffect se encarga de completar proceso
     let response;
     let nombreArchivoSire;
     let codM;
+    //let moneda='PEN-USD'; //todo ;) el api no lo utiliza, depurar en backend nodejs
     const partes = periodo_trabajo.split('-');
     const periodoAno = partes[0];
     const periodoMes = partes[1];
-    if (moneda==='PEN') {codM = '1';}
-    if (moneda==='USD') {codM = '2';}
+    
+    //Ya no diferenciamos monedas, todo asumimos codigo 1, sunat de mela asi funciona
+    codM = '1';
+    //if (moneda==='PEN') {codM = '1';}
+    //if (moneda==='USD') {codM = '2';}
 
     if (id_libro==='008'){
-      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'11'+ codM + '2'+'.TXT';
-      response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}/${moneda}`);
+      if (sFormato === 'REEMPL'){
+        nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'11'+ codM + '2'+'.TXT';
+        response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
+      }
+      //Opcion NO domiciliado
+      if (sFormato === 'NO.DOMIC'){
+        nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'11'+ codM + '2'+'.TXT';
+        response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
+      }
     }
     if (id_libro==='014'){
+      //Solo tenemos reemplazo para ventas
       nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00140400'+'02'+'11'+ codM + '2'+'.TXT';
-      response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}/${moneda}`);
+      response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
     }
+
     if (response.ok) {
       const data = await response.json();
       console.log("Datos obtenidos:", data);
@@ -561,6 +629,7 @@ export default function AsientoList() {
       console.error("Error al obtener datos. Código de respuesta:", response.status);
     }    
   };
+
   const procesaArchivoTexto = (datostexto,nombreArchivoSire) =>{
     var texto;
 
@@ -1052,10 +1121,6 @@ export default function AsientoList() {
           if (tienePermiso) {
             setPermisoDiario(true);
           }
-          tienePermiso = permisosData.some(permiso => permiso.id_menu === '05');
-          if (tienePermiso) {
-            setPermisoReportes(true);
-          }
         })
         .catch(error => {
           console.log('Error al obtener los permisos:', error);
@@ -1194,7 +1259,6 @@ export default function AsientoList() {
       )
     }
 
-    <ToggleButton value="reporte">Reportes</ToggleButton>
 
   </ToggleButtonGroup>      
   </div>
@@ -1219,6 +1283,10 @@ export default function AsientoList() {
                                 if (id_libro === "014") {
                                   navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
                                 }
+                                if (id_libro === "001" || id_libro === "005") {
+                                  console.log(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                  navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                }
                               } else {
                                 //navigate(`/ventamovil/new`);
                                 if (id_libro === "008") {
@@ -1226,6 +1294,10 @@ export default function AsientoList() {
                                 }
                                 if (id_libro === "014") {
                                   navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                }
+                                if (id_libro === "001" || id_libro === "005") {
+                                  console.log(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
+                                  navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
                                 }
                               }
                             }}
@@ -1257,31 +1329,47 @@ export default function AsientoList() {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-            <Tooltip title='DESCARGA XLS VACIO' >
-            <IconButton color="success" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: 'skyblue' }}
-                            onClick={() => {
-                                  handleDescargarExcelVacio();
-                            }}
-            >
-                  <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-            </Tooltip>
+          {(id_libro==='014' || id_libro==='008') ?
+            (
+              <Tooltip title='DESCARGA XLS VACIO' >
+              <IconButton color="success" 
+                              //style={{ padding: '0px'}}
+                              style={{ padding: '0px', color: 'skyblue' }}
+                              onClick={() => {
+                                    handleDescargarExcelVacio();
+                              }}
+              >
+                    <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
+              </IconButton>
+              </Tooltip>
+            )
+            :
+            (
+              <div></div>
+            )
+          }
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-          <Tooltip title='GENERAR ASIENTOS' >
-          <IconButton color="inherit" 
-                            style={{ padding: '0px'}}
-                            //style={{ padding: '0px', color: 'skyblue' }}
-                            onClick={() => {
-                              navigate(`/asientogenerador/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
-                            }}
-            >
-              <PlaylistAddCheckIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-          </Tooltip>
+          {(id_libro==='014' || id_libro==='008') ?
+           (
+              <Tooltip title='GENERAR ASIENTOS' >
+              <IconButton color="inherit" 
+                                style={{ padding: '0px'}}
+                                //style={{ padding: '0px', color: 'skyblue' }}
+                                onClick={() => {
+                                  navigate(`/asientogenerador/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
+                                }}
+                >
+                  <PlaylistAddCheckIcon style={{ fontSize: '40px' }}/>
+                </IconButton>
+              </Tooltip>
+            )
+            :
+            (
+              <div></div>
+            )
+          }
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
