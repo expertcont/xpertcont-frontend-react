@@ -25,6 +25,7 @@ import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego 
 import BotonExcelVentas from './BotonExcelVentas';
 import { HojaTrabColumnas } from './ColumnasAsiento';
 import { AnalisisCuentaColumnas } from './ColumnasAsiento';
+import { CuentasCorrientesColumnas } from './ColumnasAsiento';
 import { CajaColumnas } from './ColumnasAsiento';
 import { saveAs } from 'file-saver';
 import IconButton from '@mui/material/IconButton';
@@ -252,6 +253,16 @@ export default function AsientoList() {
             setTabladet(data); //Copia para tratamiento de filtrado
         }
         //console.log("data", data);
+
+        if (valorVista==='cuentascorrientes') {
+          sApi = `${back_host}/reporte/cuentascorrientes/${params.id_anfitrion}/${sContabilidad}/${sPeriodoFin}`;
+          response = await fetch(sApi);
+          const data = await response.json();
+          setRegistrosdet(data);
+  
+          setTabladet(data); //Copia para tratamiento de filtrado
+      }
+
     }
     
   }
@@ -394,6 +405,7 @@ export default function AsientoList() {
       columnasEspecificas = 
           st_valorVista === 'analisis' ? AnalisisCuentaColumnas
         : st_valorVista === 'hojatrab' ? HojaTrabColumnas
+        : st_valorVista === 'cuentascorrientes' ? CuentasCorrientesColumnas
         : CajaColumnas;
     }
 
@@ -548,6 +560,8 @@ export default function AsientoList() {
     <ToggleButton value="analisis">ANALISIS</ToggleButton>
 
     <ToggleButton value="hojatrab">HOJA TRABAJO</ToggleButton>
+
+    <ToggleButton value="cuentascorrientes">CTAS. CORRIENTES</ToggleButton>
 
     <ToggleButton value="eeff">EE.FF</ToggleButton>
 

@@ -13,6 +13,11 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import BoltIcon from '@mui/icons-material/Bolt';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import DownloadIcon from '@mui/icons-material/Download';
+import { blueGrey } from '@mui/material/colors';
+import TaskIcon from '@mui/icons-material/Task';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
+import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 
 import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
@@ -601,8 +606,6 @@ export default function AsientoList() {
     
     //Ya no diferenciamos monedas, todo asumimos codigo 1, sunat de mela asi funciona
     codM = '1';
-    //if (moneda==='PEN') {codM = '1';}
-    //if (moneda==='USD') {codM = '2';}
 
     if (id_libro==='008'){
       if (sFormato === 'REEMPL'){
@@ -1157,6 +1160,99 @@ export default function AsientoList() {
       console.error('Error al descargar el archivo:', error);
     }
   };
+
+  const handleAsientoMasivoContado = async (sAnfitrion,sDocumentoId,sPeriodo) => {
+      swal2.fire({
+        title: "Genera Asiento CANCELA VENTAS CONTADO",
+        //html: armaMensajeTotalesVenta(),
+        icon: 'question',
+        showDenyButton: true, // Mostrar botón "Cancelar"
+        confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
+        denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+              await fetch(`${back_host}/asientomasivoventascontado/${sAnfitrion}/${sDocumentoId}/${sPeriodo}`, {
+                method:"POST",
+                headers: {"Content-Type":"text/plain"}
+              });
+              setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+                setUpdateTrigger(Math.random());//experimento
+              }, 200);
+              console.log('generado contrasiento de ventas al contado,recargar useeffect');
+            } else if (result.isDenied || result.isDismissed) {
+              console.log("Usuario canceló el mensaje");
+          }
+      });
+  };
+  const handleAsientoDifCambio = async (sAnfitrion,sDocumentoId,sPeriodo) => {
+    swal2.fire({
+      title: "Genera Asiento DIF.CAMBIO",
+      //html: armaMensajeTotalesVenta(),
+      icon: 'question',
+      showDenyButton: true, // Mostrar botón "Cancelar"
+      confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
+      denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+            await fetch(`${back_host}/asientomasivodifcambio/${sAnfitrion}/${sDocumentoId}/${sPeriodo}`, {
+              method:"POST",
+              headers: {"Content-Type":"text/plain"}
+            });
+            setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+              setUpdateTrigger(Math.random());//experimento
+            }, 200);
+            console.log('generado dif cambio en diario,recargar useeffect');
+          } else if (result.isDenied || result.isDismissed) {
+            console.log("Usuario canceló el mensaje");
+        }
+    });
+  };
+  const handleAsientoMayorizado = async (sAnfitrion,sDocumentoId,sPeriodo) => {
+    let sLibro;
+    const { value: selectedOrigen } = await swal2.fire({
+      title: 'Mayorizar Libro',
+      //text: 'Selecciona el origen para la eliminación masiva:',
+      input: 'select',
+      icon: 'question',
+      //color: 'orange',
+      inputOptions: {
+        VENTAS: 'VENTAS',
+        COMPRAS: 'COMPRAS',
+        CAJA: 'CAJA',
+        // Agrega las opciones según los valores de "origen" de tu tabla
+      },
+      inputPlaceholder: 'Selecciona el origen',
+      showCancelButton: true,
+      confirmButtonText: 'Generar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        return new Promise((resolve) => {
+          if (value === '') {
+            resolve('Debes seleccionar un Libro');
+          } else {
+            resolve();
+          }
+        });
+      },
+    });
+
+    // Si el usuario hace clic en "Eliminar" y selecciona un origen
+    if (selectedOrigen) {
+      if (selectedOrigen==='VENTAS'){sLibro='014';}
+      if (selectedOrigen==='COMPRAS'){sLibro='008';}
+      if (selectedOrigen==='CAJA'){sLibro='001';}
+      await fetch(`${back_host}/asientomayorizado/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}`, {
+        method:"POST",
+        headers: {"Content-Type":"text/plain"}
+      });
+
+      setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+        setUpdateTrigger(Math.random());//experimento
+      }, 200);
+      console.log('asiento generado, recargar en 2do useeffect');
+    }
+  };
+    
   //////////////////////////////////////////////////////////
 
 
@@ -1273,7 +1369,7 @@ export default function AsientoList() {
           <Tooltip title='AGREGAR NUEVO' >
             <IconButton color="primary" 
                             //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: 'skyblue' }}
+                            style={{ padding: '0px', color: blueGrey[700] }}
                             onClick={() => {
                               if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
                                 //Validamos libro a registrar
@@ -1313,7 +1409,7 @@ export default function AsientoList() {
             <Tooltip title='ELIMINAR MASIVO' >
             <IconButton color="warning" 
                             //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: 'skyblue' }}
+                            style={{ padding: '0px', color: blueGrey[700] }}
                             onClick={() => {
                               handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
                             }}
@@ -1322,19 +1418,22 @@ export default function AsientoList() {
             </IconButton>
             </Tooltip>
 
-          ):(
+          )
+          :
+          (
             <div></div>
           )
           }
+
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           {(id_libro==='014' || id_libro==='008') ?
             (
               <Tooltip title='DESCARGA XLS VACIO' >
-              <IconButton color="success" 
+              <IconButton color="primary" 
                               //style={{ padding: '0px'}}
-                              style={{ padding: '0px', color: 'skyblue' }}
+                              style={{ padding: '0px', color: blueGrey[700] }}
                               onClick={() => {
                                     handleDescargarExcelVacio();
                               }}
@@ -1345,7 +1444,41 @@ export default function AsientoList() {
             )
             :
             (
-              <div></div>
+              (id_libro==='001') ?
+              (
+                <Tooltip title='CONTRASIENTO VENTAS AL CONTADO' >
+                <IconButton color="primary" 
+                                //style={{ padding: '0px'}}
+                                style={{ padding: '2px', color: blueGrey[700] }}
+                                onClick={() => {
+                                    handleAsientoMasivoContado(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
+                                }}
+                >
+                      <FactCheckIcon style={{ fontSize: '35px' }}/>
+                </IconButton>
+                </Tooltip>
+              )
+              :
+              (
+                (id_libro==='005') ?
+                (
+                  <Tooltip title='GENERA DIF DE CAMBIO' >
+                  <IconButton color="primary" 
+                                  //style={{ padding: '0px'}}
+                                  style={{ padding: '3px', color: blueGrey[700] }}
+                                  onClick={() => {
+                                      handleAsientoDifCambio(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
+                                  }}
+                  >
+                        <CurrencyExchangeIcon style={{ fontSize: '30px' }}/>
+                  </IconButton>
+                  </Tooltip>
+                )
+                :
+                (
+                  <div></div>
+                )
+              )
             )
           }
         </Grid>
@@ -1354,9 +1487,9 @@ export default function AsientoList() {
           {(id_libro==='014' || id_libro==='008') ?
            (
               <Tooltip title='GENERAR ASIENTOS' >
-              <IconButton color="inherit" 
-                                style={{ padding: '0px'}}
-                                //style={{ padding: '0px', color: 'skyblue' }}
+              <IconButton //color="inherit" 
+                                //style={{ padding: '0px'}}
+                                style={{ padding: '0px', color: blueGrey[700] }}
                                 onClick={() => {
                                   navigate(`/asientogenerador/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
                                 }}
@@ -1367,7 +1500,24 @@ export default function AsientoList() {
             )
             :
             (
-              <div></div>
+              (id_libro==='005') ?
+              (
+                <Tooltip title='GENERA ASIENTO MAYORIZADO' >
+                <IconButton color="primary" 
+                                //style={{ padding: '0px'}}
+                                style={{ padding: '3px', color: blueGrey[700] }}
+                                onClick={() => {
+                                  handleAsientoMayorizado(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
+                                }}
+                >
+                      <LibraryBooksIcon style={{ fontSize: '30px' }}/>
+                </IconButton>
+                </Tooltip>
+              )
+              :
+              (
+                <div></div>
+              )
             )
           }
         </Grid>
@@ -1464,7 +1614,7 @@ export default function AsientoList() {
                                     sx={{display:'block',
                                           margin:'.0rem 0'}}
                                     name="busqueda"
-                                    placeholder='Filtro:  Ruc   Razon Social   Comprobante'
+                                    placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE'
                                     onChange={actualizaValorFiltro}
                                     inputProps={{ style:{color:'white'} }}
                                     InputProps={{
@@ -1473,7 +1623,9 @@ export default function AsientoList() {
                                             <FindIcon />
                                           </InputAdornment>
                                         ),
-                                        style:{color:'white'} 
+                                        style:{color:'white'},
+                                        // Estilo para el placeholder
+                                        inputProps: { style: { fontSize: '14px', color: 'gray' } }                                         
                                     }}
         />
     </Grid>
