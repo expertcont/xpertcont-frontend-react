@@ -807,6 +807,81 @@ export const CuentasCorrientesColumnas = [
       </div>
     ) 
   },
-
 ];
+export const CuentasCorrientesColumnasPopUp = [
+  {//01
+    name: 'Cuenta',
+    selector: 'id_cuenta',
+    sortable: true,
+    width: '100px',
+  },
+  {//01
+    name: 'Documento',
+    selector: 'r_documento_id',
+    sortable: true,
+    width: '110px',
+  },
+  {//02
+    name: 'RSocial',
+    selector: 'r_razon_social',
+    sortable: true,
+  },
+  {//02
+    name: 'Emision',
+    selector: 'r_fecemi',
+    sortable: true,
+    width: '100px',
+  },
+  {//02
+    name: 'Comprobante',
+    selector: 'r_comprobante',
+    sortable: true,
+    width: '120px',
+  },
+
+  {//03
+    name: 'Deudor S/',
+    selector: 'saldo_deudor_mn',
+    sortable: true,
+    width: '110px',
+    cell: row => (
+      <div>
+        {row.saldo_deudor_mn !== null ? parseFloat(row.saldo_deudor_mn).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//04
+    name: 'Acreedor S/',
+    selector: 'saldo_acreedor_mn',
+    sortable: true,
+    width: '120px',
+    cell: row => (
+      <div>
+        {row.saldo_acreedor_mn !== null ? parseFloat(row.saldo_acreedor_mn).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//03
+    name: 'Deudor $',
+    selector: 'saldo_deudor_me',
+    sortable: true,
+    width: '110px',
+    cell: row => (
+      <div>
+        {row.saldo_deudor_me !== null ? parseFloat(row.saldo_deudor_me).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+  {//04
+    name: 'Acreedor $',
+    selector: 'saldo_acreedor_me',
+    sortable: true,
+    cell: row => (
+      <div>
+        {row.saldo_acreedor_me !== null ? parseFloat(row.saldo_acreedor_me).toLocaleString('en-US', { minimumFractionDigits: 2 }) : ''}
+      </div>
+    ) 
+  },
+];
+
 // Define más conjuntos de columnas para las otras vistas (caja, diario, etc.) si es necesario

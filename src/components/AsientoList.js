@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
+import { Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -14,10 +14,11 @@ import BoltIcon from '@mui/icons-material/Bolt';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import DownloadIcon from '@mui/icons-material/Download';
 import { blueGrey } from '@mui/material/colors';
-import TaskIcon from '@mui/icons-material/Task';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
+import ShopOutlinedIcon from '@mui/icons-material/ShopOutlined';
+
+import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
-import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
+import HorizontalSplitIcon from '@mui/icons-material/HorizontalSplit';
 
 import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
@@ -50,6 +51,7 @@ import { DiarioColumnas } from './ColumnasAsiento';
 import AsientoFileInput from './AsientoFileInput';
 import { saveAs } from 'file-saver';
 import AsientoMensajeTotales from './AsientoMensajeTotales';
+import AsientoCobranzaCredito from './AsientoCobranzaCredito';
 
 export default function AsientoList() {
   //Control de useffect en retroceso de formularios
@@ -197,12 +199,11 @@ export default function AsientoList() {
   const [periodo_trabajo, setPeriodoTrabajo] = useState("");
   const [periodo_select,setPeriodosSelect] = useState([]);
   
-  const [sirecompras,setSireCompras] = useState([]);
-  const [sireventas,setSireVentas] = useState([]);
-
   const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
   const [contabilidad_nombre, setContabilidadNombre] = useState("");
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
+  
+  const [datosPopUp,setDatosPopUp] = useState([]);
 
   const handleChange = e => {
     //Para todos los demas casos ;)
@@ -1252,12 +1253,56 @@ export default function AsientoList() {
       console.log('asiento generado, recargar en 2do useeffect');
     }
   };
+  const handleAsientoCuentasCorrientes = async (sAnfitrion,sDocumentoId,sPeriodo) => {
+    //Por default deudores
+    const sApi = `${back_host}/reporte/cuentascorrientes/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/deudores`;
+    const response = await fetch(sApi);
+    const data = await response.json();
+    setDatosPopUp(data);
+    
+    console.log(data);
+    //Pausa, cargar useState ... mostrar resultados en pantalla
+    setTimeout(() => { 
+      setUpdateTrigger(Math.random());
+    }, 200);
+    //Ahora a mostrar el modal
+    
+    setAbierto(true); // Abre el modal
+  };
     
   //////////////////////////////////////////////////////////
-
+  const abrirCerrarModal = ()=>{
+    setAbierto(!abierto);
+  };
+  const [abierto,setAbierto] = useState(false);
+  const modalStyles={
+    position:'absolute',
+    top:'0%',
+    left:'0%',
+    background:'gray',
+    border:'2px solid #000',
+    padding:'16px 32px 24px',
+    width:'100',
+    minHeight: '50px'
+    //transform:'translate(0%,0%)'
+  };
+  const handleCerrar = (updatedData) => {
+    setDatosPopUp(updatedData); // Actualiza los datos con los datos modificados
+    setAbierto(false); // Cierra el modal
+  };
 
  return (
   <>
+  <div>
+    <Modal
+      open={abierto}
+      onClose={abrirCerrarModal}
+      style={modalStyles}
+      >
+      <AsientoCobranzaCredito datos={datosPopUp} onClose={handleCerrar} id_anfitrion={params.id_anfitrion} documento_id={contabilidad_trabajo} periodo_trabajo={periodo_trabajo} contabilidad_nombre={contabilidad_nombre}/>
+    </Modal>
+  </div>
+
   <Grid container
         direction={isSmallScreen ? 'column' : 'row'}
         //alignItems={isSmallScreen ? 'center' : 'center'}
@@ -1446,7 +1491,7 @@ export default function AsientoList() {
             (
               (id_libro==='001') ?
               (
-                <Tooltip title='CONTRASIENTO VENTAS AL CONTADO' >
+                <Tooltip title='ASIENTO VENTAS CONTADO' >
                 <IconButton color="primary" 
                                 //style={{ padding: '0px'}}
                                 style={{ padding: '2px', color: blueGrey[700] }}
@@ -1454,7 +1499,7 @@ export default function AsientoList() {
                                     handleAsientoMasivoContado(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
                                 }}
                 >
-                      <FactCheckIcon style={{ fontSize: '35px' }}/>
+                      <ShopOutlinedIcon style={{ fontSize: '33px' }}/>
                 </IconButton>
                 </Tooltip>
               )
@@ -1510,13 +1555,30 @@ export default function AsientoList() {
                                   handleAsientoMayorizado(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
                                 }}
                 >
-                      <LibraryBooksIcon style={{ fontSize: '30px' }}/>
+                      <HorizontalSplitIcon style={{ fontSize: '30px' }}/>
                 </IconButton>
                 </Tooltip>
               )
               :
               (
+                (id_libro==='001') ?
+                (
+                  <Tooltip title='CUENTAS POR COBRAR / PAGAR' >
+                  <IconButton color="primary" 
+                                  //style={{ padding: '0px'}}
+                                  style={{ padding: '3px', color: blueGrey[700] }}
+                                  onClick={() => {
+                                    handleAsientoCuentasCorrientes(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
+                                  }}
+                  >
+                        <CreditScoreIcon style={{ fontSize: '30px' }}/>
+                  </IconButton>
+                  </Tooltip>
+                )
+                :
+                (
                 <div></div>
+                ) 
               )
             )
           }
@@ -1527,6 +1589,7 @@ export default function AsientoList() {
             <BotonExcelVentas registrosdet={registrosdet} 
             />
           </Tooltip>
+
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
@@ -1545,7 +1608,7 @@ export default function AsientoList() {
             </Tooltip>
             ):
             (
-              <div></div>
+                <div></div>
             )
           }
         </Grid>
@@ -1591,7 +1654,7 @@ export default function AsientoList() {
             getButtonColor={getButtonColor}
             onCancel={handleCancel}
             onAccept={handleAccept}
-          />
+            />
         </Grid>
 
         )}
@@ -1603,10 +1666,11 @@ export default function AsientoList() {
         )
         :
         (
-          <div></div>
+            <div></div>
         )
       }
     </Grid>
+
 
     <Grid item xs={isSmallScreen ? 12 : 12} >
         <TextField fullWidth variant="outlined" color="success" size="small"
