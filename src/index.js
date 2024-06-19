@@ -12,8 +12,11 @@ const domain = "dev-i4ndxhhmhmbyd4tt.us.auth0.com"; //auth0 propio expertcontper
 //Version Local
 //const clientId = "sRVhE9SzcBOGmeDSncrECCLuGA88O8FQ"; //auth0 propio expertcontperu@gmail.com
 
-//Version Web
-const clientId = "cVGIEcCJEINGNoLG9khMuXeErdZ3C8jm"; //auth0 propio expertcontperu@gmail.com
+//Version Web Ralwaiy
+//const clientId = "cVGIEcCJEINGNoLG9khMuXeErdZ3C8jm"; //auth0 propio expertcontperu@gmail.com
+
+//Version Web expertcont.pe
+const clientId = "vFKcLZ6SHdwEWUWrMzkty0PDVjLbTZrW"; //auth0 propio expertcontperu@gmail.com
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -37,7 +40,8 @@ function Main() {
         clientId={clientId}
         authorizationParams={{
           //redirect_uri: "http://localhost:3000"
-          redirect_uri: "https://expertcont.up.railway.app/"
+          //redirect_uri: "https://expertcont.up.railway.app/"
+          redirect_uri: "https://expertcont.pe/"
         }}
       >
         {/* Renderiza la pantalla de bienvenida o la aplicación principal según el estado */}
