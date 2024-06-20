@@ -520,11 +520,18 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     axios
     .get(`${back_host}/tipocambio/${sFecha}/${sTipo}`)
     .then((response) => {
-        setTipoCambio(response.data);
+        const tipoCambio = response.data.tc;
+        setTipoCambio(tipoCambio);      
+        //setTipoCambio(response.data);
     })
     .catch((error) => {
         console.log(error);
     });
+  }
+
+  const handleChangeFecha = (sFecha) => {
+    setFechaAsiento(sFecha);
+    cargaTC(sFecha,'2');
   }
 
   return (
@@ -559,7 +566,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                                   size='small'
                                   type="date"
                                   value={fechaAsiento} 
-                                  //onChange={(e) => handleChange('fecemi', e.target.value)}
+                                  onChange={(e) => handleChangeFecha(e.target.value)}
                                   InputProps={{
                                     style: { color: 'white' },
                                     inputProps: { style: { fontSize: '14px', color: 'white',textAlign: 'center' } }
