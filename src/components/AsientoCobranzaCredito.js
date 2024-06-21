@@ -102,6 +102,8 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     // Redondear la suma a dos decimales
     total = Math.round(total * 100) / 100;
     setTotalMontoEfec(total);
+    console.log('setTotalMontoEfec: ',total);
+
   }, [selectedRows, datos]);
   
   useEffect( ()=> {
@@ -157,6 +159,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       if (selectedIds.includes(item.id)) {
         return { ...item, 
                   monto_efec: item.saldo_acreedor_mn,
+
                   debe_nac: item.saldo_acreedor_mn,
                   haber_nac: item.saldo_deudor_mn,
                   debe_me: item.saldo_acreedor_me,
@@ -180,6 +183,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       if (selectedIds.includes(item.id)) {
         return { ...item, 
                   monto_efec: item.saldo_acreedor_mn,
+
                   debe_nac: item.saldo_acreedor_mn,
                   haber_nac: item.saldo_deudor_mn,
                   debe_me: item.saldo_acreedor_me,
@@ -202,7 +206,8 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     setFilteredData(updatedFilteredData); // Actualizamos los datos filtrados
     setSelectedRows(state.selectedRows);
 
-    console.log("Updated Data: ", updatedFilteredData); // Log updated data to check the changes
+    console.log("setOriginalData: ", updatedOriginalData); // Log updated data to check the changes
+    console.log("setFilteredData: ", updatedFilteredData); // Log updated data to check the changes
   };  
 
   const handleChangeDebeHaber = (id, name, value) => {
@@ -541,17 +546,32 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           alignItems={isSmallScreen ? 'center' : 'start'}
           justifyContent={isSmallScreen ? 'center' : 'end'}
       >
+          
           <Grid item xs={isSmallScreen ? 12:2} > 
               <ToggleButtonGroup
-                color="info"
+                color="warning"
                 size="small"
                 value={valorVista}
                 exclusive
                 onChange={actualizaValorVista}
                 aria-label="Platform"
+                //style={{ backgroundColor: 'lightblue', padding: '0px' }}  // Cambia el color de fondo aquí
               >
-                <ToggleButton value="deudores">Deudores</ToggleButton>
-                <ToggleButton value="acreedores">Acreedores</ToggleButton>
+                <ToggleButton value="deudores" 
+                              style={{
+                                        backgroundColor: valorVista === 'deudores' ? 'lightblue' : 'transparent',
+                                        color: valorVista === 'deudores' ? 'orange' : 'white',
+                                    }}
+                >
+                  DEUDORES
+                </ToggleButton>
+                <ToggleButton value="acreedores" 
+                              style={{
+                                        backgroundColor: valorVista === 'acreedores' ? 'lightblue' : 'transparent',
+                                        color: valorVista === 'acreedores' ? 'orange' : 'white',
+                                    }}
+                >ACREEDORES
+                </ToggleButton>
 
               </ToggleButtonGroup>      
           </Grid>
@@ -591,7 +611,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                                 }}
               />
           </Grid>
-          <Grid item xs={isSmallScreen ? 12:7.5} > 
+          <Grid item xs={isSmallScreen ? 12:6.5} > 
               <TextField variant="outlined"
                                 fullWidth
                                 sx={{display:'block',
@@ -610,6 +630,11 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                                   inputProps: { style: { fontSize: '14px', color: 'gray' } }
                                 }}
               />
+          </Grid>
+          <Grid item xs={isSmallScreen ? 12:1} > 
+            <Button variant='contained' fullWidth  color="warning" onClick={handleCobrar}>
+              Cerrar
+            </Button>
           </Grid>
 
           <Grid item xs={isSmallScreen ? 12:6} > 
@@ -715,7 +740,6 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
             )
             }
           </Grid>
-          
 
       </Grid>
 
@@ -740,11 +764,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       </div>      
 
       <br />
-      <div>
-        <Button color="warning" onClick={handleCobrar}>
-          Cerrar
-        </Button>
-      </div>
+
     </div>
   );
 };
