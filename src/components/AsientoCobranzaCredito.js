@@ -15,11 +15,13 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const [datos, setDatos] = useState(initialDatos);
+
   const [filteredData, setFilteredData] = useState(initialDatos);
   const [originalData, setOriginalData] = useState(initialDatos);
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchText, setSearchText] = useState('');
+
   const [totalMontoEfec, setTotalMontoEfec] = useState(0);
   const [cuentaBase, setCuentaBase] = useState(''); // Estado para el TextField de cuenta contable
   const [cuentaBaseDesc, setCuentaBaseDesc] = useState(''); // Estado para el TextField de cuenta contable
@@ -27,6 +29,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
   const [showModal, setShowModal] = useState(false); //Modal General
   const [showModalCuenta, setShowModalCuenta] = useState(false); //Modal Secundario
   const [valorVista, setValorVista] = useState("deudores");
+  const [valorMoneda, setValorMoneda] = useState("soles");
   const [fechaAsiento, setFechaAsiento] = useState('');
   const [tipoCambio, setTipoCambio] = useState('');
 
@@ -89,13 +92,13 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
   }, [datos]);
 
   useEffect(() => {
-    const updatedDataCopy = [...datos];
+    const updatedDataCopy = [...filteredData];
+    //arreglar suma para deudor, esta fallando condicional
     let total = 0;
     selectedRows.forEach(row => {
       const selectedRow = updatedDataCopy.find(item => item.id === row.id);
-      if (selectedRow && (selectedRow.debe_nac || selectedRow.haber_nac )) {
-        total += (parseFloat(selectedRow.debe_nac ?? 0) || 0) + (parseFloat(selectedRow.haber_nac ?? 0) || 0);
-        //console.log(selectedRow.debe_nac,selectedRow.haber_nac);
+      if (selectedRow && selectedRow.monto_efec) {
+        total += (parseFloat(selectedRow.monto_efec ?? 0) || 0);
       }
       
     });
@@ -104,7 +107,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     setTotalMontoEfec(total);
     console.log('setTotalMontoEfec: ',total);
 
-  }, [selectedRows, datos]);
+  }, [selectedRows, filteredData]);
   
   useEffect( ()=> {
     if (showModal) {
@@ -120,7 +123,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
 
   useEffect( ()=> {
     /////////////////////////////
-    console.log('filtrar');
+    console.log('cambio de valorVista useEffect');
     handleAsientoCuentasCorrientes(id_anfitrion,documento_id,periodo_trabajo);
 
   },[valorVista]) //Aumentamos IsAuthenticated y user
@@ -141,27 +144,49 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     
   };
   
-  const handleSearch = (event) => {
-    const { value } = event.target;
-    setSearchText(value);
+  const handleFilterSearch = (sValue) => {
+    //const { value } = event.target;
+    setSearchText(sValue);
     const filtered = datos.filter(item =>
-      item.r_razon_social.toLowerCase().includes(value.toLowerCase()) ||
-      item.r_comprobante.toLowerCase().includes(value.toLowerCase())
+      item.r_razon_social.toLowerCase().includes(sValue.toLowerCase()) ||
+      item.r_comprobante.toLowerCase().includes(sValue.toLowerCase())
     );
     setFilteredData(filtered);
   };
-
+  const convierteSolesDolares = (nMontoSoles,nMontoDolares,nTipoCambio) =>{
+      if (nMontoDolares !== 0 && nMontoDolares !== null) {
+          return (nMontoDolares*nTipoCambio).toFixed(2);
+      }
+      else{
+        return nMontoSoles;
+      }
+  }
   const handleSelectedRowsChange = (state) => {
+    //Click en fila de seleccion
+    console.log('click en check >> Filas seleccionadas: ', state.selectedRows);
     const selectedIds = state.selectedRows.map(row => row.id);
 
     // Actualizamos el estado original
     const updatedOriginalData = originalData.map(item => {
       if (selectedIds.includes(item.id)) {
         return { ...item, 
-                  monto_efec: item.saldo_acreedor_mn,
+                  //pasamos 100% valor correspondiente con la vista
+                  monto_efec: valorVista==='deudores' ? 
+                              ( valorMoneda==='soles' ?
+                                //todo pago soles, verifica ref dolares y convierte equivalente a tc de la fecha
+                                convierteSolesDolares(item.saldo_deudor_mn,item.saldo_deudor_me,parseFloat(tipoCambio))
+                                :
+                                item.saldo_deudor_me
+                              )
+                              : 
+                              (
+                                //todo pago soles, verifica ref dolares y convierte equivalente a tc de la fecha
+                                convierteSolesDolares(item.saldo_acreedor_mn,item.saldo_acreedor_me,parseFloat(tipoCambio))
+                              ),
+                  //aqui debemos convertir tc
+                  debe_nac: (item.saldo_acreedor_me*parseFloat(tipoCambio)).toFixed(2),
+                  haber_nac: (item.saldo_deudor_me*parseFloat(tipoCambio)).toFixed(2),
 
-                  debe_nac: item.saldo_acreedor_mn,
-                  haber_nac: item.saldo_deudor_mn,
                   debe_me: item.saldo_acreedor_me,
                   haber_me: item.saldo_deudor_me
                };
@@ -182,10 +207,24 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     const updatedFilteredData = filteredData.map(item => {
       if (selectedIds.includes(item.id)) {
         return { ...item, 
-                  monto_efec: item.saldo_acreedor_mn,
+                  //pasamos 100% valor correspondiente con la vista
+                  monto_efec: valorVista==='deudores' ? 
+                              ( valorMoneda==='soles' ?
+                                //todo pago soles, verifica ref dolares y convierte equivalente a tc de la fecha
+                                convierteSolesDolares(item.saldo_deudor_mn,item.saldo_deudor_me,parseFloat(tipoCambio))
+                                :
+                                item.saldo_deudor_me
+                              )
+                              : 
+                              (
+                                //todo pago soles, verifica ref dolares y convierte equivalente a tc de la fecha
+                                convierteSolesDolares(item.saldo_acreedor_mn,item.saldo_acreedor_me,parseFloat(tipoCambio))
+                              ),
 
-                  debe_nac: item.saldo_acreedor_mn,
-                  haber_nac: item.saldo_deudor_mn,
+                  //aqui debemos convertir tc
+                  debe_nac: (item.saldo_acreedor_me*parseFloat(tipoCambio)).toFixed(2),
+                  haber_nac: (item.saldo_deudor_me*parseFloat(tipoCambio)).toFixed(2),
+
                   debe_me: item.saldo_acreedor_me,
                   haber_me: item.saldo_deudor_me
                };
@@ -210,20 +249,88 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     console.log("setFilteredData: ", updatedFilteredData); // Log updated data to check the changes
   };  
 
-  const handleChangeDebeHaber = (id, name, value) => {
-    const updatedData = datos.map(item =>
-      item.id === id ? { ...item, [name]: value } : item
-    );
-    setDatos(updatedData);
-    setFilteredData(updatedData);
-  };
+  const handleChangeMontoEfec = (id, value, valueSaldoMe) => {
+    //value = monto modificado
+    //valueSaldoMe = saldo referencial en moneda extranjera, se usa como validacion y limite
 
-  const handleChangeMontoEfec = (id, value) => {
-    const updatedData = datos.map(item =>
-      item.id === id ? { ...item, monto_efec: value } : item
-    );
-    setDatos(updatedData);
+    let updatedData;
+    let nMontoEfecMe=0; //nuevo efectivo en dolares, monto efectivo en SOLES
+    let nMontoEfecMn=0; //nuevo efectivo en soles, monto efectivo en DOLARES
+
+    //verificar si existe ref en dolares, para calcular equivalencia
+    if (valorMoneda==='soles') {
+      if (valueSaldoMe !== 0) {
+        nMontoEfecMe = (value / parseFloat(tipoCambio)).toFixed(2);
+      }
+    }else{
+      nMontoEfecMn = (value * parseFloat(tipoCambio)).toFixed(2);
+    }
+
+    //Actualizamos columnas debe,haber,soles,dolares, respectivamente
+    if (valorVista==='deudores') {
+      if (valorMoneda==='soles') {
+        //actualizar haber_nac desde saldo_deudor_mn
+        updatedData = originalData.map(item =>
+          item.id === id ? { ...item, haber_nac: value, haber_me:nMontoEfecMe, monto_efec: value  } : item
+        );
+      }else{
+        //actualizar haber_me desde saldo_deudor_me
+        updatedData = originalData.map(item =>
+          item.id === id ? { ...item, haber_me: value, haber_mn:nMontoEfecMn ,monto_efec: value  } : item
+        );
+      }
+    }else{
+      if (valorMoneda==='soles') {
+        //actualizar debe_nac desde saldo_acreedor_mn
+        updatedData = originalData.map(item =>
+          item.id === id ? { ...item, debe_nac: value, debe_me:nMontoEfecMe, monto_efec: value  } : item
+        );
+      }else{
+        //actualizar debe_me desde saldo_acreedor_me
+        updatedData = originalData.map(item =>
+          item.id === id ? { ...item, debe_me: value, haber_me:nMontoEfecMe, monto_efec: value  } : item
+        );
+      }
+    }
+    setOriginalData(updatedData);
+
+    //Aumentamos en el filteredData tambien, porque despues de modificar la wa, mostraba todo ;)
+    if (valorVista==='deudores') {
+      if (valorMoneda==='soles') {
+        //actualizar haber_nac desde saldo_deudor_mn
+        updatedData = filteredData.map(item =>
+          //item.id === id ? { ...item, haber_nac: value, monto_efec: value  } : item
+          item.id === id ? { ...item, haber_nac: value, haber_me:nMontoEfecMe, monto_efec: value  } : item
+        );
+      }else{
+        //actualizar haber_me desde saldo_deudor_me
+        updatedData = filteredData.map(item =>
+          //item.id === id ? { ...item, haber_me: value, monto_efec: value  } : item
+          item.id === id ? { ...item, haber_me: value, haber_mn:nMontoEfecMn ,monto_efec: value  } : item
+        );
+      }
+    }else{
+      if (valorMoneda==='soles') {
+        //actualizar debe_nac desde saldo_acreedor_mn
+        updatedData = filteredData.map(item =>
+          //item.id === id ? { ...item, debe_nac: value, monto_efec: value  } : item
+          item.id === id ? { ...item, debe_nac: value, debe_me:nMontoEfecMe, monto_efec: value  } : item
+        );
+      }else{
+        //actualizar debe_me desde saldo_acreedor_me
+        updatedData = filteredData.map(item =>
+          //item.id === id ? { ...item, debe_me: value, monto_efec: value  } : item
+          item.id === id ? { ...item, debe_me: value, haber_me:nMontoEfecMe, monto_efec: value  } : item
+        );
+      }
+    }
     setFilteredData(updatedData);
+
+    console.log("setOriginalData y setFilteredData : ", updatedData); // Log updated data to check the changes
+
+    //probando aplicar filtro, pero desparece el monto y no deja sumar, arreglar
+    //handleFilterSearch(searchText);
+    
   };
 
   const handleCobrar = () => {
@@ -249,6 +356,44 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       width: '140px',
     },
     {
+      name: 'Monto Efectivo',
+      selector: 'monto_efec',
+      sortable: true,
+      width: '120px',
+      cell: row => (
+        <TextField
+          variant="outlined"
+          size="small"
+          value={row.monto_efec || ''}
+          onChange={e => {
+            const newValue = parseFloat(e.target.value);
+            const saldo_me = (parseFloat(row.saldo_deudor_me) || 0) + (parseFloat(row.saldo_acreedor_me) || 0);
+            
+            //validar saldo con valorVista y valorMoneda chochera
+            const saldo = valorVista==='deudores' ? 
+                        ( valorMoneda==='soles' ?
+                          row.saldo_deudor_mn
+                          :
+                          row.saldo_deudor_me
+                        )
+                        : 
+                        (
+                          row.saldo_acreedor_mn
+                        );
+            //const saldo = parseFloat(row.saldo_acreedor_mn);
+            if (!isNaN(newValue) && newValue <= saldo) {
+              handleChangeMontoEfec(row.id, newValue, saldo_me);
+            }
+          }}
+          InputProps={{
+            style: { color: 'white' },
+            inputProps: { style: { fontSize: '14px', color: 'skyblue' } }
+          }}
+          disabled={!selectedRows.some(selectedRow => selectedRow.id === row.id)}
+        />
+      ),
+    },
+    /*{
       name: 'DEBE PEN',
       selector: 'debe_nac',
       sortable: true,
@@ -260,11 +405,11 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           value={row.debe_nac || ''}
           onChange={e => {
             //control de cambios, no exceder columna original
-            const newValue = parseFloat(e.target.value);
-            const saldo = parseFloat(row.saldo_acreedor_mn);
-            if (!isNaN(newValue) && newValue <= saldo) {
-              handleChangeDebeHaber(row.id, 'debe_nac', newValue);
-            }
+            //const newValue = parseFloat(e.target.value);
+            //const saldo = parseFloat(row.saldo_acreedor_mn);
+            //if (!isNaN(newValue) && newValue <= saldo) {
+            //  handleChangeDebeHaber(row.id, 'debe_nac', newValue);
+            //}
           }}
           InputProps={{
             style: { color: 'white' },
@@ -286,11 +431,11 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           value={row.haber_nac || ''}
           onChange={e => {
             //control de cambios, no exceder columna original
-            const newValue = parseFloat(e.target.value);
-            const saldo = parseFloat(row.saldo_deudor_mn);
-            if (!isNaN(newValue) && newValue <= saldo) {
-              handleChangeDebeHaber(row.id, 'haber_nac', newValue);
-            }
+            //const newValue = parseFloat(e.target.value);
+            //const saldo = parseFloat(row.saldo_deudor_mn);
+            //if (!isNaN(newValue) && newValue <= saldo) {
+            //  handleChangeDebeHaber(row.id, 'haber_nac', newValue);
+            //}
           }}
           InputProps={{
             style: { color: 'white' },
@@ -312,11 +457,11 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           value={row.debe_me || ''}
           onChange={e => {
             //control de cambios, no exceder columna original
-            const newValue = parseFloat(e.target.value);
-            const saldo = parseFloat(row.saldo_acreedor_me);
-            if (!isNaN(newValue) && newValue <= saldo) {
-              handleChangeDebeHaber(row.id, 'debe_me', newValue);
-            }
+            //const newValue = parseFloat(e.target.value);
+            //const saldo = parseFloat(row.saldo_acreedor_me);
+            //if (!isNaN(newValue) && newValue <= saldo) {
+            //  handleChangeDebeHaber(row.id, 'debe_me', newValue);
+            //}
           }}
           InputProps={{
             style: { color: 'white' },
@@ -338,11 +483,11 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           value={row.haber_me || ''}
           onChange={e => {
             //control de cambios, no exceder columna original
-            const newValue = parseFloat(e.target.value);
-            const saldo = parseFloat(row.saldo_deudor_me);
-            if (!isNaN(newValue) && newValue <= saldo) {
-              handleChangeDebeHaber(row.id, 'haber_me', newValue);
-            }
+            //const newValue = parseFloat(e.target.value);
+            //const saldo = parseFloat(row.saldo_deudor_me);
+            //if (!isNaN(newValue) && newValue <= saldo) {
+            //  handleChangeDebeHaber(row.id, 'haber_me', newValue);
+            //}
           }}
           InputProps={{
             style: { color: 'white' },
@@ -351,32 +496,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           disabled={!selectedRows.some(selectedRow => selectedRow.id === row.id)}
         />
       ),
-    },
-    {
-      name: 'Monto Efectivo',
-      selector: 'monto_efec',
-      sortable: true,
-      width: '120px',
-      cell: row => (
-        <TextField
-          variant="outlined"
-          size="small"
-          value={row.monto_efec || ''}
-          onChange={e => {
-            const newValue = parseFloat(e.target.value);
-            const saldo = parseFloat(row.saldo_acreedor_mn);
-            if (!isNaN(newValue) && newValue <= saldo) {
-              handleChangeMontoEfec(row.id, newValue);
-            }
-          }}
-          InputProps={{
-            style: { color: 'white' },
-            inputProps: { style: { fontSize: '14px', color: 'skyblue' } }
-          }}
-          disabled={!selectedRows.some(selectedRow => selectedRow.id === row.id)}
-        />
-      ),
-    },
+    },*/
     {
       name: 'Cuenta',
       selector: 'id_cuenta',
@@ -520,6 +640,12 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     //Lo dejaremos terminar el evento de cambio o change
     //setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
+  const actualizaValorMoneda = (e) => {
+    setValorMoneda(e.target.value);
+
+    //Lo dejaremos terminar el evento de cambio o change
+    //setUpdateTrigger(Math.random());//experimento para actualizar el dom
+  }
 
   const cargaTC = (sFecha,sTipo) =>{
     axios
@@ -577,6 +703,35 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           </Grid>
 
           <Grid item xs={isSmallScreen ? 12:1.5} > 
+              <ToggleButtonGroup
+                color="warning"
+                size="small"
+                value={valorMoneda}
+                exclusive
+                onChange={actualizaValorMoneda}
+                aria-label="Platform"
+              >
+                <ToggleButton value="soles" 
+                              style={{
+                                        backgroundColor: valorMoneda === 'soles' ? 'lightblue' : 'transparent',
+                                        color: valorMoneda === 'soles' ? 'orange' : 'white',
+                                    }}
+                >
+                  SOLES
+                </ToggleButton>
+                <ToggleButton value="dolares" 
+                              style={{
+                                        backgroundColor: valorMoneda === 'dolares' ? 'lightblue' : 'transparent',
+                                        color: valorMoneda === 'dolares' ? 'orange' : 'white',
+                                    }}
+                >
+                  DOLARES
+                </ToggleButton>
+
+              </ToggleButtonGroup>      
+          </Grid>
+
+          <Grid item xs={isSmallScreen ? 12:1.2} > 
               <TextField variant="outlined" 
                                   fullWidth
                                   //label="FECMI"
@@ -611,7 +766,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                                 }}
               />
           </Grid>
-          <Grid item xs={isSmallScreen ? 12:6.5} > 
+          <Grid item xs={isSmallScreen ? 12:5.3} > 
               <TextField variant="outlined"
                                 fullWidth
                                 sx={{display:'block',
@@ -619,7 +774,10 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                                 size="small"
                                 placeholder="RAZON SOCIAL  COMPROBANTE"
                                 value={searchText}
-                                onChange={handleSearch}
+                                onChange={ (e)=>{
+                                  handleFilterSearch(e.target.value)
+                                    }
+                                }
                                 InputProps={{
                                   startAdornment: (
                                     <InputAdornment position="start">
