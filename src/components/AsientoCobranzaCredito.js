@@ -10,6 +10,7 @@ import ListaPopUp from './ListaPopUp';
 import axios from 'axios';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import swal from 'sweetalert'
 
 const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, documento_id, periodo_trabajo, contabilidad_nombre }) => {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -334,10 +335,9 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
   };
 
   const handleCobrar = () => {
+    //mostramos modal de cuenta contable
     setShowModal(true);
     
-    //desactivamos el cerrar, para que sea opcional en modal
-    //onClose(datos);
   };
 
   const contextActions = useMemo(() => {
@@ -607,7 +607,35 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       console.log(codigo,descripcion);
       
       setShowModal(false);
+      confirmaRegistroAsiento(id_anfitrion,documento_id,periodo_trabajo,'001','90000');
   };
+  const confirmaRegistroAsiento = async(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento)=>{
+    await swal({
+      title: (valorVista==='deudores') ? "Registrar Cobranza Deudor":"Registrar Pago Acreedor",
+      text:"Seguro ?",
+      icon:"info",
+      buttons:["No","Si"]
+    }).then(respuesta=>{
+        if (respuesta){
+          //console.log(cod,serie,num,elem,item);
+          //eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento);
+          //setToggleCleared(!toggleCleared);
+          //setRegistrosdet(registrosdet.filter(
+          //                registrosdet => registrosdet.num_asiento !== sAsiento
+          //                ));
+          setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+              //setUpdateTrigger(Math.random());//experimento
+          }, 200);
+                        
+          swal({
+            text:"Asiento registrado con exito",
+            icon:"success",
+            timer:"2000"
+          });
+      }
+    })
+  }
+
   const handleSearchTextCuentaChange = (event) => {
     console.log(event.target.value);
     setSearchTextCuenta(event.target.value.replace('+', '').replace('-',''));
@@ -682,11 +710,14 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                 onChange={actualizaValorVista}
                 aria-label="Platform"
                 //style={{ backgroundColor: 'lightblue', padding: '0px' }}  // Cambia el color de fondo aquí
+                style={{ width: '100%' }}  // Asegura que el grupo ocupe todo el espacio disponible                
               >
                 <ToggleButton value="deudores" 
                               style={{
                                         backgroundColor: valorVista === 'deudores' ? 'lightblue' : 'transparent',
                                         color: valorVista === 'deudores' ? 'orange' : 'white',
+                                        flex: 1,  // Permite que el botón ocupe el espacio disponible
+                                        width: '100%',                                        
                                     }}
                 >
                   DEUDORES
@@ -695,6 +726,8 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                               style={{
                                         backgroundColor: valorVista === 'acreedores' ? 'lightblue' : 'transparent',
                                         color: valorVista === 'acreedores' ? 'orange' : 'white',
+                                        flex: 1,  // Permite que el botón ocupe el espacio disponible
+                                        width: '100%',                                        
                                     }}
                 >ACREEDORES
                 </ToggleButton>
@@ -710,11 +743,14 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                 exclusive
                 onChange={actualizaValorMoneda}
                 aria-label="Platform"
+                style={{ width: '100%' }}  // Asegura que el grupo ocupe todo el espacio disponible                                
               >
                 <ToggleButton value="soles" 
                               style={{
                                         backgroundColor: valorMoneda === 'soles' ? 'lightblue' : 'transparent',
                                         color: valorMoneda === 'soles' ? 'orange' : 'white',
+                                        flex: 1,  // Permite que el botón ocupe el espacio disponible
+                                        width: '100%',                                        
                                     }}
                 >
                   SOLES
@@ -723,6 +759,8 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                               style={{
                                         backgroundColor: valorMoneda === 'dolares' ? 'lightblue' : 'transparent',
                                         color: valorMoneda === 'dolares' ? 'orange' : 'white',
+                                        flex: 1,  // Permite que el botón ocupe el espacio disponible
+                                        width: '100%',                                        
                                     }}
                 >
                   DOLARES
@@ -790,7 +828,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
               />
           </Grid>
           <Grid item xs={isSmallScreen ? 12:1} > 
-            <Button variant='contained' fullWidth  color="warning" onClick={handleCobrar}>
+            <Button variant='contained' fullWidth  color="warning" onClick={ ()=>{onClose(datos)} }>
               Cerrar
             </Button>
           </Grid>
