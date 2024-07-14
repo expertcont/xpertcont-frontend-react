@@ -19,6 +19,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
 
   const [filteredData, setFilteredData] = useState(initialDatos);
   const [originalData, setOriginalData] = useState(initialDatos);
+  const [finalData, setFinalData] = useState([]); //para consumir API
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -37,6 +38,33 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
   const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
   const [searchTextCuenta, setSearchTextCuenta] = useState('');
   const textFieldRef = useRef(null); //foco del buscador  
+
+  // Plantilla de la estructura de una fila
+  const rowTemplate = {
+    id: "",
+    tipo: "SALDO MENSUAL USD",
+    id_cuenta: "",
+    r_id_doc: "",
+    r_documento_id: "",
+    r_razon_social: "",
+    r_fecemi: "",
+    r_cod: "",
+    r_serie: "",
+    r_numero: "",
+    saldo_soles: "",
+    saldo_dolares: "",
+    saldo_deudor_mn: null,
+    saldo_acreedor_mn: null,
+    saldo_deudor_me: null,
+    saldo_acreedor_me: null,
+    r_comprobante: "",
+    monto_efec: null,
+    debe_nac: null,
+    haber_nac: null,
+    debe_me: null,
+    haber_me: null
+  };
+
   const [registro,setRegistro] = useState({
     id_cuenta:'',
     cuenta_descripcion:'',
@@ -606,10 +634,12 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       setCuentaBaseDesc(descripcion);
       console.log(codigo,descripcion);
       
+      confirmaRegistroAsiento(codigo,id_anfitrion,documento_id,periodo_trabajo);
+
       setShowModal(false);
-      confirmaRegistroAsiento(id_anfitrion,documento_id,periodo_trabajo,'001','90000');
+      
   };
-  const confirmaRegistroAsiento = async(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento)=>{
+  const confirmaRegistroAsiento = async(sCuenta,sAnfitrion,sDocumentoId,sPeriodo)=>{
     await swal({
       title: (valorVista==='deudores') ? "Registrar Cobranza Deudor":"Registrar Pago Acreedor",
       text:"Seguro ?",
@@ -617,21 +647,80 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
       buttons:["No","Si"]
     }).then(respuesta=>{
         if (respuesta){
-          //console.log(cod,serie,num,elem,item);
-          //eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento);
-          //setToggleCleared(!toggleCleared);
-          //setRegistrosdet(registrosdet.filter(
-          //                registrosdet => registrosdet.num_asiento !== sAsiento
-          //                ));
-          setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+          //Filtrar useState con monto_efec <> 0 y null = dataFinal
+          const filtrado = filteredData.filter(row => row.monto_efec !== 0 && row.monto_efec !== null);
+          const finalDataCopy = [...filtrado];
+          
+          let newRow = {
+            ...rowTemplate,
+            id: (filtrado.length + 1).toString(),
+            id_cuenta: sCuenta,
+            r_fecemi: fechaAsiento
+          };
+          if (valorVista==='deudores'){
+            if (valorMoneda==='soles'){
+              newRow = {...newRow,debe_nac:totalMontoEfec};
+            }
+            else{
+              newRow = {...newRow,debe_me:totalMontoEfec};
+            }
+          }else{
+            if (valorMoneda==='soles'){
+              newRow = {...newRow,haber_nac:totalMontoEfec};
+            }
+            else{
+              newRow = {...newRow,haber_me:totalMontoEfec};
+            }
+          }
+          //Agregar fila con totales y cuenta 104 al useState dataFinal 
+          finalDataCopy.push(newRow);
+          console.log('finalDataCopy: ',finalDataCopy);
+
+          //Consumir API y respuesta de confirmacion
+          //Enviamos parametros y json
+          //(Backend y Postgres)Funcion postgres se encarga de insertar asiento y confirmar respuesta
+          //Version envio de json
+          /*const soloNumAsientos = elementosSeleccionados.map(item => {
+            return { num_asiento: item.num_asiento };
+          });*/
+          //console.log('Tamaño bytes solo num_asiento: ',calcularTamanoJSON(JSON.stringify(soloNumAsientos)));
+          const sRuta = 
+          `${back_host}/asientomasivocaja/${sAnfitrion}/${sDocumentoId}/${sPeriodo}`;
+          console.log(sRuta);
+          fetch(sRuta, {
+            method: "POST",
+            body: JSON.stringify(finalDataCopy), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+            headers: {"Content-Type":"application/json"}
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  console.log('La operación fue exitosa');
+                  swal({
+                    text:"Asiento registrado con exito",
+                    icon:"success",
+                    timer:"2000"
+                  });
+                  // Aquí puedes agregar lógica adicional para manejar una respuesta exitosa
+              } else {
+                  console.log('La operación falló');
+                  // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+                  swal({
+                    text:"La Operacion fallo, intentelo nuevamente",
+                    icon:"warning",
+                    timer:"2000"
+                  });
+              }
+          })
+          .catch(error => {
+              console.error('Hubo un problema con la solicitud fetch:', error);
+              // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+          });
+
+          /*setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
               //setUpdateTrigger(Math.random());//experimento
           }, 200);
-                        
-          swal({
-            text:"Asiento registrado con exito",
-            icon:"success",
-            timer:"2000"
-          });
+            */            
       }
     })
   }
