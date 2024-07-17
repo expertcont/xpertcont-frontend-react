@@ -714,6 +714,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
           })
           .catch(error => {
               console.error('Hubo un problema con la solicitud fetch:', error);
+              //ahora si
               // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
           });
 
