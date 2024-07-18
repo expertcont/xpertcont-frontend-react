@@ -184,10 +184,17 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
   };
   const convierteSolesDolares = (nMontoSoles,nMontoDolares,nTipoCambio) =>{
       if (nMontoDolares !== 0 && nMontoDolares !== null) {
+          console.log('dolares');
           return (nMontoDolares*nTipoCambio).toFixed(2);
       }
       else{
-        return nMontoSoles;
+        console.log('soles');
+        if (nMontoSoles !== null) {
+            return nMontoSoles;
+        }else{
+            console.log('nulo a cero');
+            return 0;
+        }
       }
   }
   const handleSelectedRowsChange = (state) => {
@@ -213,8 +220,8 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                                 convierteSolesDolares(item.saldo_acreedor_mn,item.saldo_acreedor_me,parseFloat(tipoCambio))
                               ),
                   //aqui debemos convertir tc
-                  debe_nac: (item.saldo_acreedor_me*parseFloat(tipoCambio)).toFixed(2),
-                  haber_nac: (item.saldo_deudor_me*parseFloat(tipoCambio)).toFixed(2),
+                  debe_nac: convierteSolesDolares(item.saldo_acreedor_mn,item.saldo_acreedor_me,parseFloat(tipoCambio)),
+                  haber_nac: convierteSolesDolares(item.saldo_deudor_mn,item.saldo_deudor_me,parseFloat(tipoCambio)),
 
                   debe_me: item.saldo_acreedor_me,
                   haber_me: item.saldo_deudor_me
@@ -235,6 +242,8 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     // Actualizamos el estado filtrado
     const updatedFilteredData = filteredData.map(item => {
       if (selectedIds.includes(item.id)) {
+        console.log('tipoCambio',tipoCambio);
+
         return { ...item, 
                   //pasamos 100% valor correspondiente con la vista
                   monto_efec: valorVista==='deudores' ? 
@@ -251,9 +260,11 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
                               ),
 
                   //aqui debemos convertir tc
-                  debe_nac: (item.saldo_acreedor_me*parseFloat(tipoCambio)).toFixed(2),
-                  haber_nac: (item.saldo_deudor_me*parseFloat(tipoCambio)).toFixed(2),
-
+                  //debe_nac: (item.saldo_acreedor_me*parseFloat(tipoCambio)).toFixed(2),
+                  //haber_nac: (item.saldo_deudor_me*parseFloat(tipoCambio)).toFixed(2),
+                  debe_nac: convierteSolesDolares(item.saldo_acreedor_mn,item.saldo_acreedor_me,parseFloat(tipoCambio)),
+                  haber_nac: convierteSolesDolares(item.saldo_deudor_mn,item.saldo_deudor_me,parseFloat(tipoCambio)),
+                  
                   debe_me: item.saldo_acreedor_me,
                   haber_me: item.saldo_deudor_me
                };
