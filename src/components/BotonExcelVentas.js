@@ -9,7 +9,7 @@ import Tooltip from '@mui/material/Tooltip';
 const BotonExcelVentas = ({ registrosdet }) => {
   const [loading, setLoading] = useState(false);
 
-  const titulo = [{ A: "Reporte de Ventas" }, {}];
+  const titulo = [{ A: "Reporte" }, {}];
 
   const informacionAdicional = {
     A: "Doc Negocios Web  >>>  email:ovivasar@gmail.com  whathsapp +51 954807980",
@@ -22,62 +22,36 @@ const BotonExcelVentas = ({ registrosdet }) => {
 
     let tabla = [
       {
-        A: "Zona",
+        A: "Origen",
         B: "Fecha",
-        C: "Pedido",
-        D: "Vendedor",
-        E: "Codigo Cliente",
-        F: "Cliente",
-        G: "Ruc",
-        H: "Razon Social",
-        I: "P. Llegada",
-        J: "Producto",
-        K: "Precio U.",
-        L: "Moneda",
-        M: "%IGV",
-        N: "Cantidad",
-        O: "Peso Guia",     //CONSULTA ADD
-        P: "Guia Remision", //CONSULTA ADD
-        Q: "Estado",
-        R: "F/Carga",
-        S: "Ruc Transp.",
-        T: "Transp.",
-        U: "Chofer",
-        V: "Celular",
+        C: "Comprobante",
+        D: "Id",
+        E: "Documento",
+        F: "Razon Social",
+        G: "Total",
+        H: "Moneda",
+        I: "TC",
+
       },
     ];
 
     const newData = registrosdet.map((item) => ({
         ...item,
-        cantidad: parseFloat(item.cantidad),
-        precio_unitario: parseFloat(item.precio_unitario),
-        porc_igv: parseFloat(item.porc_igv),
+        r_monto_total: parseFloat(item.r_monto_total),
+        r_tc: parseFloat(item.r_tc),
       }));
   
       newData.forEach((item) => {
       tabla.push({
-        A: item.zona_venta,
-        B: item.comprobante_original_fecemi,
-        C: item.pedido,
-        D: item.vendedor,
-        E: item.codigo, //codigo_cliente porque les gustara a alsa
-        F: item.razon_social,
-        G: item.ref_documento_id,
-        H: item.ref_razon_social,
-        I: item.zona_entrega,
-        J: item.descripcion,
-        K: item.precio_unitario,
-        L: item.moneda,
-        M: item.porc_igv,
-        N: item.cantidad,
-        //O: item.peso_guia,
-        //P: item.guia,
-        Q: item.estado,
-        R: item.tr_fecha_carga,
-        S: item.tr_ruc,
-        T: item.tr_razon_social,
-        U: item.tr_chofer,
-        V: item.tr_celular,
+        A: item.resultado,
+        B: item.r_fecemi,
+        C: item.comprobante,
+        D: item.r_id_doc,
+        E: item.r_documento_id,
+        F: item.r_razon_social,
+        G: item.r_monto_total,
+        H: item.r_moneda,
+        I: item.r_tc,
       });
     });
 
@@ -119,7 +93,7 @@ const BotonExcelVentas = ({ registrosdet }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "ProductosEstilizado.xlsx";
+    link.download = "Reporte.xlsx";
     link.click();
     URL.revokeObjectURL(url);
   };
