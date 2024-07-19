@@ -387,7 +387,7 @@ export default function AsientoVentaForm() {
                             disabled={
                                       !registro.r_documento_id || 
                                       !registro.r_razon_social || 
-                                      !registro.r_monto_total ||
+                                      //!registro.r_monto_total ||
                                       clickGuardar
                                       }
                             >
