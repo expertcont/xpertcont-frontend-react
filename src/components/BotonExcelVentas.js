@@ -93,7 +93,7 @@ const BotonExcelVentas = ({ registrosdet }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "Reporte.xlsx";
+    link.download = "Reporteee.xlsx";
     link.click();
     URL.revokeObjectURL(url);
   };
