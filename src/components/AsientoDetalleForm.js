@@ -572,8 +572,8 @@ const cargaPopUpMedioPago = () =>{
             >
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          //label="DEBE"
-                          placeholder="DEBE"
+                          label="DEBE"
+                          //placeholder="DEBE"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
                               }}
@@ -606,7 +606,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                              <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>DEBE</Typography>
+                              <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>PEN</Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -614,8 +614,8 @@ const cargaPopUpMedioPago = () =>{
                 </Grid>
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          //label="HABER"
-                          placeholder="HABER"
+                          label="HABER"
+                          //placeholder="HABER"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
                               }}
@@ -642,7 +642,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>HABER</Typography>
+                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>PEN</Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -660,8 +660,8 @@ const cargaPopUpMedioPago = () =>{
             >
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          //label="DEBE"
-                          placeholder="DEBE"
+                          label="DEBE"
+                          //placeholder="DEBE"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
                               }}
@@ -702,8 +702,8 @@ const cargaPopUpMedioPago = () =>{
                 </Grid>
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          //label="HABER"
-                          placeholder="HABER"
+                          label="HABER"
+                          //placeholder="HABER"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
                               }}

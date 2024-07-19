@@ -1370,7 +1370,13 @@ export default function AsientoList() {
   >
     { permisoVentas ?
       (    
-      <ToggleButton value="ventas">L-Ventas</ToggleButton>
+      <ToggleButton value="ventas"
+                    style={{
+                      backgroundColor: valorVista === 'ventas' ? 'lightblue' : 'transparent',
+                      color: valorVista === 'ventas' ? "orange" : "gray"
+                    }}
+
+      >L-Ventas</ToggleButton>
       ):(
       <span></span>
       )
@@ -1378,7 +1384,13 @@ export default function AsientoList() {
 
     { permisoCompras ?
       (    
-    <ToggleButton value="compras">L-Compras</ToggleButton>
+    <ToggleButton value="compras"
+                  style={{
+                    backgroundColor: valorVista === 'compras' ? 'lightblue' : 'transparent',
+                    color: valorVista === 'compras' ? 'orange' : 'gray',
+                    borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
+                  }}
+    >L-Compras</ToggleButton>
     ):(
       <span></span>
       )
@@ -1386,7 +1398,13 @@ export default function AsientoList() {
 
     { permisoCaja ?
     (
-    <ToggleButton value="caja">L-Caja</ToggleButton>
+    <ToggleButton value="caja"
+                  style={{
+                    backgroundColor: valorVista === 'caja' ? 'lightblue' : 'transparent',
+                    color: valorVista === 'caja' ? 'orange' : 'gray',
+                    borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                                        
+                  }}
+    >L-Caja</ToggleButton>
     ):(
       <span></span>
       )
@@ -1394,7 +1412,12 @@ export default function AsientoList() {
 
     { permisoDiario ?
     (
-    <ToggleButton value="diario">L-Diario</ToggleButton>
+    <ToggleButton value="diario"
+                  style={{
+                    backgroundColor: valorVista === 'diario' ? 'lightblue' : 'transparent',
+                    color: valorVista === 'diario' ? 'orange' : 'gray',
+                  }}
+    >L-Diario</ToggleButton>
     ):(
       <span></span>
       )

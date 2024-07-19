@@ -74,7 +74,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
                   }}
             >
                 <Typography variant='h5' color='white' textAlign='center'>
-                    Bienvenido
+                    Contabilidad Móvil
                 </Typography>
                 
                 <CardContent >
@@ -134,7 +134,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
                                               sx={{display:'block',margin:'.5rem 0'}}
                                               //sx={{margin:'.5rem 0', height:55}}
                                               >
-                      INGRESAR CONTABILIDAD
+                      INGRESAR
                       </Button>
 
                       </>

@@ -353,41 +353,7 @@ const handleModificar = (row) => {
                                       style:{color:'white'} 
                                   }}
       />
-      <TextField  variant="outlined" color="primary" size="small"
-                                   label="OTRA COSA"
-                                   sx={{display:'block',
-                                        margin:'.5rem 0'}}
-                                   name="busqueda2"
-                                   placeholder='Razon social'
-                                   onChange={actualizaValorFiltro}
-                                   inputProps={{ style:{color:'white'} }}
-                                   InputProps={{
-                                      startAdornment: (
-                                        <InputAdornment position="start">
-                                          <FindIcon />
-                                        </InputAdornment>
-                                      ),
-                                      style:{color:'white'} 
-                                  }}
-      />
-      <TextField  variant="outlined" color="secondary" size="small"
-                                   label="nuevo"
-                                   sx={{display:'block',
-                                        margin:'.5rem 0'}}
-                                   name="busqueda2"
-                                   placeholder='Razon social'
-                                   onChange={actualizaValorFiltro}
-                                   inputProps={{ style:{color:'white'} }}
-                                   InputProps={{
-                                      startAdornment: (
-                                        <InputAdornment position="start">
-                                          <FavoriteIcon />
-                                        </InputAdornment>
-                                      ),
-                                      style:{color:'white'} 
-                                  }}
-      />
-
+ 
     </div>
 
 
