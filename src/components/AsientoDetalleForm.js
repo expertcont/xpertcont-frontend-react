@@ -572,7 +572,7 @@ const cargaPopUpMedioPago = () =>{
             >
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          label="DEBE"
+                          label="DEBE S/."
                           //placeholder="DEBE"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
@@ -606,7 +606,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                              <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>PEN</Typography>
+                              <Typography variant="caption" sx={{ fontSize: '0.85rem' }}> </Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -614,7 +614,7 @@ const cargaPopUpMedioPago = () =>{
                 </Grid>
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          label="HABER"
+                          label="HABER S/."
                           //placeholder="HABER"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
@@ -642,7 +642,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>PEN</Typography>
+                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}> </Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -660,7 +660,7 @@ const cargaPopUpMedioPago = () =>{
             >
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          label="DEBE"
+                          label="DEBE USD"
                           //placeholder="DEBE"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
@@ -679,7 +679,7 @@ const cargaPopUpMedioPago = () =>{
                           inputRef={TextFieldRef05}
                           onKeyDown={(event) => handleKeyDown(event, TextFieldRef06,TextFieldRef04)}
                           inputProps={{ style:{color:'white'} }}
-                          InputLabelProps={{ style:{color:'skyblue'} }}
+                          InputLabelProps={{ style:{color:'green'} }}
                           InputProps={{ // Estilos para el contenedor del input
                             endAdornment: (
                               <IconButton 
@@ -694,7 +694,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>USD</Typography>
+                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}> </Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -702,8 +702,7 @@ const cargaPopUpMedioPago = () =>{
                 </Grid>
                 <Grid item xs={4.8} >
                   <TextField variant="outlined" 
-                          label="HABER"
-                          //placeholder="HABER"
+                          label="HABER USD"
                           sx={{ display:'block',
                                   margin:'.5rem 0',
                               }}
@@ -715,7 +714,7 @@ const cargaPopUpMedioPago = () =>{
                           inputRef={TextFieldRef06}
                           onKeyDown={(event) => handleKeyDown(event, TextFieldRef07,TextFieldRef05)}
                           inputProps={{ style:{color:'white'} }}
-                          InputLabelProps={{ style:{color:'skyblue'} }}
+                          InputLabelProps={{ style:{color:'green'} }}
                           InputProps={{ // Estilos para el contenedor del input
                             endAdornment: (
                               <IconButton 
@@ -730,7 +729,7 @@ const cargaPopUpMedioPago = () =>{
                                   transform: 'translateY(-50%)', // Centrar verticalmente
                                 }}
                               >
-                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}>USD</Typography>
+                                <Typography variant="caption" sx={{ fontSize: '0.85rem' }}> </Typography>
                               </IconButton>
                             ),
                           }}                                
@@ -761,7 +760,7 @@ const cargaPopUpMedioPago = () =>{
                 alignItems={isSmallScreen ? 'center' : 'center'}
                 justifyContent={isSmallScreen ? 'center' : 'center'}
             >
-                <Grid item xs={6} >
+                <Grid item xs={4.8} >
                     <TextField variant="outlined" 
                         //label="RUC/DNI"
                         placeholder="RUC/DNI"
@@ -862,14 +861,15 @@ const cargaPopUpMedioPago = () =>{
                             auxiliarKey=""
                         />
                 </Grid>
-                <Grid xs={isSmallScreen ? 3 : 4}>
+                <Grid xs={isSmallScreen ? 4.2 : 5.2}>
                   <Typography variant='inherit' 
                               color='white' 
-                              textAlign='center'
+                              textAlign='left'
                               sx={{ 
                                 overflow: 'hidden', // Ocultar el texto que se desborda
                                 textOverflow: 'ellipsis', // Agregar puntos suspensivos
                                 whiteSpace: 'nowrap', // Evitar que el texto se rompa en múltiples líneas
+                                ml: 1 // Agregar margen a la izquierda 
                               }}                              
                   >
                         {registro.r_doc}
@@ -1105,7 +1105,7 @@ const cargaPopUpMedioPago = () =>{
                 </Grid>
             </Grid>
             <TextField variant="outlined" 
-                    //label="EMI Ref."
+                    label="EMISION R."
                     sx={{display:'block',
                             margin:'.5rem 0'}}
                     name="r_fecemi_ref"

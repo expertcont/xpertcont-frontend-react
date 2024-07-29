@@ -776,7 +776,7 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     //setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
 
-  const cargaTC = (sFecha,sTipo) =>{
+  /*const cargaTC = (sFecha,sTipo) =>{
     axios
     .get(`${back_host}/tipocambio/${sFecha}/${sTipo}`)
     .then((response) => {
@@ -787,8 +787,21 @@ const AsientoCobranzaCredito = ({ datos: initialDatos, onClose, id_anfitrion, do
     .catch((error) => {
         console.log(error);
     });
-  }
-
+  }*/
+  const cargaTC = (sFecha) => {
+      axios
+          .post(`${back_host}/tipocambiogenera`, {
+              fecha: sFecha
+          })
+          .then((response) => {
+              const { venta } = response.data;
+              setTipoCambio(venta);
+          })
+          .catch((error) => {
+              console.log(error);
+          });
+  };
+  
   const handleChangeFecha = (sFecha) => {
     setFechaAsiento(sFecha);
     cargaTC(sFecha,'2');
