@@ -31,7 +31,7 @@ import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
-import '../App.css';
+import '../../App.css';
 import 'styled-components';
 //import axios from 'axios';
 
@@ -43,102 +43,23 @@ import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutli
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelVentas from './BotonExcelVentas';
-import { ComprasColumnas } from './ColumnasAsiento';
-import { VentasColumnas } from './ColumnasAsiento';
-import { CajaColumnas } from './ColumnasAsiento';
-import { DiarioColumnas } from './ColumnasAsiento';
-import AsientoFileInput from './AsientoFileInput';
-import { saveAs } from 'file-saver';
-import AsientoMensajeTotales from './AsientoMensajeTotales';
-import AsientoCobranzaCredito from './AsientoCobranzaCredito';
+import BotonExcelVentas from '../BotonExcelVentas';
 
-export default function AsientoList() {
+import { AdminComprasColumnas } from './AdminColumnas';
+import { AdminVentasColumnas } from './AdminColumnas';
+import { AdminCajaColumnas } from './AdminColumnas';
+
+import { saveAs } from 'file-saver';
+import AsientoMensajeTotales from '../AsientoMensajeTotales';
+import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
+
+export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const handleCancel = () => {
-    console.log('Operación cancelada');
-    setDialogOpen(false);
-  };
-  const handleAccept = (buttonValue) => {
-    console.log(`Operación aceptada con el botón: ${buttonValue}`);
-    if (buttonValue==='aceptar1') {
-      console.log(calcularSumatoriaMoneda('r_monto_total','PEN'));
-      procesarSire('REEMPL')
-    }
-    if (buttonValue==='aceptar2') {
-        console.log(calcularSumatoriaMoneda('r_monto_total','USD'));
-        //Mostrar Totales Previos
-        procesarSire('NO.DOMIC')
-    }
-    if (buttonValue==='aceptar3') {
-      //procesarVacio
-    }
 
-    setDialogOpen(false);
-  };
-  const procesarSire=(sFormato) =>{
-    //Mostrar Totales Previos
-    if (id_libro==='014'){
-      swal2.fire({
-        title: "Ventas PEN - USD",
-        html: armaMensajeTotalesVenta(),
-        showDenyButton: true, // Mostrar botón "Cancelar"
-        confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
-        denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
-        }).then((result) => {
-          if (result.isConfirmed) {
-            convertirATextoSire(sFormato);
-          } else if (result.isDenied || result.isDismissed) {
-            console.log("Usuario canceló el mensaje");
-          }
-        });
-    }
-    if (id_libro==='008'){
-      swal2.fire({
-        title: "Compras PEN - USD",
-        html: armaMensajeTotalesCompra(),
-        showDenyButton: true, // Mostrar botón "Cancelar"
-        confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
-        denyButtonText: 'Cancelar' // Texto del botón "Cancelar"      
-        }).then((result) => {
-          if (result.isConfirmed) {
-            convertirATextoSire(sFormato);
-          } else if (result.isDenied || result.isDismissed) {
-            console.log("Usuario canceló el mensaje");
-          }
-        });
-    }
-  }
-
-  const initialButtons = [
-    { text: 'REEMPL', value: 'aceptar1' },
-    { text: 'NO.DOMIC', value: 'aceptar2' },
-    { text: 'CERO', value: 'aceptar3' }
-  ]; 
-
-  const [buttons, setButtons] = useState([
-    { text: 'REEMPL', value: 'aceptar1' },
-    { text: 'NO.DOMIC', value: 'aceptar2' },
-    { text: 'CERO', value: 'aceptar3' }
-  ]); 
-
-  const getButtonColor = (buttonValue) => {
-    switch (buttonValue) {
-      case 'aceptar1':
-        return 'info'; 
-      case 'aceptar2':
-        return 'success';
-      case 'aceptar3':
-        return 'inherit';
-      default:
-        return 'inherit'; // Color predeterminado
-    }
-  };  
-  //Fin Seccion Dialog
 
   createTheme('solarized', {
     text: {
@@ -270,8 +191,7 @@ export default function AsientoList() {
   const [permisoVentas, setPermisoVentas] = useState(false);
   const [permisoCompras, setPermisoCompras] = useState(false);
   const [permisoCaja, setPermisoCaja] = useState(false);
-  const [permisoDiario, setPermisoDiario] = useState(false);
-
+  
   //Permisos Nivel 02 - Comandos (Buttons)
   const [pVenta0101, setPVenta0101] = useState(false); //Nuevo (Casi libre)
   const [pVenta0102, setPVenta0102] = useState(false); //Modificar (Restringido)
@@ -288,11 +208,7 @@ export default function AsientoList() {
   const [pCaja0303, setPCaja0303] = useState(false); //Anular (Restringido)
   const [pCaja0304, setPCaja0304] = useState(false); //Eliminar (Casi Nunca solo el administrador)
 
-  const [pDiario0401, setPDiario0401] = useState(false); //Nuevo (Casi libre)
-  const [pDiario0402, setPDiario0402] = useState(false); //Modificar (Restringido)
-  const [pDiario0403, setPDiario0403] = useState(false); //Anular (Restringido)
-  const [pDiario0404, setPDiario0404] = useState(false); //Eliminar (Casi Nunca solo el administrador)
-
+  
   // valores adicionales para Carga Archivo
   const [datosCarga, setDatosCarga] = useState({
     id_anfitrion: '',
@@ -358,7 +274,7 @@ export default function AsientoList() {
   };
   const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento)=>{
     await swal({
-      title:"Eliminar Asiento",
+      title:"Eliminar Registro",
       text:"Seguro ?",
       icon:"warning",
       buttons:["No","Si"]
@@ -456,246 +372,20 @@ export default function AsientoList() {
     }, 0);
   };  
 
-  const armaMensajeTotalesVenta = () => {
-    let strMensaje;
-    strMensaje =  `
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
-      <div style="text-align: left;">
-        <p style="margin: 2px 0;">Exportacion:</p>
-        <p style="margin: 2px 0;">Base:</p>
-        <p style="margin: 2px 0;">Descuentos:</p>
-        <p style="margin: 2px 0;">Exonerado:</p>
-        <p style="margin: 2px 0;">Inafecta:</p>
-        <p style="margin: 2px 0;">ISC:</p>
-        <p style="margin: 2px 0;">IGV:</p>
-        <p style="margin: 2px 0;">Desc IGV:</p>
-        <p style="margin: 2px 0;">Base IVAP:</p>
-        <p style="margin: 2px 0;">IVAP:</p>
-        <p style="margin: 2px 0;">ICBP:</p>
-        <p style="margin: 2px 0;">Otros:</p>
-        <p style="margin: 2px 0;">Total:</p>
-        <p style="margin: 2px 0;">Filas Validas:</p>
-      </div>
-      <div style="text-align: left;">
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('export','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('base','PEN')}</p>
-        <p style="margin: 2px 0;">S/ 0.00</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('exonera','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('inafecta','PEN')}</p>
-        <p style="margin: 2px 0;">S/ 0.00</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('igv','PEN')}</p>
-        <p style="margin: 2px 0;">S/ 0.00</p>
-        <p style="margin: 2px 0;">S/ 0.00</p>
-        <p style="margin: 2px 0;">S/ 0.00</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_icbp','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_otros','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_total','PEN')}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('PEN')}</p>
-      </div>
-      <div style="text-align: left;">
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('export','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('base','USD')}</p>
-        <p style="margin: 2px 0;">$ 0.00</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('exonera','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('inafecta','USD')}</p>
-        <p style="margin: 2px 0;">$ 0.00</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('igv','USD')}</p>
-        <p style="margin: 2px 0;">$ 0.00</p>
-        <p style="margin: 2px 0;">$ 0.00</p>
-        <p style="margin: 2px 0;">$ 0.00</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_icbp','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_otros','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_total','USD')}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('USD')}</p>
-      </div>
 
-    </div>
-    `;
-    return strMensaje;
-  };
-
-  const armaMensajeTotalesCompra = () => {
-    let strMensaje;
-    strMensaje =  `
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;">
-      <div style="text-align: left;">
-        <p style="margin: 2px 0;">Base(A):</p>
-        <p style="margin: 2px 0;">Igv(A):</p>
-        <p style="margin: 2px 0;">Base(B):</p>
-        <p style="margin: 2px 0;">Igv(B):</p>
-        <p style="margin: 2px 0;">Base(C):</p>
-        <p style="margin: 2px 0;">Igv(C):</p>
-        <p style="margin: 2px 0;">No Gravadas:</p>
-        <p style="margin: 2px 0;">ISC:</p>
-        <p style="margin: 2px 0;">ICBP:</p>
-        <p style="margin: 2px 0;">Otros:</p>
-        <p style="margin: 2px 0;">Total:</p>
-        <p style="margin: 2px 0;">Filas Validas:</p>
-      </div>
-      <div style="text-align: left;">
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base001','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_igv001','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base002','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_igv002','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base003','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_igv003','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_base004','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_isc','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_icbp','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_otros','PEN')}</p>
-        <p style="margin: 2px 0;">${'S/ ' + calcularSumatoriaMoneda('r_monto_total','PEN')}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('PEN')}</p>
-      </div>
-      <div style="text-align: left;">
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base001','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_igv001','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base002','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_igv002','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base003','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_igv003','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_base004','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_isc','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_icbp','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_otros','USD')}</p>
-        <p style="margin: 2px 0;">${'$ ' + calcularSumatoriaMoneda('r_monto_total','USD')}</p>
-        <p style="margin: 2px 0;">${calcularSumatoriaFilasMoneda('USD')}</p>
-      </div>
-
-    </div>
-    `;
-    return strMensaje;
-  };
-  
-  const handleMensajeTotales = () => {
-    if (isDialogOpen) {
-      setDialogOpen(false);
-    }else{
-      
-      //Calcular sumatorias y habilitar Botones
-      const soles = calcularSumatoriaMoneda('r_monto_total','PEN');
-      const dolares = calcularSumatoriaMoneda('r_monto_total','USD');
-      //console.log(soles,dolares);
-      
-      setButtons(initialButtons);
-      if (id_libro==='014') {
-        //Eliminar el botón NO.DOMIC por default
-        setButtons(prevButtons => prevButtons.filter(button => button.text !== 'NO.DOMIC'));
-
-        //Eliminar el botón 'PEN' si soles es igual a '0.00'
-        if (soles === '0.00') {
-          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'REEMPL'));
-        }else{
-          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'CERO'));
-        }
-      }
-      if (id_libro==='008') {
-        //Eliminar el botón 'PEN' si soles es igual a '0.00'
-        if (soles === '0.00') {
-          console.log('igual a cero en compras');
-          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'REEMPL'));
-          setButtons(prevButtons => prevButtons.filter(button => button.text !== 'NO.DOMIC'));
-        }
-        //Falta verificar si existen NO.DOMIC
-
-      }
-
-      //console.log(buttons);
-      setDialogOpen(true);
-    }
-  };
-
-  const convertirATextoSire = async(sFormato) => {
-    //Debemos cambiar parametro de ingreso: REEMPLAZO o NO.DOMIC o CERO
-    //Solo actualizamos estados, y el useeffect se encarga de completar proceso
-    let response;
-    let nombreArchivoSire;
-    let codM;
-    //let moneda='PEN-USD'; //todo ;) el api no lo utiliza, depurar en backend nodejs
-    const partes = periodo_trabajo.split('-');
-    const periodoAno = partes[0];
-    const periodoMes = partes[1];
-    
-    //Ya no diferenciamos monedas, todo asumimos codigo 1, sunat de mela asi funciona
-    codM = '1';
-
-    if (id_libro==='008'){
-      if (sFormato === 'REEMPL'){
-        nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'11'+ codM + '2'+'.TXT';
-        response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-      }
-      //Opcion NO domiciliado
-      if (sFormato === 'NO.DOMIC'){
-        nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00080400'+'02'+'11'+ codM + '2'+'.TXT';
-        response = await fetch(`${back_host}/sire/compras/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-      }
-    }
-    if (id_libro==='014'){
-      //Solo tenemos reemplazo para ventas
-      nombreArchivoSire = 'LE'+ contabilidad_trabajo+periodoAno+periodoMes+'00140400'+'02'+'11'+ codM + '2'+'.TXT';
-      response = await fetch(`${back_host}/sire/ventas/${params.id_anfitrion}/${contabilidad_trabajo}/${contabilidad_nombre}/${periodo_trabajo}`);
-    }
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log("Datos obtenidos:", data);
-      procesaArchivoTexto(data, nombreArchivoSire);
-    } else {
-      console.error("Error al obtener datos. Código de respuesta:", response.status);
-    }    
-  };
-
-  const procesaArchivoTexto = (datostexto,nombreArchivoSire) =>{
-    var texto;
-
-    texto = datostexto.map(item => {
-      return Object.values(item).join('|');
-    }).join('\n');
-
-    // Crear un blob con los datos de texto
-    const blob = new Blob([texto], { type: 'text/plain' });
-
-    // Crear una URL para el blob
-    const url = URL.createObjectURL(blob);
-
-    // Crear un enlace invisible para descargar el archivo
-    const enlaceDescarga = document.createElement('a');
-    enlaceDescarga.href = url;
-    enlaceDescarga.download = nombreArchivoSire;
-
-    // Simular un clic en el enlace para iniciar la descarga
-    document.body.appendChild(enlaceDescarga);
-    enlaceDescarga.click();
-
-    // Limpiar después de la descarga
-    document.body.removeChild(enlaceDescarga);
-    URL.revokeObjectURL(url);
-  }
-
-  // Función que se pasa como prop al componente.js
-  const handleActualizaImportaOK = () => {
-    
-    console.log('valorVista,periodo_trabajo,contabilidad_trabajo:', valorVista,periodo_trabajo,contabilidad_trabajo);
-    cargaRegistro(valorVista,periodo_trabajo,contabilidad_trabajo);
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
-    // Puedes realizar otras operaciones con la cantidad de filas si es necesario
-  };
-  
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   const cargaRegistro = async (strHistorialValorVista,strHistorialPeriodo,strHistorialContabilidad) => {
-    var response;
+    let response;
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
-    //Pero asi es mas facil, porque todo esta en valorVista ... muaaaaaa
-    //console.log(`${back_host}/asiento/${valorVista}/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}`);
-    //console.log(`${back_host}/asiento/${valorVista}/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
     if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-        response = await fetch(`${back_host}/asiento/${valorVista}/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+        console.log(`${back_host}/ad_venta/${params.id_anfitrion}/${contabilidad_trabajo}/${periodo_trabajo}`);
+        response = await fetch(`${back_host}/ad_venta/${params.id_anfitrion}/${contabilidad_trabajo}/${periodo_trabajo}`);
     }
     else{
         //usamos los historiales
-        //console.log("historiales cargaRegistro");
-        console.log(`${back_host}/asiento/${strHistorialValorVista}/${params.id_anfitrion}/${params.id_invitado}/${strHistorialPeriodo}/${strHistorialContabilidad}`);
-        response = await fetch(`${back_host}/asiento/${strHistorialValorVista}/${params.id_anfitrion}/${params.id_invitado}/${strHistorialPeriodo}/${strHistorialContabilidad}`);
+        console.log('historiales ',`${back_host}/ad_venta/${params.id_anfitrion}/${strHistorialContabilidad}/${strHistorialPeriodo}`);
+        response = await fetch(`${back_host}/ad_venta/${params.id_anfitrion}/${strHistorialContabilidad}/${strHistorialPeriodo}`);
     }
     
     const data = await response.json();
@@ -739,18 +429,6 @@ export default function AsientoList() {
     //Lo dejaremos terminar el evento de cambio o change
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
-  /*const filtrar=(strBusca)=>{
-      var resultadosBusqueda = [];
-      resultadosBusqueda = tabladet.filter((elemento) => {
-        if (elemento.r_razon_social.toString().toLowerCase().includes(strBusca.toLowerCase())
-         || elemento.r_documento_id.toString().toLowerCase().includes(strBusca.toLowerCase())
-         || elemento.comprobante.toString().toLowerCase().includes(strBusca.toLowerCase())
-          ){
-              return elemento;
-          }
-      });
-      setRegistrosdet(resultadosBusqueda);
-  }*/
   const filtrar = (strBusca) => {
     var resultadosBusqueda = tabladet.filter((elemento) => {
       //verifica nulls para evitar error de busqueda
@@ -786,10 +464,6 @@ export default function AsientoList() {
       setPCaja0303(true); //eliminar
       setPCaja0304(true); //eliminar masivo
 
-      setPDiario0401(true); //nuevo
-      setPDiario0402(true); //modificar
-      setPDiario0403(true); //eliminar
-      setPDiario0404(true); //eliminar masivo
     }
     else{
         //Realiza la consulta a la API de permisos
@@ -860,22 +534,6 @@ export default function AsientoList() {
             setPCaja0304(true);
           }else {setPCaja0304(false);}
           ////////////////////////////////////////////////
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '04-01'); //Nuevo
-          if (tienePermiso) {
-            setPDiario0401(true);
-          }
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '04-02'); //Modificar
-          if (tienePermiso) {
-            setPDiario0402(true);
-          }else {setPDiario0402(false);}
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '04-03'); //Eliminar
-          if (tienePermiso) {
-            setPDiario0403(true);
-          }else {setPDiario0403(false);}
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '04-04'); //Eliminar Masivo
-          if (tienePermiso) {
-            setPDiario0404(true);
-          }else {setPDiario0404(false);}
 
           //setUpdateTrigger(Math.random());//experimento
         })
@@ -924,9 +582,11 @@ export default function AsientoList() {
       if (isAuthenticated && user && user.email) {
         cargaPermisosMenu(); //carga permisos menus
       }
+
   },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
 
   useEffect( ()=> {
+    
       //Carga por cada cambio de seleccion en toggleButton
       console.log('2do useeffect periodo_trabajo: ',periodo_trabajo);
 
@@ -950,11 +610,10 @@ export default function AsientoList() {
       if (st_valorVista === 'ventas') {cargaPermisosMenuComando('01');}
       if (st_valorVista === 'compras') {cargaPermisosMenuComando('02');}
       if (st_valorVista === 'caja') {cargaPermisosMenuComando('03');}
-      if (st_valorVista === 'diario') {cargaPermisosMenuComando('04');}
 
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo);
-
+    
   },[updateTrigger]) //Aumentamos
 
   useEffect( ()=> {
@@ -976,13 +635,12 @@ export default function AsientoList() {
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
     if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      columnasEspecificas = VentasColumnas;
+      columnasEspecificas = AdminVentasColumnas;
     }else{
       columnasEspecificas = 
-          st_valorVista === 'ventas' ? VentasColumnas
-        : st_valorVista === 'compras' ? ComprasColumnas
-        : st_valorVista === 'caja' ? CajaColumnas
-        : DiarioColumnas;
+          st_valorVista === 'ventas' ? AdminVentasColumnas
+        : st_valorVista === 'compras' ? AdminComprasColumnas
+        : AdminCajaColumnas;
     }
 
     //console.log('permisosComando pVenta0103 cargado: ',pVenta0103);
@@ -992,7 +650,6 @@ export default function AsientoList() {
     setColumnas([...columnasComunes, ...columnasEspecificas]);
     
     //cuando carga x primera vez, sale vacio ... arreglar esto
-    //cargaRegistro(st_valorVista,st_periodo_trabajo,st_contabilidad_trabajo); //anterior falla 1era vez
     cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo); //new cambio
 
     //Datos listos en caso de volver por aqui, para envio
@@ -1001,8 +658,8 @@ export default function AsientoList() {
     setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
     setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-
-  },[permisosComando, pVenta0101, pCompra0201, pCaja0301, pDiario0401, valorVista]) //Solo cuando este completo estado
+    
+  },[permisosComando, pVenta0101, pCompra0201, pCaja0301, valorVista]) //Solo cuando este completo estado
 
 
   //////////////////////////////////////////////////////////
@@ -1015,7 +672,7 @@ export default function AsientoList() {
         name: '',
         width: '40px',
         cell: (row) => (
-          (pVenta0102 || pCompra0202 || pCaja0302 || pDiario0402) ? (
+          (pVenta0102 || pCompra0202 || pCaja0302) ? (
             <DriveFileRenameOutlineIcon
               onClick={() => handleUpdate(row.num_asiento)}
               style={{
@@ -1033,7 +690,7 @@ export default function AsientoList() {
         name: '',
         width: '40px',
         cell: (row) => (
-          (pVenta0103 || pCompra0203 || pCaja0303 || pDiario0403) ? (
+          (pVenta0103 || pCompra0203 || pCaja0303) ? (
             <DeleteIcon
               onClick={() => handleDelete(row.num_asiento)}
               style={{
@@ -1054,6 +711,8 @@ export default function AsientoList() {
     .get(`${back_host}/usuario/periodos/${params.id_anfitrion}`)
     .then((response) => {
       setPeriodosSelect(response.data);
+      //console.log(response.data);
+
       if (strHistorialPeriodo === '' || strHistorialPeriodo === null){
         //Establecer 1er elemento en select
         if (response.data.length > 0) {
@@ -1102,7 +761,6 @@ export default function AsientoList() {
       setPermisoVentas(true);
       setPermisoCompras(true);
       setPermisoCaja(true);
-      setPermisoDiario(true);
     }
     else{
         //Realiza la consulta a la API de permisos, puro Menu (obtenerTodosMenu)
@@ -1131,10 +789,6 @@ export default function AsientoList() {
           if (tienePermiso) {
             setPermisoCaja(true);
           }
-          tienePermiso = permisosData.some(permiso => permiso.id_menu === '04');
-          if (tienePermiso) {
-            setPermisoDiario(true);
-          }
         })
         .catch(error => {
           console.log('Error al obtener los permisos:', error);
@@ -1142,144 +796,6 @@ export default function AsientoList() {
     }
   };
 
-  const handleDescargarExcelVacio = async () => {
-    // Question view id_libro
-    let filePath;
-    let fileName;
-    console.log(id_libro);
-    if (id_libro==='014'){
-      filePath = '/reg_ventas_xpertcont.xlsx';
-      // Nombre del archivo para la descarga
-      fileName = 'reg_ventas_xpertcont.xlsx';
-    }
-    if (id_libro==='008'){
-      filePath = '/reg_compras_xpertcont.xlsx';
-      // Nombre del archivo para la descarga
-      fileName = 'reg_compras_xpertcont.xlsx';
-    }
-
-    // URL completa del archivo
-    const fileUrl = process.env.PUBLIC_URL + filePath;
-
-    try {
-      // Realizar la solicitud para obtener el archivo usando axios
-      const response = await axios.get(fileUrl, { responseType: 'blob' });
-
-      // Utilizar file-saver para descargar el archivo
-      saveAs(response.data, fileName);
-    } catch (error) {
-      console.error('Error al descargar el archivo:', error);
-    }
-  };
-
-  const handleAsientoMasivoContado = async (sAnfitrion,sDocumentoId,sPeriodo) => {
-      swal2.fire({
-        title: "Genera Asiento CANCELA VENTAS CONTADO",
-        //html: armaMensajeTotalesVenta(),
-        icon: 'question',
-        showDenyButton: true, // Mostrar botón "Cancelar"
-        confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
-        denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-              await fetch(`${back_host}/asientomasivoventascontado/${sAnfitrion}/${sDocumentoId}/${sPeriodo}`, {
-                method:"POST",
-                headers: {"Content-Type":"text/plain"}
-              });
-              setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
-                setUpdateTrigger(Math.random());//experimento
-              }, 200);
-              console.log('generado contrasiento de ventas al contado,recargar useeffect');
-            } else if (result.isDenied || result.isDismissed) {
-              console.log("Usuario canceló el mensaje");
-          }
-      });
-  };
-  const handleAsientoDifCambio = async (sAnfitrion,sDocumentoId,sPeriodo) => {
-    swal2.fire({
-      title: "Genera Asiento DIF.CAMBIO",
-      //html: armaMensajeTotalesVenta(),
-      icon: 'question',
-      showDenyButton: true, // Mostrar botón "Cancelar"
-      confirmButtonText: 'Aceptar', // Texto del botón "Aceptar"
-      denyButtonText: 'Cancelar' // Texto del botón "Cancelar"
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-            await fetch(`${back_host}/asientomasivodifcambio/${sAnfitrion}/${sDocumentoId}/${sPeriodo}`, {
-              method:"POST",
-              headers: {"Content-Type":"text/plain"}
-            });
-            setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
-              setUpdateTrigger(Math.random());//experimento
-            }, 200);
-            console.log('generado dif cambio en diario,recargar useeffect');
-          } else if (result.isDenied || result.isDismissed) {
-            console.log("Usuario canceló el mensaje");
-        }
-    });
-  };
-  const handleAsientoMayorizado = async (sAnfitrion,sDocumentoId,sPeriodo) => {
-    let sLibro;
-    const { value: selectedOrigen } = await swal2.fire({
-      title: 'Mayorizar Libro',
-      //text: 'Selecciona el origen para la eliminación masiva:',
-      input: 'select',
-      icon: 'question',
-      //color: 'orange',
-      inputOptions: {
-        VENTAS: 'VENTAS',
-        COMPRAS: 'COMPRAS',
-        CAJA: 'CAJA',
-        // Agrega las opciones según los valores de "origen" de tu tabla
-      },
-      inputPlaceholder: 'Selecciona el origen',
-      showCancelButton: true,
-      confirmButtonText: 'Generar',
-      cancelButtonText: 'Cancelar',
-      inputValidator: (value) => {
-        return new Promise((resolve) => {
-          if (value === '') {
-            resolve('Debes seleccionar un Libro');
-          } else {
-            resolve();
-          }
-        });
-      },
-    });
-
-    // Si el usuario hace clic en "Eliminar" y selecciona un origen
-    if (selectedOrigen) {
-      if (selectedOrigen==='VENTAS'){sLibro='014';}
-      if (selectedOrigen==='COMPRAS'){sLibro='008';}
-      if (selectedOrigen==='CAJA'){sLibro='001';}
-      await fetch(`${back_host}/asientomayorizado/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}`, {
-        method:"POST",
-        headers: {"Content-Type":"text/plain"}
-      });
-
-      setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
-        setUpdateTrigger(Math.random());//experimento
-      }, 200);
-      console.log('asiento generado, recargar en 2do useeffect');
-    }
-  };
-  const handleAsientoCuentasCorrientes = async (sAnfitrion,sDocumentoId,sPeriodo) => {
-    //Por default deudores
-    const sApi = `${back_host}/reporte/cuentascorrientes/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/deudores`;
-    const response = await fetch(sApi);
-    const data = await response.json();
-    setDatosPopUp(data);
-    
-    console.log(data);
-    //Pausa, cargar useState ... mostrar resultados en pantalla
-    setTimeout(() => { 
-      setUpdateTrigger(Math.random());
-    }, 200);
-    //Ahora a mostrar el modal
-    
-    setAbierto(true); // Abre el modal
-  };
-    
   //////////////////////////////////////////////////////////
   const abrirCerrarModal = ()=>{
     setAbierto(!abierto);
@@ -1382,11 +898,11 @@ export default function AsientoList() {
       (    
       <ToggleButton value="ventas"
                     style={{
-                      backgroundColor: valorVista === 'ventas' ? 'lightblue' : 'transparent',
+                      backgroundColor: valorVista === 'ventas' ? 'lightsteelblue' : 'transparent',
                       color: valorVista === 'ventas' ? "orange" : "gray"
                     }}
 
-      >L-Ventas</ToggleButton>
+      >Ventas</ToggleButton>
       ):(
       <span></span>
       )
@@ -1400,7 +916,7 @@ export default function AsientoList() {
                     color: valorVista === 'compras' ? 'orange' : 'gray',
                     borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                   }}
-    >L-Compras</ToggleButton>
+    >Compras</ToggleButton>
     ):(
       <span></span>
       )
@@ -1414,20 +930,7 @@ export default function AsientoList() {
                     color: valorVista === 'caja' ? 'orange' : 'gray',
                     borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                                        
                   }}
-    >L-Caja</ToggleButton>
-    ):(
-      <span></span>
-      )
-    }
-
-    { permisoDiario ?
-    (
-    <ToggleButton value="diario"
-                  style={{
-                    backgroundColor: valorVista === 'diario' ? 'lightblue' : 'transparent',
-                    color: valorVista === 'diario' ? 'orange' : 'gray',
-                  }}
-    >L-Diario</ToggleButton>
+    >Caja</ToggleButton>
     ):(
       <span></span>
       )
@@ -1483,7 +986,7 @@ export default function AsientoList() {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-          { (pVenta0104 || pCompra0204 || pCaja0304 || pDiario0404) ? (
+          { (pVenta0104 || pCompra0204 || pCaja0304 ) ? (
 
             <Tooltip title='ELIMINAR MASIVO' >
             <IconButton color="warning" 
@@ -1507,202 +1010,39 @@ export default function AsientoList() {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-          {(id_libro==='014' || id_libro==='008') ?
-            (
-              <Tooltip title='DESCARGA XLS VACIO' >
-              <IconButton color="primary" 
-                              //style={{ padding: '0px'}}
-                              style={{ padding: '0px', color: blueGrey[700] }}
-                              onClick={() => {
-                                    handleDescargarExcelVacio();
-                              }}
-              >
-                    <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
-              </IconButton>
-              </Tooltip>
-            )
-            :
-            (
-              (id_libro==='001') ?
-              (
-                <Tooltip title='ASIENTO VENTAS CONTADO' >
-                <IconButton color="primary" 
-                                //style={{ padding: '0px'}}
-                                style={{ padding: '2px', color: blueGrey[700] }}
-                                onClick={() => {
-                                    handleAsientoMasivoContado(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
-                                }}
-                >
-                      <ShopOutlinedIcon style={{ fontSize: '33px' }}/>
-                </IconButton>
-                </Tooltip>
-              )
-              :
-              (
-                (id_libro==='005') ?
-                (
-                  <Tooltip title='GENERA DIF DE CAMBIO' >
-                  <IconButton color="primary" 
-                                  //style={{ padding: '0px'}}
-                                  style={{ padding: '3px', color: blueGrey[700] }}
-                                  onClick={() => {
-                                      handleAsientoDifCambio(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
-                                  }}
-                  >
-                        <CurrencyExchangeIcon style={{ fontSize: '30px' }}/>
-                  </IconButton>
-                  </Tooltip>
-                )
-                :
-                (
-                  <div></div>
-                )
-              )
-            )
-          }
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-          {(id_libro==='014' || id_libro==='008') ?
-           (
-              <Tooltip title='GENERAR ASIENTOS' >
-              <IconButton //color="inherit" 
-                                //style={{ padding: '0px'}}
-                                style={{ padding: '0px', color: blueGrey[700] }}
-                                onClick={() => {
-                                  navigate(`/asientogenerador/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
-                                }}
-                >
-                  <PlaylistAddCheckIcon style={{ fontSize: '40px' }}/>
-                </IconButton>
-              </Tooltip>
-            )
-            :
-            (
-              (id_libro==='005') ?
-              (
-                <Tooltip title='GENERA ASIENTO MAYORIZADO' >
-                <IconButton color="primary" 
-                                //style={{ padding: '0px'}}
-                                style={{ padding: '3px', color: blueGrey[700] }}
-                                onClick={() => {
-                                  handleAsientoMayorizado(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
-                                }}
-                >
-                      <HorizontalSplitIcon style={{ fontSize: '30px' }}/>
-                </IconButton>
-                </Tooltip>
-              )
-              :
-              (
-                (id_libro==='001') ?
-                (
-                  <Tooltip title='CUENTAS POR COBRAR / PAGAR' >
-                  <IconButton color="primary" 
-                                  //style={{ padding: '0px'}}
-                                  style={{ padding: '3px', color: blueGrey[700] }}
-                                  onClick={() => {
-                                    handleAsientoCuentasCorrientes(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo);
-                                  }}
-                  >
-                        <CreditScoreIcon style={{ fontSize: '30px' }}/>
-                  </IconButton>
-                  </Tooltip>
-                )
-                :
-                (
-                <div></div>
-                ) 
-              )
-            )
-          }
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-          <Tooltip title='EXPORTAR LIBRO XLS' >
-            <BotonExcelVentas registrosdet={registrosdet} 
-            />
+          <Tooltip title='EXPORTAR XLS' >
+              <BotonExcelVentas registrosdet={registrosdet} 
+              />
           </Tooltip>
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
+
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
 
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
-          {(id_libro==='014' || id_libro==='008') ? 
-            (
-            <Tooltip title='SIRE vs SISTEMA' >
-              <IconButton color="primary" 
-                          style={{ padding: '0px' }}
-                          onClick={() => {
-                            navigate(`/sirecomparacion/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}`);
-                            }
-                          }
-              >
-                    <FindInPageIcon style={{ fontSize: '40px' }}/>
-              </IconButton>
-            </Tooltip>
-            ):
-            (
-                <div></div>
-            )
-          }
+
         </Grid>
 
         <Grid item xs={isSmallScreen ? 2 : 0.7}>    
-          <Tooltip title='GENERAR REEMPLAZO' >
-            {(id_libro==='014' || id_libro==='008') ? 
-            (
-              <Button variant='contained' 
-                      fullWidth
-                      color='primary'
-                      sx={{display:'block',margin:'.0rem 0'}}
-                      onClick={() => {
-                        handleMensajeTotales();
-                        }
-                      }
-                      >
-                  {(id_libro==='014') ? 
-                  (
-                    'RVIE'
-                  ):
-                  (
-                    'RCE'
-                  )
-                  }
-              </Button>
-            )
-            :
-            (
-              <div></div>
-            )
-            }
-          </Tooltip>
+
         </Grid>
         
         {/* El componente del cuadro de diálogo */}
         {isDialogOpen && (
         
         <Grid item xs={isSmallScreen ? 12 : 8.8}>
-            <AsientoMensajeTotales
-            title="Selecciona una opción"
-            buttons={buttons}
-            getButtonColor={getButtonColor}
-            onCancel={handleCancel}
-            onAccept={handleAccept}
-            />
+
         </Grid>
 
         )}
 
     <Grid item xs={isSmallScreen ? 12 : 8.3}>
-      {(id_libro==='014' || id_libro==='008') ? 
-        (
-        <AsientoFileInput datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AsientoFileInput>
-        )
-        :
-        (
-            <div></div>
-        )
-      }
+
     </Grid>
 
 

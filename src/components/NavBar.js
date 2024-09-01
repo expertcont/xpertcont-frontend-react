@@ -15,6 +15,7 @@ import Tooltip from '@mui/material/Tooltip';
 import NextWeekIcon from '@mui/icons-material/NextWeek';
 import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpdateGood';
 import UpdateIcon from '@mui/icons-material/Update';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 
 import React, { useState } from 'react';
 import LoginPerfil from "./LoginPerfil" //new
@@ -37,6 +38,11 @@ export default function NavBar(props) {
   const [permisoCaja, setPermisoCaja] = useState(false);
   const [permisoDiario, setPermisoDiario] = useState(false);
   const [permisoReportes, setPermisoReportes] = useState(false);
+  
+  //Determina cargar icono o acceso en NavBar /////////////////////
+  const [accesoAdmin, setAccesoAdmin] = useState(false);
+  const [accesoCont, setAccesoCont] = useState(false);
+  /////////////////////////////////////////////////////////////////
 
   const [permisoContabilidades, setPermisoContabilidades] = useState(false);
   const [permisoTipoCambio, setPermisoTipoCambio] = useState(false);
@@ -68,12 +74,15 @@ export default function NavBar(props) {
   //////////////////////////////////////////////////////////
   useEffect(() => {
     if (isAuthenticated && user && user.email) {
+      //Actualizar variables de estado CONT o ADMIN
+      //Carga dual de sistema 
+      cargaModulosAnfitrion();
+
       // cargar permisos de sistema
       cargaPermisosMenu();
       console.log("idAnfitrion: ", props.idAnfitrion);
       console.log("idInvitado: ",props.idInvitado);
-      //
-      //new////////////////////////
+      
       //Verificar Estudios Contables registrados
       cargaPeriodosAnfitrion();
 
@@ -84,20 +93,23 @@ export default function NavBar(props) {
     }
   }, [isAuthenticated, user]);
 
-  /*useEffect(() => {
-    console.log('Navigating...');
-  console.log('idAnfitrion:', props.idAnfitrion);
-  console.log('idInvitado:', props.idInvitado);
-  console.log('periodo_trabajo:', periodo_trabajo);
-  console.log('contabilidad_trabajo:', contabilidad_trabajo);
-    
-    //navigate(`/`);
-    // La función navigate se ejecutará cada vez que cambie uno de estos valores
-    navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-  }, [navigate, props.idAnfitrion, props.idInvitado, periodo_trabajo, contabilidad_trabajo]);
-  */
 
   //////////////////////////////////////////////////////////
+  const cargaModulosAnfitrion = () =>{
+    axios
+    .get(`${back_host}/usuario/modulos/${props.idAnfitrion}/${props.idInvitado}`)
+    .then((response) => {
+      if (response.data.length > 0) {
+        setAccesoAdmin(response.data.some(item =>item.tipo==='ADMIN'));
+        setAccesoCont(response.data.some(item =>item.tipo==='CONT'));
+        console.log('modulos: ',response.data);
+      }
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+
   const cargaPeriodosAnfitrion = () =>{
     axios
     .get(`${back_host}/usuario/periodos/${props.idAnfitrion}`)
@@ -137,6 +149,10 @@ export default function NavBar(props) {
   const cargaPermisosMenu = async()=>{
       //Si es el usuario anfitrion, tiene acceso a todo
       if (props.idAnfitrion === props.idInvitado){
+        //New dual
+        setAccesoCont(true);
+        setAccesoAdmin(true);
+        //
         setPermisoVentas(true);
         setPermisoCompras(true);
         setPermisoCaja(true);
@@ -149,7 +165,7 @@ export default function NavBar(props) {
         setPermisoSeguridad(true);
       }
       else {
-        console.log(`${back_host}/seguridadmenu/${props.idAnfitrion}/${props.idInvitado}`);
+        //console.log(`${back_host}/seguridadmenu/${props.idAnfitrion}/${props.idInvitado}`);
         //Realiza la consulta a la API de permisos, puro Menu (obtenerTodosMenu)
         fetch(`${back_host}/seguridadmenu/${props.idAnfitrion}/${props.idInvitado}`, {
           method: 'GET',
@@ -258,10 +274,10 @@ export default function NavBar(props) {
                     >
                       <HomeIcon />
                     </IconButton>
-                    
-                    { permisoVentas ?
+
+                    { accesoAdmin ?
                     (
-                    <Tooltip title="REGISTRO Asientos">
+                    <Tooltip title="ADMIN Ventas">
                     <IconButton  
                         sx={{
                           color: selectedButton === 'icono02' ? 'primary.main' : blueGrey[300],flexGrow:1
@@ -270,9 +286,59 @@ export default function NavBar(props) {
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
                                     //cuidado estamos enviando el periodo y el ruc de la contabilidad inicial del anfitrion
-                                    console.log(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                                    navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                                    console.log(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                                    navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                                     handleClick('icono02');
+                                                }
+                                }
+                    >
+                      <ShoppingCartIcon />
+                    </IconButton>
+                    </Tooltip>
+                    ):(
+                      <span></span>
+                    )
+                    }
+                    { accesoAdmin ?
+                    (
+                    <Tooltip title="ADMIN Productos">
+                    <IconButton  
+                        sx={{
+                          color: selectedButton === 'icono02' ? 'primary.main' : blueGrey[300],flexGrow:1
+                        }}
+                        aria-label="upload picture" component="label" size="large"
+                                onClick = {()=> {
+                                    //el ventalist se encargara de verificar permisos Comandos, con email
+                                    //cuidado estamos enviando el periodo y el ruc de la contabilidad inicial del anfitrion
+                                    navigate(`/ad_producto/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
+                                    handleClick('icono02');
+                                                }
+                                }
+                    >
+                      <ShoppingCartIcon />
+                    </IconButton>
+                    </Tooltip>
+                    ):(
+                      <span></span>
+                    )
+                    }
+
+
+
+                    { ((permisoVentas || permisoCompras || permisoCaja || permisoDiario) && accesoCont) ?
+                    (
+                    <Tooltip title="REGISTRO Asientos">
+                    <IconButton  
+                        sx={{
+                          color: selectedButton === 'icono03' ? 'primary.main' : blueGrey[300],flexGrow:1
+                        }}
+                        aria-label="upload picture" component="label" size="large"
+                                onClick = {()=> {
+                                    //el ventalist se encargara de verificar permisos Comandos, con email
+                                    //cuidado estamos enviando el periodo y el ruc de la contabilidad inicial del anfitrion
+                                    //console.log(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                                    navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                                    handleClick('icono03');
                                                 }
                                 }
                     >
@@ -287,7 +353,7 @@ export default function NavBar(props) {
                     )
                     }
 
-                    { permisoCorrentista ?
+                    { permisoReportes ?
                     (
                     <Tooltip title="REPORTES">
                     <IconButton  

@@ -45,8 +45,8 @@ export default function AsientoGenericoForm() {
 
     //Cambiooo para controlar Edicion
     if (editando && !clonarTermino){
-      console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
-      console.log(registro);
+      //console.log(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+      //console.log(registro);
       await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`, {
         method: "PUT",
         body: JSON.stringify(registro),
@@ -65,6 +65,12 @@ export default function AsientoGenericoForm() {
       setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
       
       setRegistro(prevState => ({ ...prevState, ctrl_crea_us: params.id_invitado }));
+      
+      registro.id_anfitrion = params.id_invitado;
+      registro.periodo = params.id_invitado;
+      registro.documento_id = params.id_invitado;
+      registro.id_libro = params.id_invitado;
+      registro.id_invitado = params.id_invitado;
       registro.ctrl_crea_us = params.id_invitado;
 
       console.log(`${back_host}/asiento`);
@@ -92,6 +98,11 @@ export default function AsientoGenericoForm() {
     if (params.num_asiento){
         mostrarRegistro(params.id_anfitrion,params.periodo,params.documento_id,params.id_libro,params.num_asiento);
     }
+    console.log('registro final useEffect editar: ',registro);
+
+  },[params.num_asiento]);
+
+  useEffect( ()=> {
     //cargar datos generales en asiento
     //fusionar al arreglo registro, el campo id_invitado: 'valor', otro_campo:'valor dif'
     setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
@@ -102,8 +113,7 @@ export default function AsientoGenericoForm() {
 
     console.log('registro final useEffect AsientoCompraForm: ',registro);
     
-  },[params.num_asiento]);
-
+  },[]);
 
   //Rico evento change
   const handleChange = e => {

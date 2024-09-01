@@ -6,6 +6,7 @@ import axios from 'axios';
 
 const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
+  
   const handleChange = (name, value) => {
     //console.log("datos en componente: ",name, value);
     onFormDataChange({ ...formData, [name]: value });
@@ -17,6 +18,7 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
   };
   const [doc_select,setDocSelect] = useState([]);
   const cargaDocSelect = () =>{
+    console.log(`${back_host}/iddoc`);
     axios
     .get(`${back_host}/iddoc`)
     .then((response) => {
@@ -30,11 +32,29 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
   useEffect( ()=> {
     //cargar datos generales
     cargaDocSelect();
+    console.log(doc_select);
   },[]);
   
   const [razonSocialBusca, setRazonSocialBusca] = useState("");
   const [id_docBusca, setIdDocBusca] = useState("");
   
+  const mostrarRazonSocialGenera = (sDocumentoId) => {
+    axios
+        .post(`${back_host}/correntistagenera`, {
+            ruc: sDocumentoId
+        })
+        .then((response) => {
+            const { nombre_o_razon_social,r_id_doc } = response.data;
+            setRazonSocialBusca(nombre_o_razon_social);
+            formData.r_razon_social = nombre_o_razon_social;
+            setIdDocBusca(r_id_doc);
+            formData.r_id_doc = r_id_doc;
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+  };
+
   const mostrarRazonSocialBusca = async (documento_id) => {
     let datosjson;
 
@@ -131,7 +151,8 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
                                 sx={{mt:-1}}
                                 onClick = { () => {
                                     formData.r_razon_social = "";
-                                    mostrarRazonSocialBusca(formData.r_documento_id);
+                                    //mostrarRazonSocialBusca(formData.r_documento_id);
+                                    mostrarRazonSocialGenera(formData.r_documento_id);
                                   }
                                 }
                               >
@@ -160,8 +181,8 @@ const AsientoRazonSocial = ({ formData, isSmallScreen, onFormDataChange }) => {
                         >
                             {   
                                 doc_select.map(elemento => (
-                                <MenuItem key={elemento.id_doc} value={elemento.id_doc}>
-                                {elemento.nombre}
+                                <MenuItem key={elemento.codigo} value={elemento.codigo}>
+                                {elemento.descripcion}
                                 </MenuItem>)) 
                             }
                     </Select>

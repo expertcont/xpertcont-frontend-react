@@ -99,6 +99,8 @@ export default function AsientoListPrev() {
   const [searchText02, setSearchText02] = useState('');
 
   //Variables estado para manejo de cuentas amarre contable
+  const [glosa, setGlosa] = useState('');
+
   const [cuentaBase, setCuentaBase] = useState('');
   const [cuentaBaseDesc, setCuentaBaseDesc] = useState('');
  
@@ -269,6 +271,11 @@ export default function AsientoListPrev() {
       setCuentaAbonoDest(e.target.value);
       return;
     }
+    if (e.target.name === "glosa") {
+      setGlosa(e.target.value.toUpperCase());
+      return;
+    }
+
     //setVenta({...venta, [e.target.name]: e.target.value});
   }
 
@@ -360,7 +367,7 @@ export default function AsientoListPrev() {
             cargaCuentaContable('9');
           }
       }
-  
+
       /////////////////////////////
       //NEW codigo para autenticacion y permisos de BD
       if (isAuthenticated && user && user.email) {
@@ -384,6 +391,7 @@ export default function AsientoListPrev() {
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro();
 
+      setGlosa(params.id_libro === '008' ? 'COMPRAS' : 'VENTAS');
   },[updateTrigger]) //Aumentamos
 
 
@@ -552,9 +560,9 @@ export default function AsientoListPrev() {
 
       let nombreApi = params.id_libro === '014' ? 'asientomasivoventas': 'asientomasivocompras';
       let sRuta = params.id_libro === '014' ? 
-        `${back_host}/${nombreApi}/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${cuentaBase}`
+        `${back_host}/${nombreApi}/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${cuentaBase}/${glosa}`
         : 
-        `${back_host}/${nombreApi}/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${cuentaBase}/${cuentaCargoDest}/${cuentaAbonoDest}`;
+        `${back_host}/${nombreApi}/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${cuentaBase}/${cuentaCargoDest}/${cuentaAbonoDest}/${glosa}`;
 
       console.log("cuentaBase,cuentaCargoDest,cuentaAbonoDest: ",cuentaBase,cuentaCargoDest,cuentaAbonoDest);
       console.log(sRuta);
@@ -890,7 +898,19 @@ export default function AsientoListPrev() {
       </Grid>
 
   </Grid>
-
+  <div>
+      <TextField variant="outlined" 
+                              placeholder="GLOSA"
+                              sx={{ display: 'block', margin: '.5rem 0' }}
+                              name="glosa"
+                              size='small'
+                              fullWidth
+                              value={glosa} 
+                              onChange={handleChange}                              
+                              inputProps={{ style: { color: 'white' } }}
+                              InputLabelProps={{ style: { color: 'skyblue' } }}
+      />
+  </div>
   <Datatable
       //title="GENERADOR - Asientos"
       //title={<div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}> </div>}

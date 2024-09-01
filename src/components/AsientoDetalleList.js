@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Grid,Button,useMediaQuery } from "@mui/material";
-import { useNavigate,useParams } from "react-router-dom";
+import { Grid,Button,useMediaQuery,CircularProgress} from "@mui/material";
+import { useNavigate,useParams,useLocation } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
 import Add from '@mui/icons-material/Add';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
@@ -57,12 +57,24 @@ export default function AsientoDetalleList() {
     },
   }, 'dark');
 
-  //experimento
-  const [dataGrilla, setDataGrilla] = useState([
-    { id: 1, cargo: 0, abono: 0 },
-    { id: 2, cargo: 0, abono: 0 },
-    // Otros datos...
-  ]);
+  const [registro,setRegistro] = useState({
+    //id_anfitrion:'',
+    //documento_id:'',
+    //periodo:'',
+    //id_libro:'',
+    //id_invitado:'',
+
+    glosa:'',
+    mayorizado:'0',
+    fecha_asiento:'',
+    
+    registrado:'1'
+  });
+  const [cargando,setCargando] = useState(false);
+  const [editando,setEditando] = useState(false);
+  const [clonando,setClonando] = useState(false);
+  const [clickGuardar,setClickGuardar] = useState(false);
+  const location = useLocation();
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
@@ -181,6 +193,25 @@ export default function AsientoDetalleList() {
   //////////////////////////////////////////////////////////
   //const [registrosdet,setRegistrosdet] = useState([]);
   //////////////////////////////////////////////////////////
+  const cargaRegistroCab = async (id_anfitrion,periodo,documento_id,id_libro,num_asiento) => {
+    const res = await fetch(`${back_host}/asiento/todos/${id_anfitrion}/${documento_id}/${periodo}/${id_libro}/${num_asiento}`);
+    const data = await res.json();
+    //Actualiza datos para enlace con controles, al momento de modo editar
+    setRegistro({  
+          id_anfitrion:params.id_anfitrion,
+          documento_id:params.documento_id,
+          periodo:params.periodo,
+          id_libro:params.id_libro,
+          num_asiento:num_asiento,
+
+          fecha_asiento:data.fecha_asiento,
+          glosa:data.glosa,
+
+          });
+    console.log("data mostrar registro: ",data);
+    setEditando(true);
+  };
+
   const cargaRegistro = async () => {
     var response;
     console.log(`${back_host}/asientodet/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
@@ -359,14 +390,18 @@ export default function AsientoDetalleList() {
     setRegistrosdet(resultadosBusqueda);
 }
 
-const handleModificar = (row) => {
+/*const handleModificar = (row) => {
   // Aquí puedes agregar la lógica para modificar la fila seleccionada
   console.log(`Modificar fila ${row.numero}`);
-};
+};*/
 
 //////////////////////////////////////////////////////////
   useEffect( ()=> {
-      console.log(params.id_anfitrion,params.documento_id,params.periodo,params.id_libro,params.num_asiento);
+    //Cargar glosa, fecha_asiento  num_asiento
+      if (params.num_asiento){
+        cargaRegistroCab(params.id_anfitrion,params.periodo,params.documento_id,params.id_libro,params.num_asiento);
+      }
+      //console.log(params.id_anfitrion,params.documento_id,params.periodo,params.id_libro,params.num_asiento);
       cargaRegistro();
 
       //NEW codigo para autenticacion y permisos de BD
@@ -376,6 +411,14 @@ const handleModificar = (row) => {
         console.log('falta verificar permisos');
       }
       
+      setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
+      setRegistro(prevState => ({ ...prevState, periodo: params.periodo }));
+      setRegistro(prevState => ({ ...prevState, documento_id: params.documento_id }));
+      setRegistro(prevState => ({ ...prevState, id_libro: params.id_libro }));
+      setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
+  
+      console.log('registro final useEffect AsientoCompraForm: ',registro);
+        
   },[isAuthenticated, user, updateTrigger])
   //////////////////////////////////////////////////////////
 
@@ -391,28 +434,130 @@ const handleModificar = (row) => {
     console.log('Cambios en la celda:', row, columnId, value);
   };
 
+  const handleModificar = async() => {
+    //e.preventDefault();
+    setCargando(true);
+    var data;
+    const clonarTermino = location.pathname.includes('clonar');
+
+    //Cambiooo para controlar Edicion
+    if (editando && !clonarTermino){
+      await fetch(`${back_host}/asiento/${params.id_anfitrion}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`, {
+        method: "PUT",
+        body: JSON.stringify(registro),
+        headers: {"Content-Type":"application/json"}
+      });
+      setCargando(false);
+      //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
+      //navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${params.num_asiento}/edit`);
+      //desactivar boton guardar
+      setClickGuardar(true);
+    }else{
+      setRegistro(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
+      setRegistro(prevState => ({ ...prevState, periodo: params.periodo }));
+      setRegistro(prevState => ({ ...prevState, documento_id: params.documento_id }));
+      setRegistro(prevState => ({ ...prevState, id_libro: params.id_libro }));
+      setRegistro(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
+      
+      setRegistro(prevState => ({ ...prevState, ctrl_crea_us: params.id_invitado }));
+      registro.ctrl_crea_us = params.id_invitado;
+      console.log(registro);
+
+      const res = await fetch(`${back_host}/asiento`, {
+        method: "POST",
+        body: JSON.stringify(registro),
+        headers: {"Content-Type":"application/json"}
+      });
+      //nuevo
+      data = await res.json();
+      //Obtener json respuesta, para extraer num_asiento y colocarlo en modo editar ;) viejo truco del guardado y editado posterior
+      //navigate(`/asientoc/${params.id_usuario}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${params.id_libro}/${data.num_asiento}/edit`);
+      registro.num_asiento = data.num_asiento;
+      setRegistro(prevState => ({ ...prevState, num_asiento: data.num_asiento }));
+      //desactivar boton guardar
+      setClickGuardar(true);
+    }
+    setCargando(false);
+    setEditando(true);
+  };
+
+  const handleChange = e => {
+    console.log(e.target.name, e.target.value);
+    const inputValue = e.target.value;
+    const valorEnMayusculas = inputValue.toUpperCase();
+    setRegistro({...registro, [e.target.name]: valorEnMayusculas});
+  }
+
  return (
   <>
     <div> 
-      <TextField fullWidth variant="outlined" color="success" size="small"
-                                   label="FILTRAR"
-                                   sx={{display:'block',
-                                        margin:'.5rem 0'}}
-                                   name="busqueda"
-                                   placeholder='Razon social'
-                                   onChange={actualizaValorFiltro}
-                                   inputProps={{ style:{color:'white'} }}
-                                   InputProps={{
-                                      startAdornment: (
-                                        <InputAdornment position="start">
-                                          <FindIcon />
-                                        </InputAdornment>
-                                      ),
-                                      style:{color:'white'} 
-                                  }}
-      />
+      <Grid container spacing={0.5} style={{ marginTop: "0px" }}
+        direction={isSmallScreen ? 'column' : 'row'}
+        //alignItems={isSmallScreen ? 'center' : 'center'}
+        //justifyContent={isSmallScreen ? 'center' : 'center'}
+      > 
+          <Grid item xs={2} style={{ width: '100%' }}>
+              <Button variant='contained' 
+                            color='primary' 
+                            type='submit'
+                            fullWidth
+                            sx={{display:'block',
+                            margin:'.1rem 0'}}
+                            disabled={
+                                      !registro.glosa 
+                                      || clickGuardar
+                                      }
+                            onClick={
+                              ()=>{
+                                console.log('grabando glosa');
+                                handleModificar();
+                              }
+                            } 
+                            >
+                  { cargando ? (
+                  <CircularProgress color="inherit" size={24} />
+                  ) : (
+                    editando ?
+                  'Modificar' : 'Grabar')
+                  }
+              </Button>
+          </Grid>      
+
+          <Grid item xs={7} style={{ width: '100%' }}>
+            <TextField variant="outlined" 
+                              placeholder="GLOSA"
+                              sx={{ display: 'block', margin: '.1rem 0' }}
+                              name="glosa"
+                              size='small'
+                              fullWidth
+                              value={registro.glosa} 
+                              onChange={handleChange}                              
+                              inputProps={{ style: { color: 'white' } }}
+                              InputLabelProps={{ style: { color: 'skyblue' } }}
+              />
+          </Grid>      
+
+          <Grid item xs={3} style={{ width: '100%' }}>
+              {registro.fecha_asiento !== null && (
+              <TextField
+                variant="outlined"
+                label="FECHA"
+                sx={{ display: 'block', margin: '.1rem 0' }}
+                name="fecha_asiento"
+                size="small"
+                fullWidth
+                type="date"
+                value={registro.fecha_asiento}
+                onChange={handleChange}
+                inputProps={{ style: { color: 'white', textAlign: 'center' } }}
+                InputLabelProps={{ style: { color: 'skyblue' } }}
+              />
+              )}
+          </Grid>
+
+      </Grid>
     </div>
-    
+   
 
     <Datatable
       //title="Detalle Asiento ${params.num_asiento}"

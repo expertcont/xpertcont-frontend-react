@@ -1,4 +1,4 @@
-import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress} from '@mui/material'
+import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Select,MenuItem} from '@mui/material'
 //import { padding } from '@mui/system'
 import {useState,useEffect,useRef} from 'react';
 import React from 'react';
@@ -12,6 +12,7 @@ export default function ContabilidadForm() {
   const [contabilidad,setContabilidad] = useState({
       id_anfitrion:'',
       documento_id:'',
+      tipo:'',
       razon_social:'',
       activo:''
   })
@@ -39,9 +40,9 @@ export default function ContabilidadForm() {
     
     //Cambiooo para controlar Edicion
     if (editando){
-      console.log(`${back_host}/contabilidad/${params.id_anfitrion}/${params.documento_id}`);
-      console.log(contabilidad);
-      await fetch(`${back_host}/contabilidad/${params.id_anfitrion}/${params.documento_id}`, {
+      //console.log(`${back_host}/contabilidad/${params.id_anfitrion}/${params.documento_id}`);
+      //console.log(contabilidad);
+      await fetch(`${back_host}/contabilidad/${params.id_anfitrion}/${params.documento_id}/${params.tipo}`, {
         method: "PUT",
         body: JSON.stringify(contabilidad),
         headers: {"Content-Type":"application/json"}
@@ -50,8 +51,8 @@ export default function ContabilidadForm() {
       setContabilidad(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
       contabilidad.id_anfitrion = params.id_anfitrion;
 
-      console.log(`${back_host}/contabilidad`);
-      console.log(contabilidad);
+      //console.log(`${back_host}/contabilidad`);
+      //console.log(contabilidad);
       await fetch(`${back_host}/contabilidad`, {
         method: "POST",
         body: JSON.stringify(contabilidad),
@@ -67,7 +68,7 @@ export default function ContabilidadForm() {
   //Aqui se leen parametros en caso lleguen
   useEffect( ()=> {
     if (params.id_anfitrion && params.documento_id){
-      mostrarContabilidad(params.id_anfitrion, params.documento_id);
+      mostrarContabilidad(params.id_anfitrion, params.documento_id,params.tipo);
       setContabilidad(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
       
     }
@@ -99,14 +100,15 @@ export default function ContabilidadForm() {
   }
 
   //funcion para mostrar data de formulario, modo edicion
-  const mostrarContabilidad = async (id_anfitrion,documento_id) => {
-    console.log(`${back_host}/contabilidad/${id_anfitrion}/${documento_id}`);
-    const res = await fetch(`${back_host}/contabilidad/${id_anfitrion}/${documento_id}`);
+  const mostrarContabilidad = async (id_anfitrion,documento_id,tipo) => {
+    //console.log(`${back_host}/contabilidad/${id_anfitrion}/${documento_id}`);
+    const res = await fetch(`${back_host}/contabilidad/${id_anfitrion}/${documento_id}/${tipo}`);
     const data = await res.json();
     //Actualiza datos para enlace con controles, al momento de modo editar
     setContabilidad({
             id_anfitrion:data.id_usuario,       
-            documento_id:data.documento_id,       
+            documento_id:data.documento_id,
+            tipo:data.tipo, //new fusion admin ;)
             razon_social:data.razon_social, 
             activo:data.activo});
     //console.log(data);
@@ -167,6 +169,22 @@ export default function ContabilidadForm() {
                          />
                         </Grid>
                         
+                        <Grid item xs={12}>
+                          <Select
+                                  labelId="role-select-label"
+                                  name="tipo"
+                                  value={contabilidad.tipo}
+                                  onChange={handleChange}
+                                  label="Tipo"
+                                  fullWidth
+                                  sx={{display:'block',
+                                    margin:'.5rem 0', color:"white"}}
+                          >
+                                  <MenuItem value="CONT">CONT</MenuItem>
+                                  <MenuItem value="ADMIN">ADMIN</MenuItem>
+                          </Select>
+                        </Grid>
+
                         <Grid item xs={12}>
                         <Switch
                           checked={activoCont} // Utilizamos el valor correspondiente al índice en el array

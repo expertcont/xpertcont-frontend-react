@@ -159,12 +159,12 @@ export default function ContabilidadList() {
     setTabladet(data); //Copia para tratamiento de filtrado
   }
   //////////////////////////////////////
-  const handleDelete = (documento_id) => {
-    console.log(documento_id);
+  const handleDelete = (documento_id,tipo) => {
+    //console.log(documento_id);
     
-    confirmaEliminacion(params.id_anfitrion,documento_id);
+    confirmaEliminacion(params.id_anfitrion,documento_id,tipo);
   };
-  const confirmaEliminacion = async(sAnfitrion,sDocumentoId)=>{
+  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sTipo)=>{
     await swal({
       title:"Eliminar Contabilidad",
       text:"Seguro ?",
@@ -173,10 +173,10 @@ export default function ContabilidadList() {
     }).then(respuesta=>{
         if (respuesta){
           //console.log(cod,serie,num,elem,item);
-          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId);
+          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sTipo);
           setToggleCleared(!toggleCleared);
           setRegistrosdet(registrosdet.filter(
-                          registrosdet => registrosdet.documento_id !== sDocumentoId
+                          registrosdet => registrosdet.documento_id !== sDocumentoId && registrosdet.tipo !== sTipo
                           ));
           setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
               setUpdateTrigger(Math.random());//experimento
@@ -190,9 +190,9 @@ export default function ContabilidadList() {
       }
     })
   }
-  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId) => {
-      console.log(`${back_host}/contabilidad/${sAnfitrion}/${sDocumentoId}`);
-      await fetch(`${back_host}/contabilidad/${sAnfitrion}/${sDocumentoId}`, {
+  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sTipo) => {
+      //console.log(`${back_host}/contabilidad/${sAnfitrion}/${sDocumentoId}`);
+      await fetch(`${back_host}/contabilidad/${sAnfitrion}/${sDocumentoId}/${sTipo}`, {
         method:"DELETE"
       });
   }
@@ -204,7 +204,7 @@ export default function ContabilidadList() {
       width: '40px',
       cell: (row) => (
           <DriveFileRenameOutlineIcon
-            onClick={() => handleCopyClick(row.documento_id)}
+            onClick={() => handleEditarContabilidad(row.documento_id,row.tipo)}
             style={{
               cursor: 'pointer',
               color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
@@ -221,7 +221,7 @@ export default function ContabilidadList() {
       cell: (row) => (
         (pConta0603) ? (
           <DeleteIcon
-            onClick={() => handleDelete(row.documento_id)}
+            onClick={() => handleDelete(row.documento_id, row.tipo)}
             style={{
               cursor: 'pointer',
               color: 'orange',
@@ -243,6 +243,11 @@ export default function ContabilidadList() {
     { name:'RAZON SOCIAL', 
       selector:row => row.razon_social,
       width: '250px',
+      sortable: true
+    },
+    { name:'TIPO', 
+      selector:row => row.tipo,
+      width: '100px',
       sortable: true
     },
     {
@@ -271,7 +276,7 @@ export default function ContabilidadList() {
     },    
 
   ];
-  const handleCopyClick = (documento_id) => {
+  const handleEditarContabilidad = (documento_id,tipo) => {
     // Aquí puedes agregar la lógica para copiar el contenido
     // Por ejemplo, puedes usar el portapapeles o cualquier otra forma de copiar
     console.log(documento_id);
@@ -280,7 +285,7 @@ export default function ContabilidadList() {
     } else {
       setCopiedRowId(documento_id);
     }
-    navigate(`/contabilidad/${params.id_anfitrion}/${documento_id}/edit`);
+    navigate(`/contabilidad/${params.id_anfitrion}/${documento_id}/${tipo}/edit`);
   };
   const handleEditarPlanClick = (documento_id) => {
     // Aquí puedes agregar la lógica para copiar el contenido

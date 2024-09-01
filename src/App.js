@@ -23,6 +23,10 @@ import AsientoDetalleForm from "./components/AsientoDetalleForm";
 import ReportesList from "./components/ReportesList";
 import AsientoGenericoForm from "./components/AsientoGenericoForm";
 
+import AdminVentaList from "./components/Admin/AdminVentaList";
+import AdminProductoList from "./components/Admin/AdminProductoList";
+import AdminProductoForm from "./components/Admin/AdminProductoForm";
+
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
   //los props llegan desde BienvenidaExpert.js
@@ -58,13 +62,23 @@ function App(props) {
          { /* Agregar desde Panel (un registro01 Libre)
                Agregar Clonado desde Panel (un registro01 con Numero Orden y datos adicionales)
                Agregar desde Form Orden (un registro01 con Numero Orden)   */ }
+          <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />
+
+          <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoList />} />          
+          <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminProductoForm />} />          
+          <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/:id_producto/edit" element={<AdminProductoForm />} />
 
           <Route path="/reporte/:id_anfitrion/:id_invitado" element={<ReportesList />} />
 
           <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento/new" element={<AsientoDetalleForm />} />
           <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento/:item/edit" element={<AsientoDetalleForm />} />
-          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento" element={<AsientoDetalleList />} />
           
+          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/new" element={<AsientoDetalleList />} />
+          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento/edit" element={<AsientoDetalleList />} />
+          {/* 
+          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento" element={<AsientoDetalleList />} />
+          */}
+
           <Route path="/asiento/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AsientoList />} />
           
           <Route path="/asientog/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro/new" element={<AsientoGenericoForm />} />
@@ -80,7 +94,7 @@ function App(props) {
 
           <Route path="/contabilidades/:id_anfitrion/:id_invitado" element={<ContabilidadList />} />
           <Route path="/contabilidad/:id_anfitrion/new" element={<ContabilidadForm />} />
-          <Route path="/contabilidad/:id_anfitrion/:documento_id/edit" element={<ContabilidadForm />} />
+          <Route path="/contabilidad/:id_anfitrion/:documento_id/:tipo/edit" element={<ContabilidadForm />} />
           
           <Route path="/cuentas/:id_usuario/:documento_id" element={<CuentaList />} />
           <Route path="/cuenta/:id_usuario/:documento_id/new" element={<CuentaForm />} />
