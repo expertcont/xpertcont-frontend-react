@@ -26,6 +26,7 @@ import AsientoGenericoForm from "./components/AsientoGenericoForm";
 import AdminVentaList from "./components/Admin/AdminVentaList";
 import AdminProductoList from "./components/Admin/AdminProductoList";
 import AdminProductoForm from "./components/Admin/AdminProductoForm";
+import AdminVentaForm from "./components/Admin/AdminVentaForm";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -63,6 +64,8 @@ function App(props) {
                Agregar Clonado desde Panel (un registro01 con Numero Orden y datos adicionales)
                Agregar desde Form Orden (un registro01 con Numero Orden)   */ }
           <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />
+          <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaForm />} />
+          <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaForm />} />
 
           <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoList />} />          
           <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminProductoForm />} />          

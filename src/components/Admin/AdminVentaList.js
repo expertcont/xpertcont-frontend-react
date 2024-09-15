@@ -226,45 +226,16 @@ export default function AdminVentaList() {
     setUpdateTrigger(Math.random());//experimento
   };*/
 
-  const handleUpdate = (num_asiento) => {
+  const handleUpdate = (sComprobante) => {
     //var num_asiento;
-    //num_asiento = selectedRows.map(r => r.num_asiento);
-    //console.log("libro:", id_libro);
-    //console.log("asiento:", num_asiento);
-
     if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
       console.log("Estás usando un dispositivo móvil!!");
       //Validamos libro a mostrar
-      if (id_libro === "008") {
-        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }
-      if (id_libro === "014") {
-        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }
-
-      /*if (id_libro === "001" || id_libro === "005") {
-        navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }*/
-      if (id_libro === "001" || id_libro === "005") {
-        navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${contabilidad_trabajo}/${periodo_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }
-
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/edit`);
+      //navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
     } else {
       console.log("No estás usando un móvil");
-      if (id_libro === "008") {
-        navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }
-      if (id_libro === "014") {
-        navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }
-
-      /*if (id_libro === "001" || id_libro === "005") {
-        navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }*/
-      if (id_libro === "001" || id_libro === "005") {
-        navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${contabilidad_trabajo}/${periodo_trabajo}/${id_libro}/${num_asiento}/edit`);
-      }
-
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/edit`);
     }    
   };
   const handleDelete = (num_asiento) => {
@@ -379,13 +350,13 @@ export default function AdminVentaList() {
     let response;
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
     if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-        console.log(`${back_host}/ad_venta/${params.id_anfitrion}/${contabilidad_trabajo}/${periodo_trabajo}`);
-        response = await fetch(`${back_host}/ad_venta/${params.id_anfitrion}/${contabilidad_trabajo}/${periodo_trabajo}`);
+        console.log(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}`);
+        response = await fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}`);
     }
     else{
         //usamos los historiales
-        console.log('historiales ',`${back_host}/ad_venta/${params.id_anfitrion}/${strHistorialContabilidad}/${strHistorialPeriodo}`);
-        response = await fetch(`${back_host}/ad_venta/${params.id_anfitrion}/${strHistorialContabilidad}/${strHistorialPeriodo}`);
+        console.log('historiales ',`${back_host}/ad_venta/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}`);
+        response = await fetch(`${back_host}/ad_venta/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}`);
     }
     
     const data = await response.json();
@@ -674,7 +645,7 @@ export default function AdminVentaList() {
         cell: (row) => (
           (pVenta0102 || pCompra0202 || pCaja0302) ? (
             <DriveFileRenameOutlineIcon
-              onClick={() => handleUpdate(row.num_asiento)}
+              onClick={() => handleUpdate(row.comprobante)}
               style={{
                 cursor: 'pointer',
                 color: 'skyblue',
@@ -954,29 +925,10 @@ export default function AdminVentaList() {
                             onClick={() => {
                               if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
                                 //Validamos libro a registrar
-                                if (id_libro === "008") {
-                                  navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                                }
-                                if (id_libro === "014") {
-                                  navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                                }
-                                if (id_libro === "001" || id_libro === "005") {
-                                  //reemplazamos el formulario simple generico, por el detalle mas informativo
-                                  //navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                                  navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${contabilidad_trabajo}/${periodo_trabajo}/${id_libro}/new`);
-                                }
+                                  navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
                               } else {
                                 //navigate(`/ventamovil/new`);
-                                if (id_libro === "008") {
-                                  navigate(`/asientoc/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                                }
-                                if (id_libro === "014") {
-                                  navigate(`/asientov/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                                }
-                                if (id_libro === "001" || id_libro === "005") {
-                                  //navigate(`/asientog/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${id_libro}/new`);
-                                  navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${contabilidad_trabajo}/${periodo_trabajo}/${id_libro}/new`);
-                                }
+                                  navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
                               }
                             }}
             >
