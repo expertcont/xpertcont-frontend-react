@@ -2,7 +2,6 @@ import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { Grid,Button,useMediaQuery,CircularProgress} from "@mui/material";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
-import FindIcon from '@mui/icons-material/FindInPage';
 import Add from '@mui/icons-material/Add';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 
@@ -10,18 +9,13 @@ import IconButton from '@mui/material/IconButton';
 import Datatable, {createTheme} from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import '../App.css';
 import 'styled-components';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import ThumbUpOffAlt from '@mui/icons-material/ThumbUpOffAlt';
-import ClearIcon from '@mui/icons-material/Lock';
 import UpdateIcon from '@mui/icons-material/Update';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import CloseIcon from '@mui/icons-material/Close';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import DeleteIcon from '@mui/icons-material/Delete';
 import swal from 'sweetalert';
 import BotonExcelVentas from './BotonExcelVentas';

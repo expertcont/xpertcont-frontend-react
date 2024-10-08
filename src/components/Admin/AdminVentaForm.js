@@ -1,48 +1,65 @@
-import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Select,MenuItem,InputLabel,Box,FormControl, List,ListItem,ListItemText,Dialog,DialogContent,DialogTitle} from '@mui/material'
-import {useState,useEffect,useRef} from 'react';
+import {Grid,Card,CardContent,useMediaQuery,Typography,TextField,Button,CircularProgress,Select,MenuItem,InputLabel,Box,FormControl, List,ListItem,ListItemText,Dialog,DialogContent,DialogTitle} from '@mui/material'
+import {useState,useEffect,useRef,useMemo,useCallback} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import axios from 'axios';
 import AddBoxRoundedIcon from '@mui/icons-material/ShoppingCart';
-import BorderColorIcon from '@mui/icons-material/QrCodeRounded';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import FindIcon from '@mui/icons-material/FindInPage';
+import InputAdornment from '@mui/material/InputAdornment';
+import Tooltip from '@mui/material/Tooltip';
+import PrintIcon from '@mui/icons-material/Print';
+import ReplyIcon from '@mui/icons-material/Reply';
+
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import IndeterminateCheckBox from '@mui/icons-material/IndeterminateCheckBox';
+import Timer10SelectIcon from '@mui/icons-material/Timer10Select';
+import AddCircleIcon from '@mui/icons-material/AddBox'; // Ícono para aumentar de 10 en 10
+import Checkbox from '@mui/material/Checkbox';
+import ArrowDownward from '@mui/icons-material/ArrowDownward';
+import UpdateIcon from '@mui/icons-material/Update';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 
 import DeleteIcon from '@mui/icons-material/DeleteForeverRounded';
 import IconButton from '@mui/material/IconButton';
-import LocalShippingIcon from '@mui/icons-material/LocalShippingTwoTone';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import logo from '../../Logo02.png';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import numeral from 'numeral';
+import ListaPopUp from '../ListaPopUp';
 
 import swal from 'sweetalert';
+import Datatable, {createTheme} from 'react-data-table-component';
 
 export default function AdminVentaForm() {
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
-
-  const [vendedor_select,setVendedorSelect] = useState([]);
+  const [updateTrigger, setUpdateTrigger] = useState({});
   const [cliente_select,setClienteSelect] = useState([]);
   //////////////////////////////////////////////////////////
   const [showModal, setShowModal] = useState(false);
+  const [showModalProducto, setShowModalProducto] = useState(false);
+  const [showModalProductoLista, setShowModalProductoLista] = useState(false);
   const [searchText, setSearchText] = useState('');
   const textFieldRef = useRef(null); //foco del buscador
   const [razonSocialBusca, setRazonSocialBusca] = useState("");
   //////////////////////////////////////////////////////////
 
-  const [formapago_select,setFormaPagoSelect] = useState([]);
+  const [producto_select,setProductoSelect] = useState([]);
   
   //Permisos Nivel 02
   const {user, isAuthenticated } = useAuth0();
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
   const [pVenta010201, setPVenta010201] = useState(false); //Grabar Cabecera Venta
   const [pVenta010202, setPVenta010202] = useState(false); //Agregar Detalle de Productos
-  const [pVenta010203, setPVenta010203] = useState(false); //Det Editar Producto en Venta
-  const [pVenta010204, setPVenta010204] = useState(false); //Det Editar Transporte en Venta
-  const [pVenta010205, setPVenta010205] = useState(false); //Det Editar Eliminar Producto en Venta
+  const [pVenta010203, setPVenta010203] = useState(false); //Det Editar Item-Modifica
+  const [pVenta010204, setPVenta010204] = useState(false); //Det Editar Item-Elimina
+  
+  const [pVenta010205, setPVenta010205] = useState(false); //Facturar
+  const [pVenta010206, setPVenta010206] = useState(false); //Boletear
+  const [pVenta010207, setPVenta010207] = useState(false); //Notear
 
   const [registrosdet,setRegistrosdet] = useState([]);
   //const fecha_actual = new Date();
@@ -243,17 +260,35 @@ export default function AdminVentaForm() {
   }
 
   const [venta,setVenta] = useState({
-      id_empresa:'1',  
-      id_punto_venta:'1001',  
-      tipo_op:'VENTA',
-      comprobante_original_fecemi:'',
-      documento_id:'', //cliente
-      razon_social:'', //cliente
+      fecemi:'',
+      r_documento_id:'', //cliente
+      r_razon_social:'', //cliente
       debe:'0',
       peso_total:'0',
 
       registrado:'1'
-  })
+  });
+  
+  const [producto,setProducto] = useState({
+    //datos complementarios para post
+    id_anfitrion:'',
+    documento_id:'',
+    periodo:'',
+    r_cod:'',
+    r_serie:'',
+    r_numero:'',
+    elemento:1,
+    r_fecemi:'',
+    //datos propios del producto
+    id_producto:'',
+    descripcion:'',
+    cantidad:'1',
+    precio_unitario:'',
+    precio_neto:'',
+    porc_igv:'',
+    cont_und:'',
+    auxiliar:'' //precio_unitario - cont_und - porc_igv
+  });
 
   const handleCodigoKeyDown = async (event) => {
     if (event.key === '+') {
@@ -287,12 +322,46 @@ export default function AdminVentaForm() {
   const filteredClientes = cliente_select.filter((c) =>
   `${c.documento_id} ${c.razon_social}`.toLowerCase().includes(searchText.toLowerCase())
   );
+  const handleCobrar = () => {
+    //mostramos modal de cuenta contable
+    setShowModal(true);
+    
+  };
   
   const [cargando,setCargando] = useState(false);
   const [editando,setEditando] = useState(false);
   
   const navigate = useNavigate();
   const params = useParams();
+
+  const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
+  const [searchTextCuenta, setSearchTextCuenta] = useState('');
+  const filteredCuentas = cuenta_select.filter((c) =>
+    `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchTextCuenta.toLowerCase())
+  );
+  const cargaPopUpProducto = () =>{
+    axios
+    .get(`${back_host}/ad_productopopup/${params.id_anfitrion}/${params.documento_id}`)
+    .then((response) => {
+        setProductoSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+
+  const handleCuentaSelect = (codigo, descripcion, sNombreCuenta) => {
+      setSearchTextCuenta(codigo);
+      console.log(codigo,descripcion);
+      //confirmaRegistroAsiento(codigo,id_anfitrion,documento_id,periodo_trabajo);
+
+      setShowModal(false);
+  };
+  const handleSearchTextCuentaChange = (event) => {
+    console.log(event.target.value);
+    setSearchTextCuenta(event.target.value.replace('+', '').replace('-',''));
+  };
+
 
   const handleSubmit = async(e) => {
     e.preventDefault();
@@ -324,7 +393,6 @@ export default function AdminVentaForm() {
     if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
       navigate(`/ventamovil/${data.comprobante_original_codigo}/${data.comprobante_original_serie}/${data.comprobante_original_numero}/${data.elemento}/edit`);
     }else{
-      //navigate(`/venta/${data.comprobante_original_codigo}/${data.comprobante_original_serie}/${data.comprobante_original_numero}/${data.elemento}/edit`);
       navigate(`/ventamovil/${data.comprobante_original_codigo}/${data.comprobante_original_serie}/${data.comprobante_original_numero}/${data.elemento}/edit`);
     }
   };
@@ -333,12 +401,6 @@ export default function AdminVentaForm() {
   useEffect( ()=> {
     //Verificar si existe venta abierta
     //APi respuesta con array, si existe valores entonces cargar modo edicion
-    //Lanzar consulta y cargar resultados
-    //siempre estaremos en modo genera si viene click boton +
-
-
-    //caso contrario click modificar cargara comprobante correspondiente
-
 
     if (params.comprobante){
       //parametro llega con click en modificar
@@ -351,22 +413,20 @@ export default function AdminVentaForm() {
       
     }else{
       //click nuevo, genera = verificar si existe caso contrario inserta y siempre devuelve datos
-      generaVenta();
-      console.log('generaVenta cuidadoooo ya estamos aqui ....');
+      //generaVenta();
+      console.log('generaVenta cuidadoooo se encargar de generar y mostrar ....');
       //console.log(obtenerFecha(params.periodo,false));
-      
-      
-
     }
 
     //consideraciones finales de renderizado
     //si cliente existe, renderizarlo, sino en blanco indica que esta en modo Pedido
     cargaClienteCombo();
+    cargaPopUpProducto();
 
     //NEW codigo para autenticacion y permisos de BD
-    if (isAuthenticated && user && user.email) {
+    if (isAuthenticated && user.email) {
       // cargar permisos de sistema
-      cargaPermisosMenuComando('01'); //Alimentamos el useState permisosComando
+      cargaPermisosMenuComando('20'); //Alimentamos el useState permisosComando
       //console.log(permisosComando);
     }
 
@@ -375,8 +435,39 @@ export default function AdminVentaForm() {
       textFieldRef.current.focus();
     }
   
-  },[params.comprobante, isAuthenticated, showModal, textFieldRef.current, editando]);
+  },[params.comprobante, isAuthenticated, textFieldRef.current, editando]);
 
+  useEffect( ()=> {
+    //Control de producto elegido
+      console.log("click aceptar Lista Producto");
+
+      //procesar el auxiliar y desglosar precio_unitario, cont_und, porc_igv
+      //producto.cantidad = 1;
+      const [PRECIO_UNITARIO, CONT_UND, PORC_IGV] = producto.auxiliar.split('-');
+
+      setProducto(prevState => ({ ...prevState
+            //,id_producto: producto.id_producto
+            ,cantidad: 1
+            ,precio_unitario: PRECIO_UNITARIO
+            ,precio_neto:PRECIO_UNITARIO
+            ,cont_und:CONT_UND
+            ,porc_igv:PORC_IGV
+      }));
+
+  },[producto.auxiliar]);
+
+  useEffect( ()=> {
+      //mostrar detalle actualizado
+      const [COD, SERIE, NUMERO] = params.comprobante.split('-');
+      mostrarVentaDetalle(COD, SERIE, NUMERO, '1');
+      console.log('actualiza detalle:', registrosdet);
+
+    /////////////////////////////
+    //NEW codigo para autenticacion y permisos de BD
+    /*if (isAuthenticated && user && user.email) {
+      cargaPermisosMenuComando('01');
+    }*/
+  },[updateTrigger]) //Aumentamos IsAuthenticated y user
 
   const cargaClienteCombo = () =>{
     axios
@@ -391,36 +482,45 @@ export default function AdminVentaForm() {
 
   const cargaPermisosMenuComando = async(idMenu)=>{
     //Realiza la consulta a la API de permisos (obtenerTodosPermisoComandos)
-    fetch(`${back_host}/seguridad/${user.email}/${idMenu}`, {
+    fetch(`${back_host}/seguridad/${params.id_anfitrion}/${params.id_invitado}/${idMenu}`, {
       method: 'GET'
     })
     .then(response => response.json())
     .then(permisosData => {
       // Guarda los permisos en el estado
       setPermisosComando(permisosData);
-      console.log(permisosComando);
+      console.log('permisosComando: ',permisosComando);
       let tienePermiso;
       // Verifica si existe el permiso de acceso 'ventas'
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-02-01'); //Nuevo Producto Venta
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-01'); //Graba CAB-Cambios
       if (tienePermiso) {
         setPVenta010201(true);
       }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-02-02'); //Nuevo Producto Venta
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-02'); //Item-Agrega
       if (tienePermiso) {
         setPVenta010202(true);
       }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-02-03'); //Nuevo Producto Venta
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-03'); //Item-Modifica
       if (tienePermiso) {
         setPVenta010203(true);
       }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-02-04'); //Nuevo Producto Venta
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-04'); //Item-Elimina
       if (tienePermiso) {
         setPVenta010204(true);
       }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-02-05'); //Nuevo Producto Venta
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-05'); //Facturar
       if (tienePermiso) {
         setPVenta010205(true);
       }
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-06'); //Boletear
+      if (tienePermiso) {
+        setPVenta010206(true);
+      }
+      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-07'); //Notear
+      if (tienePermiso) {
+        setPVenta010207(true);
+      }
+
     })
     .catch(error => {
       console.log('Error al obtener los permisos:', error);
@@ -429,106 +529,26 @@ export default function AdminVentaForm() {
 
   //Rico evento change
   const handleChange = e => {
-    var index;
-    var sTexto;
-    if (e.target.name === "id_vendedor") {
-      const arrayCopia = vendedor_select.slice();
-      index = arrayCopia.map(elemento => elemento.id_vendedor).indexOf(e.target.value);
-      sTexto = arrayCopia[index].nombre;
-      setVenta({...venta, [e.target.name]: e.target.value, vendedor:sTexto});
-      return;
-    }
-
     setVenta({...venta, [e.target.name]: e.target.value});
   }
-
-  const generaVenta = async () => {
-    //console.log('fecha formateada: ',obtenerFecha(params.periodo,true));
-    try {
-      const response = await axios.post(`${back_host}/ad_venta`, {
-        id_anfitrion: params.id_anfitrion,
-        documento_id: params.documento_id,
-        periodo: params.periodo,
-        id_invitado: params.id_invitado,
-        fecha: obtenerFecha(params.periodo,true),
-      });
-
-      if (response.data.success) {
-        //setFormData(response.data.data); // Actualiza los datos del formulario
-        console.log(response.data.data);
-        console.log(response.data.data.r_numero);
-        mostrarVenta('NP','0001',response.data.data.r_numero,'1');
-        mostrarVentaDetalle('NP','0001',response.data.data.r_numero,'1');
-      } else {
-        //setError(response.data.message);
-        console.log(response.data.message);
-      }
-    } catch (err) {
-      //setError('Error al crear el pedido.');
-      console.log('Error al crear el pedido.');
-    }    
-    /*try {
-      const response = await fetch(`${back_host}/ad_venta`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id_anfitrion: params.id_anfitrion,
-          documento_id: params.documento_id,
-          periodo: params.periodo,
-          id_invitado: params.id_invitado,
-          fecha: '2024-09-03',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        //setData(result.data); // Almacena los datos del pedido
-        console.log(result.data);
-      } else {
-        //setError(result.message || 'No se encontraron resultados.');
-        console.log(result.message || 'No se encontraron resultados.');
-      }
-    } catch (err) {
-      //setError(err.message); // Manejar errores
-      console.log(err.message);
-    }*/
-  };
-
-  const obtenerFecha = (periodo,bformatoBD) => {
-    // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
-    const [year, month] = periodo.split('-').map(Number);
-  
-    // Obtener la fecha actual
-    const fechaActual = new Date();
-    const mesActual = fechaActual.getMonth() + 1; // Los meses en JavaScript son base 0, así que sumamos 1
-  
-    // Verificar si el mes del periodo es igual al mes actual
-    if (mesActual === month) {
-      return formatearFecha(fechaActual,bformatoBD); // Retorna la fecha actual formateada
-    } else {
-      // Retornar el último día del mes del periodo
-      const ultimoDiaMes = new Date(year, month, 0); // Al pasar 0 en el día, se obtiene el último día del mes
-      return formatearFecha(ultimoDiaMes,bformatoBD);
+  const handleChangeProductoDatos = e => {
+    let precio_neto;
+    
+    if (e.target.name === "cantidad"){
+      precio_neto = producto.precio_unitario * e.target.value;
+      //setProducto({...producto, [precio_neto]: precio_neto});
+      console.log('modificando cantidad, importe nuevo: ', precio_neto);
+      producto.precio_neto = precio_neto;
     }
-  };
-  // Función para formatear la fecha en DD/MM/YYYY
-  const formatearFecha = (fecha,bformatoBD) => {
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses en JavaScript son base 0
-    const anio = fecha.getFullYear();
-    if (bformatoBD) {
-      return `${anio}-${mes}-${dia}`;
-    }else{
-      return `${dia}/${mes}/${anio}`;
+    if (e.target.name === "precio_unitario"){
+      precio_neto = producto.cantidad * e.target.value;
+      //setProducto({...producto, [precio_neto]: precio_neto});
+      console.log('modificando precio_unitario, importe nuevo: ', precio_neto);
+      producto.precio_neto = precio_neto;
     }
-  };
-  
+    
+    setProducto({...producto, [e.target.name]: e.target.value});
+  }
 
   //funcion para mostrar data de formulario, modo edicion
   const mostrarVenta = async (cod,serie,num,elem) => {
@@ -540,10 +560,11 @@ export default function AdminVentaForm() {
                 r_serie:data.r_serie,
                 r_numero:data.r_numero,
                 elemento:data.elemento,
-                r_fecemi:data.r_fecemi,
+                r_fecemi:data.fecemi, //cambio de var, por la conversion a varchar
                 r_documento_id:data.r_documento_id, //cliente
                 r_razon_social:data.r_razon_social, //cliente
                 debe:data.debe,
+                r_monto_total:data.r_monto_total,
                 peso_total:data.peso_total,
                 r_cod_ref:data.r_cod_ref,       //ref
                 r_serie_ref:data.r_serie_ref,   //ref
@@ -561,7 +582,7 @@ export default function AdminVentaForm() {
     const res = await fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
     const dataDet = await res.json();
     setRegistrosdet(dataDet);
-    console.log('detalle',dataDet);
+    //console.log('detalle',dataDet);
     setEditando(true);
   };
 
@@ -598,298 +619,321 @@ export default function AdminVentaForm() {
     })
   }
 
-  //Body para Modal de Busqueda Incremental de Pedidos
+ 
+  //////////////////////////////////funciones control cantidad//////////////////////////////////////////
+  const parseCantidad = (cantidad) => {
+    // Si el campo está vacío o es NaN, se asume valor 0
+    const parsedCantidad = parseInt(cantidad, 10);
+    return isNaN(parsedCantidad) ? 0 : parsedCantidad;
+  };
+  const handleResetCantidad = () => {
+    //setProducto({ ...producto, cantidad: '1' });
+    setProducto((prevProducto) => {
+      const newCantidad = 1;
+      const newImporte = prevProducto.precio_unitario * newCantidad;
+      return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
+    });
+  };
+  const handleDecreaseByOne = () => {
+    setProducto((prevProducto) => {
+      const newCantidad = Math.max(parseCantidad(prevProducto.cantidad) - 1, 0); // Evita que sea menor a 0
+      const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
+      return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };      
+    });
+  };
+  const handleIncreaseByOne = () => {
+    /*const newCantidad = parseCantidad(producto.cantidad) + 1;
+    const newImporte = producto.precio_unitario*newCantidad;
+    setProducto({...producto, cantidad: newCantidad, precio_neto:newImporte});*/
 
-  const body=(
-  <div>
-      {
-      registrosdet.map((indice) => (
-        indice ?
-        <div>
-        <Card sx={{mt:0.1}}
-                style={{
-                  background:'#1e272e',
-                  padding:'1rem',
-                  height:'2rem',
-                  marginTop:".2rem"
-                }}
-                key={indice.ref_documento_id}
+    setProducto((prevProducto) => {
+      const newCantidad = parseCantidad(prevProducto.cantidad) + 1;
+      const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
+      return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
+    });
+  };
+  const handleIncreaseByTen = () => {
+    setProducto((prevProducto) => {
+      const newCantidad = parseCantidad(prevProducto.cantidad) + 10;
+      const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
+      return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
+    });
+  };
+  const handleSaveDetail = () =>{
+      //Consumir API grabar
+      confirmaGrabarDetalle();
+
+      //Resetear useState producto
+      const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+      const estadoInicial = {
+          id_anfitrion: params.id_anfitrion,
+          documento_id: params.documento_id,
+          periodo: params.periodo,
+          r_cod: COD,
+          r_serie: SERIE,
+          r_numero: NUMERO,
+          r_fecemi: venta.r_fecemi,
+              
+          id_producto: '',
+          descripcion: '',
+          cantidad: '',
+          precio_unitario: '',
+          precio_neto: '',
+          auxiliar: '' // calculo de precio_unitario - cont_und - porc_igv
+        };
+      setProducto(estadoInicial);
+
+      //Quitar modal
+      setShowModalProducto(false);
+      
+  }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  const confirmaGrabarDetalle = async()=>{
+    //console.log('antes de comprobante y setProducto');
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+
+    producto.id_anfitrion = params.id_anfitrion;
+    producto.documento_id = params.documento_id;
+    producto.periodo = params.periodo;
+    producto.r_cod = COD;
+    producto.r_serie = SERIE;
+    producto.r_numero = NUMERO;
+    producto.r_fecemi = venta.r_fecemi;
+
+    console.log(producto);
+
+    const sRuta = `${back_host}/ad_ventadet`;
+    fetch(sRuta, {
+      method: "POST",
+      body: JSON.stringify(producto), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+      headers: {"Content-Type":"application/json"}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            //console.log('La operación fue exitosa');
+            swal({
+              text:"Detalle registrado con exito",
+              icon:"success",
+              timer:"2000"
+            });
+            
+            setUpdateTrigger(Math.random());//experimento
+
+        } else {
+            console.log('La operación falló');
+            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+            swal({
+              text:"La Operacion fallo, intentelo nuevamente",
+              icon:"warning",
+              timer:"2000"
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Hubo un problema con la solicitud fetch:', error);
+        //ahora si
+        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+    });
+  }
+
+  /////////////////////////////////////////////////seccion datatable/////////////
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [copiedRowId, setCopiedRowId] = useState(null);
+  const columnas = [
+    {
+      name: '',
+      width: '40px',
+      cell: (row) => (
+          <DriveFileRenameOutlineIcon
+            //onClick={() => handleCopyClick(row.item)}
+            style={{
+              cursor: 'pointer',
+              color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
+              transition: 'color 0.3s ease',
+            }}
+          />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: '40px',
+      cell: (row) => (
+        (true) ? (  //modificar urgente con permiso para eliminar detalle
+          <DeleteIcon
+            //onClick={() => handleDelete(row.item)}
+            style={{
+              cursor: 'pointer',
+              color: 'orange',
+              transition: 'color 0.3s ease',
+            }}
+          />
+        ) : null
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    { name:'DESCRIPCION', 
+      selector:row => row.descripcion,
+      sortable: true,
+      width: '210px'
+      //key:true
+    },
+    { name:'CANTIDAD', 
+      selector:row => row.cantidad,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'P.UNIT', 
+      selector:row => row.precio_unitario,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'IMPORTE', 
+      selector:row => row.precio_neto,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'UND', 
+      selector:row => row.cont_und,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+  ];
+
+  const handleRowSelected = useCallback(state => {
+		setSelectedRows(state.selectedRows);
+	}, []);
+  
+  const contextActions = useMemo(() => {
+    //console.log("asaaa");
+
+    const handleUpdate = () => {
+			var strSeleccionado;
+      strSeleccionado = selectedRows.map(r => r.documento_id);
+			navigate(`/contabilidad/${strSeleccionado}/edit`);
+		};
+
+		return (
+      <>
+			<Button key="modificar" onClick={handleUpdate} >
+        MODIFICAR
+      <UpdateIcon/>
+			</Button>
+
+      </>
+		);
+	}, [registrosdet, selectedRows]);
+
+  const actions = (
+    <>
+    <IconButton color="warning" 
+      onClick = {()=> {
+                  //Icono retroceder pagina
+                  navigate(-1, { replace: true });
+                }
+              }
+    >
+      <ReplyIcon />
+    </IconButton>
+
+    <IconButton color="inherit" 
+        onClick = {()=> {
+                    //Icono Imprimir
+                  }
+                }
         >
-          
-          <CardContent style={{color:'white'}}>
+        <PrintIcon />
+    </IconButton>
+    
+    { pVenta010202 ?
+    (
+    <IconButton color="primary" 
+      onClick = {()=> {
+                  //Agregar Producto
+                  setShowModalProducto(true);                  
+                }
+              }
+    >
+      <AddBoxRoundedIcon />
+    </IconButton>
+    ):
+    (<div></div>)
+    }
 
-          <Grid container spacing={3}
-                direction="column"
-                //alignItems="center"
-                sx={{ justifyContent: 'flex-start' }}
-          >
-
-              <Grid container spacing={0}
-                alignItems="center"
-              > 
-                  <Grid item xs={12} sm={6}>
-                  
-                  { pVenta010203 ? 
-                    //Editar Detalle Producto (Venta)
-                    (      
-                    <IconButton color="primary" aria-label="upload picture" component="label" size="small"
-                                sx={{ textAlign: 'left' }}
-                                onClick = {()=> {
-                                        if (venta.tipo_op=="TRASLADO"){
-                                          navigate(`/ventadettraslado/${indice.comprobante_original_codigo}/${indice.comprobante_original_serie}/${indice.comprobante_original_numero}/${indice.elemento}/${indice.item}/edit`)
-                                        }else{
-                                          navigate(`/ventadet/${indice.comprobante_original_codigo}/${indice.comprobante_original_serie}/${indice.comprobante_original_numero}/${indice.elemento}/${indice.item}/edit`)
-                                        }
-
-                                        }
-                                      }
-                    >
-                    <BorderColorIcon />
-                    </IconButton>
-                    ):
-                    (
-                      <IconButton color="inherit" aria-label="upload picture" component="label" size="small"
-                      sx={{ textAlign: 'left' }}
-                    >
-                    <BorderColorIcon />
-                    </IconButton>
-                    )
-                  }
-
-                  { pVenta010205 ? 
-                    //Eliminar Producto
-                    (      
-                    <IconButton color="warning" aria-label="upload picture" component="label" size="small"
-                                sx={{ textAlign: 'left' }}
-                                onClick = { () => confirmaEliminacionDet(indice.comprobante_original_codigo
-                                                                          ,indice.comprobante_original_serie
-                                                                          ,indice.comprobante_original_numero
-                                                                          ,indice.elemento
-                                                                          ,indice.item)
-                                          }
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                    ):
-                    (
-                      <IconButton color="inherit" aria-label="upload picture" component="label" size="small"
-                      sx={{ textAlign: 'left' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )
-                  }
-
-                  </Grid>
-                
-                  <Grid item xs={12} sm={6}>
-                    <Typography fontSize={15} marginTop="0rem" >
-                    {indice.cantidad} {indice.unidad_medida} {indice.descripcion}
-                    </Typography>
-                  </Grid>
-
-              </Grid>
-
-          </Grid>
-
-          </CardContent>
-        </Card>
-        </div>
-        : null
-      ))
-      }
-  </div>
-  )
+    </>
+);
 
   return (
   <div> 
       <div></div>
-    <Grid container spacing={2}
-          direction="column"
-          alignItems="center"
-          justifyContent="center"
-    >
-      
-      <Grid item xs={3}
-      >
             <Card sx={{mt:1}}
                   style={{
                     background:'#1e272e',
-                    //maxWidth: '400px', // Ajusta este valor según tu preferencia
-                    padding:'1rem'
+                    //width: '700px', // Ajusta este valor según tu preferencia
+                    padding:'0rem'
                   }}
-                  >
-                <Typography variant='h5' color='white' textAlign='center'>
-                    {editando ? 
-                      ("Editar " + venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero) 
-                      : 
-                      ("Pedido")
-                    }
-                </Typography>
-                
+            >
                 <CardContent >
                     <form onSubmit={handleSubmit} >
 
-                      <Grid container spacing={0.5}
-                            direction="column"
-                            //alignItems="center"
-                            justifyContent="center"
-                      >
-
-                          <TextField variant="outlined" 
-                                    //label="fecha"
-                                    fullWidth
-                                    size="small"
-                                    sx={{display:'block',
-                                          margin:'.5rem 0'}}
-                                    name="comprobante_original_fecemi"
-                                    type="date"
-                                    //format="yyyy/MM/dd"
-                                    value={venta.comprobante_original_fecemi}
-                                    onChange={handleChange}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputLabelProps={{ style:{color:'white'} }}
-                          />
-                          
                           <Grid container spacing={0}
-                                //direction="column"
-                                alignItems="center"
-                                justifyContent="left"
+                                  //direction= {isSmallScreen ? "column": "row"} 
+                                  alignItems="center"
+                                  justifyContent="left"
                           >
-                              <Grid item xs={10}>
-                                  <TextField variant="outlined" 
-                                              label="Cliente"
-                                              size="small"
-                                              sx={{mt:1}}
-                                              fullWidth
-                                              name="documento_id"
-                                              //value={venta.documento_id}
-                                              //onChange={handleChange}
-                                              value={venta.documento_id}
-                                              onChange={handleChange} //new para busqueda
-                                              onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                              inputProps={{ style:{color:'white',width: 140} }}
-                                              InputLabelProps={{ style:{color:'green'} }}
-                                  />
-
-                                  {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental clientes */}
-                                  <Dialog
-                                    open={showModal}
-                                    onClose={() => setShowModal(false)}
-                                    maxWidth="md"
-                                    fullWidth
-                                    PaperProps={{
-                                      style: {
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                        background:'#1e272e',
-                                        color:'white'
-                                      },
-                                    }}
-                                  >
-                                    <DialogTitle>Listado de Clientes</DialogTitle>
-                                      <TextField variant="standard" 
-                                                  maxWidth="md"
-                                                  autoFocus
-                                                  size="small"
-                                                  //sx={{display:'block',
-                                                  //      margin:'.5rem 0'}}
-                                                  sx={{mt:-1}}
-                                                  name="documento_id_modal"
-                                                  inputRef={textFieldRef} // Referencia para el TextField
-                                                  value={searchText}
-                                                  onChange={handleSearchTextChange} //new para busqueda
-                                                  onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                  inputProps={{ style:{color:'white',width: 140} }}
-                                                  InputLabelProps={{ style:{color:'white'} }}
-                                        />
-                                    <DialogContent>
-                                      <List>
-                                        {filteredClientes.map((c) => (
-                                          <ListItem key={c.documento_id} onClick={() => handleClienteSelect(c.documento_id, c.razon_social)}>
-                                            <ListItemText primary={`${c.documento_id} - ${c.razon_social}`} 
-                                            />
-                                          </ListItem>
-                                        ))}
-                                      </List>
-                                    </DialogContent>
-                                  </Dialog>
-                                  {/* FIN Seccion para mostrar Dialog tipo Modal */}
-
-                              </Grid>
-
-                              <Grid item xs={1}>
-                                  <IconButton color="success" aria-label="upload picture" component="label" size="small"
-                                      sx={{mt:-1}}
-                                      onClick = { () => {
-                                          //mostrar modal
-                                          setShowModal(true);
-                                        }
-                                      }
-                                    >
-                                    <PersonSearchIcon />
-                                  </IconButton>
-                              </Grid>
-                              <Grid item xs={0.5}>
-                                  <IconButton color="warning" aria-label="upload picture" component="label" size="small"
-                                      sx={{mt:-1}}
-                                      onClick = { () => {
-                                          //busqueda en internet
-                                          
-                                        }
-                                      }
-                                    >
-                                    <FindIcon />
-                                  </IconButton>
-                              </Grid>
-
-                              <TextField variant="outlined" 
-                                      //label="RAZON SOCIAL"
-                                      fullWidth
-                                      size="small"
-                                      //sx={{display:'block',
-                                      //      margin:'.5rem 0'}}
-                                      sx={{mt:0}}
-                                      name="razon_social"
-                                      value={venta.razon_social || razonSocialBusca}
-                                      onChange={handleChange}
-                                      inputProps={{ style:{color:'white'} }}
-                                      InputLabelProps={{ style:{color:'white'} }}
-                              />
-
-                          </Grid>
-
-                          <Grid container spacing={0.5}>
-                              <Grid item xs={2}>
-                                  { pVenta010202 ?
-                                    //Agregar Detalle Producto (Venta)
-                                    (
-                                      <IconButton color="primary" aria-label="upload picture" component="label" size="small"
-                                          sx={{margin:'.5rem 0'}}
-                                          onClick = {()=> {
-                                                  navigate(`/ventadet/${venta.comprobante_original_codigo}/${venta.comprobante_original_serie}/${venta.comprobante_original_numero}/${venta.elemento}/${venta.comprobante_original_fecemi}/new`);
-                                                }
-                                          }
-                                      >
-                                      <AddBoxRoundedIcon />
-                                    </IconButton>
-                                    ):
-                                    (
-                                      <IconButton color="inherit" aria-label="upload picture" component="label" size="small"
-                                          sx={{margin:'.5rem 0', color:"white"}}
-                                      >
-                                      <AddBoxRoundedIcon />
-                                    </IconButton>
-                                    )
+                            <Grid item xs={isSmallScreen ? 12 : 2}>
+                              <Typography variant='h6' color='white' textAlign='center'>
+                                  { !params.comprobante.includes('NP') ?
+                                    (venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero) 
+                                    :
+                                    ('NP en Proceso')
                                   }
+                              </Typography>
+                            </Grid>
+
+                            <Grid item xs={isSmallScreen ? 12 : 2}>
+                              <TextField variant="outlined" 
+                                        //label="fecha"
+                                        fullWidth
+                                        size="small"
+                                        sx={{display:'block',
+                                              margin:'.5rem 0'}}
+                                        name="r_fecemi"
+                                        type="date"
+                                        //format="yyyy/MM/dd"
+                                        value={venta.r_fecemi}
+                                        onChange={handleChange}
+                                        inputProps={{ style:{color:'white'} }}
+                                        InputLabelProps={{ style:{color:'white'} }}
+                                />
                               </Grid>
 
-                              <Grid item xs={8}>
-                                { pVenta010201 ?
-                                  //Grabar Datos Cabecera (Venta)
-                                  (
+                              <Grid item xs={isSmallScreen ? 12 : 4}>
+                                <Typography variant='h5' color='white' textAlign='center'>
+                                  {
+                                    (`Total: S/ ${parseFloat(venta.r_monto_total).toLocaleString('en-US', {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2
+                                    })}`) 
+                                  }
+                                </Typography>
+                              </Grid>
+
+                              <Grid item xs={isSmallScreen ? 12 : 2.8}>
+
+                              </Grid>
+
+                              <Grid item xs={isSmallScreen ? 12 : 1.2}>
+                              {//En caso de NP en Proceso, solo se emite comprobante
+                               params.comprobante.includes('NP') ?
+                               (
                                   <Button variant='contained' 
                                           color='primary' 
                                           type='submit'
@@ -897,52 +941,372 @@ export default function AdminVentaForm() {
                                           sx={{display:'block',
                                           margin:'.5rem 0'}}
                                           disabled={
-                                                    !venta.id_zona_venta || 
-                                                    !venta.comprobante_original_fecemi || 
-                                                    !venta.id_vendedor || 
-                                                    !venta.documento_id
+                                                    !venta.r_fecemi 
                                                     }
                                           >
                                           { cargando ? (
                                           <CircularProgress color="inherit" size={24} />
                                           ) : (
-                                            editando ?
-                                          'Modificar' : 'Grabar')
+                                          'EMITIR')
                                           }
                                   </Button>
-                                  ):
-                                  (
-                                  <span></span>
-                                  )
-                                }
+                               )
+                               :
+                               (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
+                                  //Comprobantes Sunat NO, porque ya estan declarados en OSE-sunat
+                                  <Button variant='contained' 
+                                          color='primary' 
+                                          type='submit'
+                                          fullWidth
+                                          sx={{display:'block',
+                                          margin:'.5rem 0'}}
+                                          disabled={
+                                                    !venta.r_fecemi || 
+                                                    !venta.r_documento_id ||
+                                                    !pVenta010201 ||
+                                                    !params.comprobante.includes('NV')
+                                                    }
+                                          >
+                                          { cargando ? (
+                                          <CircularProgress color="inherit" size={24} />
+                                          ) : (
+                                          'MODIFICA')
+                                          }
+                                  </Button>
+                               )
+                              }
+
                               </Grid>
-                              <Grid item xs={2}>
-                                <Button variant='contained' 
-                                              color='warning' 
-                                              //size='small'
-                                              //startIcon={<AssessmentRoundedIcon />}
-                                              onClick={createPdf}
-                                              fullWidth
-                                              sx={{display:'block',margin:'.5rem 0'}}
-                                              //sx={{margin:'.5rem 0', height:55}}
-                                              >
-                                  PDF
-                                </Button>
+
+                              {!params.comprobante.includes('NP') && (
+                              <Grid container spacing={0}
+                                      //direction= {isSmallScreen ? "column": "row"} 
+                                      alignItems="center"
+                                      justifyContent="left"
+                              >
+                                    <Grid item xs={isSmallScreen ? 11 : 2}>
+                                        <TextField variant="outlined" 
+                                                    placeholder="RUC/DNI"
+                                                    size="small"
+                                                    sx={{mt:1}}
+                                                    fullWidth
+                                                    name="r_documento_id"
+                                                    //value={venta.documento_id}
+                                                    //onChange={handleChange}
+                                                    value={venta.r_documento_id}
+                                                    onChange={handleChange} //new para busqueda
+                                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                    inputProps={{ style:{color:'white',width: 140} }}
+                                                    InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={isSmallScreen ? 1 : 0.5}>
+                                        <IconButton color="warning" aria-label="upload picture" component="label" size="small"
+                                            sx={{mt:1}}
+                                            onClick = { () => {
+                                                //busqueda en internet
+                                                
+                                              }
+                                            }
+                                          >
+                                          <FindIcon />
+                                        </IconButton>
+                                    </Grid>
+                                    <Grid item xs={isSmallScreen ? 12 :3.5}>
+                                        <TextField variant="outlined" 
+                                                    placeholder="RAZON SOCIAL"
+                                                    size="small"
+                                                    sx={{mt:1}}
+                                                    fullWidth
+                                                    name="r_razon_social"
+                                                    //value={venta.r_razon_social}
+                                                    //onChange={handleChange}
+                                                    value={venta.r_razon_social}
+                                                    onChange={handleChange} //new para busqueda
+                                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                    inputProps={{ style:{color:'white',width: 140} }}
+                                                    InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                    </Grid>
+
+                                    <Grid item xs={isSmallScreen ? 12 : 6}>
+                                        <TextField variant="outlined" 
+                                                placeholder="DIRECCION"
+                                                fullWidth
+                                                size="small"
+                                                //sx={{display:'block',
+                                                //      margin:'.5rem 0'}}
+                                                sx={{mt:1}}
+                                                name="r_direccion"
+                                                value={venta.r_direccion}
+                                                onChange={handleChange}
+                                                inputProps={{ style:{color:'white'} }}
+                                                InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                    </Grid>
+
                               </Grid>
+                              )}                            
+
                           </Grid>
 
-                          {body}
+                          { (showModalProducto) ?
+                            (   <>
+                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                                        <Dialog
+                                          open={showModalProducto}
+                                          onClose={() => setShowModalProducto(false)}
+                                          maxWidth="md" // Valor predeterminado de 960px
+                                          fullWidth
+                                          PaperProps={{
+                                            style: {
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              alignItems: 'center',
+                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
+                                              //background:'#1e272e',
+                                              background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
+                                              color:'white',
+                                              width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                              maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                            },
+                                          }}
+                                        >
+                                        <DialogTitle>Producto - Item</DialogTitle>
+                                            <Tooltip title={producto.descripcion}>
+                                            <TextField
+                                              variant="outlined"
+                                              placeholder="PRODUCTO"
+                                              autoFocus
+                                              size="small"
+                                              name="id_producto"
+                                              value={producto.descripcion}
+                                              InputLabelProps={{ style: { color: 'white' } }}
+                                              InputProps={{
+                                                style: { color: 'white', width: 270 },
+                                                endAdornment: (
+                                                  <IconButton
+                                                    color="default"
+                                                    aria-label="upload picture"
+                                                    component="label"
+                                                    size="small"
+                                                    sx={{
+                                                      position: 'absolute',
+                                                      top: '50%',
+                                                      left: 0,
+                                                      transform: 'translateY(-50%)',
+                                                    }}
+                                                    onClick={() => {
+                                                      setShowModalProductoLista(true);
+                                                    }}
+                                                  >
+                                                    <FindIcon />
+                                                  </IconButton>
+                                                ),
+                                                // Aquí se ajusta el padding del texto sin afectar el icono
+                                                inputProps: {
+                                                  style: {
+                                                    paddingLeft: '32px', // Mueve solo el texto a la derecha
+                                                      fontSize: '12px', // Ajusta el tamaño de letra aquí
+                                                  },
+                                                },
+                                              }}
+                                            />
+                                            </Tooltip>
+                                                  <ListaPopUp
+                                                      registroPopUp={producto_select}
+                                                      showModal={showModalProductoLista}
+                                                      setShowModal={setShowModalProductoLista}
+                                                      registro={producto}                    
+                                                      setRegistro={setProducto}                    
+                                                      idCodigoKey="id_producto"
+                                                      descripcionKey="descripcion"
+                                                      auxiliarKey="auxiliar"
+                                                  />
 
-                      </Grid>
+                                            <TextField
+                                              variant="outlined"
+                                              placeholder="CANTIDAD"
+                                              label="CANTIDAD"
+                                              autoFocus
+                                              size="small"
+                                              sx={{ mt: 2 }}
+                                              name="cantidad"
+                                              value={producto.cantidad}
+                                              onChange={handleChangeProductoDatos}
+                                              inputProps={{
+                                                style: {
+                                                  color: 'white',
+                                                  width: 145,
+                                                  textAlign: 'center',
+                                                  readOnly: true,
+                                                },
+                                              }}
+                                              InputLabelProps={{ style: { color: 'white' } }}
+                                              InputProps={{
+                                                startAdornment: (
+                                                  <InputAdornment position="start">
+                                                    <IconButton
+                                                      color="default"
+                                                      aria-label="reiniciar a 1"
+                                                      size="small"
+                                                      onClick={handleResetCantidad} // Función para retroceder cambios
+                                                      sx={{
+                                                        padding: '0px',
+                                                        height:'30',
+                                                        marginLeft:'-10px',
+                                                        marginRight: '0px',
+                                                        backgroundColor: 'primary', // Color de fondo del ícono
+                                                        borderRadius: '4px', // Bordes redondeados
+                                                        '&:hover': {
+                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                                        },
+                                                      }}                                                        
+                                                    >
+                                                      <RestartAltIcon />
+                                                    </IconButton>
+                                                    
+                                                    <IconButton
+                                                      color="default"
+                                                      aria-label="disminuir en 1"
+                                                      size="small"
+                                                      onClick={handleDecreaseByOne} // Función para retroceder cambios
+                                                      sx={{
+                                                        padding: '0px',
+                                                        height:'30',
+                                                        marginRight: '0px',
+                                                        backgroundColor: 'primary', // Color de fondo del ícono
+                                                        borderRadius: '4px', // Bordes redondeados
+                                                        '&:hover': {
+                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                                        },
+                                                      }}                                                        
+                                                    >
+                                                      <IndeterminateCheckBox />
+                                                    </IconButton>
+
+                                                  </InputAdornment>
+                                                ),
+                                                endAdornment: (
+                                                  <InputAdornment position="end">
+                                                    <IconButton
+                                                      color="default"
+                                                      aria-label="aumentar de 1 en 1"
+                                                      size="small"
+                                                      onClick={handleIncreaseByOne} // Función para aumentar de 1 en 1
+                                                      sx={{
+                                                        padding: '0px',
+                                                        marginRight: '5px',
+                                                        backgroundColor: 'primary', // Color de fondo del ícono
+                                                        borderRadius: '4px', // Bordes redondeados
+                                                        '&:hover': {
+                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                                        },
+                                                      }}                                                        
+                                                    >
+                                                      <AddCircleIcon />
+                                                    </IconButton>
+                                                    <IconButton
+                                                      color="default"
+                                                      aria-label="aumentar de 10 en 10"
+                                                      size="large"
+                                                      onClick={handleIncreaseByTen} // Función para aumentar de 10 en 10
+                                                      sx={{
+                                                        padding: '0px',
+                                                        marginRight: '-10px',
+                                                        backgroundColor: 'primary', // Color de fondo del ícono
+                                                        borderRadius: '4px', // Bordes redondeados
+                                                        '&:hover': {
+                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                                        },
+                                                      }}                                                        
+                                                    >
+                                                      <Timer10SelectIcon />
+                                                    </IconButton>
+                                                  </InputAdornment>
+                                                ),
+                                              }}
+                                            />
+
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='PRECIO U.'
+                                                      label='PRECIO U.'
+                                                      autoFocus
+                                                      size="small"
+                                                      //sx={{mt:-1}}
+                                                      name="precio_unitario"
+                                                      value={producto.precio_unitario}
+                                                      onChange={handleChangeProductoDatos}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
+                                            />
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='IMPORTE'
+                                                      label='IMPORTE'
+                                                      autoFocus
+                                                      size="small"
+                                                      //sx={{mt:-1}}
+                                                      name="precio_neto"
+                                                      value={producto.precio_neto}
+                                                      //onChange={handleSearchTextCuentaChange} //new para busqueda
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
+                                            />
+                                            <Button variant='contained' 
+                                                        color='success' 
+                                                        //size='small'
+                                                        //startIcon={<AssessmentRoundedIcon />}
+                                                        onClick={handleSaveDetail}
+                                                        sx={{display:'block',margin:'.5rem 0', width: 270}}
+                                                        //sx={{margin:'.5rem 0', height:55}}
+                                                        >
+                                                        AGREGAR
+                                            </Button>
+
+                                        </Dialog>
+                                        {/* FIN Seccion para mostrar Dialog tipo Modal */}
+                                </>
+                            )
+                            :
+                            (   
+                              <>
+                              </>
+                            )
+                          }
+
+
                     </form>
                 </CardContent>
             </Card>
-      </Grid>
 
-        
-      
 
-    </Grid>
+    <Card sx={{mt:1}}
+                  style={{
+                    background:'#1e272e',
+                    //maxWidth: '700px', // Ajusta este valor según tu preferencia
+                    padding:'1rem',
+                  }}
+            >
+              <Datatable
+                //title={actions}
+                theme="solarized"
+                columns={columnas}
+                data={registrosdet}
+                contextActions={contextActions}
+                actions={actions}
+                onSelectedRowsChange={handleRowSelected}
+                selectableRowsComponent={Checkbox} // Pass the function only
+                sortIcon={<ArrowDownward />}
+                dense={true}
+                highlightOnHover //resalta la fila
+              >
+              </Datatable>
+            </Card>
+
   </div>    
   );
 }

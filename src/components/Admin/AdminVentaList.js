@@ -425,7 +425,7 @@ export default function AdminVentaList() {
       setPVenta0103(true); //eliminar
       setPVenta0104(true); //eliminar masivo
 
-      setPCompra0201(true); //nuevo
+      /*setPCompra0201(true); //nuevo
       setPCompra0202(true); //modificar
       setPCompra0203(true); //eliminar
       setPCompra0204(true); //eliminar masivo
@@ -433,7 +433,7 @@ export default function AdminVentaList() {
       setPCaja0301(true); //nuevo
       setPCaja0302(true); //modificar
       setPCaja0303(true); //eliminar
-      setPCaja0304(true); //eliminar masivo
+      setPCaja0304(true); //eliminar masivo*/
 
     }
     else{
@@ -448,27 +448,27 @@ export default function AdminVentaList() {
           console.log(permisosComando);
           let tienePermiso;
           // Verifica si existe el permiso de acceso 'ventas'
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-01'); //Nuevo
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-01'); //Nuevo
           if (tienePermiso) {
             setPVenta0101(true);
           }
 
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-02'); //Modificar
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02'); //Modificar
           if (tienePermiso) {
             setPVenta0102(true);
           }else {setPVenta0102(false);}
 
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-03'); //Eliminar
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-03'); //Eliminar
           if (tienePermiso) {
             setPVenta0103(true);
           }else {setPVenta0103(false);}
 
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '01-04'); //Eliminar Masivo
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-04'); //Eliminar Masivo
           if (tienePermiso) {
             setPVenta0104(true);
           }else {setPVenta0104(false);}
           ////////////////////////////////////////////////
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '02-01'); //Nuevo
+          /*tienePermiso = permisosData.some(permiso => permiso.id_comando === '02-01'); //Nuevo
           if (tienePermiso) {
             setPCompra0201(true);
           }
@@ -503,7 +503,7 @@ export default function AdminVentaList() {
           tienePermiso = permisosData.some(permiso => permiso.id_comando === '03-04'); //Eliminar Masivo
           if (tienePermiso) {
             setPCaja0304(true);
-          }else {setPCaja0304(false);}
+          }else {setPCaja0304(false);}*/
           ////////////////////////////////////////////////
 
           //setUpdateTrigger(Math.random());//experimento
@@ -572,15 +572,15 @@ export default function AdminVentaList() {
       }
 
       if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      cargaPermisosMenuComando('01'); //Por default, la 1era vez
+      cargaPermisosMenuComando('20'); //Por default, la 1era vez
       setValorVista('ventas'); //Por default, la 1era vez
       //st_valorVista = 'ventas'; //new 
       }else{
       setValorVista(st_valorVista);
       }
-      if (st_valorVista === 'ventas') {cargaPermisosMenuComando('01');}
-      if (st_valorVista === 'compras') {cargaPermisosMenuComando('02');}
-      if (st_valorVista === 'caja') {cargaPermisosMenuComando('03');}
+      if (st_valorVista === 'ventas') {cargaPermisosMenuComando('20');}
+      //if (st_valorVista === 'compras') {cargaPermisosMenuComando('02');}
+      //if (st_valorVista === 'caja') {cargaPermisosMenuComando('03');}
 
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo);
@@ -630,7 +630,7 @@ export default function AdminVentaList() {
     setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
     
-  },[permisosComando, pVenta0101, pCompra0201, pCaja0301, valorVista]) //Solo cuando este completo estado
+  },[permisosComando, pVenta0101, valorVista]) //Solo cuando este completo estado
 
 
   //////////////////////////////////////////////////////////
@@ -787,6 +787,60 @@ export default function AdminVentaList() {
     setDatosPopUp(updatedData); // Actualiza los datos con los datos modificados
     setAbierto(false); // Cierra el modal
   };
+  //////////////////////////////////////////////////////
+  const generaVenta = async () => {
+    //console.log('fecha formateada: ',obtenerFecha(params.periodo,true));
+    try {
+      const response = await axios.post(`${back_host}/ad_venta`, {
+        id_anfitrion: params.id_anfitrion,
+        documento_id: params.documento_id,
+        periodo: params.periodo,
+        id_invitado: params.id_invitado,
+        fecha: obtenerFecha(params.periodo,true),
+      });
+      console.log('antes de ... ');
+
+      if (response.data.success) {
+        const sComprobanteAbierto = 'NP-0001-' + response.data.data.r_numero;
+        //enviamos la edicion del registro abierto
+        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/edit`);
+      } else {
+        //setError(response.data.message);
+        console.log(response.data.message);
+      }
+    } catch (err) {
+      //setError('Error al crear el pedido.');
+      console.log('Error al crear el pedido.');
+    }    
+  };
+  const obtenerFecha = (periodo,bformatoBD) => {
+    // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
+    const [year, month] = periodo.split('-').map(Number);
+  
+    // Obtener la fecha actual
+    const fechaActual = new Date();
+    const mesActual = fechaActual.getMonth() + 1; // Los meses en JavaScript son base 0, así que sumamos 1
+  
+    // Verificar si el mes del periodo es igual al mes actual
+    if (mesActual === month) {
+      return formatearFecha(fechaActual,bformatoBD); // Retorna la fecha actual formateada
+    } else {
+      // Retornar el último día del mes del periodo
+      const ultimoDiaMes = new Date(year, month, 0); // Al pasar 0 en el día, se obtiene el último día del mes
+      return formatearFecha(ultimoDiaMes,bformatoBD);
+    }
+  };
+  // Función para formatear la fecha en DD/MM/YYYY
+  const formatearFecha = (fecha,bformatoBD) => {
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses en JavaScript son base 0
+    const anio = fecha.getFullYear();
+    if (bformatoBD) {
+      return `${anio}-${mes}-${dia}`;
+    }else{
+      return `${dia}/${mes}/${anio}`;
+    }
+  };
 
  return (
   <>
@@ -923,13 +977,14 @@ export default function AdminVentaList() {
                             //style={{ padding: '0px'}}
                             style={{ padding: '0px', color: blueGrey[700] }}
                             onClick={() => {
-                              if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
+                              /*if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
                                 //Validamos libro a registrar
                                   navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
                               } else {
                                 //navigate(`/ventamovil/new`);
                                   navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
-                              }
+                              }*/
+                              generaVenta();
                             }}
             >
                   <AddBoxIcon style={{ fontSize: '40px' }}/>
