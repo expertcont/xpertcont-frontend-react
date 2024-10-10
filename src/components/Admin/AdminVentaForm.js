@@ -457,11 +457,13 @@ export default function AdminVentaForm() {
   },[producto.auxiliar]);
 
   useEffect( ()=> {
-      //mostrar detalle actualizado
+      //mostrar detalle actualizado y encabezado mas por el rico total
       const [COD, SERIE, NUMERO] = params.comprobante.split('-');
-      mostrarVentaDetalle(COD, SERIE, NUMERO, '1');
-      console.log('actualiza detalle:', registrosdet);
 
+      mostrarVenta(COD, SERIE, NUMERO, '1'); //falta escpecificar elemento
+      mostrarVentaDetalle(COD, SERIE, NUMERO, '1');
+      console.log('cabecera actualizado: ', venta);
+      console.log('detalle actualizado: ', registrosdet);
     /////////////////////////////
     //NEW codigo para autenticacion y permisos de BD
     /*if (isAuthenticated && user && user.email) {
@@ -555,23 +557,25 @@ export default function AdminVentaForm() {
     const res = await fetch(`${back_host}/ad_venta/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
     const data = await res.json();
     //Actualiza datos para enlace con controles, al momento de modo editar
-    setVenta({  
-                r_cod:data.r_cod,
-                r_serie:data.r_serie,
-                r_numero:data.r_numero,
-                elemento:data.elemento,
-                r_fecemi:data.fecemi, //cambio de var, por la conversion a varchar
-                r_documento_id:data.r_documento_id, //cliente
-                r_razon_social:data.r_razon_social, //cliente
-                debe:data.debe,
-                r_monto_total:data.r_monto_total,
-                peso_total:data.peso_total,
-                r_cod_ref:data.r_cod_ref,       //ref
-                r_serie_ref:data.r_serie_ref,   //ref
-                r_numero_ref:data.r_numero_ref, //ref
-                r_fecemi_ref:data.r_fecemi_ref, //ref
-                registrado:data.registrado
-              });
+    setVenta((prevState) => ({
+      ...prevState, // Mantiene el resto del estado anterior
+      r_cod: data.r_cod,
+      r_serie: data.r_serie,
+      r_numero: data.r_numero,
+      elemento: data.elemento,
+      r_fecemi: data.fecemi, // cambio de var, por la conversión a varchar
+      r_documento_id: data.r_documento_id, // cliente
+      r_razon_social: data.r_razon_social, // cliente
+      debe: data.debe,
+      r_monto_total: data.r_monto_total,
+      peso_total: data.peso_total,
+      r_cod_ref: data.r_cod_ref,       // ref
+      r_serie_ref: data.r_serie_ref,   // ref
+      r_numero_ref: data.r_numero_ref, // ref
+      r_fecemi_ref: data.r_fecemi_ref, // ref
+      registrado: data.registrado
+    }));
+      
     //console.log(data);
     setSearchText(data.r_documento_id); //data de cliente para form
     setEditando(true);
@@ -586,41 +590,14 @@ export default function AdminVentaForm() {
     setEditando(true);
   };
 
-  const eliminarVentaDetalleItem = async (cod,serie,num,elem,item) => {
-    await fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`, {
-      method:"DELETE"
-    });
-    
-    setRegistrosdet(registrosdet.filter(registrosdet => registrosdet.r_cod !== cod ||
-                                                        registrosdet.r_serie !== serie ||
-                                                        registrosdet.r_numero !== num ||
-                                                        registrosdet.elemento !== elem ||
-                                                        registrosdet.item !== item                                                        
-    ));
-    //console.log(data);
-  }
+  //Seccion Elimina Item
+  const handleDelete = (item) => {
+    console.log(item);
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');
+    confirmaEliminarDetalle(COD, SERIE, NUMERO,1,item);
+  };
 
-  const confirmaEliminacionDet = (cod,serie,num,elem,item)=>{
-    swal({
-      title:"Eliminar Detalle de Venta",
-      text:"Seguro ?",
-      icon:"warning",
-      timer:"3000",
-      buttons:["No","Si"]
-    }).then(respuesta=>{
-        if (respuesta){
-          eliminarVentaDetalleItem(cod,serie,num,elem,item);
-            swal({
-            text:"Detalle de venta eliminado con exito",
-            icon:"success",
-            timer:"2000"
-          });
-      }
-    })
-  }
-
- 
-  //////////////////////////////////funciones control cantidad//////////////////////////////////////////
+   //////////////////////////////////funciones control cantidad//////////////////////////////////////////
   const parseCantidad = (cantidad) => {
     // Si el campo está vacío o es NaN, se asume valor 0
     const parsedCantidad = parseInt(cantidad, 10);
@@ -681,11 +658,15 @@ export default function AdminVentaForm() {
           precio_neto: '',
           auxiliar: '' // calculo de precio_unitario - cont_und - porc_igv
         };
-      setProducto(estadoInicial);
+      //setProducto(estadoInicial);
+
+      setProducto((prevState) => ({
+        ...prevState,
+        ...estadoInicial
+      }));
 
       //Quitar modal
       setShowModalProducto(false);
-      
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   const confirmaGrabarDetalle = async()=>{
@@ -718,7 +699,42 @@ export default function AdminVentaForm() {
               timer:"2000"
             });
             
-            setUpdateTrigger(Math.random());//experimento
+            setUpdateTrigger(Math.random());//actualizad vista detalle
+
+        } else {
+            console.log('La operación falló');
+            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+            swal({
+              text:"La Operacion fallo, intentelo nuevamente",
+              icon:"warning",
+              timer:"2000"
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Hubo un problema con la solicitud fetch:', error);
+        //ahora si
+        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+    });
+  }
+
+
+  const confirmaEliminarDetalle = async(cod,serie,num,elem,item)=>{
+    const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
+    fetch(sRuta, {
+      method: "DELETE"
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            //console.log('La operación fue exitosa');
+            swal({
+              text:"Detalle eliminado con exito",
+              icon:"success",
+              timer:"2000"
+            });
+            
+            setUpdateTrigger(Math.random());//actualizad vista detalle
 
         } else {
             console.log('La operación falló');
@@ -763,7 +779,7 @@ export default function AdminVentaForm() {
       cell: (row) => (
         (true) ? (  //modificar urgente con permiso para eliminar detalle
           <DeleteIcon
-            //onClick={() => handleDelete(row.item)}
+            onClick={() => handleDelete(row.item)}
             style={{
               cursor: 'pointer',
               color: 'orange',
