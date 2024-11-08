@@ -16,6 +16,7 @@ import NextWeekIcon from '@mui/icons-material/NextWeek';
 import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpdateGood';
 import UpdateIcon from '@mui/icons-material/Update';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import QrCodeIcon from '@mui/icons-material/QrCode';
 
 import React, { useState } from 'react';
 import LoginPerfil from "./LoginPerfil" //new
@@ -304,18 +305,18 @@ export default function NavBar(props) {
                     <Tooltip title="ADMIN Productos">
                     <IconButton  
                         sx={{
-                          color: selectedButton === 'icono02' ? 'primary.main' : blueGrey[300],flexGrow:1
+                          color: selectedButton === 'icono03' ? 'primary.main' : blueGrey[300],flexGrow:1
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
                                     //cuidado estamos enviando el periodo y el ruc de la contabilidad inicial del anfitrion
                                     navigate(`/ad_producto/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
-                                    handleClick('icono02');
+                                    handleClick('icono03');
                                                 }
                                 }
                     >
-                      <ShoppingCartIcon />
+                      <QrCodeIcon />
                     </IconButton>
                     </Tooltip>
                     ):(
@@ -325,12 +326,14 @@ export default function NavBar(props) {
 
 
 
-                    { ((permisoVentas || permisoCompras || permisoCaja || permisoDiario) && accesoCont) ?
+                    { 
+                    ((permisoVentas || permisoCompras || permisoCaja || permisoDiario)) ?
+                    //((permisoVentas || permisoCompras || permisoCaja || permisoDiario) && accesoCont) ?
                     (
                     <Tooltip title="REGISTRO Asientos">
                     <IconButton  
                         sx={{
-                          color: selectedButton === 'icono03' ? 'primary.main' : blueGrey[300],flexGrow:1
+                          color: selectedButton === 'icono04' ? 'primary.main' : blueGrey[300],flexGrow:1
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
@@ -338,7 +341,7 @@ export default function NavBar(props) {
                                     //cuidado estamos enviando el periodo y el ruc de la contabilidad inicial del anfitrion
                                     //console.log(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                                     navigate(`/asiento/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                                    handleClick('icono03');
+                                    handleClick('icono04');
                                                 }
                                 }
                     >
@@ -358,12 +361,12 @@ export default function NavBar(props) {
                     <Tooltip title="REPORTES">
                     <IconButton  
                         sx={{
-                          color: selectedButton === 'icono06' ? 'primary.main' : blueGrey[300],flexGrow:1
+                          color: selectedButton === 'icono05' ? 'primary.main' : blueGrey[300],flexGrow:1
                         }}
                         color="primary" aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/reporte/${props.idAnfitrion}/${props.idInvitado}`);
-                                  handleClick('icono06');
+                                  handleClick('icono05');
                                                 }
                                 }
                     >
@@ -383,12 +386,12 @@ export default function NavBar(props) {
                     <Tooltip title="Panel 01 CONTABILIDADES">
                     <IconButton  
                         sx={{
-                          color: selectedButton === 'icono04' ? 'primary.main' : blueGrey[300],flexGrow:1
+                          color: selectedButton === 'icono06' ? 'primary.main' : blueGrey[300],flexGrow:1
                         }}
                                 component="label" size="large" color="success"
                                 onClick = {()=> {
                                   navigate(`/contabilidades/${props.idAnfitrion}/${props.idInvitado}`);
-                                  handleClick('icono04');
+                                  handleClick('icono06');
                                                 }
                                 }
                     >
@@ -408,12 +411,12 @@ export default function NavBar(props) {
                     <Tooltip title="Panel 02 TIPO-CAMBIO">
                     <IconButton  
                         sx={{
-                          color: selectedButton === 'icono05' ? 'primary.main' : blueGrey[300],flexGrow:1
+                          color: selectedButton === 'icono07' ? 'primary.main' : blueGrey[300],flexGrow:1
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/correntista`);
-                                  handleClick('icono05');
+                                  handleClick('icono07');
                                                 }
                                 }
                     >

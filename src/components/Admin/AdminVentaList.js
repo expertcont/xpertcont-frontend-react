@@ -15,6 +15,8 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import DownloadIcon from '@mui/icons-material/Download';
 import { blueGrey } from '@mui/material/colors';
 import ShopOutlinedIcon from '@mui/icons-material/ShopOutlined';
+import Sunat01Icon from '../../assets/images/sunat0.png';
+import Sunat02Icon from '../../assets/images/sunat1.png';
 
 import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
@@ -675,6 +677,31 @@ export default function AdminVentaList() {
         allowOverflow: true,
         button: true,
       },
+      {
+        name: '',
+        width: '40px',
+        cell: (row) => (
+          (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
+          (
+            <img
+              src={Sunat01Icon} // Aquí usas la imagen importada
+              onClick={() => handleDelete(row.comprobante)}
+              alt="Icono Sunat01"
+              style={{
+                cursor: 'pointer',
+                //opacity: 0.9, // Ajusta la transparencia
+                filter: (row.r_vfirmado == null) ? 'grayscale(0.8)' : 'grayscale(0)', // Aplica escala de grises
+                transition: 'color 0.3s ease',
+                width: '24px',
+                height: '24px',  // Puedes ajustar el tamaño según necesites
+              }}
+            />
+          ) : null
+        ),
+        allowOverflow: true,
+        button: true,
+      },
+
     ];
   }
   const cargaPeriodosAnfitrion = (strHistorialPeriodo) =>{
@@ -801,7 +828,7 @@ export default function AdminVentaList() {
       console.log('antes de ... ');
 
       if (response.data.success) {
-        const sComprobanteAbierto = 'NP-0001-' + response.data.data.r_numero;
+        const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero;
         //enviamos la edicion del registro abierto
         navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/edit`);
       } else {
@@ -923,7 +950,7 @@ export default function AdminVentaList() {
       (    
       <ToggleButton value="ventas"
                     style={{
-                      backgroundColor: valorVista === 'ventas' ? 'lightsteelblue' : 'transparent',
+                      backgroundColor: valorVista === 'ventas' ? 'gray' : 'transparent',
                       color: valorVista === 'ventas' ? "orange" : "gray"
                     }}
 
@@ -975,7 +1002,7 @@ export default function AdminVentaList() {
           <Tooltip title='AGREGAR NUEVO' >
             <IconButton color="primary" 
                             //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
+                            style={{ padding: '0px', color: 'gray' }}
                             onClick={() => {
                               /*if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
                                 //Validamos libro a registrar

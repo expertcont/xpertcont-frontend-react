@@ -2,12 +2,14 @@ import {Grid,Card,CardContent,useMediaQuery,Typography,TextField,Button,Circular
 import {useState,useEffect,useRef,useMemo,useCallback} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import axios from 'axios';
-import AddBoxRoundedIcon from '@mui/icons-material/ShoppingCart';
+import AddIcon from '@mui/icons-material/Add';
 import FindIcon from '@mui/icons-material/FindInPage';
 import InputAdornment from '@mui/material/InputAdornment';
 import Tooltip from '@mui/material/Tooltip';
 import PrintIcon from '@mui/icons-material/Print';
 import ReplyIcon from '@mui/icons-material/Reply';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import IndeterminateCheckBox from '@mui/icons-material/IndeterminateCheckBox';
@@ -38,13 +40,32 @@ export default function AdminVentaForm() {
   ////////////////////////////////////////////////////////////////////////////////////////
   const [updateTrigger, setUpdateTrigger] = useState({});
   const [cliente_select,setClienteSelect] = useState([]);
+  const [doc_select,setDocSelect] = useState([]);
   //////////////////////////////////////////////////////////
+  //const params = useParams();
+  //Obtener los parámetros de URL
+  const { id_anfitrion, id_invitado, periodo, documento_id, comprobante } = useParams();
+  //Crear estado `params` y sincronizarlo con los valores de la URL
+  const [params, setParams] = useState({
+    id_anfitrion,
+    id_invitado,
+    periodo,
+    documento_id,
+    comprobante,
+  });
+
+  /////////
   const [showModal, setShowModal] = useState(false);
   const [showModalProducto, setShowModalProducto] = useState(false);
   const [showModalProductoLista, setShowModalProductoLista] = useState(false);
+
+  const [showModalEmite, setShowModalEmite] = useState(false);
+
   const [searchText, setSearchText] = useState('');
   const textFieldRef = useRef(null); //foco del buscador
-  const [razonSocialBusca, setRazonSocialBusca] = useState("");
+  const [valorEmite, setValorEmite] = useState('03');
+  const [comprobanteEmitido, setComprobanteEmitido] = useState(null);
+  const [razonSocialBusca, setRazonSocialBusca] = useState('');
   //////////////////////////////////////////////////////////
 
   const [producto_select,setProductoSelect] = useState([]);
@@ -63,6 +84,23 @@ export default function AdminVentaForm() {
 
   const [registrosdet,setRegistrosdet] = useState([]);
   //const fecha_actual = new Date();
+
+  const actualizaValorEmite = (e) => {
+    setValorEmite(e.target.value);
+    setDatosEmitir(prevState => ({ ...prevState, r_cod_emitir: e.target.value }));
+  }
+  
+  const cargaDocSelect = () =>{
+    console.log(`${back_host}/iddoc`);
+    axios
+    .get(`${back_host}/iddoc`)
+    .then((response) => {
+        setDocSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  };
 
   const createPdf = async () => {
     const pdfDoc = await PDFDocument.create()
@@ -290,6 +328,25 @@ export default function AdminVentaForm() {
     auxiliar:'' //precio_unitario - cont_und - porc_igv
   });
 
+  const [datosEmitir,setDatosEmitir] = useState({
+    //datos complementarios para post
+    id_anfitrion:'',
+    documento_id:'',
+    periodo:'',
+    r_cod:'',
+    r_serie:'',
+    r_numero:'',
+    elemento:1,
+    r_fecemi:'',
+    //datos propios del comprobante a generar y correntista a registrar
+    //solo emitidos 01,03,NV ... los 07 y 08 los generamos desde clonar para mayor facilidad
+    r_cod_emitir:'',
+    r_documento_id:'',
+    r_id_doc:'',
+    r_razon_social:'',
+    r_direccion:''
+  });
+
   const handleCodigoKeyDown = async (event) => {
     if (event.key === '+') {
         setShowModal(true);
@@ -332,7 +389,6 @@ export default function AdminVentaForm() {
   const [editando,setEditando] = useState(false);
   
   const navigate = useNavigate();
-  const params = useParams();
 
   const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
   const [searchTextCuenta, setSearchTextCuenta] = useState('');
@@ -420,8 +476,9 @@ export default function AdminVentaForm() {
 
     //consideraciones finales de renderizado
     //si cliente existe, renderizarlo, sino en blanco indica que esta en modo Pedido
-    cargaClienteCombo();
+    //cargaClienteCombo();
     cargaPopUpProducto();
+    cargaDocSelect();
 
     //NEW codigo para autenticacion y permisos de BD
     if (isAuthenticated && user.email) {
@@ -464,23 +521,46 @@ export default function AdminVentaForm() {
       mostrarVentaDetalle(COD, SERIE, NUMERO, '1');
       console.log('cabecera actualizado: ', venta);
       console.log('detalle actualizado: ', registrosdet);
-    /////////////////////////////
-    //NEW codigo para autenticacion y permisos de BD
-    /*if (isAuthenticated && user && user.email) {
-      cargaPermisosMenuComando('01');
-    }*/
+
   },[updateTrigger]) //Aumentamos IsAuthenticated y user
 
-  const cargaClienteCombo = () =>{
-    axios
-    .get(`${back_host}/correntista`)
-    .then((response) => {
-        setClienteSelect(response.data);
-    })
-    .catch((error) => {
-        console.log(error);
+  useEffect( ()=> {
+    //Datos de emision
+    if (valorEmite === '03' || valorEmite === 'NV'){
+      //Regla en Boletas 
+      setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '0000001' }));
+      setDatosEmitir(prevState => ({ ...prevState, r_razon_social: 'VARIOS' }));
+      setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '1' }));
+      setIdDocBusca('1');
+      setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
+      
+      if (venta.r_monto_total > 700 && valorEmite === '03'){
+        setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '' }));
+        setDatosEmitir(prevState => ({ ...prevState, r_razon_social: '' }));
+        setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '1' }));
+        setIdDocBusca('1');
+        setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
+      }
+    }
+    if (valorEmite === '01'){
+      setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '' }));
+      setDatosEmitir(prevState => ({ ...prevState, r_razon_social: '' }));
+      setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '6' }));
+      setIdDocBusca('6');
+      setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
+    }
+
+  },[valorEmite]) //Cambios en Emision, actualiza 'datosEmitir'
+
+  useEffect(() => {
+    setParams({
+      id_anfitrion,
+      id_invitado,
+      periodo,
+      documento_id,
+      comprobante,
     });
-  }
+  }, [id_anfitrion, id_invitado, periodo, documento_id, comprobante]);
 
   const cargaPermisosMenuComando = async(idMenu)=>{
     //Realiza la consulta a la API de permisos (obtenerTodosPermisoComandos)
@@ -530,6 +610,10 @@ export default function AdminVentaForm() {
   }
 
   //Rico evento change
+  const handleChangeEmite = (name, value) => {
+    setDatosEmitir({...datosEmitir, [name]: value});
+  }
+    
   const handleChange = e => {
     setVenta({...venta, [e.target.name]: e.target.value});
   }
@@ -752,6 +836,87 @@ export default function AdminVentaForm() {
         // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
     });
   }
+  
+  const handleSaveComprobante = () =>{
+    //Consumir API grabar
+    confirmaGrabarComprobante();
+
+    //Quitar modal emitir
+    setShowModalEmite(false);
+
+    //actualizar params, renderizado automatico
+
+
+  }
+
+  const confirmaGrabarComprobante = async()=>{
+    //console.log('antes de comprobante y setProducto');
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+
+    //Alimentar useState venta
+    const estadoFinal = {
+        id_anfitrion: params.id_anfitrion,
+        documento_id: params.documento_id,
+        periodo: params.periodo,
+        id_invitado: params.id_invitado,
+
+        r_cod: COD,
+        r_serie: SERIE,
+        r_numero: NUMERO,
+        r_cod_emitir: valorEmite,
+        
+        r_id_doc: datosEmitir.r_id_doc,
+        r_documento_id: datosEmitir.r_documento_id,
+        r_razon_social: datosEmitir.r_razon_social,
+        r_direccion: datosEmitir.r_direccion,
+
+      };
+
+    console.log(estadoFinal);
+
+    const sRuta = `${back_host}/ad_ventacomp`;
+    fetch(sRuta, {
+      method: "POST",
+      body: JSON.stringify(estadoFinal), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+      headers: {"Content-Type":"application/json"}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            //console.log('La operación fue exitosa');
+            swal({
+              text:"Detalle registrado con exito",
+              icon:"success",
+              timer:"2000"
+            });
+            
+            //setUpdateTrigger(Math.random());//actualizad vista detalle
+            setParams(prevParams => ({
+              ...prevParams,         // Mantenemos los valores previos
+              comprobante: (data.r_cod + '-' + data.r_serie + '-' + data.r_numero ) //actualizamos comprobante
+            }));
+            //console.log(params);
+            //console.log(data);
+            //console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero);
+
+        } else {
+            console.log('La operación falló');
+            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+            swal({
+              text:"La Operacion fallo, intentelo nuevamente",
+              icon:"warning",
+              timer:"2000"
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Hubo un problema con la solicitud fetch:', error);
+        //ahora si
+        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+    });
+    
+  }
+
 
   /////////////////////////////////////////////////seccion datatable/////////////
   const [selectedRows, setSelectedRows] = useState([]);
@@ -847,6 +1012,7 @@ export default function AdminVentaForm() {
 		);
 	}, [registrosdet, selectedRows]);
 
+  
   const actions = (
     <>
     <IconButton color="warning" 
@@ -859,7 +1025,7 @@ export default function AdminVentaForm() {
       <ReplyIcon />
     </IconButton>
 
-    <IconButton color="inherit" 
+    <IconButton color="primary" 
         onClick = {()=> {
                     //Icono Imprimir
                   }
@@ -877,7 +1043,7 @@ export default function AdminVentaForm() {
                 }
               }
     >
-      <AddBoxRoundedIcon />
+      <AddIcon />
     </IconButton>
     ):
     (<div></div>)
@@ -885,6 +1051,85 @@ export default function AdminVentaForm() {
 
     </>
 );
+
+  createTheme('solarized', {
+    text: {
+      //primary: '#268bd2',
+      primary: '#ffffff',
+      secondary: '#2aa198',
+    },
+    background: {
+      //default: '#002b36',
+      default: '#1e272e'
+    },
+    context: {
+      background: '#cb4b16',
+      //background: '#1e272e',
+      text: '#FFFFFF',
+    },
+    divider: {
+      default: '#073642',
+    },
+    action: {
+      button: 'rgba(0,0,0,.54)',
+      hover: 'rgba(0,0,0,.08)',
+      disabled: 'rgba(0,0,0,.12)',
+    },
+  }, 'dark');
+
+  const [id_docBusca, setIdDocBusca] = useState("");
+  const mostrarRazonSocialGenera = (sDocumentoId) => {
+    axios
+        .post(`${back_host}/correntistagenera`, {
+            ruc: sDocumentoId
+        })
+        .then((response) => {
+            console.log(response.data);
+            const { nombre_o_razon_social,r_id_doc,direccion_completa } = response.data;
+            setRazonSocialBusca(nombre_o_razon_social);
+            setIdDocBusca(r_id_doc);
+            
+            setDatosEmitir(prevState => ({ ...prevState, r_id_doc: r_id_doc }));
+            setDatosEmitir(prevState => ({ ...prevState, r_razon_social: nombre_o_razon_social }));
+            setDatosEmitir(prevState => ({ ...prevState, r_direccion: direccion_completa }));
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+  };
+
+  const handleUpdateInvoice = () =>{
+    //Consumir API grabar
+    confirmaGrabarDetalle();
+
+    //Resetear useState producto
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+    const estadoInicial = {
+        id_anfitrion: params.id_anfitrion,
+        documento_id: params.documento_id,
+        periodo: params.periodo,
+        r_cod: COD,
+        r_serie: SERIE,
+        r_numero: NUMERO,
+        r_fecemi: venta.r_fecemi,
+            
+        id_producto: '',
+        descripcion: '',
+        cantidad: '',
+        precio_unitario: '',
+        precio_neto: '',
+        auxiliar: '' // calculo de precio_unitario - cont_und - porc_igv
+      };
+    //setProducto(estadoInicial);
+
+    setProducto((prevState) => ({
+      ...prevState,
+      ...estadoInicial
+    }));
+
+    //Quitar modal
+    setShowModalProducto(false);
+  }
 
   return (
   <div> 
@@ -906,10 +1151,17 @@ export default function AdminVentaForm() {
                           >
                             <Grid item xs={isSmallScreen ? 12 : 2}>
                               <Typography variant='h6' color='white' textAlign='center'>
-                                  { !params.comprobante.includes('NP') ?
-                                    (venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero) 
+                                  { comprobanteEmitido ? 
+                                    (
+                                      ('Emitido Final')
+                                    )
                                     :
-                                    ('NP en Proceso')
+                                    (
+                                      params.comprobante.includes('NP') ?
+                                      ('NP en Proceso')
+                                      :
+                                      (venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero) 
+                                    )
                                   }
                               </Typography>
                             </Grid>
@@ -956,6 +1208,11 @@ export default function AdminVentaForm() {
                                           fullWidth
                                           sx={{display:'block',
                                           margin:'.5rem 0'}}
+                                          onClick = { () => {
+                                            //busqueda en internet
+                                            setShowModalEmite(true);
+                                            }
+                                          }
                                           disabled={
                                                     !venta.r_fecemi 
                                                     }
@@ -1007,8 +1264,6 @@ export default function AdminVentaForm() {
                                                     sx={{mt:1}}
                                                     fullWidth
                                                     name="r_documento_id"
-                                                    //value={venta.documento_id}
-                                                    //onChange={handleChange}
                                                     value={venta.r_documento_id}
                                                     onChange={handleChange} //new para busqueda
                                                     onKeyDown={handleCodigoKeyDown} //new para busqueda
@@ -1035,8 +1290,6 @@ export default function AdminVentaForm() {
                                                     sx={{mt:1}}
                                                     fullWidth
                                                     name="r_razon_social"
-                                                    //value={venta.r_razon_social}
-                                                    //onChange={handleChange}
                                                     value={venta.r_razon_social}
                                                     onChange={handleChange} //new para busqueda
                                                     onKeyDown={handleCodigoKeyDown} //new para busqueda
@@ -1081,7 +1334,8 @@ export default function AdminVentaForm() {
                                               alignItems: 'center',
                                               marginTop: '10vh', // Ajusta este valor según tus necesidades
                                               //background:'#1e272e',
-                                              background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
+                                              //background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
+                                              background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
                                               color:'white',
                                               width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
                                               maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
@@ -1282,6 +1536,25 @@ export default function AdminVentaForm() {
                                                         >
                                                         AGREGAR
                                             </Button>
+                                            <Button variant='contained' 
+                                                        //color='warning' 
+                                                        //size='small'
+                                                        onClick={()=>{
+                                                              setShowModalProducto(false);
+                                                          }
+                                                        }
+                                                        sx={{display:'block',
+                                                             margin:'.5rem 0',
+                                                             width: 270, 
+                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                                            '&:hover': {
+                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                                                },                                                             
+                                                             mt:-0.5}}
+                                                        >
+                                                        ESC - CERRAR
+                                            </Button>
+
 
                                         </Dialog>
                                         {/* FIN Seccion para mostrar Dialog tipo Modal */}
@@ -1294,6 +1567,220 @@ export default function AdminVentaForm() {
                             )
                           }
 
+
+
+                          { (showModalEmite) ?
+                            (   <>
+                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                                        <Dialog
+                                          open={showModalEmite}
+                                          onClose={() => setShowModalEmite(false)}
+                                          maxWidth="md" // Valor predeterminado de 960px
+                                          fullWidth
+                                          PaperProps={{
+                                            style: {
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              alignItems: 'center',
+                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
+                                              //background:'#1e272e',
+                                              background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
+                                              //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                                              color:'white',
+                                              width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                              maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                            },
+                                          }}
+                                        >
+                                        <DialogTitle>Datos - Emision</DialogTitle>
+
+                                            <ToggleButtonGroup
+                                                color="success"
+                                                value={valorEmite}
+                                                exclusive
+                                                size="small"
+                                                onChange={actualizaValorEmite}
+                                                aria-label="Platform"
+                                                sx={{
+                                                  width: 270, // Ajusta el ancho que quieres
+                                                  margin: '0.5rem 0', // Opcional: márgenes
+                                                }}                                                
+                                            >
+                                              <ToggleButton value="01"
+                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
+                                                            style={{
+                                                              backgroundColor: valorEmite === '01' ? 'lightblue' : 'transparent',
+                                                              color: valorEmite === '01' ? "orange" : "gray",
+                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
+                                                            }}
+                                              >FACT</ToggleButton>
+
+                                              <ToggleButton value="03"
+                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
+                                                            style={{
+                                                              backgroundColor: valorEmite === '03' ? 'lightblue' : 'transparent',
+                                                              color: valorEmite === '03' ? 'orange' : 'gray',
+                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
+                                                            }}
+                                              >BOL</ToggleButton>
+
+                                              <ToggleButton value="NV"
+                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
+                                                            style={{
+                                                              backgroundColor: valorEmite === 'NV' ? 'lightblue' : 'transparent',
+                                                              color: valorEmite === 'NV' ? 'orange' : 'gray',
+                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
+                                                            }}
+                                              >NV</ToggleButton>
+
+                                            </ToggleButtonGroup>
+
+                                            <TextField
+                                                    variant="outlined"
+                                                    placeholder="RUC/DNI"
+                                                    autoFocus
+                                                    size="small"
+                                                    autoComplete="off"
+                                                    name="r_documento_id"
+                                                    value={datosEmitir.r_documento_id}
+                                                    onChange={(e) => handleChangeEmite('r_documento_id', e.target.value)}
+                                                    InputLabelProps={{ style: { color: 'white' } }}
+                                                    InputProps={{
+                                                      style: { color: 'white', width: 270 },
+                                                      endAdornment: (
+                                                        <IconButton
+                                                          color="default"
+                                                          aria-label="upload picture"
+                                                          component="label"
+                                                          size="small"
+                                                          sx={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            right: 0,
+                                                            transform: 'translateY(-50%)',
+                                                            color: 'orange',
+                                                          }}
+                                                          onClick={() => {
+                                                            //
+                                                            mostrarRazonSocialGenera(datosEmitir.r_documento_id);
+                                                          }}
+                                                        >
+                                                          <FindIcon />
+                                                        </IconButton>
+                                                      ),
+                                                      inputProps: {
+                                                        style: {
+                                                          paddingLeft: '32px', // Mueve solo el texto a la derecha
+                                                          fontSize: '18px', // Ajusta el tamaño de letra aquí
+                                                        },
+                                                      },
+                                                    }}
+                                                    sx={{
+                                                      mt:-1,
+                                                      '& .MuiInputBase-input': {
+                                                        textAlign: 'center', // Alinea el texto del campo
+                                                      },
+                                                    }}
+                                             />
+                                            
+                                             <Select
+                                                    labelId="documento_select"
+                                                    value={ id_docBusca || datosEmitir.r_id_doc}  // 
+                                                    size='small'
+                                                    name="r_id_doc"
+                                                    //fullWidth
+                                                    sx={{display:'block',
+                                                         //margin:'.4rem 0', 
+                                                         mt:0,
+                                                         width: '270px',  // Establece el ancho fijo aquí
+                                                         textAlign: 'center',  // Centrar el texto seleccionado
+                                                         '.MuiSelect-select': { 
+                                                           textAlign: 'center',  // Centrar el valor dentro del Select
+                                                         },                                                         
+                                                         color:"white"}}
+                                                    label="doc"
+                                                    onChange={(e) => handleChangeEmite('r_id_doc', e.target.value)}
+                                                >
+                                                    {   
+                                                        doc_select.map(elemento => (
+                                                        <MenuItem key={elemento.codigo} value={elemento.codigo}
+                                                                  sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
+                                                        >
+                                                        {elemento.descripcion}
+                                                        </MenuItem>)) 
+                                                    }
+                                            </Select>
+
+                                            <Tooltip title={datosEmitir.r_razon_social}>
+                                                <TextField variant="outlined" 
+                                                          //maxWidth="md"
+                                                          placeholder='RAZON SOCIAL'
+                                                          //label='RAZON SOCIAL'
+                                                          autoFocus
+                                                          size="small"
+                                                          autoComplete="off"
+                                                          sx={{mt:0}}
+                                                          name="r_razon_social"
+                                                          value={datosEmitir.r_razon_social}
+                                                          onChange={(e) => handleChangeEmite('r_razon_social', e.target.value)}
+                                                          //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                          inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
+                                                          InputLabelProps={{ style:{color:'white'} }}
+                                                />
+                                            </Tooltip>
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='DIRECCION'
+                                                      //label='DIRECCION'
+                                                      autoFocus
+                                                      size="small"
+                                                      autoComplete="off"
+                                                      //sx={{mt:-1}}
+                                                      name="r_direccion"
+                                                      value={datosEmitir.r_direccion}
+                                                      //onChange={handleSearchTextCuentaChange} //new para busqueda
+                                                      onChange={(e) => handleChangeEmite('r_direccion', e.target.value)}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
+                                            />
+                                            <Button variant='contained' 
+                                                        color='primary' 
+                                                        //size='small'
+                                                        onClick={handleSaveComprobante}
+                                                        sx={{display:'block',margin:'.5rem 0', width: 270}}
+                                                        >
+                                                        GRABAR
+                                            </Button>
+                                            <Button variant='contained' 
+                                                        //color='warning' 
+                                                        //size='small'
+                                                        onClick={()=>{
+                                                              setShowModalEmite(false);
+                                                          }
+                                                        }
+                                                        sx={{display:'block',
+                                                             margin:'.5rem 0',
+                                                             width: 270, 
+                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                                            '&:hover': {
+                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                                                },                                                             
+                                                             mt:-0.5}}
+                                                        >
+                                                        ESC - CERRAR
+                                            </Button>
+
+                                        </Dialog>
+                                        {/* FIN Seccion para mostrar Dialog tipo Modal */}
+                                </>
+                            )
+                            :
+                            (   
+                              <>
+                              </>
+                            )
+                          }
 
                     </form>
                 </CardContent>
