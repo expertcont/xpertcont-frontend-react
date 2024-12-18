@@ -227,25 +227,50 @@ export default function AdminVentaList() {
   /*const handleRecarga = () => {
     setUpdateTrigger(Math.random());//experimento
   };*/
+  
+  const handleSunat = (sComprobante,elemento) => {
+    const [COD, SERIE, NUMERO] = sComprobante.split('-');
 
+    console.log('Enviando a sunat:', sComprobante,elemento);
+    axios
+        .post(`${back_host}/ad_ventacpe`, {
+            p_periodo: periodo_trabajo,
+            p_id_usuario: params.id_anfitrion,
+            p_documento_id: contabilidad_trabajo,
+            p_r_cod: COD,
+            p_r_serie: SERIE,
+            p_r_numero: NUMERO,
+            p_elemento: elemento
+        })
+        .then((response) => {
+            //respuesta positiva 
+
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+
+    //Si no existe valor firmado, entonces comsumir API facturacion integral, actualizar vista
+    //En caso de tener valor firmado, mostrar los links de descarga XML,CDR y PDF (Dialog)
+  };
+  
   const handleUpdate = (sComprobante) => {
     //var num_asiento;
     if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
       console.log("Estás usando un dispositivo móvil!!");
       //Validamos libro a mostrar
       navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/edit`);
-      //navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
     } else {
       console.log("No estás usando un móvil");
       navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/edit`);
     }    
   };
-  const handleDelete = (num_asiento) => {
-    console.log(num_asiento);
+  const handleDelete = (comprobante,elemento) => {
+    console.log(comprobante,elemento);
     
-    confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro,num_asiento);
+    confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante,elemento);
   };
-  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento)=>{
+  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento)=>{
     await swal({
       title:"Eliminar Registro",
       text:"Seguro ?",
@@ -254,10 +279,10 @@ export default function AdminVentaList() {
     }).then(respuesta=>{
         if (respuesta){
           //console.log(cod,serie,num,elem,item);
-          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento);
+          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento);
           setToggleCleared(!toggleCleared);
           setRegistrosdet(registrosdet.filter(
-                          registrosdet => registrosdet.num_asiento !== sAsiento
+                          registrosdet => registrosdet.comprobante !== sComprobante
                           ));
           setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
               setUpdateTrigger(Math.random());//experimento
@@ -271,13 +296,15 @@ export default function AdminVentaList() {
       }
     })
   }
-  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro,sAsiento) => {
-    console.log(`${back_host}/asiento/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${sAsiento}`);
+  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento) => {
+    const [COD, SERIE, NUMERO] = sComprobante.split('-');
+    //console.log(`${back_host}/ad_venta/${sPeriodo}/${sAnfitrion}/${sDocumentoId}/${COD}/${SERIE}/${NUMERO}/${sElemento}`);
     //En ventas solo se eliminan, detalle-cabecera
-      await fetch(`${back_host}/asiento/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${sAsiento}`, {
+    await fetch(`${back_host}/ad_venta/${sPeriodo}/${sAnfitrion}/${sDocumentoId}/${COD}/${SERIE}/${NUMERO}/${sElemento}`, {
         method:"DELETE"
-      });
+    });
   }
+
   const handleDeleteOrigen = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro) => {
     const { value: selectedOrigen } = await swal2.fire({
       title: 'Eliminar registros',
@@ -645,7 +672,32 @@ export default function AdminVentaList() {
         name: '',
         width: '40px',
         cell: (row) => (
-          (pVenta0102 || pCompra0202 || pCaja0302) ? (
+          (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
+          (
+            <img
+              src={Sunat01Icon} // Aquí usas la imagen importada
+              onClick={() => handleSunat(row.comprobante,row.elemento)}
+              alt="Icono Sunat01"
+              style={{
+                cursor: 'pointer',
+                //opacity: 0.9, // Ajusta la transparencia
+                filter: (row.r_vfirmado == null) ? 'grayscale(0.8)' : 'grayscale(0)', // Aplica escala de grises
+                transition: 'color 0.3s ease',
+                width: '24px',
+                height: '24px',  // Puedes ajustar el tamaño según necesites
+              }}
+            />
+          ) : null
+        ),
+        allowOverflow: true,
+        button: true,
+      },
+      {
+        name: '',
+        width: '40px',
+        cell: (row) => (
+          (pVenta0102 || pCompra0202 || pCaja0302) && (row.r_vfirmado == null) ?
+          (
             <DriveFileRenameOutlineIcon
               onClick={() => handleUpdate(row.comprobante)}
               style={{
@@ -663,37 +715,14 @@ export default function AdminVentaList() {
         name: '',
         width: '40px',
         cell: (row) => (
-          (pVenta0103 || pCompra0203 || pCaja0303) ? (
+          (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_vfirmado == null) ?
+          (
             <DeleteIcon
-              onClick={() => handleDelete(row.num_asiento)}
+              onClick={() => handleDelete(row.comprobante, row.elemento)}
               style={{
                 cursor: 'pointer',
                 color: 'orange',
                 transition: 'color 0.3s ease',
-              }}
-            />
-          ) : null
-        ),
-        allowOverflow: true,
-        button: true,
-      },
-      {
-        name: '',
-        width: '40px',
-        cell: (row) => (
-          (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
-          (
-            <img
-              src={Sunat01Icon} // Aquí usas la imagen importada
-              onClick={() => handleDelete(row.comprobante)}
-              alt="Icono Sunat01"
-              style={{
-                cursor: 'pointer',
-                //opacity: 0.9, // Ajusta la transparencia
-                filter: (row.r_vfirmado == null) ? 'grayscale(0.8)' : 'grayscale(0)', // Aplica escala de grises
-                transition: 'color 0.3s ease',
-                width: '24px',
-                height: '24px',  // Puedes ajustar el tamaño según necesites
               }}
             />
           ) : null
@@ -1004,13 +1033,6 @@ export default function AdminVentaList() {
                             //style={{ padding: '0px'}}
                             style={{ padding: '0px', color: 'gray' }}
                             onClick={() => {
-                              /*if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-                                //Validamos libro a registrar
-                                  navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
-                              } else {
-                                //navigate(`/ventamovil/new`);
-                                  navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/new`);
-                              }*/
                               generaVenta();
                             }}
             >

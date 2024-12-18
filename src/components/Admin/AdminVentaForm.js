@@ -10,6 +10,7 @@ import PrintIcon from '@mui/icons-material/Print';
 import ReplyIcon from '@mui/icons-material/Reply';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
 
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import IndeterminateCheckBox from '@mui/icons-material/IndeterminateCheckBox';
@@ -23,13 +24,17 @@ import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutli
 import DeleteIcon from '@mui/icons-material/DeleteForeverRounded';
 import IconButton from '@mui/material/IconButton';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import logo from '../../Logo02.png';
+//import logo from '../../Logo02.png';
+import logo from '../../Logo04small.png';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import numeral from 'numeral';
 import ListaPopUp from '../ListaPopUp';
 
 import swal from 'sweetalert';
 import Datatable, {createTheme} from 'react-data-table-component';
+import QRCode from 'qrcode';
+import { NumerosALetras } from 'numero-a-letras';
+import { Margin } from '@mui/icons-material';
 
 export default function AdminVentaForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -38,6 +43,7 @@ export default function AdminVentaForm() {
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
+  const inputProductoRef = useRef(null); // Crear referencia al TextField
   const [updateTrigger, setUpdateTrigger] = useState({});
   const [cliente_select,setClienteSelect] = useState([]);
   const [doc_select,setDocSelect] = useState([]);
@@ -102,22 +108,30 @@ export default function AdminVentaForm() {
     });
   };
 
+  function base64ToUint8Array(base64) {
+    const binaryString = window.atob(base64); // Decodificar Base64 a binario
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  }
   const createPdf = async () => {
     const pdfDoc = await PDFDocument.create()
     const page = pdfDoc.addPage();
     const { width, height } = page.getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontNegrita = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     // Add logo to the top of the page
     //const logoImage = pdfDoc.embedPng(logo);
     const pngImage = await pdfDoc.embedPng(logo);
-    const pngDims = pngImage.scale(0.5)
+    const pngDims = pngImage.scale(0.6)
 
     page.drawImage(pngImage, {
-      //x: page.getWidth() / 2 - pngDims.width / 2 + 75,
-      //y: page.getHeight() / 2 - pngDims.height + 250,
-      x: 210,
-      y: 780,
+      x: 410,
+      y: 755,
       width: pngDims.width,
       height: pngDims.height,
     })
@@ -127,154 +141,102 @@ export default function AdminVentaForm() {
     const margin = 50;
     let x = margin;
     let y = height - margin - lineHeight - 10;
-    
-    y = y - 10;
 
-    // Draw column headers
-    page.drawText(venta.tipo_op + ": "+ params.r_cod+"-"+params.r_serie+"-"+params.r_numero, { x:220, y, size: 16 });
+    //Documento electronico y logo expertcont
+    const COD = params.comprobante.slice(0,2);
+    const documentos = {
+      '01': 'FACTURA ELECTRONICA',
+      '03': 'BOLETA ELECTRONICA',
+      '07': 'NOTA CRED. ELECTRONICA',
+      '08': 'NOTA DEB. ELECTRONICA'
+    };
+    const sDocumento = documentos[COD] || 'DOCUMENTO'; // Manejo de caso por defecto
+    
+    page.drawText(sDocumento, { x:50, y:792, size: 14, font:fontNegrita });
+    //page.drawText('expertcont.pe', { x:410, y:775, size: 13 });
+    
+    //Razon social
+    page.drawText('RUC '+params.documento_id, { x:50, y:778, size: 14, font:fontNegrita });
+    page.drawText(venta.razon_social, { x:50, y:765, size: 10 });
+    page.drawText(venta.direccion, { x:50, y:755, size: 10 });
+    page.drawText(params.comprobante.slice(3), { x:410, y:735, size: 16, font:fontNegrita });
+
+    y = y - 10;
     y=y-12; //aumentamos linea nueva
-    y=y-5; //aumentamos linea nueva
+    y=y-10; //aumentamos linea nueva
 
     //Calculamos el punto x, acorde al largo de la razon social (centradito chochera ... claro pi cojuda)
-    let centro;
-    if (venta.razon_social===null) {
-      centro = 0;
-    }else{
-      centro = (page.getWidth()/2) - (("CLIENTE: "+venta.razon_social).toString().length)/2 - margin - 40;
-      page.drawText("CLIENTE: " + venta.razon_social?.toString() ?? "", { x:centro, y, size: 12 });
-    }
-    y=y-5; //aumentamos linea nueva
+    page.drawText("CLIENTE: " + venta.r_razon_social?.toString() ?? "", { x:50, y, size: 10, font:fontNegrita });
+
+    y=y-12; //aumentamos linea nueva
+    page.drawText("RUC/DNI: " + venta.r_documento_id?.toString() ?? "", { x:50, y, size: 10 });
+    page.drawText("FECHA: ", { x:410, y, size: 10 });
+    page.drawText(venta.r_fecemi, { x:450, y, size: 12 });
+
+    y=y-12; //aumentamos linea nueva
+    page.drawText("DIRECCION: " + venta.r_direccion?.toString() ?? "", { x:50, y, size: 10 });
+    page.drawText("VENTA: ", { x:410, y, size: 10 });
+    page.drawText(params.id_invitado.split('@')[0].slice(0,14), { x:450, y, size: 12 });
+    
+    y=y-12; //aumentamos linea nueva
+    page.drawText("PAGO: CONTADO", { x:410, y, size: 10 });
+
     y=y-12; //aumentamos linea nueva
     y=y-12; //aumentamos linea nueva
     
-    ////////////////////////////////////////////////////////////////////
-    page.drawRectangle({
-      x: margin,
-      y: y,
-      width: (page.getWidth()-margin-50), //TODA ANCHO DE LA HOJA
-      height: (lineHeight+7),
-      borderWidth: 1,
-      //color: rgb(0.778, 0.778, 0.778),
-      borderColor: rgb(0.8,0.8,0.8)
-    });
-    page.drawText("FECHA: ", { x:55, y:y+4, size: 10 });
-    page.drawText(venta.comprobante_original_fecemi, { x:100, y:y+4, size: 12 });
-
-    page.drawText("ZONA: ", { x:55+140, y:y+4, size: 10 });
-    page.drawText(venta.zona_venta, { x:100+140, y:y+4, size: 12 });
-
-    ////////////////////////////////////////////////////////////////////
-    page.drawText("VENDEDOR: ", { x:55+220+100, y:y+4, size: 10 });
-    page.drawText(venta.vendedor, { x:260+160+30, y:y+4, size: 12 });
-    
-    ////////////////////////////////////////////////////////////////////
-    
-    //person.pedido?.toString() ?? ""
-    y=y-12; //aumentamos linea nueva
-    y=y-12; //aumentamos linea nueva
-    y=y-5; //aumentamos linea nueva
-
-    page.drawText("PAGO: ", { x:55, y:y+4, size: 10 });
-    page.drawText(venta.formapago, { x:130, y:y+4, size: 10 });
-    y=y-12; //aumentamos linea nueva
-    page.drawText("VENTA: ", { x:55, y:y+4, size: 10 });
-    page.drawText(venta.cond_venta, { x:130, y:y+4, size: 10 });
-    y=y-12; //aumentamos linea nueva
-    page.drawText("ENTREGA: ", { x:55, y:y+4, size: 10 });
-    page.drawText(venta.cond_entrega, { x:130, y:y+4, size: 10 });
-
     ////////////////////////////////////////////////////////////////////
     // Draw table data
     let row = 1;
     let espaciadoDet = 0; //iniciamos en la 1era fila
     
-    let precio_total = 0;
+    //let precio_total = 0;
     espaciadoDet = espaciadoDet+20; ///NEW
+
+    page.drawRectangle({
+      x: margin,
+      y: y-2,
+      width: (page.getWidth()-margin-50), //TODA ANCHO DE LA HOJA
+      height: (lineHeight+2),
+      borderWidth: 1,
+      color: rgb(0.778, 0.778, 0.778),
+      borderColor: rgb(0.8,0.8,0.8)
+    });
+
+    page.drawText("CANT", { x:x, y, size: 8 });
+    page.drawText("DESCRIPCION", { x:x+80, y, size: 8 });
+    page.drawText("IMPORTE", { x:x+450, y, size: 8 });
+
     registrosdet.forEach((person) => {
       const text = `${person.descripcion}`;
       const textY = y - lineHeight; //corregimos aca, porque se duplicaba espacio en cada grupo
-      page.drawRectangle({
-        x: margin,
-        y: y-espaciadoDet+2,
-        width: (page.getWidth()-margin-50), //TODA ANCHO DE LA HOJA
-        height: (lineHeight+2),
-        borderWidth: 1,
-        color: rgb(0.778, 0.778, 0.778),
-        borderColor: rgb(0.8,0.8,0.8)
-      });
 
       //1ERA LINEA
       //Desglosar 2da Linea, DECREMENTAR LA POS Y UNA LINEA MAS ABAJO //NEW
-      page.drawText(person.cantidad.toString(), { x:margin, y:y+4-espaciadoDet, size: 12, font });
-      page.drawText(person.unidad_medida?.toString() ?? "", { x:x+40, y:y+4-espaciadoDet, size: 12, font }); //Actualizar urgente
-      page.drawText(text, { x:x+80, y:y+4-espaciadoDet, size: 12, font }); //Texto de Titulo de Barra ()
-      page.drawText(person.moneda?.toString() ?? "", { x:x+410, y:y+4-espaciadoDet, size: 12, font }); //Actualizar urgente
-      page.drawText(numeral(person.precio_unitario).format('0,0.00')?.toString() ?? "", { x:x+440, y:y+4-espaciadoDet, size: 12, font }); //Actualizar urgente
+      page.drawText(person.cantidad.toString(), { x:margin, y:y+4-espaciadoDet, size: 10, font });
+      page.drawText(person.cont_und?.toString() ?? "", { x:x+40, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
+      page.drawText(text, { x:x+80, y:y+4-espaciadoDet, size: 10, font }); //Texto de Titulo de Barra ()
+
+      // Calcular la posición x para alinearlo a la derecha
+      const textWidth = font.widthOfTextAtSize(person.precio_neto, 10); // Tamaño de fuente 12
+      const x_new = x+480 - textWidth;
+      page.drawText(numeral(person.precio_neto).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
       
-      precio_total = precio_total + person.precio_unitario*person.cantidad;
-      page.drawText("IGV% "+person.porc_igv.toString(), { x:x+440, y:textY-espaciadoDet, size: 10, font }); //igv
-      //No usaremos campo base, para pedidos
-      //page.drawText("BAS.", { x:x+410, y:textY-espaciadoDet, size: 10, font }); //igv
-      //page.drawText(numeral(person.precio_unitario/(1+person.porc_igv/100))?.format('0,0.00').toString() ?? "", { x:x+440, y:textY-espaciadoDet, size: 10, font,color:rgb(0,0,0.7) }); //Actualizar urgente
-
-      page.drawText("ENTREGA", { x:x, y:textY-espaciadoDet, size: 7 });
-      page.drawText("PLACA", { x:x+80, y:textY-espaciadoDet, size: 7 });
-      page.drawText("TRANSPORTE", { x:x+130, y:textY-espaciadoDet, size: 7 });
-      espaciadoDet = espaciadoDet+15;
-      page.drawText(person.zona_entrega.toString(), { x:x, y: textY-espaciadoDet, size: 10, font });
-      page.drawText(person.tr_placa?.toString() ?? "", { x:x+80, y: textY-espaciadoDet, size: 10, font }); //Actualizar urgente
-      page.drawText(person.tr_razon_social?.toString() ?? "", { x:x+130, y: textY-espaciadoDet, size: 10, font }); //Actualizar urgente
-
-      //2DA LINEA
-      espaciadoDet = espaciadoDet+15;
-      page.drawText("CHOFER", { x, y:textY-espaciadoDet, size: 7 });
-      page.drawText("FECH.CARGA", { x:x+80, y:textY-espaciadoDet, size: 7 });
-      page.drawText("NOMBRE", { x:x+130, y:textY-espaciadoDet, size: 7 });
-
-      espaciadoDet = espaciadoDet+15;
-      if (person.tr_celular===null) {
-        page.drawText("-", { x, y: textY-espaciadoDet, size: 10, font });
-      }else{
-        page.drawText(person.tr_celular, { x, y: textY-espaciadoDet, size: 10, font });
-      }
-      if (person.tr_fecha_carga===null) {
-        page.drawText("-", { x:x+80, y: textY-espaciadoDet, size: 10, font });
-      }else{
-        page.drawText(person.tr_fecha_carga.toString().substring(0,10), { x:x+80, y: textY-espaciadoDet, size: 10, font });
-      }
-      if (person.tr_chofer===null) {
-        page.drawText("-", { x:x+130, y: textY-espaciadoDet, size: 10, font });
-      }else{
-        page.drawText(person.tr_chofer, { x:x+135, y: textY-espaciadoDet, size: 10, font });
-      }
-
-      //2ERA LINEA
-      espaciadoDet = espaciadoDet+15;
-      page.drawText("FACT. RUC", { x, y:textY-espaciadoDet, size: 7 });
-      page.drawText("FACT. RAZON SOCIAL", { x:x+80, y:textY-espaciadoDet, size: 7 });
-      page.drawText("FACT.", { x:x+450, y:textY-espaciadoDet, size: 7 });
-
-      espaciadoDet = espaciadoDet+15;
-      if (person.ref_documento_id===null) {
-        page.drawText("-", { x, y: textY-espaciadoDet, size: 10, font });
-      }else{
-        page.drawText(person.ref_documento_id, { x, y: textY-espaciadoDet, size: 10, font });
-      }
-      if (person.ref_razon_social===null) {
-        page.drawText("-", { x:x+80, y: textY-espaciadoDet, size: 10, font });
-      }else{
-        page.drawText(person.ref_razon_social, { x:x+80, y: textY-espaciadoDet, size: 10, font });
-      }
-      page.drawText(numeral(person.precio_unitario*person.cantidad).format('0,0.00'), { x:x+440, y: textY-espaciadoDet, size: 10, font });
-
-      //al final del bucle, aumentamos una linea simple :) claro pi ...
-      espaciadoDet = espaciadoDet+50;
+       //al final del bucle, aumentamos una linea simple :) claro pi ...
+      espaciadoDet = espaciadoDet+10;
       row++;
     });
     
-    //Linea del total facturado, solo para casos que sea misma moneda en todos los detalles
-    //en este caso, la facturacion es por cada detalle, saludos terricolas
-    //page.drawText(numeral(precio_total).format('0,0.00'), { x:x+440, y: y-espaciadoDet, size: 10, font });
+    y=y-15; //aumentamos linea nueva
+    y=y-15; //aumentamos linea nueva
+
+    let MontoEnLetras = NumerosALetras(venta.r_monto_total, {
+      plural: 'SOLES', //pinches opciones no funcionan, tengo q arreglarlas en la siguiente linea
+      singular: 'SOL', //todos mis movimientos estan friamente calculados
+      centPlural: 'CÉNTIMOS', //siganme los buenos ...  :)
+      centSingular: 'CÉNTIMO',
+    });
+    MontoEnLetras = 'SON: ' + MontoEnLetras.toUpperCase().replace('PESOS', 'SOLES').replace('M.N.','').replace('SOLES','SOLES CON');
+    page.drawText(MontoEnLetras, { x:margin, y:y-espaciadoDet+30, size: 10 }); //Actualizar urgente
 
     //Final
     page.drawRectangle({
@@ -287,6 +249,48 @@ export default function AdminVentaForm() {
       borderColor: rgb(0.8,0.8,0.8)
     });
     
+    const moneda = {
+      'PEN': 'S/',
+      'USD': '$ USD'
+    };
+    const sMoneda = moneda[venta.r_moneda] || ''; // Manejo de caso por defecto
+    console.log(venta.r_moneda, sMoneda);
+
+    let textWidth = font.widthOfTextAtSize(venta.r_base002, 10); // Tamaño de fuente 12
+    let x_new = x+480 - textWidth;
+    page.drawText("BASE GRAV.: ",{ x:410, y:y-espaciadoDet+4, size: 9 });
+    page.drawText(numeral(venta.r_base002).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
+
+    textWidth = font.widthOfTextAtSize(venta.r_igv002, 10); // Tamaño de fuente 12
+    x_new = x+480 - textWidth;
+    page.drawText("IGV.: ",{ x:410, y:y-espaciadoDet+4-10, size: 9 });
+    page.drawText(numeral(venta.r_igv002).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet-10, size: 10, font }); //Actualizar urgente
+
+    textWidth = font.widthOfTextAtSize(venta.r_monto_total, 10); // Tamaño de fuente 12
+    x_new = x+480 - textWidth;
+    page.drawText("TOTAL.: " + sMoneda,{ x:410, y:y-espaciadoDet+4-20, size: 10, font:fontNegrita });
+    page.drawText(numeral(venta.r_monto_total).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet-20, size: 10, font:fontNegrita }); //Actualizar urgente
+    
+    //SeccionQR
+    // Generar el código QR como base64
+    const qrImage = await QRCode.toDataURL(params.comprobante);
+    // Convertir la imagen base64 a formato compatible con pdf-lib
+    const qrImageBytes = qrImage.split(',')[1]; // Eliminar el encabezado base64
+    //const qrImageBuffer = Uint8Array.from(atob(qrImageBytes), (c) => c.charCodeAt(0));
+    const qrImageBuffer = base64ToUint8Array(qrImageBytes);
+    
+    const qrImageEmbed = await pdfDoc.embedPng(qrImageBuffer);
+    // Obtener dimensiones de la imagen
+    const qrWidth = 45;
+    const qrHeight = 45;    
+    // Dibujar el código QR en el PDF
+    page.drawImage(qrImageEmbed, {
+      x: margin+5,
+      y: y-espaciadoDet-26,
+      width: qrWidth,
+      height: qrHeight,
+    });
+
     const pdfBytes = await pdfDoc.save();
 
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -294,7 +298,297 @@ export default function AdminVentaForm() {
     const url = URL.createObjectURL(blob);
     // Abre la URL en una nueva pestaña del navegador
     window.open(url, '_blank');
+  }
+
+  const createPdfTicket = async (size) => {
+    const pdfDoc = await PDFDocument.create()
+
+    // Definir el ancho según el tamaño del ticket
+    const width = (size === '80mm') ? 226.77 : 164.41; // 80mm o 58mm
+    const fontSize = (size === '80mm') ? 10 : 8; // 80mm o 58mm
+    const marginLeftSize = (size === '80mm') ? 0 : 62.36; // 80mm o 58mm
+
+    const lineHeight = fontSize * 1.2;
+
+    //caso contrario restar 22mm a la izquierda y disminuir la fuente en 2 puntos, probando
+
+    // Altura inicial (puedes ajustarla dinámicamente)
+    let height = 800;
+    const page = pdfDoc.addPage([width, height]);
+
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontNegrita = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Add logo to the top of the page
+    //const logoImage = pdfDoc.embedPng(logo);
+    const pngImage = await pdfDoc.embedPng(logo);
+    const pngDims = pngImage.scale(0.6)
+    const margin = 5;
+
+    page.drawImage(pngImage, {
+      x: margin+50-(marginLeftSize/2),
+      y: 730,
+      width: pngDims.width,
+      height: pngDims.height,
+    })
+
+    let x = margin;
+    let y = 720;
+
+    //Documento electronico y logo expertcont
+    const COD = params.comprobante.slice(0,2);
+    const documentos = {
+      '01': 'FACTURA ELECTRONICA',
+      '03': 'BOLETA ELECTRONICA',
+      '07': 'NOTA CRED. ELECTRONICA',
+      '08': 'NOTA DEB. ELECTRONICA'
+    };
+    const sDocumento = documentos[COD] || 'DOCUMENTO'; // Manejo de caso por defecto
+
+    const ticketWidth = 227; // Ancho del ticket en puntos (80mm)
+   
+    //////////////////
+    let textWidth = fontNegrita.widthOfTextAtSize(sDocumento, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText(sDocumento, { x, y, size: fontSize, font:fontNegrita });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize(('RUC '+params.documento_id), fontSize+1);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText('RUC '+params.documento_id, { x, y, size: fontSize+1, font:fontNegrita });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize(venta.razon_social, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText(venta.razon_social, { x, y, size: fontSize });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize(venta.direccion, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = ((ticketWidth - textWidth)/2)>0 ? ((ticketWidth - textWidth)/2) : margin;
+    page.drawText(venta.direccion, { x, y, size: 8 });
+    y=y-12; //aumentamos linea nueva
+
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize(params.comprobante.slice(3), 12);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText(params.comprobante.slice(3), { x, y, size: 12, font:fontNegrita });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize("FECHA: " + venta.r_fecemi, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText("FECHA: " + venta.r_fecemi, { x, y, size: fontSize });
+    y=y-15 //aumentamos linea nueva
+    //y=y-12; //aumentamos linea nueva
+
+    page.drawRectangle({
+      x: margin,
+      y: y-2,
+      width: (page.getWidth()-margin-5), //TODA ANCHO DE LA HOJA
+      height: (lineHeight+2),
+      borderWidth: 1,
+      color: rgb(0.778, 0.778, 0.778),
+      borderColor: rgb(0.8,0.8,0.8)
+    });
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize("DATOS CLIENTE: ", fontSize-1);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText("DATOS DEL CLIENTE: ", { x, y, size: fontSize-1 });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize(venta.r_razon_social, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText(venta.r_razon_social?.toString() ?? "", { x, y, size: fontSize});
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize("RUC/DNI: " + venta.r_documento_id, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText("RUC/DNI: " + venta.r_documento_id?.toString() ?? "", { x, y, size: fontSize });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize(venta.r_direccion, fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText(venta.r_direccion?.toString() ?? "", { x, y, size: fontSize });
+    y=y-12; //aumentamos linea nueva
+
+    ////////////////// cambiar por ctrl_us_crea correo que lo registro
+    textWidth = fontNegrita.widthOfTextAtSize("VENTA: "+params.id_invitado.split('@')[0].slice(0,14), fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText("VENTA: "+params.id_invitado.split('@')[0].slice(0,14), { x, y, size: fontSize });
+    y=y-12; //aumentamos linea nueva
+
+    //////////////////
+    textWidth = fontNegrita.widthOfTextAtSize("PAGO: CONTADO", fontSize);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - marginLeftSize)/2;
+    page.drawText("PAGO: CONTADO", { x, y, size: fontSize });
     
+    y=y-15; //aumentamos linea nueva
+    //y=y-12; //aumentamos linea nueva
+    
+    ////////////////////////////////////////////////////////////////////
+    // Draw table data
+    let row = 1;
+    let espaciadoDet = 0; //iniciamos en la 1era fila
+    
+    //let precio_total = 0;
+    espaciadoDet = espaciadoDet+20; ///NEW
+
+    page.drawRectangle({
+      x: margin,
+      y: y-2,
+      width: (page.getWidth()-margin-5), //TODA ANCHO DE LA HOJA
+      height: (lineHeight+2),
+      borderWidth: 1,
+      color: rgb(0.778, 0.778, 0.778),
+      borderColor: rgb(0.8,0.8,0.8)
+    });
+
+    page.drawText("DESCRIPCION", { x:margin, y, size: fontSize-1 });
+
+    textWidth = fontNegrita.widthOfTextAtSize('P.UNIT', fontSize-1);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - margin - 50 - marginLeftSize); //50 por columna IMPORTE
+    page.drawText("P.UNIT", { x, y, size: fontSize-1 });    
+
+    textWidth = fontNegrita.widthOfTextAtSize('IMPORTE', fontSize-1);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - margin - marginLeftSize);
+    page.drawText("IMPORTE", { x, y, size: fontSize-1 });
+    
+    
+    registrosdet.forEach((person) => {
+      const text = `${person.descripcion}`;
+      const textY = y - lineHeight; //corregimos aca, porque se duplicaba espacio en cada grupo
+
+      //1ERA LINEA
+      //page.drawText(person.cont_und?.toString() ?? "", { x:x+40, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
+      page.drawText(text, { x:margin, y:y+4-espaciadoDet, size: fontSize-1, font }); //Texto de Titulo de Barra ()
+
+      //2da Linea
+      espaciadoDet = espaciadoDet+10;
+      page.drawText('Cant: '+person.cantidad, { x:margin, y:y+4-espaciadoDet, size: fontSize-1 });
+
+      textWidth = fontNegrita.widthOfTextAtSize(numeral(person.precio_unitario).format('0,0.00'), fontSize);
+      // Calcular el punto x para alinear a la derecha
+      x = (ticketWidth - textWidth - margin - 50 - marginLeftSize); //50 por columna precio_neto
+      page.drawText(person.precio_unitario, { x, y:y+4-espaciadoDet, size: fontSize-1 });
+      
+      textWidth = fontNegrita.widthOfTextAtSize(numeral(person.precio_neto).format('0,0.00'), fontSize);
+      // Calcular el punto x para alinear a la derecha
+      x = (ticketWidth - textWidth - margin - marginLeftSize);
+      page.drawText(person.precio_neto, { x, y:y+4-espaciadoDet, size: fontSize-1 });
+
+      page.drawLine({
+        start: { x: margin, y: y + 2 - espaciadoDet }, // Punto inicial
+        end: { x: page.getWidth() - margin - 5, y: y + 2 - espaciadoDet }, // Punto final
+        thickness: 1, // Grosor de la línea
+        color: rgb(0.778, 0.778, 0.778), // Color de la línea
+      });
+
+      //al final del bucle, aumentamos una linea simple :) claro pi ...
+      espaciadoDet = espaciadoDet+10;
+      row++;
+    });
+    
+    y=y-15; //aumentamos linea nueva
+    y=y-15; //aumentamos linea nueva
+
+    let MontoEnLetras = NumerosALetras(venta.r_monto_total, {
+      plural: 'SOLES', //pinches opciones no funcionan, tengo q arreglarlas en la siguiente linea
+      singular: 'SOL', //todos mis movimientos estan friamente calculados
+      centPlural: 'CÉNTIMOS', //siganme los buenos ...  :)
+      centSingular: 'CÉNTIMO',
+    });
+    MontoEnLetras = 'SON: ' + MontoEnLetras.toUpperCase().replace('PESOS', 'SOLES CON').replace('PESO', 'SOL CON').replace('M.N.','');
+    page.drawText(MontoEnLetras, { x:margin, y:y-espaciadoDet+30, size: 8 }); //Actualizar urgente
+
+
+    const moneda = {
+      'PEN': 'S/',
+      'USD': '$ USD'
+    };
+    const sMoneda = moneda[venta.r_moneda] || ''; // Manejo de caso por defecto
+    console.log(venta.r_moneda, sMoneda);
+
+    //////////////////
+    x = margin;
+    page.drawText("BASE:",{ x, y:y-espaciadoDet+4, size: 9 });
+
+    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_base002).format('0,0.00'), fontSize+2);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - margin - marginLeftSize);
+    page.drawText(numeral(venta.r_base002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
+
+    x = margin;
+    page.drawText("IGV.: ",{ x, y:y-espaciadoDet+4-10, size: 9 });
+
+    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_igv002).format('0,0.00'), fontSize+2);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - margin - marginLeftSize);
+    page.drawText(numeral(venta.r_igv002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-10, size: 10, font }); //Actualizar urgente
+
+    x = margin;
+    page.drawText("TOTAL.:" + sMoneda,{ x, y:y-espaciadoDet+4-25, size: fontSize+2, font:fontNegrita });
+
+    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_monto_total).format('0,0.00'), fontSize+2);
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - textWidth - margin - marginLeftSize);
+    page.drawText(numeral(venta.r_monto_total).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-25, size: fontSize+2, font:fontNegrita }); //Actualizar urgente
+
+    
+    //SeccionQR
+    // Generar el código QR como base64
+    const partes = comprobante.split('-');
+    const numeroFormateado = partes[2].padStart(8, '0');
+    const comprobanteConvertido = `${partes[0]}|${partes[1]}|${numeroFormateado}`;
+
+    const qrImage = await QRCode.toDataURL(params.documento_id + '|' + comprobanteConvertido + '|' + venta.r_igv002 + '|' + venta.r_monto_total + '|' + venta.r_fecemi + '|' + venta.r_id_doc + '|' + venta.r_documento_id + '|');
+    // Convertir la imagen base64 a formato compatible con pdf-lib
+    const qrImageBytes = qrImage.split(',')[1]; // Eliminar el encabezado base64
+    //const qrImageBuffer = Uint8Array.from(atob(qrImageBytes), (c) => c.charCodeAt(0));
+    const qrImageBuffer = base64ToUint8Array(qrImageBytes);
+    
+    const qrImageEmbed = await pdfDoc.embedPng(qrImageBuffer);
+    // Obtener dimensiones de la imagen
+    const qrWidth = 45;
+    const qrHeight = 45;
+    // Calcular el punto x para alinear a la derecha
+    x = (ticketWidth - 45 - marginLeftSize)/2;
+
+    // Dibujar el código QR en el PDF
+    page.drawImage(qrImageEmbed, {
+      x,
+      y: y-espaciadoDet-26-45,
+      width: qrWidth,
+      height: qrHeight,
+    });
+
+    const pdfBytes = await pdfDoc.save();
+
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    // Crea una URL de objeto para el archivo Blob
+    const url = URL.createObjectURL(blob);
+    // Abre la URL en una nueva pestaña del navegador
+    window.open(url, '_blank');
   }
 
   const [venta,setVenta] = useState({
@@ -643,15 +937,26 @@ export default function AdminVentaForm() {
     //Actualiza datos para enlace con controles, al momento de modo editar
     setVenta((prevState) => ({
       ...prevState, // Mantiene el resto del estado anterior
+      razon_social: data.razon_social, //datos para impresion
+      direccion: data.direccion, //datos para impresion
       r_cod: data.r_cod,
       r_serie: data.r_serie,
       r_numero: data.r_numero,
       elemento: data.elemento,
       r_fecemi: data.fecemi, // cambio de var, por la conversión a varchar
+      
+      r_id_doc: data.r_id_doc, // cliente
       r_documento_id: data.r_documento_id, // cliente
       r_razon_social: data.r_razon_social, // cliente
+      r_direccion: data.r_direccion, // cliente
+      
       debe: data.debe,
+      r_base002: data.r_base002,
+      r_igv002: data.r_igv002,
       r_monto_total: data.r_monto_total,
+      r_moneda: data.r_moneda,
+      r_tc: data.r_tc,
+
       peso_total: data.peso_total,
       r_cod_ref: data.r_cod_ref,       // ref
       r_serie_ref: data.r_serie_ref,   // ref
@@ -802,6 +1107,55 @@ export default function AdminVentaForm() {
     });
   }
 
+  const confirmaModificarDetalle = async(cod,serie,num,elem,item)=>{
+    //console.log('antes de comprobante y setProducto');
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+
+    producto.id_anfitrion = params.id_anfitrion;
+    producto.documento_id = params.documento_id;
+    producto.periodo = params.periodo;
+    producto.r_cod = COD;
+    producto.r_serie = SERIE;
+    producto.r_numero = NUMERO;
+    producto.r_fecemi = venta.r_fecemi;
+
+    console.log(producto);
+
+    const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
+    fetch(sRuta, {
+      method: "POST",
+      body: JSON.stringify(producto), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+      headers: {"Content-Type":"application/json"}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            //console.log('La operación fue exitosa');
+            swal({
+              text:"Detalle actualizado con exito",
+              icon:"success",
+              timer:"2000"
+            });
+            
+            setUpdateTrigger(Math.random());//actualizad vista detalle
+
+        } else {
+            console.log('La operación falló');
+            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+            swal({
+              text:"La Operacion fallo, intentelo nuevamente",
+              icon:"warning",
+              timer:"2000"
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Hubo un problema con la solicitud fetch:', error);
+        //ahora si
+        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+    });
+  }
+
 
   const confirmaEliminarDetalle = async(cod,serie,num,elem,item)=>{
     const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
@@ -845,8 +1199,14 @@ export default function AdminVentaForm() {
     setShowModalEmite(false);
 
     //actualizar params, renderizado automatico
+  }
 
+  const handleEditarDetalleClick = ()=>{
+    //especificar modo edicion y cargar datos detalle en useState del Producto
+    
 
+    //mostrar modal del producto
+    setShowModalProducto(true);
   }
 
   const confirmaGrabarComprobante = async()=>{
@@ -927,7 +1287,7 @@ export default function AdminVentaForm() {
       width: '40px',
       cell: (row) => (
           <DriveFileRenameOutlineIcon
-            //onClick={() => handleCopyClick(row.item)}
+            onClick={() => handleEditarDetalleClick(row.item)}
             style={{
               cursor: 'pointer',
               color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
@@ -1028,6 +1388,9 @@ export default function AdminVentaForm() {
     <IconButton color="primary" 
         onClick = {()=> {
                     //Icono Imprimir
+                    //createPdf();
+                    //createPdfTicket('80mm');
+                    createPdfTicket('58mm');
                   }
                 }
         >
@@ -1130,6 +1493,17 @@ export default function AdminVentaForm() {
     //Quitar modal
     setShowModalProducto(false);
   }
+
+  const handleFocus = (event) => {
+    if (isSmallScreen) {
+      event.target.blur(); // Evita que se abra el teclado móvil automáticamente
+    }
+  };
+  const handleMostrarTecladoCelular = () => {
+    if (inputProductoRef.current) {
+      inputProductoRef.current.focus(); // Enfoca el campo de texto manualmente
+    }
+  };
 
   return (
   <div> 
@@ -1267,7 +1641,7 @@ export default function AdminVentaForm() {
                                                     value={venta.r_documento_id}
                                                     onChange={handleChange} //new para busqueda
                                                     onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                    inputProps={{ style:{color:'white',width: 140} }}
+                                                    inputProps={{ style:{color:'white'} }}
                                                     InputLabelProps={{ style:{color:'white'} }}
                                         />
                                     </Grid>
@@ -1293,7 +1667,7 @@ export default function AdminVentaForm() {
                                                     value={venta.r_razon_social}
                                                     onChange={handleChange} //new para busqueda
                                                     onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                    inputProps={{ style:{color:'white',width: 140} }}
+                                                    inputProps={{ style:{color:'white'} }}
                                                     InputLabelProps={{ style:{color:'white'} }}
                                         />
                                     </Grid>
@@ -1347,6 +1721,8 @@ export default function AdminVentaForm() {
                                             <TextField
                                               variant="outlined"
                                               placeholder="PRODUCTO"
+                                              inputRef={inputProductoRef} // Asocia la referencia al campo de texto
+                                              onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
                                               autoFocus
                                               size="small"
                                               name="id_producto"
@@ -1354,25 +1730,57 @@ export default function AdminVentaForm() {
                                               InputLabelProps={{ style: { color: 'white' } }}
                                               InputProps={{
                                                 style: { color: 'white', width: 270 },
-                                                endAdornment: (
-                                                  <IconButton
-                                                    color="default"
-                                                    aria-label="upload picture"
-                                                    component="label"
-                                                    size="small"
-                                                    sx={{
-                                                      position: 'absolute',
-                                                      top: '50%',
-                                                      left: 0,
-                                                      transform: 'translateY(-50%)',
-                                                    }}
-                                                    onClick={() => {
-                                                      setShowModalProductoLista(true);
-                                                    }}
-                                                  >
-                                                    <FindIcon />
-                                                  </IconButton>
+                                                startAdornment: (
+                                                  <InputAdornment position="start">
+                                                    
+                                                    <IconButton
+                                                      color="primary"
+                                                      //color = 'rgba(33, 150, 243, 0.8)'
+                                                      aria-label="upload picture"
+                                                      component="label"
+                                                      size="small"
+                                                      sx={{
+                                                        position: 'absolute',
+                                                        top: '50%',
+                                                        left: 0,
+                                                        transform: 'translateY(-50%)',
+                                                      }}
+                                                      onClick={() => {
+                                                        setShowModalProductoLista(true);
+                                                      }}
+                                                    >
+                                                      <FindIcon />
+                                                    </IconButton>
+                                                    
+                                                    { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
+                                                    isSmallScreen ? (
+                                                    <IconButton
+                                                      color="default"
+                                                      aria-label="Muestra teclado"
+                                                      size="small"
+                                                      onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
+                                                      sx={{
+                                                        padding: '0px',
+                                                        //height:'30',
+                                                        marginLeft:'20px',
+                                                        marginRight: '-30px',
+                                                        backgroundColor: 'primary', // Color de fondo del ícono
+                                                        borderRadius: '4px', // Bordes redondeados
+                                                        '&:hover': {
+                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                                        },
+                                                      }}                                                        
+                                                    >
+                                                      <KeyboardIcon />
+                                                    </IconButton>
+                                                    )
+                                                    :
+                                                    null
+                                                  }
+
+                                                  </InputAdornment>
                                                 ),
+
                                                 // Aquí se ajusta el padding del texto sin afectar el icono
                                                 inputProps: {
                                                   style: {

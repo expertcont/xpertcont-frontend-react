@@ -101,8 +101,12 @@ export default function NavBar(props) {
     .get(`${back_host}/usuario/modulos/${props.idAnfitrion}/${props.idInvitado}`)
     .then((response) => {
       if (response.data.length > 0) {
-        setAccesoAdmin(response.data.some(item =>item.tipo==='ADMIN'));
+        if (!accesoAdmin){
+          setAccesoAdmin(response.data.some(item =>item.tipo==='ADMIN'));
+        }
+        if (!accesoCont){
         setAccesoCont(response.data.some(item =>item.tipo==='CONT'));
+        }
         console.log('modulos: ',response.data);
       }
     })
