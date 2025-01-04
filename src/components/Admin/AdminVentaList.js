@@ -3,26 +3,22 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import FindIcon from '@mui/icons-material/FindInPage';
-import UpdateIcon from '@mui/icons-material/UpdateSharp';
-import Add from '@mui/icons-material/Add';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
-import BoltIcon from '@mui/icons-material/Bolt';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import DownloadIcon from '@mui/icons-material/Download';
 import { blueGrey } from '@mui/material/colors';
 import ShopOutlinedIcon from '@mui/icons-material/ShopOutlined';
 import Sunat01Icon from '../../assets/images/sunat0.png';
 import Sunat02Icon from '../../assets/images/sunat1.png';
+import SunatXml from '../../assets/images/xml02.png';
+import SunatCdr from '../../assets/images/cdr01.png';
+import SunatPdf from '../../assets/images/pdf02.png';
+import logo from '../../Logo04small.png';
+import createPdfTicket from './AdminVentaPdf';
 
-import CreditScoreIcon from '@mui/icons-material/CreditScore';
-import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
-import HorizontalSplitIcon from '@mui/icons-material/HorizontalSplit';
+//import PrintIcon from '@mui/icons-material/Print';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+//import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
-import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 
 import IconButton from '@mui/material/IconButton';
@@ -151,43 +147,7 @@ export default function AdminVentaList() {
   }
   
   // Agrega íconos al inicio de cada columna
-    let columnasComunes;
-  /*const columnasComunes = [
-    {
-      name: '',
-      width: '40px',
-      cell: (row) => (
-        pVenta0101 ? (
-          <DriveFileRenameOutlineIcon
-            onClick={() => handleUpdate(row.num_asiento)}
-            style={{
-              cursor: 'pointer',
-              color: 'skyblue',
-              transition: 'color 0.3s ease',
-            }}
-          />
-        ) : null
-      ),
-      allowOverflow: true,
-      button: true,
-    },
-    {
-      name: '',
-      width: '40px',
-      cell: (row) => (
-          <DeleteIcon
-            onClick={() => handleDelete(row.num_asiento)}
-            style={{
-              cursor: 'pointer',
-              color: 'orange',
-              transition: 'color 0.3s ease',
-            }}
-          />
-      ),
-      allowOverflow: true,
-      button: true,
-    },
-  ];*/
+  let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
   const [permisos, setPermisos] = useState([]); //Menu
   const [permisoVentas, setPermisoVentas] = useState(false);
@@ -228,12 +188,14 @@ export default function AdminVentaList() {
     setUpdateTrigger(Math.random());//experimento
   };*/
   
-  const handleSunat = (sComprobante,elemento) => {
+  const handleSunat = async (sComprobante, elemento) => {
     const [COD, SERIE, NUMERO] = sComprobante.split('-');
 
-    console.log('Enviando a sunat:', sComprobante,elemento);
-    axios
-        .post(`${back_host}/ad_ventacpe`, {
+    console.log('Enviando a sunat:', sComprobante, elemento);
+
+    try {
+        // Enviar datos a la API
+        const response = await axios.post(`${back_host}/ad_ventacpe`, {
             p_periodo: periodo_trabajo,
             p_id_usuario: params.id_anfitrion,
             p_documento_id: contabilidad_trabajo,
@@ -241,28 +203,126 @@ export default function AdminVentaList() {
             p_r_serie: SERIE,
             p_r_numero: NUMERO,
             p_elemento: elemento
-        })
-        .then((response) => {
-            //respuesta positiva 
-
-        })
-        .catch((error) => {
-            console.log(error);
         });
 
-    //Si no existe valor firmado, entonces comsumir API facturacion integral, actualizar vista
-    //En caso de tener valor firmado, mostrar los links de descarga XML,CDR y PDF (Dialog)
+        // Generar el mensaje HTML
+        const mensajeHtml = await armaMensajeHtml(response);
+
+        // Mostrar SweetAlert con el mensaje generado
+        swal2.fire({
+            title: "Envio CPE Sunat",
+            html: mensajeHtml,
+            showCancelButton: true, // Tercer botón
+            showDenyButton: true, // Segundo botón
+            confirmButtonText: "PDF A4mm", // Primer botón
+            denyButtonText: "PDF 80mm", // Segundo botón
+            cancelButtonText: "PDF 58mm", // Tercer botón
+            customClass: {
+              actions: "vertical-buttons"
+            },
+            didOpen: () => {
+              const actions = document.querySelector(".swal2-actions");
+              if (actions) {
+                  actions.style.display = "flex";
+                  actions.style.flexDirection = "column";
+                  actions.style.alignItems = "center";
+                  actions.style.gap = "-10px"; // Espaciado entre botones
+              }
+            }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            procesaPDF(sComprobante, elemento,'A4')
+          } else if (result.isDenied) {
+              procesaPDF(sComprobante, elemento,'80mm')
+          } else if (result.isDismissed) {
+              procesaPDF(sComprobante, elemento,'58mm')
+          }          
+        });
+    } catch (error) {
+        console.error("Error en el envío a SUNAT:", error);
+        swal2.fire({
+            title: "Error",
+            text: "Hubo un problema al enviar los datos a SUNAT.",
+            icon: "error",
+        });
+    }
   };
+
+  const armaMensajeHtml = async (response) => {
+    try {
+        const xmlLink = response.data.ruta_xml;
+        const cdrLink = response.data.ruta_cdr;
+
+        const xmlIcon = SunatXml;
+        const cdrIcon = SunatCdr;
+
+        return `
+            <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 2px;">
+                <div style="text-align: center;">
+                    <p>
+                        <a href="${xmlLink}" target="_blank" rel="noopener noreferrer">
+                            <img src="${xmlIcon}" alt="Icono XML" style="cursor: pointer; width: 25%; height: auto;" />
+                        </a>
+                    </p>
+                    <p>
+                        <a href="${cdrLink}" target="_blank" rel="noopener noreferrer">
+                            <img src="${cdrIcon}" alt="Icono CDR" style="cursor: pointer; width: 20%; height: auto;" />
+                        </a>
+                    </p>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error("Error al armar el mensaje HTML:", error);
+        throw new Error("No se pudo generar el mensaje HTML.");
+    }
+  };
+
+  const procesaPDF = async (comprobante, nElem, tamaño) => {
+    try {
+        const [COD, SERIE, NUM] = comprobante.split('-');
+
+        // Realizar ambas llamadas de API en paralelo
+        const [resVenta, resVentaDet] = await Promise.all([
+            fetch(`${back_host}/ad_venta/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json()),
+            fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
+        ]);
+
+        // Configuración del ticket
+        const options = {
+            comprobante,
+            documento_id: params.documento_id,
+            id_invitado: params.id_invitado,
+            venta: resVenta,
+            ventadet: resVentaDet,
+            logo,
+            size: tamaño
+        };
+
+        // Generar el PDF
+        let pdfUrl = "#";
+        try {
+            pdfUrl = await createPdfTicket(options); // Asegúrate de manejar correctamente esta función
+            // Abre la URL en una nueva pestaña del navegador
+            window.open(pdfUrl, '_blank');
+        } catch (error) {
+            console.error("Error al generar el PDF:", error);
+        }
+
+    } catch (error) {
+        console.error("Error al procesar PDF", error);
+        throw new Error("No se pudo generar el PDF.");
+    }
+  };
+
   
-  const handleUpdate = (sComprobante) => {
+  const handleUpdate = (sComprobante,bModoVista) => {
     //var num_asiento;
-    if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-      console.log("Estás usando un dispositivo móvil!!");
-      //Validamos libro a mostrar
-      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/edit`);
+    if (bModoVista) {
+      //Validamos
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/view`);
     } else {
-      console.log("No estás usando un móvil");
-      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/edit`);
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}`);
     }    
   };
   const handleDelete = (comprobante,elemento) => {
@@ -298,7 +358,6 @@ export default function AdminVentaList() {
   }
   const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento) => {
     const [COD, SERIE, NUMERO] = sComprobante.split('-');
-    //console.log(`${back_host}/ad_venta/${sPeriodo}/${sAnfitrion}/${sDocumentoId}/${COD}/${SERIE}/${NUMERO}/${sElemento}`);
     //En ventas solo se eliminan, detalle-cabecera
     await fetch(`${back_host}/ad_venta/${sPeriodo}/${sAnfitrion}/${sDocumentoId}/${COD}/${SERIE}/${NUMERO}/${sElemento}`, {
         method:"DELETE"
@@ -379,12 +438,10 @@ export default function AdminVentaList() {
     let response;
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
     if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-        console.log(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}`);
         response = await fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}`);
     }
     else{
         //usamos los historiales
-        console.log('historiales ',`${back_host}/ad_venta/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}`);
         response = await fetch(`${back_host}/ad_venta/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}`);
     }
     
@@ -699,14 +756,26 @@ export default function AdminVentaList() {
           (pVenta0102 || pCompra0202 || pCaja0302) && (row.r_vfirmado == null) ?
           (
             <DriveFileRenameOutlineIcon
-              onClick={() => handleUpdate(row.comprobante)}
+              onClick={() => handleUpdate(row.comprobante,false)}
               style={{
                 cursor: 'pointer',
                 color: 'skyblue',
                 transition: 'color 0.3s ease',
               }}
             />
-          ) : null
+          )  
+          : 
+          (
+            <CenterFocusStrongIcon
+              onClick={() => handleUpdate(row.comprobante,true)}
+              style={{
+                cursor: 'pointer',
+                color: 'skyblue',
+                transition: 'color 0.3s ease',
+              }}
+            />
+
+          )
         ),
         allowOverflow: true,
         button: true,
@@ -859,7 +928,7 @@ export default function AdminVentaList() {
       if (response.data.success) {
         const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero;
         //enviamos la edicion del registro abierto
-        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/edit`);
+        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}`);
       } else {
         //setError(response.data.message);
         console.log(response.data.message);

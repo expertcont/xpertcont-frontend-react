@@ -1,6 +1,6 @@
 import {Grid,Card,CardContent,useMediaQuery,Typography,TextField,Button,CircularProgress,Select,MenuItem,InputLabel,Box,FormControl, List,ListItem,ListItemText,Dialog,DialogContent,DialogTitle} from '@mui/material'
 import {useState,useEffect,useRef,useMemo,useCallback} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useLocation} from 'react-router-dom';
 import axios from 'axios';
 import AddIcon from '@mui/icons-material/Add';
 import FindIcon from '@mui/icons-material/FindInPage';
@@ -48,6 +48,9 @@ export default function AdminVentaForm() {
   const [cliente_select,setClienteSelect] = useState([]);
   const [doc_select,setDocSelect] = useState([]);
   //////////////////////////////////////////////////////////
+  const [visualizando,setVisualizando] = useState(false);
+  const location = useLocation();
+
   //const params = useParams();
   //Obtener los parámetros de URL
   const { id_anfitrion, id_invitado, periodo, documento_id, comprobante } = useParams();
@@ -680,7 +683,6 @@ export default function AdminVentaForm() {
   };
   
   const [cargando,setCargando] = useState(false);
-  const [editando,setEditando] = useState(false);
   
   const navigate = useNavigate();
 
@@ -719,26 +721,13 @@ export default function AdminVentaForm() {
     var data;
 
     //Cambiooo para controlar Edicion
-    if (editando){
-      await fetch(`${back_host}/venta/${params.r_cod}/${params.r_serie}/${params.r_numero}/${params.elemento}`, {
-        method: "PUT",
-        body: JSON.stringify(venta),
-        headers: {"Content-Type":"application/json"}
-      });
-    }else{
-      console.log(`${back_host}/venta`);
-      console.log(venta);
-      const res = await fetch(`${back_host}/venta`, {
-        method: "POST",
-        body: JSON.stringify(venta),
-        headers: {"Content-Type":"application/json"}
-      });
-      //nuevo
-      data = await res.json();
-    }
+    await fetch(`${back_host}/venta/${params.r_cod}/${params.r_serie}/${params.r_numero}/${params.elemento}`, {
+      method: "PUT",
+      body: JSON.stringify(venta),
+      headers: {"Content-Type":"application/json"}
+    });
     setCargando(false);
     
-    setEditando(true);
     //Obtener json respuesta, para extraer cod,serie,num y elemento
     if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
       navigate(`/ventamovil/${data.comprobante_original_codigo}/${data.comprobante_original_serie}/${data.comprobante_original_numero}/${data.elemento}/edit`);
@@ -753,8 +742,6 @@ export default function AdminVentaForm() {
     //APi respuesta con array, si existe valores entonces cargar modo edicion
 
     if (params.comprobante){
-      //parametro llega con click en modificar
-      //if (!editando){}
       // Dividir el string por el guion "-"
       const [COD, SERIE, NUMERO] = params.comprobante.split('-');
 
@@ -785,8 +772,12 @@ export default function AdminVentaForm() {
     if (showModal && textFieldRef.current) {
       textFieldRef.current.focus();
     }
-  
-  },[params.comprobante, isAuthenticated, textFieldRef.current, editando]);
+
+    setVisualizando(location.pathname.includes('view'));
+    console.log('view prueba:  ',location.pathname.includes('view'));
+    //desactivar botones de modificacion
+
+  },[params.comprobante, isAuthenticated, textFieldRef.current]);
 
   useEffect( ()=> {
     //Control de producto elegido
@@ -967,16 +958,12 @@ export default function AdminVentaForm() {
       
     //console.log(data);
     setSearchText(data.r_documento_id); //data de cliente para form
-    setEditando(true);
   };
   
   const mostrarVentaDetalle = async (cod,serie,num,elem) => {
-    //console.log(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
     const res = await fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
     const dataDet = await res.json();
     setRegistrosdet(dataDet);
-    //console.log('detalle',dataDet);
-    setEditando(true);
   };
 
   //Seccion Elimina Item
@@ -1286,6 +1273,8 @@ export default function AdminVentaForm() {
       name: '',
       width: '40px',
       cell: (row) => (
+        (!visualizando) ? 
+        (
           <DriveFileRenameOutlineIcon
             onClick={() => handleEditarDetalleClick(row.item)}
             style={{
@@ -1294,6 +1283,7 @@ export default function AdminVentaForm() {
               transition: 'color 0.3s ease',
             }}
           />
+        ):null
       ),
       allowOverflow: true,
       button: true,
@@ -1302,7 +1292,8 @@ export default function AdminVentaForm() {
       name: '',
       width: '40px',
       cell: (row) => (
-        (true) ? (  //modificar urgente con permiso para eliminar detalle
+        (!visualizando) ? 
+        (  //modificar urgente con permiso para eliminar detalle
           <DeleteIcon
             onClick={() => handleDelete(row.item)}
             style={{
@@ -1397,7 +1388,7 @@ export default function AdminVentaForm() {
         <PrintIcon />
     </IconButton>
     
-    { pVenta010202 ?
+    { pVenta010202 && !visualizando ?
     (
     <IconButton color="primary" 
       onClick = {()=> {
