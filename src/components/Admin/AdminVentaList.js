@@ -218,7 +218,8 @@ export default function AdminVentaList() {
             denyButtonText: "PDF 80mm", // Segundo botón
             cancelButtonText: "PDF 58mm", // Tercer botón
             customClass: {
-              actions: "vertical-buttons"
+              actions: "vertical-buttons",
+              popup: "swal2-align-left"
             },
             didOpen: () => {
               const actions = document.querySelector(".swal2-actions");
@@ -227,6 +228,15 @@ export default function AdminVentaList() {
                   actions.style.flexDirection = "column";
                   actions.style.alignItems = "center";
                   actions.style.gap = "-10px"; // Espaciado entre botones
+              }
+              if (isSmallScreen) {
+                  const popup = document.querySelector('.swal2-popup');
+                  if (popup) {
+                    popup.style.position = "absolute";
+                    popup.style.left = "0"; // Pegado al borde izquierdo
+                    popup.style.top = "5%"; // Ajusta la altura si es necesario
+                    popup.style.transform = "none"; // Elimina el centrado
+                  }              
               }
             }
         }).then((result) => {
