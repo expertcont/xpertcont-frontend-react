@@ -14,6 +14,7 @@ import SunatCdr from '../../assets/images/cdr01.png';
 import SunatPdf from '../../assets/images/pdf02.png';
 import logo from '../../Logo04small.png';
 import createPdfTicket from './AdminVentaPdf';
+import DaySelector from "./AdminDias";
 
 //import PrintIcon from '@mui/icons-material/Print';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
@@ -294,8 +295,8 @@ export default function AdminVentaList() {
 
         // Realizar ambas llamadas de API en paralelo
         const [resVenta, resVentaDet] = await Promise.all([
-            fetch(`${back_host}/ad_venta/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json()),
-            fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
+            fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json()),
+            fetch(`${back_host}/ad_ventadet/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
         ]);
 
         // Configuración del ticket
@@ -924,16 +925,17 @@ export default function AdminVentaList() {
   };
   //////////////////////////////////////////////////////
   const generaVenta = async () => {
-    //console.log('fecha formateada: ',obtenerFecha(params.periodo,true));
     try {
+      console.log('antes de ... ', periodo_trabajo, obtenerFecha(periodo_trabajo,true) );
+
       const response = await axios.post(`${back_host}/ad_venta`, {
         id_anfitrion: params.id_anfitrion,
         documento_id: params.documento_id,
-        periodo: params.periodo,
+        periodo: periodo_trabajo,
         id_invitado: params.id_invitado,
-        fecha: obtenerFecha(params.periodo,true),
+        fecha: obtenerFecha(periodo_trabajo,true),
       });
-      console.log('antes de ... ');
+      
 
       if (response.data.success) {
         const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero;
@@ -975,6 +977,11 @@ export default function AdminVentaList() {
     }else{
       return `${dia}/${mes}/${anio}`;
     }
+  };
+
+  const handleDayFilter = (selectedDay) => {
+    console.log(`Filtrar registros para el día: ${selectedDay}`);
+    // Aquí puedes llamar a tu función para filtrar registros
   };
 
  return (
@@ -1045,7 +1052,8 @@ export default function AdminVentaList() {
       </Grid>
 
   </Grid>
-
+  
+  <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
   <div>
   <ToggleButtonGroup
     color="success"
