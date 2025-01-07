@@ -931,6 +931,7 @@ export default function AdminVentaList() {
     try {
       console.log('antes de ... ', periodo_trabajo, obtenerFecha(periodo_trabajo,true) );
       console.log('ultimoDiaMes: ', obtenerFecha(periodo_trabajo,true,dia_sel));
+      
       //dia
       const response = await axios.post(`${back_host}/ad_venta`, {
         id_anfitrion: params.id_anfitrion,
