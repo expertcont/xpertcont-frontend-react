@@ -30,7 +30,7 @@ const AdminDias = ({ period, onDaySelect }) => {
     const defaultDay = year === currentYear && month === currentMonth ? currentDate.toString() : daysInMonth.toString();
     setSelectedDay(defaultDay);
     onDaySelect(defaultDay);
-  }, [period, onDaySelect]);
+  }, [period]);
 
   const handleDayChange = (event, newDay) => {
     if (newDay !== null) {
@@ -45,14 +45,30 @@ const AdminDias = ({ period, onDaySelect }) => {
         display: "flex",
         justifyContent: isMobile ? "center" : "start",
         overflowX: isMobile ? "scroll" : "auto",
-        p: 1,
+        p: 0,
       }}
     >
       <ToggleButtonGroup
         value={selectedDay}
         exclusive
         onChange={handleDayChange}
-        sx={{ flexWrap: isMobile ? "nowrap" : "wrap" }}
+        sx={{
+          flexWrap: isMobile ? "nowrap" : "wrap",
+          backgroundColor: "gray", // Fondo del grupo
+          color: "black", // Color de la fuente general para todos los botones
+          "& .MuiToggleButton-root": {
+            border: "1px solid",
+            borderColor: theme.palette.divider,
+            color: "inherit", // Hereda el color especificado en el grupo
+            "&.Mui-selected": {
+              backgroundColor: "orange", // Fondo cuando está seleccionado
+              color: "white", // Fuente cuando está seleccionado
+            },
+            "&:hover": {
+              backgroundColor: "lightgray", // Fondo al pasar el mouse
+            },
+          },
+        }}        
       >
         {days.map((day) => (
           <ToggleButton

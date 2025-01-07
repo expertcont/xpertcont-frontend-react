@@ -124,6 +124,7 @@ export default function AdminVentaList() {
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
   
   const [datosPopUp,setDatosPopUp] = useState([]);
+  const [dia_sel, setDiaSel] = useState("");
 
   const handleChange = e => {
     //Para todos los demas casos ;)
@@ -207,7 +208,7 @@ export default function AdminVentaList() {
         });
 
         // Generar el mensaje HTML
-        const mensajeHtml = await armaMensajeHtml(response);
+        const mensajeHtml = armaMensajeHtml(response);
 
         // Mostrar SweetAlert con el mensaje generado
         swal2.fire({
@@ -241,6 +242,8 @@ export default function AdminVentaList() {
               }
             }
         }).then((result) => {
+          
+          setUpdateTrigger(Math.random());//experimento para actualizar el dom
           if (result.isConfirmed) {
             procesaPDF(sComprobante, elemento,'A4')
           } else if (result.isDenied) {
@@ -259,7 +262,7 @@ export default function AdminVentaList() {
     }
   };
 
-  const armaMensajeHtml = async (response) => {
+  const armaMensajeHtml = (response) => {
     try {
         const xmlLink = response.data.ruta_xml;
         const cdrLink = response.data.ruta_cdr;
@@ -927,13 +930,14 @@ export default function AdminVentaList() {
   const generaVenta = async () => {
     try {
       console.log('antes de ... ', periodo_trabajo, obtenerFecha(periodo_trabajo,true) );
-
+      console.log('ultimoDiaMes: ', obtenerFecha(periodo_trabajo,true,dia_sel));
+      //dia
       const response = await axios.post(`${back_host}/ad_venta`, {
         id_anfitrion: params.id_anfitrion,
         documento_id: params.documento_id,
         periodo: periodo_trabajo,
         id_invitado: params.id_invitado,
-        fecha: obtenerFecha(periodo_trabajo,true),
+        fecha: obtenerFecha(periodo_trabajo,true,dia_sel),
       });
       
 
@@ -950,7 +954,7 @@ export default function AdminVentaList() {
       console.log('Error al crear el pedido.');
     }    
   };
-  const obtenerFecha = (periodo,bformatoBD) => {
+  const obtenerFecha = (periodo,bformatoBD,sDia) => {
     // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
     const [year, month] = periodo.split('-').map(Number);
   
@@ -960,7 +964,13 @@ export default function AdminVentaList() {
   
     // Verificar si el mes del periodo es igual al mes actual
     if (mesActual === month) {
-      return formatearFecha(fechaActual,bformatoBD); // Retorna la fecha actual formateada
+      if (sDia!==''){
+          //restamos 1 al mes, pinche manejo de fecha js
+        const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
+        return formatearFecha(fechaSeleccionada,bformatoBD); // Retorna la fecha actual formateada
+      }else{
+        return formatearFecha(fechaActual,bformatoBD); // Retorna la fecha actual formateada
+      }
     } else {
       // Retornar el último día del mes del periodo
       const ultimoDiaMes = new Date(year, month, 0); // Al pasar 0 en el día, se obtiene el último día del mes
@@ -980,8 +990,9 @@ export default function AdminVentaList() {
   };
 
   const handleDayFilter = (selectedDay) => {
-    console.log(`Filtrar registros para el día: ${selectedDay}`);
-    // Aquí puedes llamar a tu función para filtrar registros
+    const sDia = selectedDay.toString().padStart(2, '0');
+    console.log(sDia);
+    setDiaSel(sDia);
   };
 
  return (
@@ -1054,6 +1065,7 @@ export default function AdminVentaList() {
   </Grid>
   
   <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
+  
   <div>
   <ToggleButtonGroup
     color="success"
