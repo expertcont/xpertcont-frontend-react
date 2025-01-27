@@ -53,7 +53,7 @@ export default function AdminVentaForm() {
 
   //const params = useParams();
   //Obtener los parámetros de URL
-  const { id_anfitrion, id_invitado, periodo, documento_id, comprobante } = useParams();
+  const { id_anfitrion, id_invitado, periodo, documento_id, comprobante, comprobante_ref } = useParams();
   //Crear estado `params` y sincronizarlo con los valores de la URL
   const [params, setParams] = useState({
     id_anfitrion,
@@ -61,6 +61,7 @@ export default function AdminVentaForm() {
     periodo,
     documento_id,
     comprobante,
+    comprobante_ref,
   });
 
   /////////
@@ -742,11 +743,13 @@ export default function AdminVentaForm() {
     //APi respuesta con array, si existe valores entonces cargar modo edicion
 
     if (params.comprobante){
-      // Dividir el string por el guion "-"
-      const [COD, SERIE, NUMERO] = params.comprobante.split('-');
 
-      mostrarVenta(COD, SERIE, NUMERO, '1'); //falta escpecificar elemento
-      mostrarVentaDetalle(COD, SERIE, NUMERO, '1');
+      // Dividir el string por el guion "-"
+      const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
+      console.log('comprobante key: ', COD, SERIE, NUMERO, ELEM);
+
+      mostrarVenta(COD, SERIE, NUMERO, ELEM); //falta escpecificar elemento
+      mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
       
     }else{
       //click nuevo, genera = verificar si existe caso contrario inserta y siempre devuelve datos
@@ -774,7 +777,7 @@ export default function AdminVentaForm() {
     }
 
     setVisualizando(location.pathname.includes('view'));
-    console.log('view prueba:  ',location.pathname.includes('view'));
+    //console.log('view prueba:  ',location.pathname.includes('view'));
     //desactivar botones de modificacion
 
   },[params.comprobante, isAuthenticated, textFieldRef.current]);
@@ -800,10 +803,10 @@ export default function AdminVentaForm() {
 
   useEffect( ()=> {
       //mostrar detalle actualizado y encabezado mas por el rico total
-      const [COD, SERIE, NUMERO] = params.comprobante.split('-');
+      const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
 
-      mostrarVenta(COD, SERIE, NUMERO, '1'); //falta escpecificar elemento
-      mostrarVentaDetalle(COD, SERIE, NUMERO, '1');
+      mostrarVenta(COD, SERIE, NUMERO, ELEM); 
+      mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
       console.log('cabecera actualizado: ', venta);
       console.log('detalle actualizado: ', registrosdet);
 
@@ -827,7 +830,7 @@ export default function AdminVentaForm() {
         setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
       }
     }
-    if (valorEmite === '01'){
+    if (valorEmite === '01' || valorEmite === '07' || valorEmite === '08'){
       setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '' }));
       setDatosEmitir(prevState => ({ ...prevState, r_razon_social: '' }));
       setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '6' }));
@@ -844,8 +847,9 @@ export default function AdminVentaForm() {
       periodo,
       documento_id,
       comprobante,
+      comprobante_ref,
     });
-  }, [id_anfitrion, id_invitado, periodo, documento_id, comprobante]);
+  }, [id_anfitrion, id_invitado, periodo, documento_id, comprobante, comprobante_ref]);
 
   const cargaPermisosMenuComando = async(idMenu)=>{
     //Realiza la consulta a la API de permisos (obtenerTodosPermisoComandos)
@@ -969,8 +973,8 @@ export default function AdminVentaForm() {
   //Seccion Elimina Item
   const handleDelete = (item) => {
     console.log(item);
-    const [COD, SERIE, NUMERO] = params.comprobante.split('-');
-    confirmaEliminarDetalle(COD, SERIE, NUMERO,1,item);
+    const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
+    confirmaEliminarDetalle(COD, SERIE, NUMERO,ELEM,item);
   };
 
    //////////////////////////////////funciones control cantidad//////////////////////////////////////////
@@ -1047,7 +1051,7 @@ export default function AdminVentaForm() {
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   const confirmaGrabarDetalle = async()=>{
     //console.log('antes de comprobante y setProducto');
-    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+    const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');    
 
     producto.id_anfitrion = params.id_anfitrion;
     producto.documento_id = params.documento_id;
@@ -1055,6 +1059,7 @@ export default function AdminVentaForm() {
     producto.r_cod = COD;
     producto.r_serie = SERIE;
     producto.r_numero = NUMERO;
+    producto.elemento = ELEM; //verificar
     producto.r_fecemi = venta.r_fecemi;
 
     console.log(producto);
@@ -1197,9 +1202,13 @@ export default function AdminVentaForm() {
   }
 
   const confirmaGrabarComprobante = async()=>{
-    //console.log('antes de comprobante y setProducto');
+    console.log('asas');
+    console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
+    const [COD_REF, SERIE_REF, NUMERO_REF] = params.comprobante_ref !== "-" ? 
+                                              params.comprobante_ref.split('-') : [null, null, null];
+  
     //Alimentar useState venta
     const estadoFinal = {
         id_anfitrion: params.id_anfitrion,
@@ -1217,6 +1226,10 @@ export default function AdminVentaForm() {
         r_razon_social: datosEmitir.r_razon_social,
         r_direccion: datosEmitir.r_direccion,
 
+        r_cod_ref: COD_REF, //parte de la referencia a emitir
+        r_serie_ref: SERIE_REF,//parte de la referencia a emitir
+        r_numero_ref: NUMERO_REF,//parte de la referencia a emitir
+        r_idmotivo_ref: '01',//parte de la referencia a emitir (hardcodeado temporal) anulacion
       };
 
     console.log(estadoFinal);
@@ -1525,7 +1538,12 @@ export default function AdminVentaForm() {
                                       params.comprobante.includes('NP') ?
                                       ('NP en Proceso')
                                       :
-                                      (venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero) 
+                                      (  //cambiamos la vista del comprobante a mostrar
+                                        (venta.r_cod_ref==null) ?
+                                        venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero
+                                        :
+                                        venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
+                                      ) 
                                     )
                                   }
                               </Typography>
@@ -2031,6 +2049,15 @@ export default function AdminVentaForm() {
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
                                               >NV</ToggleButton>
+
+                                              <ToggleButton value="07"
+                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
+                                                            style={{
+                                                              backgroundColor: valorEmite === '07' ? 'lightblue' : 'transparent',
+                                                              color: valorEmite === '07' ? 'orange' : 'gray',
+                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
+                                                            }}
+                                              >NCred</ToggleButton>
 
                                             </ToggleButtonGroup>
 

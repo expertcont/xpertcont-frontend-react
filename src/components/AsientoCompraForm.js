@@ -406,7 +406,7 @@ export default function AsientoCompraForm() {
                             sx={{display:'block',
                             margin:'.5rem 0'}}
                             onClick={() => {
-                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/edit`);
                               }
                             }
       

@@ -17,8 +17,8 @@ import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "./AdminDias";
 
 //import PrintIcon from '@mui/icons-material/Print';
-import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
-//import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import FindInPageIcon from '@mui/icons-material/FindInPage';
+import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 
@@ -331,17 +331,17 @@ export default function AdminVentaList() {
 
   
   const handleUpdate = (sComprobante,bModoVista) => {
+    console.log('sComprobante: ',sComprobante);
     //var num_asiento;
     if (bModoVista) {
       //Validamos
       navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/view`);
     } else {
-      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}`);
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/-`);
     }    
   };
   const handleDelete = (comprobante,elemento) => {
-    console.log(comprobante,elemento);
-    
+    //Recuerda que el comprobante enviado es el comprobante_ref --> contiene el key del registro ;)
     confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante,elemento);
   };
   const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento)=>{
@@ -747,7 +747,7 @@ export default function AdminVentaList() {
           (
             <img
               src={Sunat01Icon} // Aquí usas la imagen importada
-              onClick={() => handleSunat(row.comprobante,row.elemento)}
+              onClick={() => handleSunat(row.comprobante_ref,row.elemento)}
               alt="Icono Sunat01"
               style={{
                 cursor: 'pointer',
@@ -770,7 +770,7 @@ export default function AdminVentaList() {
           (pVenta0102 || pCompra0202 || pCaja0302) && (row.r_vfirmado == null) ?
           (
             <DriveFileRenameOutlineIcon
-              onClick={() => handleUpdate(row.comprobante,false)}
+              onClick={() => handleUpdate(row.comprobante_ref,false)}
               style={{
                 cursor: 'pointer',
                 color: 'skyblue',
@@ -780,11 +780,11 @@ export default function AdminVentaList() {
           )  
           : 
           (
-            <CenterFocusStrongIcon
-              onClick={() => handleUpdate(row.comprobante,true)}
+            <FindInPageIcon
+              onClick={() => handleUpdate(row.comprobante_ref,true)}
               style={{
                 cursor: 'pointer',
-                color: 'skyblue',
+                color: 'gray',
                 transition: 'color 0.3s ease',
               }}
             />
@@ -801,14 +801,27 @@ export default function AdminVentaList() {
           (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_vfirmado == null) ?
           (
             <DeleteIcon
-              onClick={() => handleDelete(row.comprobante, row.elemento)}
+              onClick={() => handleDelete(row.comprobante_ref, row.elemento)}
               style={{
                 cursor: 'pointer',
                 color: 'orange',
                 transition: 'color 0.3s ease',
               }}
             />
-          ) : null
+          ) 
+          : 
+          (
+            <ViewAgendaIcon
+              onClick={() => clonarVenta(row.comprobante_ref)}
+              style={{
+                cursor: 'pointer',
+                color: 'skyblue',
+                transition: 'color 0.3s ease',
+              }}
+            />
+
+          )
+
         ),
         allowOverflow: true,
         button: true,
@@ -943,9 +956,10 @@ export default function AdminVentaList() {
       
 
       if (response.data.success) {
-        const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero;
+        const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1'; //aumentamos elemento
+        const sComprobanteAbiertoRef = '-'; //modo directo sin ref
         //enviamos la edicion del registro abierto
-        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}`);
+        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
       } else {
         //setError(response.data.message);
         console.log(response.data.message);
@@ -955,6 +969,40 @@ export default function AdminVentaList() {
       console.log('Error al crear el pedido.');
     }    
   };
+  const clonarVenta = async (sComprobante) => {
+    try {
+      const [COD, SERIE, NUMERO] = sComprobante.split('-');
+      console.log('antes de ... ', periodo_trabajo, obtenerFecha(periodo_trabajo,true) );
+      console.log('ultimoDiaMes: ', obtenerFecha(periodo_trabajo,true,dia_sel));
+      
+      //dia
+      const response = await axios.post(`${back_host}/ad_ventaclon`, {
+        id_anfitrion: params.id_anfitrion,
+        documento_id: params.documento_id,
+        periodo: periodo_trabajo,
+        id_invitado: params.id_invitado,
+        fecha: obtenerFecha(periodo_trabajo,true,dia_sel),
+        r_cod: COD,
+        r_serie: SERIE,
+        r_numero: NUMERO
+      });
+      
+
+      if (response.data.success) {
+        const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1';//aumentamos elemento
+        const sComprobanteAbiertoRef = sComprobante; //modo clonar con ref
+        //enviamos la edicion del registro abierto
+        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
+      } else {
+        //setError(response.data.message);
+        console.log(response.data.message);
+      }
+    } catch (err) {
+      //setError('Error al crear el pedido.');
+      console.log('Error al crear el pedido.');
+    }    
+  };
+
   const obtenerFecha = (periodo,bformatoBD,sDia) => {
     // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
     const [year, month] = periodo.split('-').map(Number);

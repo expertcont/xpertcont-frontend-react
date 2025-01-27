@@ -425,7 +425,7 @@ export default function AsientoVentaForm() {
                                 text: "Funcionalidad en diseño pendiente",
                               });*/
                               console.log(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
-                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}`);
+                              navigate(`/asientodet/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${params.periodo}/${params.id_libro}/${params.num_asiento}/edit`);
                               }
                             }
       
