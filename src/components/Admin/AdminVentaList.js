@@ -124,7 +124,7 @@ export default function AdminVentaList() {
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
   
   const [datosPopUp,setDatosPopUp] = useState([]);
-  const [dia_sel, setDiaSel] = useState("");
+  let [diaSel, setDiaSel] = useState("");
 
   const handleChange = e => {
     //Para todos los demas casos ;)
@@ -682,6 +682,7 @@ export default function AdminVentaList() {
       //if (st_valorVista === 'compras') {cargaPermisosMenuComando('02');}
       //if (st_valorVista === 'caja') {cargaPermisosMenuComando('03');}
 
+      
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo);
     
@@ -730,7 +731,7 @@ export default function AdminVentaList() {
     setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
     
-  },[permisosComando, pVenta0101, valorVista]) //Solo cuando este completo estado
+  },[permisosComando, pVenta0101, valorVista, diaSel]) //Solo cuando este completo estado
 
 
   //////////////////////////////////////////////////////////
@@ -812,7 +813,11 @@ export default function AdminVentaList() {
           : 
           (
             <ViewAgendaIcon
-              onClick={() => clonarVenta(row.comprobante_ref)}
+              onClick={() => {
+                  //alert(diaSel);
+                  clonarVenta(row.comprobante_ref);
+                  }
+                }
               style={{
                 cursor: 'pointer',
                 color: 'skyblue',
@@ -942,16 +947,13 @@ export default function AdminVentaList() {
   //////////////////////////////////////////////////////
   const generaVenta = async () => {
     try {
-      console.log('antes de ... ', periodo_trabajo, obtenerFecha(periodo_trabajo,true) );
-      console.log('ultimoDiaMes: ', obtenerFecha(periodo_trabajo,true,dia_sel));
-      
       //dia
       const response = await axios.post(`${back_host}/ad_venta`, {
         id_anfitrion: params.id_anfitrion,
         documento_id: params.documento_id,
         periodo: periodo_trabajo,
         id_invitado: params.id_invitado,
-        fecha: obtenerFecha(periodo_trabajo,true,dia_sel),
+        fecha: obtenerFecha(periodo_trabajo,true,diaSel),
       });
       
 
@@ -971,9 +973,8 @@ export default function AdminVentaList() {
   };
   const clonarVenta = async (sComprobante) => {
     try {
+      //console.log('dia sel para clonado: ... ', diaSel);
       const [COD, SERIE, NUMERO] = sComprobante.split('-');
-      console.log('antes de ... ', periodo_trabajo, obtenerFecha(periodo_trabajo,true) );
-      console.log('ultimoDiaMes: ', obtenerFecha(periodo_trabajo,true,dia_sel));
       
       //dia
       const response = await axios.post(`${back_host}/ad_ventaclon`, {
@@ -981,7 +982,7 @@ export default function AdminVentaList() {
         documento_id: params.documento_id,
         periodo: periodo_trabajo,
         id_invitado: params.id_invitado,
-        fecha: obtenerFecha(periodo_trabajo,true,dia_sel),
+        fecha: obtenerFecha(periodo_trabajo,true,diaSel),
         r_cod: COD,
         r_serie: SERIE,
         r_numero: NUMERO
@@ -1004,6 +1005,7 @@ export default function AdminVentaList() {
   };
 
   const obtenerFecha = (periodo,bformatoBD,sDia) => {
+    //console.log('sDia recepcionado: ',sDia);
     // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
     const [year, month] = periodo.split('-').map(Number);
   
@@ -1012,23 +1014,29 @@ export default function AdminVentaList() {
     const mesActual = fechaActual.getMonth() + 1; // Los meses en JavaScript son base 0, así que sumamos 1
   
     // Verificar si el mes del periodo es igual al mes actual
-    if (mesActual === month) {
+    //if (mesActual === month) {
       if (sDia!==''){
           //restamos 1 al mes, pinche manejo de fecha js
         const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
-        return formatearFecha(fechaSeleccionada,bformatoBD); // Retorna la fecha actual formateada
+        return formatearFecha(fechaSeleccionada,bformatoBD,sDia); // Retorna la fecha actual formateada
       }else{
-        return formatearFecha(fechaActual,bformatoBD); // Retorna la fecha actual formateada
+        return formatearFecha(fechaActual,bformatoBD,sDia); // Retorna la fecha actual formateada
       }
-    } else {
-      // Retornar el último día del mes del periodo
-      const ultimoDiaMes = new Date(year, month, 0); // Al pasar 0 en el día, se obtiene el último día del mes
-      return formatearFecha(ultimoDiaMes,bformatoBD);
-    }
+    //} else {
+    //  // Retornar el último día del mes del periodo
+    //  const ultimoDiaMes = new Date(year, month, 0); // Al pasar 0 en el día, se obtiene el último día del mes
+    //  return formatearFecha(ultimoDiaMes,bformatoBD);
+    //}
   };
   // Función para formatear la fecha en DD/MM/YYYY
-  const formatearFecha = (fecha,bformatoBD) => {
-    const dia = String(fecha.getDate()).padStart(2, '0');
+  const formatearFecha = (fecha,bformatoBD,sDia) => {
+    let dia;
+    if (sDia!==''){
+      dia = sDia;
+    }
+    else {
+      dia = String(fecha.getDate()).padStart(2, '0');
+    }
     const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses en JavaScript son base 0
     const anio = fecha.getFullYear();
     if (bformatoBD) {
@@ -1039,11 +1047,11 @@ export default function AdminVentaList() {
   };
 
   const handleDayFilter = (selectedDay) => {
-    const sDia = selectedDay.toString().padStart(2, '0');
-    console.log(sDia);
-    setDiaSel(sDia);
+    const dia = selectedDay.toString().padStart(2, '0');
+    setDiaSel(dia);
   };
 
+ 
  return (
   <>
   <div>

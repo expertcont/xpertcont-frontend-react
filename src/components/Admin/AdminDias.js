@@ -2,10 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 
-const getDaysInMonth = (year, month) => {
-  // Resta 1 al mes para ajustarse al índice de JavaScript
-  return new Date(year, month, 0).getDate();
-};
+const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
 
 const AdminDias = ({ period, onDaySelect }) => {
   const theme = useTheme();
@@ -15,6 +12,8 @@ const AdminDias = ({ period, onDaySelect }) => {
   const [selectedDay, setSelectedDay] = useState("");
 
   useEffect(() => {
+    if (!period) return;
+
     const [year, month] = period.split("-").map(Number);
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -27,13 +26,16 @@ const AdminDias = ({ period, onDaySelect }) => {
     const dayList = Array.from({ length: maxDay }, (_, i) => (i + 1).toString());
     setDays(dayList);
 
-    const defaultDay = year === currentYear && month === currentMonth ? currentDate.toString() : daysInMonth.toString();
-    setSelectedDay(defaultDay);
-    onDaySelect(defaultDay);
-  }, [period]);
+    // Evitar que el estado se sobrescriba con cada render
+    if (!selectedDay) {
+      const defaultDay = maxDay.toString();
+      setSelectedDay(defaultDay);
+      onDaySelect(defaultDay);
+    }
+  }, [period]); // Solo depende de `period`
 
   const handleDayChange = (event, newDay) => {
-    if (newDay !== null) {
+    if (newDay) {
       setSelectedDay(newDay);
       onDaySelect(newDay);
     }
@@ -54,21 +56,21 @@ const AdminDias = ({ period, onDaySelect }) => {
         onChange={handleDayChange}
         sx={{
           flexWrap: isMobile ? "nowrap" : "wrap",
-          backgroundColor: "gray", // Fondo del grupo
-          color: "black", // Color de la fuente general para todos los botones
+          backgroundColor: "gray",
+          color: "black",
           "& .MuiToggleButton-root": {
             border: "1px solid",
             borderColor: theme.palette.divider,
-            color: "inherit", // Hereda el color especificado en el grupo
+            color: "inherit",
             "&.Mui-selected": {
-              backgroundColor: "orange", // Fondo cuando está seleccionado
-              color: "white", // Fuente cuando está seleccionado
+              backgroundColor: "orange",
+              color: "white",
             },
             "&:hover": {
-              backgroundColor: "lightgray", // Fondo al pasar el mouse
+              backgroundColor: "lightgray",
             },
           },
-        }}        
+        }}
       >
         {days.map((day) => (
           <ToggleButton
