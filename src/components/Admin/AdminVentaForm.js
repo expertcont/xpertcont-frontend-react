@@ -1,4 +1,4 @@
-import {Grid,Card,CardContent,useMediaQuery,Typography,TextField,Button,CircularProgress,Select,MenuItem,InputLabel,Box,FormControl, List,ListItem,ListItemText,Dialog,DialogContent,DialogTitle} from '@mui/material'
+import {Grid,Card,CardContent,useMediaQuery,Typography,TextField,Button,CircularProgress,Select,MenuItem,InputLabel,Box,FormControl, List,ListItem,ListItemText,Dialog,DialogContent,DialogTitle, responsiveFontSizes} from '@mui/material'
 import {useState,useEffect,useRef,useMemo,useCallback} from 'react';
 import {useNavigate, useParams, useLocation} from 'react-router-dom';
 import axios from 'axios';
@@ -719,22 +719,11 @@ export default function AdminVentaForm() {
   const handleSubmit = async(e) => {
     e.preventDefault();
     setCargando(true);
-    var data;
+    
+    confirmaModificaComprobante();
 
-    //Cambiooo para controlar Edicion
-    await fetch(`${back_host}/venta/${params.r_cod}/${params.r_serie}/${params.r_numero}/${params.elemento}`, {
-      method: "PUT",
-      body: JSON.stringify(venta),
-      headers: {"Content-Type":"application/json"}
-    });
     setCargando(false);
     
-    //Obtener json respuesta, para extraer cod,serie,num y elemento
-    if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-      navigate(`/ventamovil/${data.comprobante_original_codigo}/${data.comprobante_original_serie}/${data.comprobante_original_numero}/${data.elemento}/edit`);
-    }else{
-      navigate(`/ventamovil/${data.comprobante_original_codigo}/${data.comprobante_original_serie}/${data.comprobante_original_numero}/${data.elemento}/edit`);
-    }
   };
   
   //Aqui se leen parametros en caso lleguen
@@ -1277,6 +1266,79 @@ export default function AdminVentaForm() {
     
   }
 
+  const confirmaModificaComprobante = async()=>{
+    console.log('modificando datos previos al envio');
+    console.log(params.comprobante,params.comprobante_ref);
+    const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
+  
+    //Alimentar useState venta
+    const estadoFinal = {
+        id_anfitrion: params.id_anfitrion,
+        documento_id: params.documento_id,
+        periodo: params.periodo,
+        id_invitado: params.id_invitado,
+
+        r_cod: COD,
+        r_serie: SERIE,
+        r_numero: NUMERO,
+        elemento: ELEM, //new
+        fecha: venta.r_fecemi,
+        
+        r_id_doc: venta.r_id_doc,
+        r_documento_id: venta.r_documento_id,
+        r_razon_social: venta.r_razon_social,
+        r_direccion: venta.r_direccion,
+
+      };
+
+    console.log(estadoFinal);
+    
+    const sRuta = `${back_host}/ad_venta`;
+    console.log(sRuta);
+    fetch(sRuta, {
+      method: "PUT",
+      body: JSON.stringify(estadoFinal), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+      headers: {"Content-Type":"application/json"}
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('responseeeee : ',data);
+
+        if (data.success) {
+            //console.log('La operación fue exitosa');
+            swal({
+              text:"Cambios registrados con exito",
+              icon:"success",
+              timer:"2000"
+            });
+            
+            //setUpdateTrigger(Math.random());//actualizad vista detalle
+            setParams(prevParams => ({
+              ...prevParams,         // Mantenemos los valores previos
+              comprobante: (data.r_cod + '-' + data.r_serie + '-' + data.r_numero ) //actualizamos comprobante
+            }));
+            //console.log(params);
+            //console.log(data);
+            //console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero);
+
+        } else {
+            console.log('La operación falló');
+            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+            swal({
+              text:"La Operacion fallo, intentelo nuevamente",
+              icon:"warning",
+              timer:"2000"
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Hubo un problema con la solicitud fetch:', error);
+        //ahora si
+        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+    });
+    
+  }
+
 
   /////////////////////////////////////////////////seccion datatable/////////////
   const [selectedRows, setSelectedRows] = useState([]);
@@ -1617,10 +1679,10 @@ export default function AdminVentaForm() {
                                           sx={{display:'block',
                                           margin:'.5rem 0'}}
                                           disabled={
-                                                    !venta.r_fecemi || 
-                                                    !venta.r_documento_id ||
-                                                    !pVenta010201 ||
-                                                    !params.comprobante.includes('NV')
+                                                    !venta.r_fecemi 
+                                                    //|| !venta.r_documento_id 
+                                                    //|| !pVenta010201 
+                                                    //|| !params.comprobante.includes('NV')
                                                     }
                                           >
                                           { cargando ? (

@@ -190,7 +190,18 @@ export default function AdminVentaList() {
     setUpdateTrigger(Math.random());//experimento
   };*/
   
-  const handleSunat = async (sComprobante, elemento) => {
+  const handleSunat = async (sComprobante, elemento, sFirma) => {
+    console.log(sFirma);
+    if (sFirma !=="" && sFirma !==null ) {
+      swal2.fire({
+        title: 'Sunat',
+        text: 'Comprobante ya fue enviado a Sunat',
+        icon: 'success', // success, error, warning, info, question
+        confirmButtonText: 'Aceptar'
+      });  
+      return;
+    }
+
     const [COD, SERIE, NUMERO] = sComprobante.split('-');
 
     console.log('Enviando a sunat:', sComprobante, elemento);
@@ -748,7 +759,7 @@ export default function AdminVentaList() {
           (
             <img
               src={Sunat01Icon} // Aquí usas la imagen importada
-              onClick={() => handleSunat(row.comprobante_ref,row.elemento)}
+              onClick={() => handleSunat(row.comprobante_ref,row.elemento,row.r_vfirmado)}
               alt="Icono Sunat01"
               style={{
                 cursor: 'pointer',
