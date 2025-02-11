@@ -1649,7 +1649,7 @@ export default function AdminVentaForm() {
                                (
                                   <Button variant='contained' 
                                           color='primary' 
-                                          type='submit'
+                                          //type='submit'
                                           fullWidth
                                           sx={{display:'block',
                                           margin:'.5rem 0'}}

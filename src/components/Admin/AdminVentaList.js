@@ -372,22 +372,69 @@ export default function AdminVentaList() {
           setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
               setUpdateTrigger(Math.random());//experimento
           }, 200);
-                        
+          
+          /*alert(respuesta);
+          if (respuesta === 1) {
+            swal({
+              text:"Venta se ha eliminado con exito",
+              icon:"success",
+              timer:"2000"
+            });
+          }
+          if (respuesta === 2) {
+            swal({
+              text:"No se puede Eliminar Venta, solo la ultima",
+              icon:"success",
+              timer:"2000"
+            });
+          }*/
+
+      }
+    })
+  }
+  const eliminarRegistroSeleccionado = async (sAnfitrion, sDocumentoId, sPeriodo, sComprobante, sElemento) => {
+    const [COD, SERIE, NUMERO] = sComprobante.split('-');
+    const datosEnvio = {
+      periodo: sPeriodo,
+      id_anfitrion: sAnfitrion,
+      documento_id: sDocumentoId,
+      r_cod: COD,
+      r_serie: SERIE,
+      r_numero: NUMERO,
+      elemento: sElemento
+    }
+    //console.log('datosEnvio',datosEnvio);
+
+    try {
+        const response = await axios.delete(`${back_host}/ad_ventadel`, {
+            data: datosEnvio
+        });
+
+        // Verifica la respuesta del backend
+        if (response.data.success) {
           swal({
             text:"Venta se ha eliminado con exito",
             icon:"success",
             timer:"2000"
           });
-      }
-    })
-  }
-  const eliminarRegistroSeleccionado = async (sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento) => {
-    const [COD, SERIE, NUMERO] = sComprobante.split('-');
-    //En ventas solo se eliminan, detalle-cabecera
-    await fetch(`${back_host}/ad_venta/${sPeriodo}/${sAnfitrion}/${sDocumentoId}/${COD}/${SERIE}/${NUMERO}/${sElemento}`, {
-        method:"DELETE"
-    });
-  }
+        } else {
+          swal({
+            text:"No se puede Eliminar Venta, solo la ultima",
+            icon:"error",
+            timer:"2000"
+          });
+          //console.log("No se pudo eliminar la venta, no es la ultima: " + response.data.message);
+        }
+    } catch (error) {
+        //console.error("Error eliminando venta:", error);
+          swal({
+            text:"No se puede Eliminar Venta",
+            icon:"error",
+            timer:"2000"
+          });
+        
+    }
+};
 
   const handleDeleteOrigen = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro) => {
     const { value: selectedOrigen } = await swal2.fire({
