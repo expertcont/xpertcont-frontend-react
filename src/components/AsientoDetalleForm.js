@@ -306,9 +306,8 @@ export default function AsientoDetalleForm() {
   };
   
   const cargaPopUpCuenta = () =>{
-    //console.log(`${back_host}/cuentassimplepopup/${params.id_anfitrion}/${params.documento_id}/1`);
     axios
-    .get(`${back_host}/cuentassimplepopup/${params.id_anfitrion}/${params.documento_id}/1`)
+    .get(`${back_host}/cuentassimplepopup/${params.id_anfitrion}/${params.documento_id}`)
     .then((response) => {
         setCuenta(response.data);
     })
