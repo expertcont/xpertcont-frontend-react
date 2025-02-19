@@ -912,6 +912,7 @@ export default function AsientoListPrev() {
                                           onClose={() => setShowModalAsTipoCompra(false)}
                                           maxWidth="md" // Valor predeterminado de 960px
                                           fullWidth
+                                          fullScreen={isSmallScreen} // Se activa en pantallas pequeñas
                                           PaperProps={{
                                             style: {
                                               display: 'flex',
