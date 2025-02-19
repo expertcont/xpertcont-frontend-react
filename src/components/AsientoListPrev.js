@@ -911,20 +911,21 @@ export default function AsientoListPrev() {
                                           open={showModalAsTipoCompra}
                                           onClose={() => setShowModalAsTipoCompra(false)}
                                           maxWidth="md" // Valor predeterminado de 960px
-                                          fullWidth
-                                          fullScreen={isSmallScreen} // Se activa en pantallas pequeñas
+                                          //fullWidth
+                                          disableScrollLock // Evita que se modifique el overflow del body
                                           PaperProps={{
                                             style: {
+                                              top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                                              left: isSmallScreen ? "-20%" : "0%", // Centrado horizontal
                                               display: 'flex',
                                               flexDirection: 'column',
                                               alignItems: 'center',
-                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                              //background:'#1e272e',
-                                              //background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
+                                              //marginTop: '10vh', // Ajusta este valor según tus necesidades
                                               background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
                                               color:'white',
-                                              width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                              width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
+                                              //width: isSmallScreen ? "90vw" : "500px",                                              
+                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
                                             },
                                           }}
                                         >

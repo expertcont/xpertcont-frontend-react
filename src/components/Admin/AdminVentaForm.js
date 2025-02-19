@@ -1771,7 +1771,7 @@ export default function AdminVentaForm() {
                                           open={showModalProducto}
                                           onClose={() => setShowModalProducto(false)}
                                           maxWidth="md" // Valor predeterminado de 960px
-                                          fullWidth
+                                          //fullWidth
                                           fullScreen={isSmallScreen} // Se activa en pantallas pequeñas
                                           PaperProps={{
                                             style: {
