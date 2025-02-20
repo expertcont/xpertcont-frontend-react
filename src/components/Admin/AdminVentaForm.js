@@ -31,6 +31,7 @@ import numeral from 'numeral';
 import ListaPopUp from '../ListaPopUp';
 
 import swal from 'sweetalert';
+import swal2 from 'sweetalert2';
 import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
@@ -1063,11 +1064,17 @@ export default function AdminVentaForm() {
     .then(data => {
         if (data.success) {
             //console.log('La operación fue exitosa');
-            swal({
+            swal2.fire({
+              text: "Detalle registrado con exito",
+              icon: "success",
+              timer:"2000",
+              scrollbarPadding: false // ¡Esta es la clave!
+            });
+            /*swal({
               text:"Detalle registrado con exito",
               icon:"success",
               timer:"2000"
-            });
+            });*/
             
             setUpdateTrigger(Math.random());//actualizad vista detalle
 
