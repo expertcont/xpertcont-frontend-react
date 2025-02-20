@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { TextField, Dialog, DialogTitle, DialogContent, List, ListItem, ListItemText } from '@mui/material';
+import { TextField, Dialog, DialogTitle, DialogContent, useMediaQuery, List, ListItem, ListItemText } from '@mui/material';
 import Datatable, {createTheme} from 'react-data-table-component';
 
 const ListaPopUp = ({ registroPopUp, showModal, setShowModal, registro,setRegistro, idCodigoKey, descripcionKey,auxiliarKey }) => {
     const [searchText, setSearchText] = useState('');
     const textFieldRef = useRef(null);
+    const isSmallScreen = useMediaQuery('(max-width: 600px)');
     //const textFieldRef = useRef(document.getElementById('miTextField'));
     createTheme('solarized', {
         text: {
@@ -116,16 +117,20 @@ const ListaPopUp = ({ registroPopUp, showModal, setShowModal, registro,setRegist
         <Dialog
             open={showModal}
             onClose={() => setShowModal(false)}
-            //maxWidth="md"
-            fullWidth
+            maxWidth="md"
+            //fullWidth
+            disableScrollLock // Evita que se modifique el overflow del body
             PaperProps={{
                 style: {
+                    top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                    left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     marginTop: '10vh',
                     background: '#1e272e',
-                    color: 'white'
+                    color: 'white',
+                    width: isSmallScreen ? ('40%') : ('40%'), // Ajusta este valor según tus necesidades
                 },
             }}
         >

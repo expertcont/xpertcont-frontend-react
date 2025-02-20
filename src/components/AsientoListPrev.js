@@ -4,9 +4,6 @@ import { Grid,Button,useMediaQuery,Select, MenuItem, Typography,Dialog,DialogCon
 import { useNavigate,useParams } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
 import UpdateIcon from '@mui/icons-material/UpdateSharp';
-import Add from '@mui/icons-material/Add';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
-import ViewCompactIcon from '@mui/icons-material/ViewCompact';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
 
 import IconButton from '@mui/material/IconButton';
@@ -23,10 +20,7 @@ import 'styled-components';
 
 //import { utils, writeFile } from 'xlsx';
 import Tooltip from '@mui/material/Tooltip';
-import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
-import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import LibraryAddRoundedIcon from '@mui/icons-material/LibraryAddRounded';
-import LibraryAddCheckRoundedIcon from '@mui/icons-material/LibraryAddCheckRounded';
 import axios from 'axios';
 import ListaPopUp from './ListaPopUp';
 
@@ -107,37 +101,24 @@ export default function AsientoListPrev() {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
-  const [updateCuentas, setUpdateCuentas] = useState({});
-
+ 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
-  const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
-  const {user, isAuthenticated } = useAuth0();
+   const {user, isAuthenticated } = useAuth0();
   
   const [columnas, setColumnas] = useState([]);
   const [bSeleccionados, setBSeleccionados] = useState(false);
   
   
   const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
-  const [amarre_select,setAmarreSelect] = useState([]); //Cuentas Amarre de 6X
-  const [showModal, setShowModal] = useState(false);
-  const [showModal02, setShowModal02] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [searchText02, setSearchText02] = useState('');
-
+  
   //Variables estado para manejo de cuentas amarre contable
   const [glosa, setGlosa] = useState('');
-
-  const [cuentaBase, setCuentaBase] = useState('');
-  const [cuentaBaseDesc, setCuentaBaseDesc] = useState('');
-  const [cuentaCargoDest, setCuentaCargoDest] = useState('');
-  const [cuentaCargoDestDesc, setCuentaCargoDestDesc] = useState('');
-  const [cuentaAbonoDest, setCuentaAbonoDest] = useState('');
-  const [cuentaAbonoDestDesc, setCuentaAbonoDestDesc] = useState('');
 
   const [asientoTipo,setAsientoTipo] = useState({
         cuentaBase:'',
@@ -147,7 +128,9 @@ export default function AsientoListPrev() {
         cuentaCargoDestDesc:'',
 
         cuentaAbonoDest:'',
-        cuentaAbonoDestDesc:''
+        cuentaAbonoDestDesc:'',
+
+        glosa:''
   });
   
   const textFieldRef = useRef(null); //foco del buscador  
@@ -156,90 +139,10 @@ export default function AsientoListPrev() {
   const [showModalCuentaDestino02, setShowModalCuentaDestino02] = useState(false); //
 
   const [showModalAsTipoCompra, setShowModalAsTipoCompra] = useState(false); //Mostrar Ocultar Asiento Tipo
+  const [showModalAsTipoVenta, setShowModalAsTipoVenta] = useState(false); //Mostrar Ocultar Asiento Tipo
   
 
-  const handleCodigoKeyDown = async (event) => {
-    console.log(event.target.name);
-    if (event.target.name==="cuentaBase"){
-      if (event.key === '+') {
-          setShowModal(true);
-      }
-      if (event.key === '-') {
-        setShowModal(false);
-      }
-    }
-    if (event.target.name==="cuentaCargoDest"){
-      if (event.key === '+') {
-          setShowModal02(true);
-      }
-      if (event.key === '-') {
-        setShowModal02(false);
-      }
-    }
 
-    //console.log(event.key);
-    if (event.key === 'Enter') {
-      //Selecciona el 1er elemento de la lista, en caso no haya filtrado nada
-      
-      if (event.target.name==="cuentaBaseModal" || event.target.name==="cuentaBase"){
-        handleCuentaSelect(filteredCuentas[0].id_cuenta, filteredCuentas[0].descripcion, event.target.name);
-
-        setShowModal(false);
-      }
-      if (event.target.name==="cuentaCargoDestModal" || event.target.name==="cuentaCargoDest"){
-        handleCuentaSelect(filteredCuentas02[0].id_cuenta, filteredCuentas02[0].descripcion, event.target.name);
-
-        setShowModal02(false);
-      }
-    }
-  };
-  const handleCuentaSelect = (codigo, descripcion, sNombreCuenta) => {
-    //console.log("codigo,descripcion: ",codigo,descripcion);
-    //console.log("sNombreCuenta: ", sNombreCuenta);
-    if (sNombreCuenta==="cuentaBaseModal"){
-        setSearchText(codigo);
-
-        setCuentaBase(codigo);
-        setCuentaBaseDesc(descripcion);
-        console.log(codigo,descripcion);
-        
-        setShowModal(false);
-    }
-    if (sNombreCuenta==="cuentaCargoDestModal"){
-        setSearchText02(codigo);
-
-        setCuentaCargoDest(codigo);
-        setCuentaCargoDestDesc(descripcion);
-
-        setShowModal02(false);
-
-        //console.log(cuentaBase);
-        //actualizar el campo cuentaBase en caso este vacio
-        if (cuentaBase === "" || cuentaBase === undefined){
-          //setCuentaBase con una 6X que le corresponda y cuenta abono destino
-          actualizaAmarreContableInverso9(codigo);
-        }else{
-          actualizaAmarreContable6();
-        }
-    }
-    //console.log(venta.documento_id,venta.razon_social);
-  };
-  const handleSearchTextChange = (event) => {
-    setSearchText(event.target.value.replace('+', '').replace('-',''));
-    //setVenta({...venta, id_cuenta:event.target.value.replace('+', '').replace('-','')});
-  };
-  const handleSearchTextChange02 = (event) => {
-    setSearchText02(event.target.value.replace('+', '').replace('-',''));
-    //setVenta({...venta, id_cuenta:event.target.value.replace('+', '').replace('-','')});
-  };
-
-  const filteredCuentas = cuenta_select.filter((c) =>
-  `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchText.toLowerCase())
-  );
-  const filteredCuentas02 = cuenta_select.filter((c) =>
-  `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchText02.toLowerCase())
-  );
-    
   // Agrega íconos al inicio de cada columna
   let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
@@ -250,13 +153,7 @@ export default function AsientoListPrev() {
 		setSelectedRows(state.selectedRows);
 	}, []);
 
-  /*const handleRecarga = () => {
-    setUpdateTrigger(Math.random());//experimento
-  };*/
-
-  
   // Función que se pasa como prop al componente.js
-  
   ///////////////////////////////////////////////////////////////////////
   const cargaRegistro = async () => {
     var response;
@@ -278,24 +175,11 @@ export default function AsientoListPrev() {
   const handleChange = e => {
       //Creo que la manipulacion de cuentas, debe ser controlada. NO LIBRE
       //NO USAREMOS ESTA SECCION HASTA NUEVO REQUERIMIENTO
-    if (e.target.name === "id_cuentabase") {
-      setCuentaBase(e.target.value);
-      return;
-    }
-    if (e.target.name === "id_cuentacargodest") {
-      setCuentaCargoDest(e.target.value);
-      return;
-    }
-    if (e.target.name === "id_cuentaabonodest") {
-      setCuentaAbonoDest(e.target.value);
-      return;
-    }
+      console.log(e.target.value.toUpperCase());
     if (e.target.name === "glosa") {
       setGlosa(e.target.value.toUpperCase());
       return;
     }
-
-    //setVenta({...venta, [e.target.name]: e.target.value});
   }
 
   const actualizaValorFiltro = e => {
@@ -341,67 +225,10 @@ export default function AsientoListPrev() {
     });
   }
 
-  const actualizaAmarreContable6 = () =>{
-    //console.log(`${back_host}/cuentasamarre9/${params.id_anfitrion}/${sCuentaFiltro}`);
-
-      setCuentaAbonoDest(cuenta_select[0].id_cuenta_haber);
-      setCuentaAbonoDestDesc(cuenta_select[0].descripcion_haber);
-  }
-
-  const actualizaAmarreContableInverso9 = (sCuentaFiltro) =>{
-    //console.log(`${back_host}/cuentasamarre9/${params.id_anfitrion}/${sCuentaFiltro}`);
-    axios
-    .get(`${back_host}/cuentasamarre9/${params.id_anfitrion}/${sCuentaFiltro}`)
-    .then((response) => {
-      //console.log(response.data);
-      //console.log(response.data[0].id_cuenta_debe,response.data[0].descripcion_debe);
-      setCuentaBase(response.data[0].id_cuenta_debe);
-      setCuentaBaseDesc(response.data[0].descripcion_debe);
-
-      setCuentaAbonoDest(response.data[0].id_cuenta_haber);
-      setCuentaAbonoDestDesc(response.data[0].descripcion_haber);
-    })
-    .catch((error) => {
-        console.log(error);
-    });
-  }
-
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
-      // Realiza acciones cuando isAuthenticated cambia
-      //Verificar historial periodo 
-      if (showModal) {
-        if (params.id_libro === '008') {
-          cargaCuentaContable('6');
-        }else{
-          cargaCuentaContable('7');
-        }
-      }
-      if (showModal02) {
-          //Pregunta si existe cuenta 6XX , buscamos amarres
-          if (cuentaBase){
-            cargaAmarreContable(cuentaBase);//6XX base elegida anteriormente
-          }else{
-            //Caso contrario filtramos la 9 libre y luego conseguimos el amarre inverso correspondiente
-            cargaCuentaContable('9');
-          }
-      }
-
-      /////////////////////////////
-      //NEW codigo para autenticacion y permisos de BD
-      if (isAuthenticated && user && user.email) {
-        
-      }
-      //foco
-      if ((showModal || showModal02) && textFieldRef.current) {
-        textFieldRef.current.focus();
-      }
-
-  },[isAuthenticated, user, showModal, showModal02, textFieldRef.current]) //Aumentamos IsAuthenticated y user
-
-  useEffect( ()=> {
       //Carga por cada cambio de seleccion en toggleButton
-      console.log('2do useeffect');
+      console.log('1ER useeffect');
 
       cargaColumnasComunes();
       //console.log('columnas comunes: ', columnasComunes);
@@ -570,8 +397,11 @@ export default function AsientoListPrev() {
     }
     
     const handleAsientoTipo = async() => {
-      
-      setShowModalAsTipoCompra(true);
+      if (params.id_libro === "008") {
+        setShowModalAsTipoCompra(true);
+      }else{
+        setShowModalAsTipoVenta(true);
+      }
 		};
 
      /* //version envio de json, ocupa el doble de espacio
@@ -608,625 +438,535 @@ export default function AsientoListPrev() {
       justifyContent={isSmallScreen ? 'center' : 'end'}
   >
       <Grid item xs={7} >
-
-      { (params.id_libro === '014') ?
-        (   <>
-          <Grid container spacing={0}
-              direction={isSmallScreen ? 'row' : 'row'}
-              alignItems={isSmallScreen ? 'center' : 'start'}
-              justifyContent={isSmallScreen ? 'center' : 'start'}
-          > 
-            <Grid item xs={4.5} >
-                <TextField  variant="outlined" color="success" size="small"
-                      sx={{display:'block',
-                            margin:'.0rem 0'}}
-                      name="cuentaBase"
-                      value={cuentaBase}
-                      placeholder='Cuenta 70'
-                      onKeyDown={handleCodigoKeyDown} //new para busqueda
-                      //onChange={actualizaValorFiltro}
-                      inputProps={{ style:{color:'white'} }}
-                      InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                            </InputAdornment>
-                          ),
-                          style:{color:'white'} 
-                      }}
-                />
-                    {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                    <Dialog
-                      open={showModal}
-                      onClose={() => setShowModal(false)}
-                      maxWidth="md"
-                      fullWidth
-                      PaperProps={{
-                        style: {
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          marginTop: '10vh', // Ajusta este valor según tus necesidades
-                          background:'#1e272e',
-                          color:'white'
-                        },
-                      }}
-                    >
-                      <DialogTitle>Listado de Cuentas</DialogTitle>
-                        <TextField variant="standard" 
-                                    maxWidth="md"
-                                    autoFocus
-                                    size="small"
-                                    //sx={{display:'block',
-                                    //      margin:'.5rem 0'}}
-                                    sx={{mt:-1}}
-                                    name="cuentaBaseModal"
-                                    inputRef={textFieldRef} // Referencia para el TextField
-                                    value={searchText}
-                                    onChange={handleSearchTextChange} //new para busqueda
-                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                    inputProps={{ style:{color:'white',width: 140} }}
-                                    InputLabelProps={{ style:{color:'white'} }}
-                          />
-                      <DialogContent>
-                        <List>
-                          {filteredCuentas.map((c) => (
-                            <ListItem key={c.id_cuenta} onClick={() => handleCuentaSelect(c.id_cuenta, c.descripcion, "cuentaBaseModal")}>
-                              <ListItemText primary={`${c.id_cuenta} - ${c.descripcion}`} 
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </DialogContent>
-                    </Dialog>
-                    {/* FIN Seccion para mostrar Dialog tipo Modal */}
-                </Grid>    
-                    
-                <Grid item xs={6} >
-                  <Typography>{cuentaBaseDesc}</Typography>
-                </Grid>
-          </Grid>
-
-                    
-            </>
-        )
-        :
-        (   
-          <>
-          </>
-        )
-        }
-
-
-      { (params.id_libro === '008') ?
-        (
-          <>
-          <Grid container spacing={0}
-              direction={isSmallScreen ? 'row' : 'row'}
-              alignItems={isSmallScreen ? 'center' : 'start'}
-              justifyContent={isSmallScreen ? 'center' : 'start'}
-          > 
-              <Grid item xs={4.5} >
-              <TextField  variant="outlined" color="success" size="small"
-                    sx={{display:'block',
-                          margin:'.0rem 0'}}
-                    name="cuentaBase"
-                    placeholder='Cuenta 6X'
-                    value={cuentaBase}
-                    //onChange={actualizaValorFiltro}
-                    onKeyDown={handleCodigoKeyDown} //new para busqueda
-                    inputProps={{ style:{color:'white'} }}
-                    InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                          </InputAdornment>
-                        ),
-                        style:{color:'white'} 
-                    }}
-              />
-                    {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                    <Dialog
-                      open={showModal}
-                      onClose={() => setShowModal(false)}
-                      maxWidth="md"
-                      fullWidth
-                      PaperProps={{
-                        style: {
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          marginTop: '10vh', // Ajusta este valor según tus necesidades
-                          background:'#1e272e',
-                          color:'white'
-                        },
-                      }}
-                    >
-                      <DialogTitle>Listado de Cuentas</DialogTitle>
-                        <TextField variant="standard" 
-                                    maxWidth="md"
-                                    autoFocus
-                                    size="small"
-                                    //sx={{display:'block',
-                                    //      margin:'.5rem 0'}}
-                                    sx={{mt:-1}}
-                                    name="cuentaBaseModal"
-                                    inputRef={textFieldRef} // Referencia para el TextField
-                                    value={searchText}
-                                    onChange={handleSearchTextChange} //new para busqueda
-                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                    inputProps={{ style:{color:'white',width: 140} }}
-                                    InputLabelProps={{ style:{color:'white'} }}
-                          />
-                      <DialogContent>
-                        <List>
-                          {filteredCuentas.map((c) => (
-                            <ListItem key={c.id_cuenta} onClick={() => handleCuentaSelect(c.id_cuenta, c.descripcion, "cuentaBaseModal")}>
-                              <ListItemText primary={`${c.id_cuenta} - ${c.descripcion}`} 
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </DialogContent>
-                    </Dialog>
-                    {/* FIN Seccion para mostrar Dialog tipo Modal */}
-
-              </Grid>
-              <Grid item xs={6} >
-                <Typography>{cuentaBaseDesc}</Typography>
-              </Grid>
-          </Grid>
-
-          <Grid container spacing={0}
-              direction={isSmallScreen ? 'row' : 'row'}
-              alignItems={isSmallScreen ? 'center' : 'start'}
-              justifyContent={isSmallScreen ? 'center' : 'start'}
-          > 
-              <Grid item xs={4.5} >
-              <TextField  variant="outlined" color="success" size="small"
-                    sx={{display:'block',
-                          margin:'.0rem 0'}}
-                    name="cuentaCargoDest"
-                    value={cuentaCargoDest}
-                    placeholder='Cta CargoDest'
-                    //onChange={actualizaValorFiltro}
-                    onKeyDown={handleCodigoKeyDown} //new para busqueda
-                    inputProps={{ style:{color:'white'} }}
-                    InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                          </InputAdornment>
-                        ),
-                        style:{color:'white'} 
-                    }}
-              />
-                    {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                    <Dialog
-                      open={showModal02}
-                      onClose={() => setShowModal02(false)}
-                      maxWidth="md"
-                      fullWidth
-                      PaperProps={{
-                        style: {
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          marginTop: '10vh', // Ajusta este valor según tus necesidades
-                          background:'#1e272e',
-                          color:'white'
-                        },
-                      }}
-                    >
-                      <DialogTitle>Listado de Cuentas</DialogTitle>
-                        <TextField variant="standard" 
-                                    maxWidth="md"
-                                    autoFocus
-                                    size="small"
-                                    //sx={{display:'block',
-                                    //      margin:'.5rem 0'}}
-                                    sx={{mt:-1}}
-                                    name="cuentaCargoDestModal"
-                                    inputRef={textFieldRef} // Referencia para el TextField
-                                    value={searchText02}
-                                    onChange={handleSearchTextChange02} //new para busqueda
-                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                    inputProps={{ style:{color:'white',width: 140} }}
-                                    InputLabelProps={{ style:{color:'white'} }}
-                          />
-                      <DialogContent>
-                        <List>
-                          {filteredCuentas02.map((c) => (
-                            <ListItem key={c.id_cuenta} onClick={() => handleCuentaSelect(c.id_cuenta, c.descripcion, "cuentaCargoDestModal")}>
-                              <ListItemText primary={`${c.id_cuenta} - ${c.descripcion}`} 
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </DialogContent>
-                    </Dialog>
-                    {/* FIN Seccion para mostrar Dialog tipo Modal */}
-
-              </Grid>
-              <Grid item xs={6} >
-                <Typography> {cuentaCargoDestDesc}</Typography>
-              </Grid>
-          </Grid>
-
-          <Grid container spacing={0}
-              direction={isSmallScreen ? 'row' : 'row'}
-              alignItems={isSmallScreen ? 'center' : 'start'}
-              justifyContent={isSmallScreen ? 'center' : 'start'}
-          > 
-              <Grid item xs={4.5} >
-              <TextField  variant="outlined" color="success" size="small"
-                    sx={{display:'block',
-                          margin:'.0rem 0'
-                        }}
-                    name="busqueda"
-                    value={cuentaAbonoDest}
-                    placeholder='Cta AbonoDest'
-                    //onChange={actualizaValorFiltro}
-                    inputProps={{ style:{textAlign: 'right', color:'white'} }}
-                    InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                          </InputAdornment>
-                        ),
-                        style:{color:'white'} 
-                    }}
-              />
-              </Grid>
-              <Grid item xs={6} >
-                <Typography>{cuentaAbonoDestDesc}</Typography>
-              </Grid>
-          </Grid>
-
-        </>
-        )
-        :
-        (   
-          <div></div>
-        )
-        }
-
       </Grid>
-
   </Grid>
-  <div>
-      <TextField variant="outlined" 
-                              placeholder="GLOSA"
-                              sx={{ display: 'block', margin: '.5rem 0' }}
-                              name="glosa"
-                              size='small'
-                              fullWidth
-                              value={glosa} 
-                              onChange={handleChange}                              
-                              inputProps={{ style: { color: 'white' } }}
-                              InputLabelProps={{ style: { color: 'skyblue' } }}
-      />
-  </div>
 
-                          { (showModalAsTipoCompra) ?
-                            (   <>
-                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                                        <Dialog
-                                          open={showModalAsTipoCompra}
-                                          onClose={() => setShowModalAsTipoCompra(false)}
-                                          maxWidth="md" // Valor predeterminado de 960px
-                                          //fullWidth
-                                          disableScrollLock // Evita que se modifique el overflow del body
-                                          PaperProps={{
-                                            style: {
-                                              top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "-20%" : "0%", // Centrado horizontal
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              alignItems: 'center',
-                                              //marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                              background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
-                                              color:'white',
-                                              width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
-                                              //width: isSmallScreen ? "90vw" : "500px",                                              
-                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                            },
-                                          }}
-                                        >
-                                        <DialogTitle>Asiento Tipo</DialogTitle>
-                                            <Tooltip title={searchText}>
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="CUENTA 6XX"
-                                              //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
-                                              //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
-                                              autoFocus
-                                              size="small"
-                                              name="cuentaBaseModal"
-                                              value={(asientoTipo.cuentaBase + " " + asientoTipo.cuentaBaseDesc).trim() || ""}
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              InputProps={{
-                                                style: { color: 'white', width: 270 },
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    
-                                                    <IconButton
-                                                      color="primary"
-                                                      //color = 'rgba(33, 150, 243, 0.8)'
-                                                      aria-label="upload picture"
-                                                      component="label"
-                                                      size="small"
-                                                      sx={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: 0,
-                                                        transform: 'translateY(-50%)',
-                                                      }}
-                                                      onClick={() => {
-                                                        cargaCuentaContable('6');
-                                                        setShowModalCuentaBase(true);
-                                                      }}
-                                                    >
-                                                      <FindIcon />
-                                                    </IconButton>
-                                                    
-                                                    { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
-                                                    isSmallScreen ? (
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="Muestra teclado"
-                                                      size="small"
-                                                      //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
-                                                      sx={{
-                                                        padding: '0px',
-                                                        //height:'30',
-                                                        marginLeft:'20px',
-                                                        marginRight: '-30px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <KeyboardIcon />
-                                                    </IconButton>
-                                                    )
-                                                    :
-                                                    null
-                                                  }
-
-                                                  </InputAdornment>
-                                                ),
-
-                                                // Aquí se ajusta el padding del texto sin afectar el icono
-                                                inputProps: {
-                                                  style: {
-                                                    paddingLeft: '32px', // Mueve solo el texto a la derecha
-                                                      fontSize: '12px', // Ajusta el tamaño de letra aquí
-                                                  },
-                                                },
-                                              }}
-                                            />
-                                            </Tooltip>
-                                                  <ListaPopUp
-                                                      registroPopUp={cuenta_select}
-                                                      showModal={showModalCuentaBase}
-                                                      setShowModal={setShowModalCuentaBase}
-                                                      registro={asientoTipo}                    
-                                                      setRegistro={setAsientoTipo}                    
-                                                      idCodigoKey="cuentaBase"
-                                                      descripcionKey="cuentaBaseDesc"
-                                                      auxiliarKey="auxiliar"
-                                                  />
-
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="DESTINO CARGO"
-                                              //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
-                                              //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
-                                              autoFocus
-                                              size="small"
-                                              name="cuentaCargoDest"
-                                              value={(asientoTipo.cuentaCargoDest + " " + asientoTipo.cuentaCargoDestDesc).trim() || ""}                                              
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              InputProps={{
-                                                style: { color: 'white', width: 270 },
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    
-                                                    <IconButton
-                                                      color="primary"
-                                                      //color = 'rgba(33, 150, 243, 0.8)'
-                                                      aria-label="upload picture"
-                                                      component="label"
-                                                      size="small"
-                                                      sx={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: 0,
-                                                        transform: 'translateY(-50%)',
-                                                      }}
-                                                      onClick={() => {
-                                                        cargaAmarreContable(asientoTipo.cuentaBase);
-                                                        setShowModalCuentaDestino(true);
-                                                      }}
-                                                    >
-                                                      <FindIcon />
-                                                    </IconButton>
-                                                    
-                                                    { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
-                                                    isSmallScreen ? (
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="Muestra teclado"
-                                                      size="small"
-                                                      //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
-                                                      sx={{
-                                                        padding: '0px',
-                                                        //height:'30',
-                                                        marginLeft:'20px',
-                                                        marginRight: '-30px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <KeyboardIcon />
-                                                    </IconButton>
-                                                    )
-                                                    :
-                                                    null
-                                                  }
-
-                                                  </InputAdornment>
-                                                ),
-
-                                                // Aquí se ajusta el padding del texto sin afectar el icono
-                                                inputProps: {
-                                                  style: {
-                                                    paddingLeft: '32px', // Mueve solo el texto a la derecha
-                                                      fontSize: '12px', // Ajusta el tamaño de letra aquí
-                                                  },
-                                                },
-                                              }}
-                                            />
-                                                  <ListaPopUp
-                                                      registroPopUp={cuenta_select}
-                                                      showModal={showModalCuentaDestino}
-                                                      setShowModal={setShowModalCuentaDestino}
-                                                      registro={asientoTipo}                    
-                                                      setRegistro={setAsientoTipo}                    
-                                                      idCodigoKey="cuentaCargoDest"
-                                                      descripcionKey="cuentaCargoDestDesc"
-                                                      auxiliarKey="cuentaAbonoDest"
-                                                  />
-
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="DESTINO ABONO"
-                                              //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
-                                              //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
-                                              autoFocus
-                                              size="small"
-                                              name="cuentaAbonoDest"
-                                              //value={asientoTipo.cuentaAbonoDest}
-                                              value={(asientoTipo.cuentaAbonoDest + " " + asientoTipo.cuentaAbonoDestDesc).trim().substring(0,16) || ""}
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              //inputProps={{ style:{textAlign: 'right', color:'white'} }}
-                                              InputProps={{
-                                                style: { color: 'white', width: 270 },
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    
-                                                    <IconButton
-                                                      color="primary"
-                                                      //color = 'rgba(33, 150, 243, 0.8)'
-                                                      aria-label="upload picture"
-                                                      component="label"
-                                                      size="small"
-                                                      sx={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: 0,
-                                                        transform: 'translateY(-50%)',
-                                                      }}
-                                                      onClick={() => {
-                                                        cargaCuentaContable('');
-                                                        setShowModalCuentaDestino02(true);
-                                                      }}
-                                                    >
-                                                      <FindIcon />
-                                                    </IconButton>
-                                                    
-                                                    { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
-                                                    isSmallScreen ? (
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="Muestra teclado"
-                                                      size="small"
-                                                      //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
-                                                      sx={{
-                                                        padding: '0px',
-                                                        //height:'30',
-                                                        marginLeft:'20px',
-                                                        marginRight: '-30px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <KeyboardIcon />
-                                                    </IconButton>
-                                                    )
-                                                    :
-                                                    null
-                                                  }
-
-                                                  </InputAdornment>
-                                                ),
-
-                                                // Aquí se ajusta el padding del texto sin afectar el icono
-                                                inputProps: {
-                                                  style: {
-                                                      paddingLeft: '32px', // Mueve solo el texto a la derecha
-                                                      fontSize: '12px', // Ajusta el tamaño de letra aquí
-                                                      textAlign: 'right'
-                                                  },
-                                                },
-                                              }}
-                                            />
-                                                  <ListaPopUp
-                                                      registroPopUp={cuenta_select}
-                                                      showModal={showModalCuentaDestino02}
-                                                      setShowModal={setShowModalCuentaDestino02}
-                                                      registro={asientoTipo}                    
-                                                      setRegistro={setAsientoTipo}                    
-                                                      idCodigoKey="cuentaAbonoDest"
-                                                      descripcionKey="cuentaAbonoDestDesc"
-                                                      auxiliarKey=""
-                                                  />
-
-                                            <Button variant='contained' 
-                                                        color='success' 
-                                                        onClick={()=>{
-                                                          handleProcesaAsientos();
-                                                          }
-                                                        }
-                                                        sx={{display:'block',margin:'.5rem 0', width: 270}}
-                                                        >
-                                                        PROCESAR
-                                            </Button>
-                                            <Button variant='contained' 
-                                                        //color='warning' 
-                                                        //size='small'
-                                                        onClick={()=>{
-                                                              setShowModalAsTipoCompra(false);
-                                                          }
-                                                        }
-                                                        sx={{display:'block',
-                                                             margin:'.5rem 0',
-                                                             width: 270, 
-                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                            '&:hover': {
-                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                                },                                                             
-                                                             mt:-0.5}}
-                                                        >
-                                                        ESC - CERRAR
-                                            </Button>
-
-
-                                        </Dialog>
-                                        {/* FIN Seccion para mostrar Dialog tipo Modal */}
-                                </>
+  { (showModalAsTipoVenta) ?
+    (   <>
+                {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                <Dialog
+                  open={showModalAsTipoVenta}
+                  onClose={() => setShowModalAsTipoVenta(false)}
+                  maxWidth="md" // Valor predeterminado de 960px
+                  //fullWidth
+                  disableScrollLock // Evita que se modifique el overflow del body
+                  PaperProps={{
+                    style: {
+                      top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                      left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      //marginTop: '10vh', // Ajusta este valor según tus necesidades
+                      background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
+                      color:'white',
+                      width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
+                      //width: isSmallScreen ? "90vw" : "500px",                                              
+                      //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                    },
+                  }}
+                >
+                <DialogTitle>Asiento Tipo</DialogTitle>
+                    <Tooltip title={searchText}>
+                    <TextField
+                      variant="outlined"
+                      placeholder="CUENTA 70X"
+                      //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
+                      //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
+                      autoFocus
+                      size="small"
+                      name="cuentaBaseModal"
+                      value={(asientoTipo.cuentaBase + " " + asientoTipo.cuentaBaseDesc).trim() || ""}
+                      InputLabelProps={{ style: { color: 'white' } }}
+                      InputProps={{
+                        style: { color: 'white', width: 270 },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            
+                            <IconButton
+                              color="primary"
+                              //color = 'rgba(33, 150, 243, 0.8)'
+                              aria-label="upload picture"
+                              component="label"
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: 0,
+                                transform: 'translateY(-50%)',
+                              }}
+                              onClick={() => {
+                                cargaCuentaContable('7');
+                                setShowModalCuentaBase(true);
+                              }}
+                            >
+                              <FindIcon />
+                            </IconButton>
+                            
+                            { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
+                            isSmallScreen ? (
+                            <IconButton
+                              color="default"
+                              aria-label="Muestra teclado"
+                              size="small"
+                              //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
+                              sx={{
+                                padding: '0px',
+                                //height:'30',
+                                marginLeft:'20px',
+                                marginRight: '-30px',
+                                backgroundColor: 'primary', // Color de fondo del ícono
+                                borderRadius: '4px', // Bordes redondeados
+                                '&:hover': {
+                                  backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                },
+                              }}                                                        
+                            >
+                              <KeyboardIcon />
+                            </IconButton>
                             )
                             :
-                            (   
-                              <>
-                              </>
-                            )
+                            null
                           }
+
+                          </InputAdornment>
+                        ),
+
+                        // Aquí se ajusta el padding del texto sin afectar el icono
+                        inputProps: {
+                          style: {
+                            paddingLeft: '32px', // Mueve solo el texto a la derecha
+                              fontSize: '12px', // Ajusta el tamaño de letra aquí
+                          },
+                        },
+                      }}
+                    />
+                    </Tooltip>
+                          <ListaPopUp
+                              registroPopUp={cuenta_select}
+                              showModal={showModalCuentaBase}
+                              setShowModal={setShowModalCuentaBase}
+                              registro={asientoTipo}                    
+                              setRegistro={setAsientoTipo}                    
+                              idCodigoKey="cuentaBase"
+                              descripcionKey="cuentaBaseDesc"
+                              auxiliarKey="auxiliar"
+                          />
+
+                    <TextField
+                      variant="outlined"
+                      placeholder="GLOSA"
+                      autoFocus
+                      size="small"
+                      name="glosa"
+                      value={glosa}
+                      onChange={handleChange}
+                      multiline
+                      rows={3} // Muestra 3 líneas de altura                                              
+                      InputLabelProps={{ style: { color: 'white' } }}
+                      //inputProps={{ style:{textAlign: 'right', color:'white'} }}
+                      InputProps={{
+                        style: { color: 'white', width: 270 },
+                        // Aquí se ajusta el padding del texto sin afectar el icono
+                        inputProps: {
+                          style: {
+                              paddingLeft: '32px', // Mueve solo el texto a la derecha
+                              fontSize: '12px', // Ajusta el tamaño de letra aquí
+                              textAlign: 'left'
+                          },
+                        },
+                      }}
+                    />
+
+                    <Button variant='contained' 
+                                color='success' 
+                                onClick={()=>{
+                                  handleProcesaAsientos();
+                                  }
+                                }
+                                sx={{display:'block',margin:'.5rem 0', width: 270}}
+                                >
+                                PROCESAR
+                    </Button>
+                    <Button variant='contained' 
+                                //color='warning' 
+                                //size='small'
+                                onClick={()=>{
+                                      setShowModalAsTipoVenta(false);
+                                  }
+                                }
+                                sx={{display:'block',
+                                      margin:'.5rem 0',
+                                      width: 270, 
+                                      backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                    '&:hover': {
+                                          backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                        },                                                             
+                                      mt:-0.5}}
+                                >
+                                ESC - CERRAR
+                    </Button>
+
+
+                </Dialog>
+                {/* FIN Seccion para mostrar Dialog tipo Modal */}
+        </>
+    )
+    :
+    (   
+      <>
+      </>
+    )
+  }
+
+  { (showModalAsTipoCompra) ?
+    (   <>
+                {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                <Dialog
+                  open={showModalAsTipoCompra}
+                  onClose={() => setShowModalAsTipoCompra(false)}
+                  maxWidth="md" // Valor predeterminado de 960px
+                  //fullWidth
+                  disableScrollLock // Evita que se modifique el overflow del body
+                  PaperProps={{
+                    style: {
+                      top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                      left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      //marginTop: '10vh', // Ajusta este valor según tus necesidades
+                      background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
+                      color:'white',
+                      width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
+                      //width: isSmallScreen ? "90vw" : "500px",                                              
+                      //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                    },
+                  }}
+                >
+                <DialogTitle>Asiento Tipo</DialogTitle>
+                    <Tooltip title={searchText}>
+                    <TextField
+                      variant="outlined"
+                      placeholder="CUENTA 6XX"
+                      //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
+                      //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
+                      autoFocus
+                      size="small"
+                      name="cuentaBaseModal"
+                      value={(asientoTipo.cuentaBase + " " + asientoTipo.cuentaBaseDesc).trim() || ""}
+                      InputLabelProps={{ style: { color: 'white' } }}
+                      InputProps={{
+                        style: { color: 'white', width: 270 },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            
+                            <IconButton
+                              color="primary"
+                              //color = 'rgba(33, 150, 243, 0.8)'
+                              aria-label="upload picture"
+                              component="label"
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: 0,
+                                transform: 'translateY(-50%)',
+                              }}
+                              onClick={() => {
+                                cargaCuentaContable('6');
+                                setShowModalCuentaBase(true);
+                              }}
+                            >
+                              <FindIcon />
+                            </IconButton>
+                            
+                            { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
+                            isSmallScreen ? (
+                            <IconButton
+                              color="default"
+                              aria-label="Muestra teclado"
+                              size="small"
+                              //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
+                              sx={{
+                                padding: '0px',
+                                //height:'30',
+                                marginLeft:'20px',
+                                marginRight: '-30px',
+                                backgroundColor: 'primary', // Color de fondo del ícono
+                                borderRadius: '4px', // Bordes redondeados
+                                '&:hover': {
+                                  backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                },
+                              }}                                                        
+                            >
+                              <KeyboardIcon />
+                            </IconButton>
+                            )
+                            :
+                            null
+                          }
+
+                          </InputAdornment>
+                        ),
+
+                        // Aquí se ajusta el padding del texto sin afectar el icono
+                        inputProps: {
+                          style: {
+                            paddingLeft: '32px', // Mueve solo el texto a la derecha
+                              fontSize: '12px', // Ajusta el tamaño de letra aquí
+                          },
+                        },
+                      }}
+                    />
+                    </Tooltip>
+                          <ListaPopUp
+                              registroPopUp={cuenta_select}
+                              showModal={showModalCuentaBase}
+                              setShowModal={setShowModalCuentaBase}
+                              registro={asientoTipo}                    
+                              setRegistro={setAsientoTipo}                    
+                              idCodigoKey="cuentaBase"
+                              descripcionKey="cuentaBaseDesc"
+                              auxiliarKey="auxiliar"
+                          />
+
+                    <TextField
+                      variant="outlined"
+                      placeholder="DESTINO CARGO"
+                      //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
+                      //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
+                      autoFocus
+                      size="small"
+                      name="cuentaCargoDest"
+                      value={(asientoTipo.cuentaCargoDest + " " + asientoTipo.cuentaCargoDestDesc).trim() || ""}                                              
+                      InputLabelProps={{ style: { color: 'white' } }}
+                      InputProps={{
+                        style: { color: 'white', width: 270 },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            
+                            <IconButton
+                              color="primary"
+                              //color = 'rgba(33, 150, 243, 0.8)'
+                              aria-label="upload picture"
+                              component="label"
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: 0,
+                                transform: 'translateY(-50%)',
+                              }}
+                              onClick={() => {
+                                cargaAmarreContable(asientoTipo.cuentaBase);
+                                setShowModalCuentaDestino(true);
+                              }}
+                            >
+                              <FindIcon />
+                            </IconButton>
+                            
+                            { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
+                            isSmallScreen ? (
+                            <IconButton
+                              color="default"
+                              aria-label="Muestra teclado"
+                              size="small"
+                              //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
+                              sx={{
+                                padding: '0px',
+                                //height:'30',
+                                marginLeft:'20px',
+                                marginRight: '-30px',
+                                backgroundColor: 'primary', // Color de fondo del ícono
+                                borderRadius: '4px', // Bordes redondeados
+                                '&:hover': {
+                                  backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                },
+                              }}                                                        
+                            >
+                              <KeyboardIcon />
+                            </IconButton>
+                            )
+                            :
+                            null
+                          }
+
+                          </InputAdornment>
+                        ),
+
+                        // Aquí se ajusta el padding del texto sin afectar el icono
+                        inputProps: {
+                          style: {
+                            paddingLeft: '32px', // Mueve solo el texto a la derecha
+                              fontSize: '12px', // Ajusta el tamaño de letra aquí
+                          },
+                        },
+                      }}
+                    />
+                          <ListaPopUp
+                              registroPopUp={cuenta_select}
+                              showModal={showModalCuentaDestino}
+                              setShowModal={setShowModalCuentaDestino}
+                              registro={asientoTipo}                    
+                              setRegistro={setAsientoTipo}                    
+                              idCodigoKey="cuentaCargoDest"
+                              descripcionKey="cuentaCargoDestDesc"
+                              auxiliarKey="cuentaAbonoDest"
+                          />
+
+                    <TextField
+                      variant="outlined"
+                      placeholder="DESTINO ABONO"
+                      //inputRef={inputProductoRef} // Asocia la referencia al campo de texto
+                      //onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
+                      autoFocus
+                      size="small"
+                      name="cuentaAbonoDest"
+                      //value={asientoTipo.cuentaAbonoDest}
+                      value={(asientoTipo.cuentaAbonoDest + " " + asientoTipo.cuentaAbonoDestDesc).trim().substring(0,16) || ""}
+                      InputLabelProps={{ style: { color: 'white' } }}
+                      //inputProps={{ style:{textAlign: 'right', color:'white'} }}
+                      InputProps={{
+                        style: { color: 'white', width: 270 },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            
+                            <IconButton
+                              color="primary"
+                              //color = 'rgba(33, 150, 243, 0.8)'
+                              aria-label="upload picture"
+                              component="label"
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: 0,
+                                transform: 'translateY(-50%)',
+                              }}
+                              onClick={() => {
+                                cargaCuentaContable('');
+                                setShowModalCuentaDestino02(true);
+                              }}
+                            >
+                              <FindIcon />
+                            </IconButton>
+                            
+                            { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
+                            isSmallScreen ? (
+                            <IconButton
+                              color="default"
+                              aria-label="Muestra teclado"
+                              size="small"
+                              //onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
+                              sx={{
+                                padding: '0px',
+                                //height:'30',
+                                marginLeft:'20px',
+                                marginRight: '-30px',
+                                backgroundColor: 'primary', // Color de fondo del ícono
+                                borderRadius: '4px', // Bordes redondeados
+                                '&:hover': {
+                                  backgroundColor: 'skyblue', // Color de fondo al hacer hover
+                                },
+                              }}                                                        
+                            >
+                              <KeyboardIcon />
+                            </IconButton>
+                            )
+                            :
+                            null
+                          }
+
+                          </InputAdornment>
+                        ),
+
+                        // Aquí se ajusta el padding del texto sin afectar el icono
+                        inputProps: {
+                          style: {
+                              paddingLeft: '32px', // Mueve solo el texto a la derecha
+                              fontSize: '12px', // Ajusta el tamaño de letra aquí
+                              textAlign: 'right'
+                          },
+                        },
+                      }}
+                    />
+                          <ListaPopUp
+                              registroPopUp={cuenta_select}
+                              showModal={showModalCuentaDestino02}
+                              setShowModal={setShowModalCuentaDestino02}
+                              registro={asientoTipo}                    
+                              setRegistro={setAsientoTipo}                    
+                              idCodigoKey="cuentaAbonoDest"
+                              descripcionKey="cuentaAbonoDestDesc"
+                              auxiliarKey=""
+                          />
+
+                    <TextField
+                      variant="outlined"
+                      placeholder="GLOSA"
+                      autoFocus
+                      size="small"
+                      name="glosa"
+                      multiline
+                      rows={3} // Muestra 3 líneas de altura                                              
+                      value={glosa}
+                      onChange={handleChange}
+                      InputLabelProps={{ style: { color: 'white' } }}
+                      //inputProps={{ style:{textAlign: 'right', color:'white'} }}
+                      InputProps={{
+                        style: { color: 'white', width: 270 },
+                        // Aquí se ajusta el padding del texto sin afectar el icono
+                        inputProps: {
+                          style: {
+                              paddingLeft: '32px', // Mueve solo el texto a la derecha
+                              fontSize: '12px', // Ajusta el tamaño de letra aquí
+                              textAlign: 'left'
+                          },
+                        },
+                      }}
+                    />
+
+                    <Button variant='contained' 
+                                color='success' 
+                                onClick={()=>{
+                                  handleProcesaAsientos();
+                                  }
+                                }
+                                sx={{display:'block',margin:'.5rem 0', width: 270}}
+                                >
+                                PROCESAR
+                    </Button>
+                    <Button variant='contained' 
+                                //color='warning' 
+                                //size='small'
+                                onClick={()=>{
+                                      setShowModalAsTipoCompra(false);
+                                  }
+                                }
+                                sx={{display:'block',
+                                      margin:'.5rem 0',
+                                      width: 270, 
+                                      backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                    '&:hover': {
+                                          backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                        },                                                             
+                                      mt:-0.5}}
+                                >
+                                ESC - CERRAR
+                    </Button>
+
+
+                </Dialog>
+                {/* FIN Seccion para mostrar Dialog tipo Modal */}
+        </>
+    )
+    :
+    (   
+      <>
+      </>
+    )
+  }
 
   <Datatable
       //title="GENERADOR - Asientos"
@@ -1247,7 +987,7 @@ export default function AsientoListPrev() {
                                                   sx={{display:'block',
                                                         margin:'.0rem 0'}}
                                                   name="busqueda"
-                                                  placeholder='GENERADOR:  Ruc  -  Razon Social  -  Serie'
+                                                  placeholder='ASIENTOS TIPO:  Ruc - Razon Social - Serie'
                                                   onChange={actualizaValorFiltro}
                                                   inputProps={{ style:{color:'white', textAlign: 'center', textTransform: 'uppercase'} }}
                                                   InputProps={{
