@@ -1772,9 +1772,11 @@ export default function AdminVentaForm() {
                                           onClose={() => setShowModalProducto(false)}
                                           maxWidth="md" // Valor predeterminado de 960px
                                           //fullWidth
-                                          fullScreen={isSmallScreen} // Se activa en pantallas pequeñas
+                                          disableScrollLock // Evita que se modifique el overflow del body
                                           PaperProps={{
                                             style: {
+                                              top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                                              left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
                                               display: 'flex',
                                               flexDirection: 'column',
                                               alignItems: 'center',
@@ -1783,8 +1785,9 @@ export default function AdminVentaForm() {
                                               //background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
                                               background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
                                               color:'white',
-                                              width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                              width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
+                                              //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
                                             },
                                           }}
                                         >
@@ -2056,9 +2059,12 @@ export default function AdminVentaForm() {
                                           open={showModalEmite}
                                           onClose={() => setShowModalEmite(false)}
                                           maxWidth="md" // Valor predeterminado de 960px
-                                          fullWidth
+                                          //fullWidth
+                                          disableScrollLock // Evita que se modifique el overflow del body
                                           PaperProps={{
                                             style: {
+                                              top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                                              left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
                                               display: 'flex',
                                               flexDirection: 'column',
                                               alignItems: 'center',
@@ -2067,8 +2073,9 @@ export default function AdminVentaForm() {
                                               background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
                                               //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
                                               color:'white',
-                                              width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                              width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
+                                              //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
                                             },
                                           }}
                                         >
