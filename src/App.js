@@ -27,6 +27,8 @@ import AdminVentaList from "./components/Admin/AdminVentaList";
 import AdminProductoList from "./components/Admin/AdminProductoList";
 import AdminProductoForm from "./components/Admin/AdminProductoForm";
 import AdminVentaForm from "./components/Admin/AdminVentaForm";
+import AdminEquipoList from "./components/Admin/AdminEquipoList";
+import AdminEquipoForm from "./components/Admin/AdminEquipoForm";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -63,6 +65,10 @@ function App(props) {
          { /* Agregar desde Panel (un registro01 Libre)
                Agregar Clonado desde Panel (un registro01 con Numero Orden y datos adicionales)
                Agregar desde Form Orden (un registro01 con Numero Orden)   */ }
+          <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id" element={<AdminEquipoList />} />          
+          <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminEquipoForm />} />          
+          <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/:id_equipo/edit" element={<AdminEquipoForm />} />
+
           <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />
           <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaForm />} />
           <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/:comprobante_ref" element={<AdminVentaForm />} />

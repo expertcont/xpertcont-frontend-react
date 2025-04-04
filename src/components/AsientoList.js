@@ -204,6 +204,15 @@ export default function AsientoList() {
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
   
   const [datosPopUp,setDatosPopUp] = useState([]);
+  
+  //Variables de estado Control - SIRE
+  const [sire_tpropuesta, setSireTPropuesta] = useState("");      //ticket propuesta
+  const [sire_tpropuesta_est, setSireTPropuestaEst] = useState("");      //ticket estado (nombre archivo)
+
+  const [sire_tpropuesta_dw, setSireTPropuestaDW] = useState(""); //"1" = propuesta descargada
+  const [sire_tpropuesta_ok, setSireTPropuestaOK] = useState(""); //"1" = propuesta aceptada
+
+  const [sire_treemplazo, setSireTReemplazo] = useState("");      //ticket de reemplazado (directo)
 
   const handleChange = e => {
     //Para todos los demas casos ;)
@@ -300,15 +309,47 @@ export default function AsientoList() {
     periodo: '',
     id_libro: '',
     id_invitado: '',
+    ticket: '',
+    nombre_archivo_rep:'' //new para descarga
   });  
 
   const handleRowSelected = useCallback(state => {
 		setSelectedRows(state.selectedRows);
 	}, []);
 
-  /*const handleRecarga = () => {
-    setUpdateTrigger(Math.random());//experimento
-  };*/
+  const handlePropuesta = async() => {
+    //consultar estado del ticket
+    if (sire_tpropuesta !== ""){
+      //si existe nombre archivo, descarga
+      //alert('ticket disponible');
+      //PREGUNTAR POR EL ESTADO, CONSUMIR API /sire/ticket/estado
+
+      //si es existe nombre archivo ..consumir API  /sire/ticket/descarga
+      cargaEstadoTicket();
+
+      if (sire_tpropuesta_est !== ""){
+        alert('archivo: '+sire_tpropuesta_est);
+      }
+      
+      console.log('json para descarga:',datosCarga);
+      //consumir API importarSire, pero con parametro indicando que consumir API adicional en backend
+      const formData = new FormData();
+      formData.append('datosCarga', JSON.stringify(datosCarga));
+
+      await fetch(`${back_host}/asientosireventas`, {
+              method: 'POST',
+              body: formData,
+      });
+      
+      handleActualizaImportaOK();
+
+    }else{
+      alert('GENERANDO TICKET');
+    }
+    //caso contrario mostra mensaje 'SUNAT procesando ...' cualquier problema sunat tiene la culpa por no responder su pinche archivo txt
+
+    //setUpdateTrigger(Math.random());//experimento
+  };
 
   const handleUpdate = (num_asiento) => {
     //var num_asiento;
@@ -673,8 +714,7 @@ export default function AsientoList() {
 
   // Función que se pasa como prop al componente.js
   const handleActualizaImportaOK = () => {
-    
-    console.log('valorVista,periodo_trabajo,contabilidad_trabajo:', valorVista,periodo_trabajo,contabilidad_trabajo);
+    //console.log('valorVista,periodo_trabajo,contabilidad_trabajo:', valorVista,periodo_trabajo,contabilidad_trabajo);
     cargaRegistro(valorVista,periodo_trabajo,contabilidad_trabajo);
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
     // Puedes realizar otras operaciones con la cantidad de filas si es necesario
@@ -887,7 +927,7 @@ export default function AsientoList() {
 
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
-      
+      console.log('1ER useeffect');
       // Realiza acciones cuando isAuthenticated cambia
       //Verificar historial periodo 
       const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo');
@@ -997,10 +1037,16 @@ export default function AsientoList() {
 
     //Datos listos en caso de volver por aqui, para envio
     setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: st_periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
+    //setDatosCarga(prevState => ({ ...prevState, periodo: st_periodo_trabajo }));
+    //setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
+    //setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
+    setDatosCarga(prevState => ({ ...prevState, periodo: periodo_trabajo }));
+    setDatosCarga(prevState => ({ ...prevState, documento_id: contabilidad_trabajo }));
+    setDatosCarga(prevState => ({ ...prevState, id_libro: id_libro }));
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
+
+    //Cargar ticket sire si existe
+    cargaTicketDB();
 
   },[permisosComando, pVenta0101, pCompra0201, pCaja0301, pDiario0401, valorVista]) //Solo cuando este completo estado
 
@@ -1089,6 +1135,53 @@ export default function AsientoList() {
         setContabilidadTrabajo(strHistorialContabilidad); 
         setContabilidadNombre(strHistorialContabilidadNombre); 
       }
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+
+  const cargaTicketDB = () =>{
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: `${back_host}/sire/ticket/consulta`,
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      data : datosCarga
+    };
+
+    axios
+    .request(config)
+    .then((response) => {
+      //console.log('datosCarga: ',datosCarga);
+      //console.log('response.data.ticket aaaaaaa: ',response.data);
+      setSireTPropuesta(response.data.ticket);
+      setDatosCarga(prevState => ({ ...prevState, ticket: response.data.ticket }));
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+  const cargaEstadoTicket = () =>{
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: `${back_host}/sire/ticket/estado`,
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      data : datosCarga
+    };
+
+    axios
+    .request(config)
+    .then((response) => {
+      //console.log('datosCarga: ',datosCarga);
+      console.log('response.data nombre_archivo_rep: ',response.data.nombre_archivo_rep);
+      setSireTPropuestaEst(response.data.nombre_archivo_rep);
+      setDatosCarga(prevState => ({ ...prevState, nombre_archivo_rep: response.data.nombre_archivo_rep }));
     })
     .catch((error) => {
         console.log(error);
@@ -1645,6 +1738,36 @@ export default function AsientoList() {
                 <div></div>
             )
           }
+        </Grid>
+
+        <Grid item xs={isSmallScreen ? 2 : 2}>    
+          <Tooltip title='IMPORTAR SIRE' >
+            {(id_libro==='014' || id_libro==='008') ? 
+            (
+              <Button variant='contained' 
+                      startIcon={<DownloadIcon />}
+                      fullWidth
+                      color='primary'
+                      //sx={{display:'block',margin:'.0rem 0'}}
+                      sx={{
+                        justifyContent: "flex-start", // Alinea el contenido a la izquierda
+                        textAlign: "left", // Asegura que el texto se mantenga alineado
+                        //width: 200, // Define un ancho para ver el efecto
+                      }}                      
+                      onClick={() => {
+                        handlePropuesta();
+                        }
+                      }
+                      >
+                {(sire_tpropuesta === "") ? "PROPUESTA" : "TK:" + sire_tpropuesta}
+              </Button>
+            )
+            :
+            (
+              <div></div>
+            )
+            }
+          </Tooltip>
         </Grid>
 
         <Grid item xs={isSmallScreen ? 2 : 0.7}>    

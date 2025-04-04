@@ -445,7 +445,8 @@ export default function NavBar(props) {
                         }}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
-                                  navigate(`/producto`);
+                                  //navigate(`/producto`);
+                                  navigate(`/ad_equipo/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
                                   handleClick('icono08');
                                                 }
                                 }
