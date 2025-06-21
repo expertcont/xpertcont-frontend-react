@@ -806,7 +806,7 @@ export default function AdminVentaForm() {
     //Datos de emision
     if (valorEmite === '03' || valorEmite === 'NV'){
       //Regla en Boletas 
-      setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '0000001' }));
+      setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '00000001' }));
       setDatosEmitir(prevState => ({ ...prevState, r_razon_social: 'VARIOS' }));
       setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '1' }));
       setIdDocBusca('1');
@@ -831,6 +831,10 @@ export default function AdminVentaForm() {
   },[valorEmite]) //Cambios en Emision, actualiza 'datosEmitir'
 
   useEffect(() => {
+    //Falta Consultar activo en parametros, precio por cantidad
+    
+    ///////////////////////////////////////////////////////////
+
     setParams({
       id_anfitrion,
       id_invitado,
@@ -900,6 +904,8 @@ export default function AdminVentaForm() {
     let precio_neto;
     
     if (e.target.name === "cantidad"){
+      //Falta aplicar precio por cantidades, si estubiera acvtivo en tabla mve_parametros (se verifica al inicio useEffect form Venta)
+      
       precio_neto = producto.precio_unitario * e.target.value;
       //setProducto({...producto, [precio_neto]: precio_neto});
       console.log('modificando cantidad, importe nuevo: ', precio_neto);

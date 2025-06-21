@@ -357,9 +357,9 @@ export default function AdminEquipoList() {
     let filePath;
     let fileName;
 
-    filePath = '/productos_prueba.xlsx';
+    filePath = '/equipos_prueba.xlsx';
     // Nombre del archivo para la descarga
-    fileName = 'productos_prueba.xlsx';
+    fileName = 'equipos_prueba.xlsx';
 
     // URL completa del archivo
     const fileUrl = process.env.PUBLIC_URL + filePath;
@@ -482,7 +482,7 @@ export default function AdminEquipoList() {
       </Grid>
 
       <Grid item xs={isSmallScreen ? 12 : 10}>
-        <AdminFileProducto datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK}></AdminFileProducto>          
+        <AdminFileProducto datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK} urlApiDestino='/ad_equipoexcel'></AdminFileProducto>          
       </Grid>
 
       <Grid item xs={isSmallScreen ? 12 : 12} >

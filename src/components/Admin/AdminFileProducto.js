@@ -8,7 +8,7 @@ import TaskIcon from '@mui/icons-material/Task';
 import Swal from 'sweetalert2';
 import Tooltip from '@mui/material/Tooltip';
 
-const AsientoFileProducto = ({datosCarga,onActualizaImportaOK}) => {
+const AsientoFileProducto = ({datosCarga,onActualizaImportaOK,urlApiDestino}) => {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileType, setSelectedFileType] = useState(null);  //(xlsx) or (txt)
@@ -61,7 +61,7 @@ const AsientoFileProducto = ({datosCarga,onActualizaImportaOK}) => {
       try {
         // Realiza la llamada a la API
         console.log('filtramos excel productos');
-        await fetch(`${back_host}/ad_productoexcel`, {
+        await fetch(`${back_host}${urlApiDestino}`, {
             method: 'POST',
             body: formData,
         });

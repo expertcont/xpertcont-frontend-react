@@ -42,7 +42,7 @@ import BotonExcelVentas from '../BotonExcelVentas';
 import AdminFileProducto from './AdminFileProducto';
 import { saveAs } from 'file-saver';
 
-export default function AdminProductoList() {
+export default function AdminCertificadoList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -183,8 +183,8 @@ export default function AdminProductoList() {
   });  
 
   const handleRowSelected = useCallback(state => {
-		setSelectedRows(state.selectedRows);
-	}, []);
+        setSelectedRows(state.selectedRows);
+    }, []);
 
   const handleUpdate = (id_producto) => {
     //Mostrar formulario para edicion

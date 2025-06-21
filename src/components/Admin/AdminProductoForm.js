@@ -41,7 +41,7 @@ export default function ProductoForm() {
         headers: {"Content-Type":"application/json"}
       });
     }else{
-      producto.id_usuario = params.id_anfitrion;
+      producto.id_anfitrion = params.id_anfitrion;
       producto.documento_id = params.documento_id;
       console.log('antes de grabar:', producto);
 
