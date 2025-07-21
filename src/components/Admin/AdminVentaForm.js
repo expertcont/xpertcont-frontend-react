@@ -80,6 +80,7 @@ export default function AdminVentaForm() {
   //////////////////////////////////////////////////////////
 
   const [producto_select,setProductoSelect] = useState([]);
+  const [precio_select,setPrecioSelect] = useState([]);
   
   //Permisos Nivel 02
   const {user, isAuthenticated } = useAuth0();
@@ -703,6 +704,16 @@ export default function AdminVentaForm() {
         console.log(error);
     });
   }
+  const cargaPreciosRangoProducto = (sIdProducto) =>{
+    axios
+    .get(`${back_host}/ad_productopreciorango/${params.id_anfitrion}/${params.documento_id}/${sIdProducto}`)
+    .then((response) => {
+        setPrecioSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
 
   const handleCuentaSelect = (codigo, descripcion, sNombreCuenta) => {
       setSearchTextCuenta(codigo);
@@ -778,7 +789,7 @@ export default function AdminVentaForm() {
 
       //procesar el auxiliar y desglosar precio_unitario, cont_und, porc_igv
       //producto.cantidad = 1;
-      const [PRECIO_UNITARIO, CONT_UND, PORC_IGV] = producto.auxiliar.split('-');
+      const [PRECIO_UNITARIO, CONT_UND, PORC_IGV, PRECIO_FACTOR] = producto.auxiliar.split('-');
 
       setProducto(prevState => ({ ...prevState
             //,id_producto: producto.id_producto
@@ -787,7 +798,19 @@ export default function AdminVentaForm() {
             ,precio_neto:PRECIO_UNITARIO
             ,cont_und:CONT_UND
             ,porc_igv:PORC_IGV
+            ,precio_factor:PRECIO_FACTOR
       }));
+
+      //Aqui debemos cargar precios por rango, en caso columna RANGO = '1'
+      if (PRECIO_FACTOR==="1"){
+        //Alimentar precio_select
+        cargaPreciosRangoProducto(producto.id_producto);
+        console.log('cargaPreciosRango: ', precio_select);
+        //Luego en evento cambio cantidad, se actualiza precio_unitario
+      }else{
+        //Liberar contenido precio_select
+        setPrecioSelect([]);
+      }
 
   },[producto.auxiliar]);
 
@@ -901,16 +924,29 @@ export default function AdminVentaForm() {
     setVenta({...venta, [e.target.name]: e.target.value});
   }
   const handleChangeProductoDatos = e => {
+    let precio_unitario;
     let precio_neto;
     
     if (e.target.name === "cantidad"){
       //Falta aplicar precio por cantidades, si estubiera acvtivo en tabla mve_parametros (se verifica al inicio useEffect form Venta)
-      
-      precio_neto = producto.precio_unitario * e.target.value;
+      //ya tenemos el useState precio_select, que contiene los precios por rango
+      console.log('modificando cantidad, importe nuevo: ', precio_select);
+
+      //new condition para verificar si precio_select tiene datos
+      if (Array.isArray(precio_select) || precio_select.length > 0) {
+        precio_unitario = obtenerPrecioPorCantidad(e.target.value);
+        //new
+        producto.precio_unitario = precio_unitario;
+        precio_neto = precio_unitario * e.target.value;
+      }else{
+        precio_neto = producto.precio_unitario * e.target.value;
+      }
+
       //setProducto({...producto, [precio_neto]: precio_neto});
       console.log('modificando cantidad, importe nuevo: ', precio_neto);
       producto.precio_neto = precio_neto;
     }
+
     if (e.target.name === "precio_unitario"){
       precio_neto = producto.cantidad * e.target.value;
       //setProducto({...producto, [precio_neto]: precio_neto});
@@ -920,6 +956,19 @@ export default function AdminVentaForm() {
     
     setProducto({...producto, [e.target.name]: e.target.value});
   }
+
+  // Función que devuelve el precio según cantidad
+  const obtenerPrecioPorCantidad = (nuevaCantidad) => {
+    const cantidadNum = parseFloat(nuevaCantidad);
+
+    const rango = precio_select.find(r => {
+      const min = parseFloat(r.cant_min);
+      const max = parseFloat(r.cant_max);
+      return cantidadNum >= min && cantidadNum <= max;
+    });
+
+    return rango ? parseFloat(rango.precio_venta/rango.unidades) : 0; // 0 si no encuentra rango
+  };
 
   //funcion para mostrar data de formulario, modo edicion
   const mostrarVenta = async (cod,serie,num,elem) => {
@@ -993,17 +1042,15 @@ export default function AdminVentaForm() {
       const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
       return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };      
     });
+    handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) - 1 } }); //new
   };
   const handleIncreaseByOne = () => {
-    /*const newCantidad = parseCantidad(producto.cantidad) + 1;
-    const newImporte = producto.precio_unitario*newCantidad;
-    setProducto({...producto, cantidad: newCantidad, precio_neto:newImporte});*/
-
     setProducto((prevProducto) => {
       const newCantidad = parseCantidad(prevProducto.cantidad) + 1;
       const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
       return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
     });
+    handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) + 1 } }); //new
   };
   const handleIncreaseByTen = () => {
     setProducto((prevProducto) => {
@@ -1011,6 +1058,7 @@ export default function AdminVentaForm() {
       const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
       return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
     });
+    handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) + 10 } }); //new
   };
   const handleSaveDetail = () =>{
       //Consumir API grabar

@@ -74,7 +74,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
                   }}
             >
                 <Typography variant='h5' color='white' textAlign='center'>
-                    Contabilidad Móvil
+                    Facturación/Contabilidad Móvil
                 </Typography>
                 
                 <CardContent >
