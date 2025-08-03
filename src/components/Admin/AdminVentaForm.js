@@ -96,6 +96,7 @@ export default function AdminVentaForm() {
 
   const [registrosdet,setRegistrosdet] = useState([]);
   //const fecha_actual = new Date();
+  const formasPago = ['YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'];
 
   const actualizaValorEmite = (e) => {
     setValorEmite(e.target.value);
@@ -603,7 +604,7 @@ export default function AdminVentaForm() {
       r_razon_social:'', //cliente
       debe:'0',
       peso_total:'0',
-
+      ctrl_atencion: '', //alias vendedor
       registrado:'1'
   });
   
@@ -644,6 +645,10 @@ export default function AdminVentaForm() {
     r_documento_id:'',
     r_id_doc:'',
     r_razon_social:'',
+    efectivo:'',
+    vuelto:'',
+    forma_pago2:'YAPE', //default
+    efectivo2:'',
     r_direccion:''
   });
 
@@ -917,6 +922,16 @@ export default function AdminVentaForm() {
 
   //Rico evento change
   const handleChangeEmite = (name, value) => {
+    //calcular monto efectivo2 si efectivo < venta.r_monto_total
+    if (name === 'efectivo' && (parseFloat(value) < parseFloat(venta.r_monto_total) || parseFloat(value) === parseFloat(venta.r_monto_total) )) {
+      setDatosEmitir(prevState => ({
+        ...prevState,
+        efectivo2: venta.r_monto_total - parseFloat(value)
+      }));
+      //dice que no debe usarse de modo directo el valor del useState en un mismo evento
+      datosEmitir.efectivo2 = venta.r_monto_total - parseFloat(value);
+    }
+    console.log('handleChangeEmite: ', datosEmitir);
     setDatosEmitir({...datosEmitir, [name]: value});
   }
     
@@ -937,7 +952,8 @@ export default function AdminVentaForm() {
         precio_unitario = obtenerPrecioPorCantidad(e.target.value);
         //new
         producto.precio_unitario = precio_unitario;
-        precio_neto = precio_unitario * e.target.value;
+        //precio_neto = precio_unitario * e.target.value;
+        precio_neto = parseFloat((precio_unitario * e.target.value).toFixed(2));
       }else{
         precio_neto = producto.precio_unitario * e.target.value;
       }
@@ -967,7 +983,9 @@ export default function AdminVentaForm() {
       return cantidadNum >= min && cantidadNum <= max;
     });
 
-    return rango ? parseFloat(rango.precio_venta/rango.unidades) : 0; // 0 si no encuentra rango
+    //return rango ? parseFloat(rango.precio_venta/rango.unidades) : 0; // 0 si no encuentra rango
+    return rango  ? parseFloat((rango.precio_venta / rango.unidades).toFixed(2)) : 0;
+
   };
 
   //funcion para mostrar data de formulario, modo edicion
@@ -1275,6 +1293,10 @@ export default function AdminVentaForm() {
         r_documento_id: datosEmitir.r_documento_id,
         r_razon_social: datosEmitir.r_razon_social,
         r_direccion: datosEmitir.r_direccion,
+
+        efectivo: datosEmitir.efectivo,
+        efectivo2: datosEmitir.efectivo2,
+        forma_pago2: datosEmitir.forma_pago2,
 
         r_cod_ref: COD_REF, //parte de la referencia a emitir
         r_serie_ref: SERIE_REF,//parte de la referencia a emitir
@@ -1700,9 +1722,38 @@ export default function AdminVentaForm() {
                                 </Typography>
                               </Grid>
 
+                              
                               <Grid item xs={isSmallScreen ? 12 : 2.8}>
-
+                                  <TextField
+                                    variant="outlined"
+                                    placeholder="ATENDIDO POR"
+                                    size="small"
+                                    sx={{ mt: 1 }}
+                                    fullWidth
+                                    name="atencion"
+                                    value={venta.ctrl_atencion}
+                                    onChange={handleChange}
+                                    onKeyDown={handleCodigoKeyDown}
+                                    inputProps={{ style: { color: 'white' } }}
+                                    InputLabelProps={{ style: { color: 'white' } }}
+                                    InputProps={{
+                                      endAdornment: (
+                                        <InputAdornment position="end">
+                                          <IconButton
+                                            color="warning"
+                                            onClick={() => {
+                                              // Esta opcion solo debe estar habilitado para administrador
+                                            }}
+                                            edge="end"
+                                          >
+                                            <FindIcon />
+                                          </IconButton>
+                                        </InputAdornment>
+                                      ),
+                                    }}
+                                  />                                
                               </Grid>
+
 
                               <Grid item xs={isSmallScreen ? 12 : 1.2}>
                               {//En caso de NP en Proceso, solo se emite comprobante
@@ -1763,32 +1814,37 @@ export default function AdminVentaForm() {
                                       alignItems="center"
                                       justifyContent="left"
                               >
-                                    <Grid item xs={isSmallScreen ? 11 : 2}>
-                                        <TextField variant="outlined" 
-                                                    placeholder="RUC/DNI"
-                                                    size="small"
-                                                    sx={{mt:1}}
-                                                    fullWidth
-                                                    name="r_documento_id"
-                                                    value={venta.r_documento_id}
-                                                    onChange={handleChange} //new para busqueda
-                                                    onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                    inputProps={{ style:{color:'white'} }}
-                                                    InputLabelProps={{ style:{color:'white'} }}
-                                        />
+                                    <Grid item xs={isSmallScreen ? 12 : 2}>
+                                        <TextField
+                                          variant="outlined"
+                                          placeholder="RUC/DNI"
+                                          size="small"
+                                          sx={{ mt: 1 }}
+                                          fullWidth
+                                          name="r_documento_id"
+                                          value={venta.r_documento_id}
+                                          onChange={handleChange}
+                                          onKeyDown={handleCodigoKeyDown}
+                                          inputProps={{ style: { color: 'white' } }}
+                                          InputLabelProps={{ style: { color: 'white' } }}
+                                          InputProps={{
+                                            endAdornment: (
+                                              <InputAdornment position="end">
+                                                <IconButton
+                                                  color="warning"
+                                                  onClick={() => {
+                                                    // acción del botón de búsqueda
+                                                  }}
+                                                  edge="end"
+                                                >
+                                                  <FindIcon />
+                                                </IconButton>
+                                              </InputAdornment>
+                                            ),
+                                          }}
+                                        />                                
                                     </Grid>
-                                    <Grid item xs={isSmallScreen ? 1 : 0.5}>
-                                        <IconButton color="warning" aria-label="upload picture" component="label" size="small"
-                                            sx={{mt:1}}
-                                            onClick = { () => {
-                                                //busqueda en internet
-                                                
-                                              }
-                                            }
-                                          >
-                                          <FindIcon />
-                                        </IconButton>
-                                    </Grid>
+
                                     <Grid item xs={isSmallScreen ? 12 :3.5}>
                                         <TextField variant="outlined" 
                                                     placeholder="RAZON SOCIAL"
@@ -2301,6 +2357,107 @@ export default function AdminVentaForm() {
                                                       inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
                                             />
+
+                                            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                                              <TextField
+                                                variant="outlined"
+                                                autoFocus
+                                                size="small"
+                                                autoComplete="off"
+                                                name="efectivo"
+                                                value={datosEmitir.efectivo || venta.r_monto_total}
+                                                onChange={(e) => handleChangeEmite('efectivo', e.target.value)}
+                                                inputProps={{
+                                                  style: {
+                                                    color: 'white',
+                                                    width: 240,
+                                                    textAlign: 'center',
+                                                    readOnly: true,
+                                                    paddingLeft: 15 , // Deja espacio visual para que no se superponga el texto
+                                                  },
+                                                }}
+                                                InputLabelProps={{ style: { color: 'white' } }}
+                                              />
+                                              <Box
+                                                sx={{
+                                                  position: 'absolute',
+                                                  top: '50%',
+                                                  left: 10,
+                                                  transform: 'translateY(-50%)',
+                                                  color: 'gray',
+                                                  fontSize: '0.85rem',
+                                                  pointerEvents: 'none', // para que no interfiera con el input
+                                                }}
+                                              >
+                                                EFECTIVO
+                                              </Box>
+                                            </Box>
+
+
+                                            <Box sx={{ position: 'relative', width: 270 }}>
+                                              {/* TextField con Select embebido */}
+                                              <TextField
+                                                variant="outlined"
+                                                size="small"
+                                                autoComplete="off"
+                                                name="efectivo2"
+                                                value={datosEmitir.efectivo2}
+                                                onChange={(e) => handleChangeEmite('efectivo2', e.target.value)}
+                                                inputProps={{
+                                                  style: {
+                                                    color: 'transparent', // ocultamos el texto del input
+                                                    textAlign: 'center',
+                                                  },
+                                                }}
+                                                InputLabelProps={{ style: { color: 'white' } }}
+                                                InputProps={{
+                                                  startAdornment: (
+                                                    <InputAdornment position="start">
+                                                      <Select
+                                                        value={datosEmitir.forma_pago2 || 'YAPE'}
+                                                        onChange={(e) => handleChangeEmite('forma_pago2', e.target.value)}
+                                                        variant="standard"
+                                                        disableUnderline
+                                                        sx={{
+                                                          color: 'gray',
+                                                          fontSize: '0.85rem',
+                                                          width: 100,
+                                                          '& .MuiSelect-icon': {
+                                                            color: 'gray',
+                                                          },
+                                                        }}
+                                                      >
+                                                        {formasPago.map((forma) => (
+                                                          <MenuItem key={forma} value={forma}>
+                                                            {forma}
+                                                          </MenuItem>
+                                                        ))}
+                                                      </Select>
+                                                    </InputAdornment>
+                                                  ),
+                                                }}
+                                              />
+
+                                              {/* Capa centrada sobre el TextField para mostrar el valor centrado */}
+                                              <Box
+                                                sx={{
+                                                  position: 'absolute',
+                                                  top: 0,
+                                                  left: 0,
+                                                  right: 0,
+                                                  bottom: 0,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  pointerEvents: 'none',
+                                                  color: 'white',
+                                                  fontSize: '1rem',
+                                                }}
+                                              >
+                                                {datosEmitir.efectivo2}
+                                              </Box>
+                                            </Box>
+
                                             <Button variant='contained' 
                                                         color='primary' 
                                                         //size='small'

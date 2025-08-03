@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
+import { Modal,Grid, Button,useMediaQuery,Select, MenuItem, Typography} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import FindIcon from '@mui/icons-material/FindInPage';
@@ -744,6 +744,7 @@ export default function AdminVentaList() {
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo);
     
+      fetchTotal();
   },[updateTrigger]) //Aumentamos
 
   useEffect( ()=> {
@@ -1108,8 +1109,20 @@ export default function AdminVentaList() {
     const dia = selectedDay.toString().padStart(2, '0');
     setDiaSel(dia);
   };
+  
+  const [total, setTotal] = useState(0);
+  const [isSuper, setIsSuper] = useState(false);
+  const fetchTotal = async () => {
+      try {
+        const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}`);
+        console.log('Tottales ventas: ', res.data);
+        setTotal(res.data.total);
+        setIsSuper(res.data.super);
+      } catch (error) {
+        console.error('Error al obtener total de ventas', error);
+      }
+  }; 
 
- 
  return (
   <>
   <div>
@@ -1175,6 +1188,19 @@ export default function AdminVentaList() {
                     }
               </Select>
           </Grid>
+
+          <Grid item xs={2} sm={2}>
+          {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
+            <Typography variant="h6" color="white" textAlign="center">
+              {`Total: S/ ${parseFloat(total).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}`}
+            </Typography>
+          )}
+
+          </Grid>
+
       </Grid>
 
   </Grid>
