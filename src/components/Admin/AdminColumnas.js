@@ -39,6 +39,12 @@ export const AdminVentasColumnas = [
       selector: 'r_moneda',
       sortable: true,
     },
+    {//nuevo
+      name: 'PAGO',
+      selector: 'forma_pago2',
+      sortable: true,
+    },
+
     {//28
       name: 'TC',
       selector: 'r_tc',

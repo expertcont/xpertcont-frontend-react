@@ -23,7 +23,13 @@ const AdminDias = ({ period, onDaySelect }) => {
     const daysInMonth = getDaysInMonth(year, month);
     const maxDay = year === currentYear && month === currentMonth ? currentDate : daysInMonth;
 
-    const dayList = Array.from({ length: maxDay }, (_, i) => (i + 1).toString());
+    //const dayList = Array.from({ length: maxDay }, (_, i) => (i + 1).toString());
+    
+    //Lista de días más el "*" al final
+    const dayList = [
+      ...Array.from({ length: maxDay }, (_, i) => (i + 1).toString()),
+      "*",
+    ];
     setDays(dayList);
 
     // Evitar que el estado se sobrescriba con cada render
