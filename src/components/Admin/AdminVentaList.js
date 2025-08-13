@@ -1150,7 +1150,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                                           PaperProps={{
                                             style: {
                                               top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "-10%" : "0%", // Centrado horizontal
+                                              left: isSmallScreen ? "-15%" : "0%", // Centrado horizontal
                                               display: 'flex',
                                               flexDirection: 'column',
                                               alignItems: 'center',
@@ -1158,7 +1158,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                                               background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
                                               //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
                                               color:'white',
-                                              width: isSmallScreen ? ('60%') : ('30%'), // Ajusta este valor según tus necesidades
+                                              width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
                                               //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
                                               //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
                                             },
