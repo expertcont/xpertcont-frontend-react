@@ -1149,8 +1149,8 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                                           disableScrollLock // Evita que se modifique el overflow del body
                                           PaperProps={{
                                             style: {
-                                              top: isSmallScreen ? "0vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "0%" : "0%", // Centrado horizontal
+                                              top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
+                                              left: isSmallScreen ? "-10%" : "0%", // Centrado horizontal
                                               display: 'flex',
                                               flexDirection: 'column',
                                               alignItems: 'center',

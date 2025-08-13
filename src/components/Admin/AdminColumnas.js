@@ -40,6 +40,16 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     {//nuevo
+      name: 'EFECTIVO',
+      selector: 'efectivo',
+      sortable: true,
+    },
+    {//nuevo
+      name: 'OTROS',
+      selector: 'efectivo2',
+      sortable: true,
+    },
+    {//nuevo
       name: 'PAGO',
       selector: 'forma_pago2',
       sortable: true,
