@@ -1150,7 +1150,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                                           PaperProps={{
                                             style: {
                                               top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "-15%" : "0%", // Centrado horizontal
+                                              left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
                                               display: 'flex',
                                               flexDirection: 'column',
                                               alignItems: 'center',
