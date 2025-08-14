@@ -54,8 +54,6 @@ function App(props) {
       <div>
       <NavBar idAnfitrion = {props.idAnfitrion}
               idInvitado = {props.idInvitado}
-              //periodo_trabajo = {periodo_trabajo}
-              //contabilidad_trabajo = {contabilidad_trabajo}
       >
       </NavBar>
       
@@ -85,9 +83,6 @@ function App(props) {
           
           <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/new" element={<AsientoDetalleList />} />
           <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento/edit" element={<AsientoDetalleList />} />
-          {/* 
-          <Route path="/asientodet/:id_anfitrion/:id_invitado/:documento_id/:periodo/:id_libro/:num_asiento" element={<AsientoDetalleList />} />
-          */}
 
           <Route path="/asiento/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AsientoList />} />
           
@@ -109,16 +104,6 @@ function App(props) {
           <Route path="/cuentas/:id_usuario/:documento_id" element={<CuentaList />} />
           <Route path="/cuenta/:id_usuario/:documento_id/new" element={<CuentaForm />} />
           <Route path="/cuenta/:id_usuario/:documento_id/edit" element={<CuentaForm />} />
-
-          {/*  modo=edit, modo=clon  
-
-          <Route path="/ventadet/:cod/:serie/:num/:elem/:fecha/new" element={<VentaFormDet />} />
-          <Route path="/ventadet/:cod/:serie/:num/:elem/:item/edit" element={<VentaFormDet />} /> 
-
-          <Route path="/venta/:fecha_ini/:fecha_proceso/:email" element={<VentaList />} />
-          <Route path="/venta/new" element={<VentaForm />} />
-          <Route path="/venta/:cod/:serie/:num/:elem/edit" element={<VentaForm />} /> 
-          */}
 
           <Route path="/correntista" element={<CorrentistaList />} />          
           <Route path="/correntista/new" element={<CorrentistaForm />} />

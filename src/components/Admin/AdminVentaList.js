@@ -225,11 +225,11 @@ export default function AdminVentaList() {
         swal2.fire({
             title: "Envio CPE Sunat",
             html: mensajeHtml,
-            showCancelButton: true, // Tercer botón
-            showDenyButton: true, // Segundo botón
+            //showCancelButton: true, // Tercer botón
+            //showDenyButton: true, // Segundo botón
             confirmButtonText: "PDF A4mm", // Primer botón
-            denyButtonText: "PDF 80mm", // Segundo botón
-            cancelButtonText: "PDF 58mm", // Tercer botón
+            //denyButtonText: "PDF 80mm", // Segundo botón
+            //cancelButtonText: "PDF 58mm", // Tercer botón
             customClass: {
               actions: "vertical-buttons",
               popup: "swal2-align-left"
@@ -277,9 +277,11 @@ export default function AdminVentaList() {
     try {
         const xmlLink = response.data.ruta_xml;
         const cdrLink = response.data.ruta_cdr;
+        const pdfLink = response.data.ruta_pdf;
 
         const xmlIcon = SunatXml;
         const cdrIcon = SunatCdr;
+        const pdfIcon = SunatPdf;
 
         return `
             <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 2px;">
@@ -294,6 +296,12 @@ export default function AdminVentaList() {
                             <img src="${cdrIcon}" alt="Icono CDR" style="cursor: pointer; width: 20%; height: auto;" />
                         </a>
                     </p>
+                    <p>
+                        <a href="${pdfLink}" target="_blank" rel="noopener noreferrer">
+                            <img src="${pdfIcon}" alt="Icono PDF" style="cursor: pointer; width: 20%; height: auto;" />
+                        </a>
+                    </p>
+
                 </div>
             </div>
         `;
