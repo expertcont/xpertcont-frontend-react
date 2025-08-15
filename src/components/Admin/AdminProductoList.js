@@ -103,7 +103,7 @@ export default function AdminProductoList() {
       cell: (row) => (
         pVenta0101 ? (
           <DriveFileRenameOutlineIcon
-            onClick={() => handleUpdate(row.id_producto)}
+            onClick={() => handleUpdate(row.id_producto, row.descripcion)} //descripcion contiene campo unidades
             style={{
               cursor: 'pointer',
               color: 'skyblue',
@@ -186,15 +186,13 @@ export default function AdminProductoList() {
 		setSelectedRows(state.selectedRows);
 	}, []);
 
-  const handleUpdate = (id_producto) => {
+  const handleUpdate = (id_producto,unidades) => {
     //Mostrar formulario para edicion
-    if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-        console.log("Estás usando un dispositivo móvil!!");
-        //Validamos libro a mostrar
+    if (valorVista === 'productos') {
         navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${id_producto}/edit`);
-    } else {
-        navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${id_producto}/edit`);
-    }    
+    }else{
+        navigate(`/ad_productoprecio/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${id_producto}/${unidades}/edit`);
+    }
   };
   const handleDelete = (id_producto) => {
     //console.log(num_asiento);

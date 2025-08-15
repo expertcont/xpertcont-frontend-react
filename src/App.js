@@ -29,6 +29,7 @@ import AdminProductoForm from "./components/Admin/AdminProductoForm";
 import AdminVentaForm from "./components/Admin/AdminVentaForm";
 import AdminEquipoList from "./components/Admin/AdminEquipoList";
 import AdminEquipoForm from "./components/Admin/AdminEquipoForm";
+import AdminProductoFormPrecio from "./components/Admin/AdminProductoFormPrecio";
 
 function App(props) {
   //Aqui los props, seran: id_usuario(correo anfitrion),id_login(correo usuario)
@@ -75,6 +76,7 @@ function App(props) {
           <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoList />} />          
           <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminProductoForm />} />          
           <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/:id_producto/edit" element={<AdminProductoForm />} />
+          <Route path="/ad_productoprecio/:id_anfitrion/:id_invitado/:documento_id/:id_producto/:unidades/edit" element={<AdminProductoFormPrecio />} />
 
           <Route path="/reporte/:id_anfitrion/:id_invitado" element={<ReportesList />} />
 
