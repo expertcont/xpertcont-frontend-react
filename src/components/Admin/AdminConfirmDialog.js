@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  useMediaQuery
 } from "@mui/material";
 import { CheckCircle, Warning, Info, Error as ErrorIcon } from "@mui/icons-material";
 
@@ -16,10 +17,29 @@ const icons = {
 };
 
 const AdminConfirmDialog = ({ open, options, onClose }) => {
+  const isSmallScreen = useMediaQuery('(max-width: 600px)');
   if (!options) return null;
 
   return (
-    <Dialog open={open} onClose={() => onClose(false)}>
+    <Dialog open={open} 
+            onClose={() => onClose(false)}
+            PaperProps={{
+              style: {
+                top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
+                left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                marginTop: '10vh', // Ajusta este valor según tus necesidades
+                background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
+                //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                color:'white',
+                width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
+                //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+              },
+            }}
+    >
       <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
         {options.icon && icons[options.icon]}
         {options.title}
