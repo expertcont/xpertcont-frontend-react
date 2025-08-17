@@ -13,8 +13,9 @@ import SunatXml from '../../assets/images/xml02.png';
 import SunatCdr from '../../assets/images/cdr01.png';
 import SunatPdf from '../../assets/images/pdf02.png';
 import logo from '../../Logo04small.png';
-import createPdfTicket from './AdminVentaPdf';
+//import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "./AdminDias";
+import { useDialog } from "./AdminConfirmDialogProvider";
 
 //import PrintIcon from '@mui/icons-material/Print';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
@@ -56,9 +57,10 @@ export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  const { confirmDialog } = useDialog(); //unico dialogo
+
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
-
 
   createTheme('solarized', {
     text: {
@@ -87,15 +89,6 @@ export default function AdminVentaList() {
 
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////
-
-  ///////////////////////////////////////////////////
-  /*function exportToExcel(data) {
-    const worksheet = utils.json_to_sheet(data);
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, 'Datos');
-    writeFile(workbook, 'datos.xlsx');
-  }*/
 
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
@@ -191,7 +184,22 @@ export default function AdminVentaList() {
   };*/
   
   const handleSunat = async (sComprobante, elemento, sFirma) => {
-    console.log(sFirma);
+
+    const result = await confirmDialog({
+        title: "¿Estás seguro?",
+        message: `Se enviara: "${sComprobante}".`,
+        icon: "success", // success | error | info | warning
+        confirmText: "ENVIAR",
+        cancelText: "CANCELAR",
+    });
+    if (result.isConfirmed) {
+      console.log("✅ Enviado:", sComprobante);
+      // aquí va tu lógica de guardar en backend
+    } else {
+      console.log("❌ Cancelado");
+      return; // Salimos si el usuario cancela
+    }
+    
     if (sFirma !=="" && sFirma !==null ) {
       swal2.fire({
         title: 'Sunat',
@@ -227,7 +235,7 @@ export default function AdminVentaList() {
             html: mensajeHtml,
             //showCancelButton: true, // Tercer botón
             //showDenyButton: true, // Segundo botón
-            confirmButtonText: "PDF A4mm", // Primer botón
+            confirmButtonText: "Aceptar", // Primer botón
             //denyButtonText: "PDF 80mm", // Segundo botón
             //cancelButtonText: "PDF 58mm", // Tercer botón
             customClass: {
@@ -255,13 +263,13 @@ export default function AdminVentaList() {
         }).then((result) => {
           
           setUpdateTrigger(Math.random());//experimento para actualizar el dom
-          if (result.isConfirmed) {
-            procesaPDF(sComprobante, elemento,'A4')
+          /*if (result.isConfirmed) {
+            //procesaPDF(sComprobante, elemento,'A4')
           } else if (result.isDenied) {
               procesaPDF(sComprobante, elemento,'80mm')
           } else if (result.isDismissed) {
               procesaPDF(sComprobante, elemento,'58mm')
-          }          
+          } */         
         });
     } catch (error) {
         console.error("Error en el envío a SUNAT:", error);
@@ -311,7 +319,7 @@ export default function AdminVentaList() {
     }
   };
 
-  const procesaPDF = async (comprobante, nElem, tamaño) => {
+  /*const procesaPDF = async (comprobante, nElem, tamaño) => {
     try {
         const [COD, SERIE, NUM] = comprobante.split('-');
 
@@ -346,7 +354,7 @@ export default function AdminVentaList() {
         console.error("Error al procesar PDF", error);
         throw new Error("No se pudo generar el PDF.");
     }
-  };
+  };*/
 
   
   const handleUpdate = (sComprobante,bModoVista) => {
@@ -1144,8 +1152,10 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
           .catch(err => console.error(err));
 };
 
+
  return (
   <>
+
  { (showModalMostrarRecaudacion) ?
                             (   <>
                                         {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
