@@ -12,7 +12,6 @@ import Sunat02Icon from '../../assets/images/sunat1.png';
 import SunatXml from '../../assets/images/xml02.png';
 import SunatCdr from '../../assets/images/cdr01.png';
 import SunatPdf from '../../assets/images/pdf02.png';
-import logo from '../../Logo04small.png';
 //import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "./AdminDias";
 import { useDialog } from "./AdminConfirmDialogProvider";
@@ -49,8 +48,6 @@ import { AdminComprasColumnas } from './AdminColumnas';
 import { AdminVentasColumnas } from './AdminColumnas';
 import { AdminCajaColumnas } from './AdminColumnas';
 
-import { saveAs } from 'file-saver';
-import AsientoMensajeTotales from '../AsientoMensajeTotales';
 import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
 
 export default function AdminVentaList() {
@@ -58,6 +55,10 @@ export default function AdminVentaList() {
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const { confirmDialog } = useDialog(); //unico dialogo
+  const [showModalSunat, setShowModalSunat] = useState(false);
+  const [rutaXml, setRutaXml] = useState("");
+  const [rutaCdr, setRutaCdr] = useState("");
+  const [rutaPdf, setRutaPdf] = useState("");
 
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -185,140 +186,62 @@ export default function AdminVentaList() {
   
   const handleSunat = async (sComprobante, elemento, sFirma) => {
 
+    const [COD, SERIE, NUMERO] = sComprobante.split('-');
+    if (sFirma !=="" && sFirma !==null ) {
+      //Solo mostrar enlaces, rapidos
+      setRutaXml(`http://74.208.184.113:8080/descargas/${params.documento_id}/${params.documento_id}-${COD}-${SERIE}-${NUMERO}.xml`);
+      setRutaCdr(`http://74.208.184.113:8080/descargas/${params.documento_id}/R-${params.documento_id}-${COD}-${SERIE}-${NUMERO}.xml`);
+      setRutaPdf(`http://74.208.184.113:8080/descargas/${params.documento_id}/${params.documento_id}-${COD}-${SERIE}-${NUMERO}.pdf`);
+      setShowModalSunat(true);
+      return;
+    }
+
     const result = await confirmDialog({
-        title: "¿Estás seguro?",
-        message: `Se enviara: "${sComprobante}".`,
+        title: "Enviar a SUNAT?",
+        message: `${sComprobante}`,
         icon: "success", // success | error | info | warning
         confirmText: "ENVIAR",
         cancelText: "CANCELAR",
     });
     if (result.isConfirmed) {
-      console.log("✅ Enviado:", sComprobante);
-      // aquí va tu lógica de guardar en backend
+        try {
+            // Enviar datos a la API
+            const response = await axios.post(`${back_host}/ad_ventacpe`, {
+                p_periodo: periodo_trabajo,
+                p_id_usuario: params.id_anfitrion,
+                p_documento_id: contabilidad_trabajo,
+                p_r_cod: COD,
+                p_r_serie: SERIE,
+                p_r_numero: NUMERO,
+                p_elemento: elemento
+            });
+            
+            //console.log(response);
+            if (response.data.codigo_hash) {
+                setRutaXml(response.data.ruta_xml);
+                setRutaCdr(response.data.ruta_cdr);
+                setRutaPdf(response.data.ruta_pdf);
+                setShowModalSunat(true);
+            }
+      
+        } catch (error) {
+            //console.error("Error en el envío a SUNAT:", error);
+            await confirmDialog({
+                    title: "Error de envio SUNAT",
+                    message: `${sComprobante}`,
+                    icon: "error", // success | error | info | warning
+                    //confirmText: "ENVIAR",
+                    //cancelText: "CERRAR",
+            });
+        }
     } else {
       console.log("❌ Cancelado");
       return; // Salimos si el usuario cancela
     }
     
-    if (sFirma !=="" && sFirma !==null ) {
-      swal2.fire({
-        title: 'Sunat',
-        text: 'Comprobante ya fue enviado a Sunat',
-        icon: 'success', // success, error, warning, info, question
-        confirmButtonText: 'Aceptar'
-      });  
-      return;
-    }
-
-    const [COD, SERIE, NUMERO] = sComprobante.split('-');
-
-    console.log('Enviando a sunat:', sComprobante, elemento);
-
-    try {
-        // Enviar datos a la API
-        const response = await axios.post(`${back_host}/ad_ventacpe`, {
-            p_periodo: periodo_trabajo,
-            p_id_usuario: params.id_anfitrion,
-            p_documento_id: contabilidad_trabajo,
-            p_r_cod: COD,
-            p_r_serie: SERIE,
-            p_r_numero: NUMERO,
-            p_elemento: elemento
-        });
-
-        // Generar el mensaje HTML
-        const mensajeHtml = armaMensajeHtml(response);
-
-        // Mostrar SweetAlert con el mensaje generado
-        swal2.fire({
-            title: "Envio CPE Sunat",
-            html: mensajeHtml,
-            //showCancelButton: true, // Tercer botón
-            //showDenyButton: true, // Segundo botón
-            confirmButtonText: "Aceptar", // Primer botón
-            //denyButtonText: "PDF 80mm", // Segundo botón
-            //cancelButtonText: "PDF 58mm", // Tercer botón
-            customClass: {
-              actions: "vertical-buttons",
-              popup: "swal2-align-left"
-            },
-            didOpen: () => {
-              const actions = document.querySelector(".swal2-actions");
-              if (actions) {
-                  actions.style.display = "flex";
-                  actions.style.flexDirection = "column";
-                  actions.style.alignItems = "center";
-                  actions.style.gap = "-10px"; // Espaciado entre botones
-              }
-              if (isSmallScreen) {
-                  const popup = document.querySelector('.swal2-popup');
-                  if (popup) {
-                    popup.style.position = "absolute";
-                    popup.style.left = "0"; // Pegado al borde izquierdo
-                    popup.style.top = "5%"; // Ajusta la altura si es necesario
-                    popup.style.transform = "none"; // Elimina el centrado
-                  }              
-              }
-            }
-        }).then((result) => {
-          
-          setUpdateTrigger(Math.random());//experimento para actualizar el dom
-          /*if (result.isConfirmed) {
-            //procesaPDF(sComprobante, elemento,'A4')
-          } else if (result.isDenied) {
-              procesaPDF(sComprobante, elemento,'80mm')
-          } else if (result.isDismissed) {
-              procesaPDF(sComprobante, elemento,'58mm')
-          } */         
-        });
-    } catch (error) {
-        console.error("Error en el envío a SUNAT:", error);
-        swal2.fire({
-            title: "Error",
-            text: "Hubo un problema al enviar los datos a SUNAT.",
-            icon: "error",
-        });
-    }
   };
 
-  const armaMensajeHtml = (response) => {
-    try {
-        const xmlLink = response.data.ruta_xml;
-        const cdrLink = response.data.ruta_cdr;
-        const pdfLink = response.data.ruta_pdf;
-
-        const xmlIcon = SunatXml;
-        const cdrIcon = SunatCdr;
-        const pdfIcon = SunatPdf;
-
-        return `
-            <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 2px;">
-                <div style="text-align: center;">
-                    <p>
-                        <a href="${xmlLink}" target="_blank" rel="noopener noreferrer">
-                            <img src="${xmlIcon}" alt="Icono XML" style="cursor: pointer; width: 25%; height: auto;" />
-                        </a>
-                    </p>
-                    <p>
-                        <a href="${cdrLink}" target="_blank" rel="noopener noreferrer">
-                            <img src="${cdrIcon}" alt="Icono CDR" style="cursor: pointer; width: 20%; height: auto;" />
-                        </a>
-                    </p>
-                    <p>
-                        <a href="${pdfLink}" target="_blank" rel="noopener noreferrer">
-                            <img src="${pdfIcon}" alt="Icono PDF" style="cursor: pointer; width: 20%; height: auto;" />
-                        </a>
-                    </p>
-
-                </div>
-            </div>
-        `;
-    } catch (error) {
-        console.error("Error al armar el mensaje HTML:", error);
-        throw new Error("No se pudo generar el mensaje HTML.");
-    }
-  };
-
+  
   /*const procesaPDF = async (comprobante, nElem, tamaño) => {
     try {
         const [COD, SERIE, NUM] = comprobante.split('-');
@@ -372,14 +295,15 @@ export default function AdminVentaList() {
     confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante,elemento);
   };
   const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento)=>{
-    await swal({
-      title:"Eliminar Registro",
-      text:"Seguro ?",
-      icon:"warning",
-      buttons:["No","Si"]
-    }).then(respuesta=>{
-        if (respuesta){
-          //console.log(cod,serie,num,elem,item);
+    const result = await confirmDialog({
+        title: "Eliminar Comprobante?",
+        message: `${sComprobante}`,
+        icon: "warning", // success | error | info | warning
+        confirmText: "ELIMINAR",
+        cancelText: "CANCELAR",
+    });
+    if (result.isConfirmed) {
+          console.log("✅ Eliminado:", sComprobante);
           eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento);
           setToggleCleared(!toggleCleared);
           setRegistrosdet(registrosdet.filter(
@@ -388,25 +312,10 @@ export default function AdminVentaList() {
           setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
               setUpdateTrigger(Math.random());//experimento
           }, 200);
-          
-          /*alert(respuesta);
-          if (respuesta === 1) {
-            swal({
-              text:"Venta se ha eliminado con exito",
-              icon:"success",
-              timer:"2000"
-            });
-          }
-          if (respuesta === 2) {
-            swal({
-              text:"No se puede Eliminar Venta, solo la ultima",
-              icon:"success",
-              timer:"2000"
-            });
-          }*/
-
-      }
-    })
+    } else {
+      console.log("❌ Cancelado");
+      return; // Salimos si el usuario cancela
+    }
   }
   const eliminarRegistroSeleccionado = async (sAnfitrion, sDocumentoId, sPeriodo, sComprobante, sElemento) => {
     const [COD, SERIE, NUMERO] = sComprobante.split('-');
@@ -1151,95 +1060,196 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
           })
           .catch(err => console.error(err));
 };
-
+const handleOpenLink = (url) => {
+    if (url) {
+      window.open(url, "_blank"); 
+      // "_blank" abre en nueva pestaña
+      // "_self" reemplaza la pestaña actual
+    } else {
+      alert("⚠️ No hay documento disponible");
+    }
+  };
 
  return (
   <>
+              { (showModalSunat) ?
+                (   <>
+                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                            <Dialog
+                              open={showModalSunat}
+                              onClose={() => setShowModalSunat(false)}
+                              maxWidth="md" // Valor predeterminado de 960px
+                              //fullWidth
+                              disableScrollLock // Evita que se modifique el overflow del body
+                              PaperProps={{
+                                style: {
+                                  top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
+                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
+                                  //background:'#1e272e',
+                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
+                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                                  color:'white',
+                                  width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
+                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                },
+                              }}
+                            >
+                            <DialogTitle>Datos - Emision</DialogTitle>
 
- { (showModalMostrarRecaudacion) ?
-                            (   <>
-                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                                        <Dialog
-                                          open={showModalMostrarRecaudacion}
-                                          onClose={() => setShowModalMostrarRecaudacion(false)}
-                                          maxWidth="md" // Valor predeterminado de 960px
-                                          //fullWidth
-                                          disableScrollLock // Evita que se modifique el overflow del body
-                                          PaperProps={{
-                                            style: {
-                                              top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              alignItems: 'center',
-                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                              background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                              //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                              color:'white',
-                                              width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                                              //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                            },
+
+                                <Button variant='contained' 
+                                            color='primary' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  handleOpenLink(rutaXml);
+                                              }
+                                            }
+                                            sx={{display:'block',margin:'.5rem 0', width: 270}}
+                                            >
+                                            XML
+                                </Button>
+                                <Button variant='contained' 
+                                            color='secondary' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  handleOpenLink(rutaCdr);
+                                              }
+                                            }
+                                            sx={{display:'block',margin:'.5rem 0', width: 270, mt:-0.5}}
+                                            >
+                                            CDR
+                                </Button>
+                                <Button variant='contained' 
+                                            color='warning' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  handleOpenLink(rutaPdf);
+                                              }
+                                            }
+                                            sx={{display:'block',margin:'.5rem 0', width: 270, mt:-0.5}}
+                                            >
+                                            PDF
+                                </Button>
+
+                                <Button variant='contained' 
+                                            //color='warning' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  setShowModalSunat(false);
+                                              }
+                                            }
+                                            sx={{display:'block',
+                                                  margin:'.5rem 0',
+                                                  width: 270, 
+                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                                '&:hover': {
+                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                                    },                                                             
+                                                  mt:-0.5}}
+                                            >
+                                            ESC - CERRAR
+                                </Button>
+
+                            </Dialog>
+                            {/* FIN Seccion para mostrar Dialog tipo Modal */}
+                    </>
+                )
+                :
+                (   
+                  <>
+                  </>
+                )
+              }
+
+             { (showModalMostrarRecaudacion) ?
+                (   <>
+                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                            <Dialog
+                              open={showModalMostrarRecaudacion}
+                              onClose={() => setShowModalMostrarRecaudacion(false)}
+                              maxWidth="md" // Valor predeterminado de 960px
+                              //fullWidth
+                              disableScrollLock // Evita que se modifique el overflow del body
+                              PaperProps={{
+                                style: {
+                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
+                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
+                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
+                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                                  color:'white',
+                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
+                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                },
+                              }}
+                            >
+                            <DialogTitle>Datos - Emision</DialogTitle>
+
+                                {/* Listado de recaudaciones */}
+                                <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>
+                                  <CardContent>
+                                    {recaudaciones.length > 0 ? (
+                                      recaudaciones.map((item, index) => (
+                                        <Box
+                                          key={index}
+                                          sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            mb: 1,
+                                            borderBottom: '1px solid rgba(255,255,255,0.2)',
+                                            pb: 0.5
                                           }}
                                         >
-                                        <DialogTitle>Datos - Emision</DialogTitle>
-
-                                            {/* Listado de recaudaciones */}
-                                            <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>
-                                              <CardContent>
-                                                {recaudaciones.length > 0 ? (
-                                                  recaudaciones.map((item, index) => (
-                                                    <Box
-                                                      key={index}
-                                                      sx={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        mb: 1,
-                                                        borderBottom: '1px solid rgba(255,255,255,0.2)',
-                                                        pb: 0.5
-                                                      }}
-                                                    >
-                                                      <Typography variant="body1">{item.recaudacion}</Typography>
-                                                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                                        S/ {Number(item.monto).toFixed(2)}
-                                                      </Typography>
-                                                    </Box>
-                                                  ))
-                                                ) : (
-                                                  <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay recaudaciones</Typography>
-                                                )}
-                                              </CardContent>
-                                            </Card>
+                                          <Typography variant="body1">{item.recaudacion}</Typography>
+                                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                                            S/ {Number(item.monto).toFixed(2)}
+                                          </Typography>
+                                        </Box>
+                                      ))
+                                    ) : (
+                                      <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay recaudaciones</Typography>
+                                    )}
+                                  </CardContent>
+                                </Card>
 
 
-                                            <Button variant='contained' 
-                                                        //color='warning' 
-                                                        //size='small'
-                                                        onClick={()=>{
-                                                              setShowModalMostrarRecaudacion(false);
-                                                          }
-                                                        }
-                                                        sx={{display:'block',
-                                                             margin:'.5rem 0',
-                                                             width: 270, 
-                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                            '&:hover': {
-                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                                },                                                             
-                                                             mt:-0.5}}
-                                                        >
-                                                        ESC - CERRAR
-                                            </Button>
+                                <Button variant='contained' 
+                                            //color='warning' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  setShowModalMostrarRecaudacion(false);
+                                              }
+                                            }
+                                            sx={{display:'block',
+                                                  margin:'.5rem 0',
+                                                  width: 270, 
+                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                                '&:hover': {
+                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                                    },                                                             
+                                                  mt:-0.5}}
+                                            >
+                                            ESC - CERRAR
+                                </Button>
 
-                                        </Dialog>
-                                </>
-                            )
-                            :
-                            (   
-                              <>
-                              </>
-                            )
-                          }  
+                            </Dialog>
+                    </>
+                )
+                :
+                (   
+                  <>
+                  </>
+                )
+              }  
   <div>
     <Modal
       open={abierto}

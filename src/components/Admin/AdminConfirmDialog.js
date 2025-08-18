@@ -8,10 +8,11 @@ import {
   useMediaQuery
 } from "@mui/material";
 import { CheckCircle, Warning, Info, Error as ErrorIcon } from "@mui/icons-material";
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 const icons = {
   success: <CheckCircle color="success" sx={{ fontSize: 40, mr: 1 }} />,
-  warning: <Warning color="warning" sx={{ fontSize: 40, mr: 1 }} />,
+  warning: <ErrorOutlineIcon color="warning" sx={{ fontSize: 40, mr: 1 }} />,
   info: <Info color="info" sx={{ fontSize: 40, mr: 1 }} />,
   error: <ErrorIcon color="error" sx={{ fontSize: 40, mr: 1 }} />,
 };

@@ -36,6 +36,7 @@ import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import { useDialog } from "./AdminConfirmDialogProvider";
 
 export default function AdminVentaForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -44,6 +45,7 @@ export default function AdminVentaForm() {
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
+  const { confirmDialog } = useDialog(); //unico dialogo
   const inputProductoRef = useRef(null); // Crear referencia al TextField
   const [updateTrigger, setUpdateTrigger] = useState({});
   const [cliente_select,setClienteSelect] = useState([]);
@@ -1233,37 +1235,41 @@ export default function AdminVentaForm() {
 
 
   const confirmaEliminarDetalle = async(cod,serie,num,elem,item)=>{
-    const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
-    fetch(sRuta, {
-      method: "DELETE"
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            //console.log('La operación fue exitosa');
-            swal({
-              text:"Detalle eliminado con exito",
-              icon:"success",
-              timer:"2000"
-            });
-            
-            setUpdateTrigger(Math.random());//actualizad vista detalle
-
-        } else {
-            console.log('La operación falló');
-            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
-            swal({
-              text:"La Operacion fallo, intentelo nuevamente",
-              icon:"warning",
-              timer:"2000"
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Hubo un problema con la solicitud fetch:', error);
-        //ahora si
-        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+    const result = await confirmDialog({
+            title: "Eliminar Item?",
+            //message: `${sComprobante}`,
+            icon: "success", // success | error | info | warning
+            confirmText: "ELIMINAR",
+            cancelText: "CANCELAR",
     });
+    //console.log(result);
+    if (result.isConfirmed) {
+        const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
+        fetch(sRuta, {
+          method: "DELETE"
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setUpdateTrigger(Math.random());//actualizad vista detalle
+            } else {
+                console.log('La operación falló');
+                // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
+                confirmDialog({
+                        title: "Error al eliminar  ",
+                        //message: `${sComprobante}`,
+                        icon: "error", // success | error | info | warning
+                        //confirmText: "ENVIAR",
+                        //cancelText: "CERRAR",
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Hubo un problema con la solicitud fetch:', error);
+            //ahora si
+            // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
+        });
+    }
   }
   
   const handleSaveComprobante = () =>{
