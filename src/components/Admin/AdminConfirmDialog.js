@@ -26,18 +26,15 @@ const AdminConfirmDialog = ({ open, options, onClose }) => {
             onClose={() => onClose(false)}
             PaperProps={{
               style: {
-                top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                top: isSmallScreen ? "-30vh" : "0vh",
+                left: isSmallScreen ? "-25%" : "0%",
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                marginTop: '10vh', // Ajusta este valor según tus necesidades
-                background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                marginTop: '10vh',
+                background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia
                 color:'white',
-                width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                width: isSmallScreen ? ('50%') : ('30%'),
               },
             }}
     >
@@ -47,12 +44,18 @@ const AdminConfirmDialog = ({ open, options, onClose }) => {
       </DialogTitle>
       <DialogContent>{options.message}</DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose(false)} color="inherit">
-          {options.cancelText || "Cancelar"}
-        </Button>
-        <Button onClick={() => onClose(true)} color="primary" variant="contained">
-          {options.confirmText || "Aceptar"}
-        </Button>
+        {/* Mostrar el botón solo si viene cancelText */}
+        {options.cancelText && (
+          <Button onClick={() => onClose(false)} color="inherit">
+            {options.cancelText}
+          </Button>
+        )}
+        {/* Mostrar el botón solo si viene confirmText */}
+        {options.confirmText && (
+          <Button onClick={() => onClose(true)} color="primary" variant="contained">
+            {options.confirmText}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

@@ -30,8 +30,6 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import numeral from 'numeral';
 import ListaPopUp from '../ListaPopUp';
 
-import swal from 'sweetalert';
-//import swal2 from 'sweetalert2';
 import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
@@ -126,189 +124,7 @@ export default function AdminVentaForm() {
     }
     return bytes;
   }
-  const createPdf = async () => {
-    const pdfDoc = await PDFDocument.create()
-    const page = pdfDoc.addPage();
-    const { width, height } = page.getSize();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontNegrita = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    // Add logo to the top of the page
-    //const logoImage = pdfDoc.embedPng(logo);
-    const pngImage = await pdfDoc.embedPng(logo);
-    const pngDims = pngImage.scale(0.6)
-
-    page.drawImage(pngImage, {
-      x: 410,
-      y: 755,
-      width: pngDims.width,
-      height: pngDims.height,
-    })
-
-    const fontSize = 12;
-    const lineHeight = fontSize * 1.2;
-    const margin = 50;
-    let x = margin;
-    let y = height - margin - lineHeight - 10;
-
-    //Documento electronico y logo expertcont
-    const COD = params.comprobante.slice(0,2);
-    const documentos = {
-      '01': 'FACTURA ELECTRONICA',
-      '03': 'BOLETA ELECTRONICA',
-      '07': 'NOTA CRED. ELECTRONICA',
-      '08': 'NOTA DEB. ELECTRONICA'
-    };
-    const sDocumento = documentos[COD] || 'DOCUMENTO'; // Manejo de caso por defecto
-    
-    page.drawText(sDocumento, { x:50, y:792, size: 14, font:fontNegrita });
-    //page.drawText('expertcont.pe', { x:410, y:775, size: 13 });
-    
-    //Razon social
-    page.drawText('RUC '+params.documento_id, { x:50, y:778, size: 14, font:fontNegrita });
-    page.drawText(venta.razon_social, { x:50, y:765, size: 10 });
-    page.drawText(venta.direccion, { x:50, y:755, size: 10 });
-    page.drawText(params.comprobante.slice(3), { x:410, y:735, size: 16, font:fontNegrita });
-
-    y = y - 10;
-    y=y-12; //aumentamos linea nueva
-    y=y-10; //aumentamos linea nueva
-
-    //Calculamos el punto x, acorde al largo de la razon social (centradito chochera ... claro pi cojuda)
-    page.drawText("CLIENTE: " + venta.r_razon_social?.toString() ?? "", { x:50, y, size: 10, font:fontNegrita });
-
-    y=y-12; //aumentamos linea nueva
-    page.drawText("RUC/DNI: " + venta.r_documento_id?.toString() ?? "", { x:50, y, size: 10 });
-    page.drawText("FECHA: ", { x:410, y, size: 10 });
-    page.drawText(venta.r_fecemi, { x:450, y, size: 12 });
-
-    y=y-12; //aumentamos linea nueva
-    page.drawText("DIRECCION: " + venta.r_direccion?.toString() ?? "", { x:50, y, size: 10 });
-    page.drawText("VENTA: ", { x:410, y, size: 10 });
-    page.drawText(params.id_invitado.split('@')[0].slice(0,14), { x:450, y, size: 12 });
-    
-    y=y-12; //aumentamos linea nueva
-    page.drawText("PAGO: CONTADO", { x:410, y, size: 10 });
-
-    y=y-12; //aumentamos linea nueva
-    y=y-12; //aumentamos linea nueva
-    
-    ////////////////////////////////////////////////////////////////////
-    // Draw table data
-    let row = 1;
-    let espaciadoDet = 0; //iniciamos en la 1era fila
-    
-    //let precio_total = 0;
-    espaciadoDet = espaciadoDet+20; ///NEW
-
-    page.drawRectangle({
-      x: margin,
-      y: y-2,
-      width: (page.getWidth()-margin-50), //TODA ANCHO DE LA HOJA
-      height: (lineHeight+2),
-      borderWidth: 1,
-      color: rgb(0.778, 0.778, 0.778),
-      borderColor: rgb(0.8,0.8,0.8)
-    });
-
-    page.drawText("CANT", { x:x, y, size: 8 });
-    page.drawText("DESCRIPCION", { x:x+80, y, size: 8 });
-    page.drawText("IMPORTE", { x:x+450, y, size: 8 });
-
-    registrosdet.forEach((person) => {
-      const text = `${person.descripcion}`;
-      const textY = y - lineHeight; //corregimos aca, porque se duplicaba espacio en cada grupo
-
-      //1ERA LINEA
-      //Desglosar 2da Linea, DECREMENTAR LA POS Y UNA LINEA MAS ABAJO //NEW
-      page.drawText(person.cantidad.toString(), { x:margin, y:y+4-espaciadoDet, size: 10, font });
-      page.drawText(person.cont_und?.toString() ?? "", { x:x+40, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
-      page.drawText(text, { x:x+80, y:y+4-espaciadoDet, size: 10, font }); //Texto de Titulo de Barra ()
-
-      // Calcular la posición x para alinearlo a la derecha
-      const textWidth = font.widthOfTextAtSize(person.precio_neto, 10); // Tamaño de fuente 12
-      const x_new = x+480 - textWidth;
-      page.drawText(numeral(person.precio_neto).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
-      
-       //al final del bucle, aumentamos una linea simple :) claro pi ...
-      espaciadoDet = espaciadoDet+10;
-      row++;
-    });
-    
-    y=y-15; //aumentamos linea nueva
-    y=y-15; //aumentamos linea nueva
-
-    let MontoEnLetras = NumerosALetras(venta.r_monto_total, {
-      plural: 'SOLES', //pinches opciones no funcionan, tengo q arreglarlas en la siguiente linea
-      singular: 'SOL', //todos mis movimientos estan friamente calculados
-      centPlural: 'CÉNTIMOS', //siganme los buenos ...  :)
-      centSingular: 'CÉNTIMO',
-    });
-    MontoEnLetras = 'SON: ' + MontoEnLetras.toUpperCase().replace('PESOS', 'SOLES').replace('M.N.','').replace('SOLES','SOLES CON');
-    page.drawText(MontoEnLetras, { x:margin, y:y-espaciadoDet+30, size: 10 }); //Actualizar urgente
-
-    //Final
-    page.drawRectangle({
-      x: margin,
-      y: y-espaciadoDet-30,
-      width: (page.getWidth()-margin-50), //TODA ANCHO DE LA HOJA
-      height: (lineHeight+40),
-      borderWidth: 1,
-      //color: rgb(0.778, 0.778, 0.778),
-      borderColor: rgb(0.8,0.8,0.8)
-    });
-    
-    const moneda = {
-      'PEN': 'S/',
-      'USD': '$ USD'
-    };
-    const sMoneda = moneda[venta.r_moneda] || ''; // Manejo de caso por defecto
-    console.log(venta.r_moneda, sMoneda);
-
-    let textWidth = font.widthOfTextAtSize(venta.r_base002, 10); // Tamaño de fuente 12
-    let x_new = x+480 - textWidth;
-    page.drawText("BASE GRAV.: ",{ x:410, y:y-espaciadoDet+4, size: 9 });
-    page.drawText(numeral(venta.r_base002).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
-
-    textWidth = font.widthOfTextAtSize(venta.r_igv002, 10); // Tamaño de fuente 12
-    x_new = x+480 - textWidth;
-    page.drawText("IGV.: ",{ x:410, y:y-espaciadoDet+4-10, size: 9 });
-    page.drawText(numeral(venta.r_igv002).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet-10, size: 10, font }); //Actualizar urgente
-
-    textWidth = font.widthOfTextAtSize(venta.r_monto_total, 10); // Tamaño de fuente 12
-    x_new = x+480 - textWidth;
-    page.drawText("TOTAL.: " + sMoneda,{ x:410, y:y-espaciadoDet+4-20, size: 10, font:fontNegrita });
-    page.drawText(numeral(venta.r_monto_total).format('0,0.00')?.toString() ?? "", { x:x_new, y:y+4-espaciadoDet-20, size: 10, font:fontNegrita }); //Actualizar urgente
-    
-    //SeccionQR
-    // Generar el código QR como base64
-    const qrImage = await QRCode.toDataURL(params.comprobante);
-    // Convertir la imagen base64 a formato compatible con pdf-lib
-    const qrImageBytes = qrImage.split(',')[1]; // Eliminar el encabezado base64
-    //const qrImageBuffer = Uint8Array.from(atob(qrImageBytes), (c) => c.charCodeAt(0));
-    const qrImageBuffer = base64ToUint8Array(qrImageBytes);
-    
-    const qrImageEmbed = await pdfDoc.embedPng(qrImageBuffer);
-    // Obtener dimensiones de la imagen
-    const qrWidth = 45;
-    const qrHeight = 45;    
-    // Dibujar el código QR en el PDF
-    page.drawImage(qrImageEmbed, {
-      x: margin+5,
-      y: y-espaciadoDet-26,
-      width: qrWidth,
-      height: qrHeight,
-    });
-
-    const pdfBytes = await pdfDoc.save();
-
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    // Crea una URL de objeto para el archivo Blob
-    const url = URL.createObjectURL(blob);
-    // Abre la URL en una nueva pestaña del navegador
-    window.open(url, '_blank');
-  }
-
+  
   const createPdfTicket = async (size) => {
     const pdfDoc = await PDFDocument.create()
 
@@ -1153,28 +969,20 @@ export default function AdminVentaForm() {
     .then(data => {
         if (data.success) {
             //console.log('La operación fue exitosa');
-            /*swal2.fire({
-              text: "Detalle registrado con exito",
-              icon: "success",
-              timer:"2000",
-              scrollbarPadding: false // ¡Esta es la clave!
-            });*/
-            /*swal({
-              text:"Detalle registrado con exito",
-              icon:"success",
-              timer:"2000"
-            });*/
             
             setUpdateTrigger(Math.random());//actualizad vista detalle
 
         } else {
             console.log('La operación falló');
             // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
-            swal({
-              text:"La Operacion fallo, intentelo nuevamente",
-              icon:"warning",
-              timer:"2000"
+            confirmDialog({
+                    title: "La Operacion fallo, intentelo nuevamente",
+                    //message: `${sComprobante}`,
+                    icon: "error", // success | error | info | warning
+                    confirmText: "ACEPTAR",
+                    //cancelText: "CERRAR",
             });
+
         }
     })
     .catch(error => {
@@ -1184,7 +992,7 @@ export default function AdminVentaForm() {
     });
   }
 
-  const confirmaModificarDetalle = async(cod,serie,num,elem,item)=>{
+  /*const confirmaModificarDetalle = async(cod,serie,num,elem,item)=>{
     //console.log('antes de comprobante y setProducto');
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
@@ -1231,7 +1039,7 @@ export default function AdminVentaForm() {
         //ahora si
         // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
     });
-  }
+  }*/
 
 
   const confirmaEliminarDetalle = async(cod,serie,num,elem,item)=>{
@@ -1259,7 +1067,7 @@ export default function AdminVentaForm() {
                         title: "Error al eliminar  ",
                         //message: `${sComprobante}`,
                         icon: "error", // success | error | info | warning
-                        //confirmText: "ENVIAR",
+                        confirmText: "ACEPTAR",
                         //cancelText: "CERRAR",
                 });
             }
@@ -1291,8 +1099,7 @@ export default function AdminVentaForm() {
   }
 
   const confirmaGrabarComprobante = async()=>{
-    console.log('asas');
-    console.log(params.comprobante,params.comprobante_ref);
+    //console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
     const [COD_REF, SERIE_REF, NUMERO_REF] = params.comprobante_ref !== "-" ? 
@@ -1338,12 +1145,14 @@ export default function AdminVentaForm() {
     .then(data => {
         if (data.success) {
             //console.log('La operación fue exitosa');
-            swal({
-              text:"Detalle registrado con exito",
-              icon:"success",
-              timer:"2000"
+            confirmDialog({
+                    title: "Comprobante emitido con exito",
+                    //message: `${sComprobante}`,
+                    icon: "success", // success | error | info | warning
+                    confirmText: "ACEPTAR",
+                    //cancelText: "CERRAR",
             });
-            
+
             //setUpdateTrigger(Math.random());//actualizad vista detalle
             setParams(prevParams => ({
               ...prevParams,         // Mantenemos los valores previos
@@ -1354,12 +1163,14 @@ export default function AdminVentaForm() {
             //console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero);
 
         } else {
-            console.log('La operación falló');
+            //console.log('La operación falló');
             // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
-            swal({
-              text:"La Operacion fallo, intentelo nuevamente",
-              icon:"warning",
-              timer:"2000"
+            confirmDialog({
+                    title: "La Operacion fallo, intentelo nuevamente",
+                    //message: `${sComprobante}`,
+                    icon: "error", // success | error | info | warning
+                    confirmText: "ACEPTAR",
+                    //cancelText: "CERRAR",
             });
         }
     })
@@ -1407,14 +1218,16 @@ export default function AdminVentaForm() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('responseeeee : ',data);
+        //console.log('responseeeee : ',data);
 
         if (data.success) {
             //console.log('La operación fue exitosa');
-            swal({
-              text:"Cambios registrados con exito",
-              icon:"success",
-              timer:"2000"
+            confirmDialog({
+                    title: "Cambios registrados con exito",
+                    //message: `${sComprobante}`,
+                    icon: "success", // success | error | info | warning
+                    confirmText: "ACEPTAR",
+                    //cancelText: "CERRAR",
             });
             
             //setUpdateTrigger(Math.random());//actualizad vista detalle
@@ -1429,10 +1242,12 @@ export default function AdminVentaForm() {
         } else {
             console.log('La operación falló');
             // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
-            swal({
-              text:"La Operacion fallo, intentelo nuevamente",
-              icon:"warning",
-              timer:"2000"
+            confirmDialog({
+                    title: "La Operacion fallo, intentelo nuevamente",
+                    //message: `${sComprobante}`,
+                    icon: "error", // success | error | info | warning
+                    confirmText: "ACEPTAR",
+                    //cancelText: "CERRAR",
             });
         }
     })

@@ -230,7 +230,7 @@ export default function AdminVentaList() {
                     title: "Error de envio SUNAT",
                     message: `${sComprobante}`,
                     icon: "error", // success | error | info | warning
-                    //confirmText: "ENVIAR",
+                    confirmText: "ACEPTAR",
                     //cancelText: "CERRAR",
             });
         }
@@ -337,16 +337,23 @@ export default function AdminVentaList() {
 
         // Verifica la respuesta del backend
         if (response.data.success) {
-          swal({
+          /*swal({
             text:"Venta se ha eliminado con exito",
             icon:"success",
             timer:"2000"
+          });*/
+          confirmDialog({
+                  title: "Venta se ha eliminado con exito",
+                  //message: `${sComprobante}`,
+                  icon: "success", // success | error | info | warning
+                  confirmText: "ACEPTAR"
+                  //cancelText: "CERRAR",
           });
         } else {
-          swal({
-            text:"No se puede Eliminar Venta, solo la ultima",
-            icon:"error",
-            timer:"2000"
+          confirmDialog({
+            title: "No se puede Eliminar Venta, solo la ultima",
+            icon: "error",
+            confirmText: "ACEPTAR"
           });
           //console.log("No se pudo eliminar la venta, no es la ultima: " + response.data.message);
         }
