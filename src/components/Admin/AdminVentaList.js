@@ -6,12 +6,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FindIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import { blueGrey } from '@mui/material/colors';
-import ShopOutlinedIcon from '@mui/icons-material/ShopOutlined';
-import Sunat01Icon from '../../assets/images/sunat0.png';
-import Sunat02Icon from '../../assets/images/sunat1.png';
-import SunatXml from '../../assets/images/xml02.png';
-import SunatCdr from '../../assets/images/cdr01.png';
-import SunatPdf from '../../assets/images/pdf02.png';
 //import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "./AdminDias";
 import { useDialog } from "./AdminConfirmDialogProvider";
@@ -49,6 +43,7 @@ import { AdminVentasColumnas } from './AdminColumnas';
 import { AdminCajaColumnas } from './AdminColumnas';
 
 import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
+import AdminSunatIcon from './AdminSunatIcon';
 
 export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
@@ -184,7 +179,7 @@ export default function AdminVentaList() {
     setUpdateTrigger(Math.random());//experimento
   };*/
   
-  const handleSunat = async (sComprobante, elemento, sFirma) => {
+  /*const handleSunat = async (sComprobante, elemento, sFirma) => {
 
     const [COD, SERIE, NUMERO] = sComprobante.split('-');
     if (sFirma !=="" && sFirma !==null ) {
@@ -239,7 +234,7 @@ export default function AdminVentaList() {
       return; // Salimos si el usuario cancela
     }
     
-  };
+  };*/
 
   
   /*const procesaPDF = async (comprobante, nElem, tamaño) => {
@@ -737,18 +732,17 @@ export default function AdminVentaList() {
         cell: (row) => (
           (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
           (
-            <img
-              src={Sunat01Icon} // Aquí usas la imagen importada
-              onClick={() => handleSunat(row.comprobante_ref,row.elemento,row.r_vfirmado)}
-              alt="Icono Sunat01"
-              style={{
-                cursor: 'pointer',
-                //opacity: 0.9, // Ajusta la transparencia
-                filter: (row.r_vfirmado == null) ? 'grayscale(0.8)' : 'grayscale(0)', // Aplica escala de grises
-                transition: 'color 0.3s ease',
-                width: '24px',
-                height: '24px',  // Puedes ajustar el tamaño según necesites
-              }}
+            <AdminSunatIcon
+              comprobante={row.comprobante_ref}
+              elemento={row.elemento}
+              firma={row.r_vfirmado}
+              documentoId={params.documento_id}
+              periodoTrabajo={periodo_trabajo}
+              idAnfitrion={params.id_anfitrion}
+              contabilidadTrabajo={contabilidad_trabajo}
+              backHost={back_host}
+              onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
+              size={26}
             />
           ) : null
         ),
@@ -1079,100 +1073,6 @@ const handleOpenLink = (url) => {
 
  return (
   <>
-              { (showModalSunat) ?
-                (   <>
-                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                            <Dialog
-                              open={showModalSunat}
-                              onClose={() => setShowModalSunat(false)}
-                              maxWidth="md" // Valor predeterminado de 960px
-                              //fullWidth
-                              disableScrollLock // Evita que se modifique el overflow del body
-                              PaperProps={{
-                                style: {
-                                  top: isSmallScreen ? "-40vh" : "0vh", // Ajusta la distancia desde arriba
-                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                  //background:'#1e272e',
-                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                  color:'white',
-                                  width: isSmallScreen ? ('40%') : ('30%'), // Ajusta este valor según tus necesidades
-                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                },
-                              }}
-                            >
-                            <DialogTitle>Datos - Emision</DialogTitle>
-
-
-                                <Button variant='contained' 
-                                            color='primary' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  handleOpenLink(rutaXml);
-                                              }
-                                            }
-                                            sx={{display:'block',margin:'.5rem 0', width: 270}}
-                                            >
-                                            XML
-                                </Button>
-                                <Button variant='contained' 
-                                            color='secondary' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  handleOpenLink(rutaCdr);
-                                              }
-                                            }
-                                            sx={{display:'block',margin:'.5rem 0', width: 270, mt:-0.5}}
-                                            >
-                                            CDR
-                                </Button>
-                                <Button variant='contained' 
-                                            color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  handleOpenLink(rutaPdf);
-                                              }
-                                            }
-                                            sx={{display:'block',margin:'.5rem 0', width: 270, mt:-0.5}}
-                                            >
-                                            PDF
-                                </Button>
-
-                                <Button variant='contained' 
-                                            //color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  setShowModalSunat(false);
-                                              }
-                                            }
-                                            sx={{display:'block',
-                                                  margin:'.5rem 0',
-                                                  width: 270, 
-                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                '&:hover': {
-                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                    },                                                             
-                                                  mt:-0.5}}
-                                            >
-                                            ESC - CERRAR
-                                </Button>
-
-                            </Dialog>
-                            {/* FIN Seccion para mostrar Dialog tipo Modal */}
-                    </>
-                )
-                :
-                (   
-                  <>
-                  </>
-                )
-              }
-
              { (showModalMostrarRecaudacion) ?
                 (   <>
                             {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}

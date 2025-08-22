@@ -35,6 +35,7 @@ import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useDialog } from "./AdminConfirmDialogProvider";
+import AdminSunatIcon from './AdminSunatIcon';
 
 export default function AdminVentaForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -853,7 +854,8 @@ export default function AdminVentaForm() {
       r_serie_ref: data.r_serie_ref,   // ref
       r_numero_ref: data.r_numero_ref, // ref
       r_fecemi_ref: data.r_fecemi_ref, // ref
-      registrado: data.registrado
+      registrado: data.registrado,
+      r_vfirmado: data.r_vfirmado //new
     }));
       
     //console.log(data);
@@ -1087,7 +1089,6 @@ export default function AdminVentaForm() {
     //Quitar modal emitir
     setShowModalEmite(false);
 
-    //actualizar params, renderizado automatico
   }
 
   const handleEditarDetalleClick = ()=>{
@@ -1160,7 +1161,14 @@ export default function AdminVentaForm() {
             }));
             //console.log(params);
             //console.log(data);
-            //console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero);
+            console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero + '-' + data.elemento);
+            
+            const sComprobanteGenerado = data.r_cod + '-' + data.r_serie + '-' + data.r_numero + '-' + data.elemento;
+            //renderizado automatico
+            navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${sComprobanteGenerado}/view`,
+                    { replace: true }
+                    );
+
 
         } else {
             //console.log('La operación falló');
@@ -1371,17 +1379,18 @@ export default function AdminVentaForm() {
       <ReplyIcon />
     </IconButton>
 
-    <IconButton color="primary" 
-        onClick = {()=> {
-                    //Icono Imprimir
-                    //createPdf();
-                    //createPdfTicket('80mm');
-                    createPdfTicket('58mm');
-                  }
-                }
-        >
-        <PrintIcon />
-    </IconButton>
+    <AdminSunatIcon
+      comprobante={params.comprobante}
+      elemento={params.comprobante.split("-").pop()}   // ✅ último valor después del último "-"
+      firma={venta.r_vfirmado}
+      documentoId={params.documento_id}
+      periodoTrabajo={params.periodo}
+      idAnfitrion={params.id_anfitrion}
+      contabilidadTrabajo={params.documento_id}
+      backHost={back_host}
+      onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
+      size={26}
+    />
     
     { pVenta010202 && !visualizando ?
     (
