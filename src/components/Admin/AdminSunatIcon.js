@@ -1,14 +1,12 @@
 // src/components/SunatIcon.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
-//import { confirmDialog } from "./ConfirmDialog"; // Ajusta la ruta a tu helper
 import { useDialog } from "./AdminConfirmDialogProvider";
 import { Dialog, DialogTitle, Button, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import Sunat01Icon from '../../assets/images/sunat0.png';
 import TaskAltIcon from "@mui/icons-material/TaskAlt";   
 import CodeIcon from '@mui/icons-material/Code';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 const AdminSunatIcon = ({

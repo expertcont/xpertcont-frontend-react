@@ -9,6 +9,7 @@ import { blueGrey } from '@mui/material/colors';
 //import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "./AdminDias";
 import { useDialog } from "./AdminConfirmDialogProvider";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";   
 
 //import PrintIcon from '@mui/icons-material/Print';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
@@ -111,7 +112,8 @@ export default function AdminVentaList() {
   const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
   const [contabilidad_nombre, setContabilidadNombre] = useState("");
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
-  
+  const [valorComprobante, setValorComprobante] = useState("");
+
   const [datosPopUp,setDatosPopUp] = useState([]);
   let [diaSel, setDiaSel] = useState("*");
 
@@ -799,8 +801,9 @@ export default function AdminVentaList() {
           (
             <ViewAgendaIcon
               onClick={() => {
-                  //alert(diaSel);
-                  clonarVenta(row.comprobante_ref);
+                  setShowModalMostrarClonar(true);
+                  setValorComprobante(row.comprobante_ref);
+                  //clonarVenta(row.comprobante_ref);
                   }
                 }
               style={{
@@ -990,38 +993,39 @@ export default function AdminVentaList() {
   };
 
   const obtenerFecha = (periodo,bformatoBD,sDia) => {
-    //console.log('sDia recepcionado: ',sDia);
     // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
     const [year, month] = periodo.split('-').map(Number);
   
     // Obtener la fecha actual
     const fechaActual = new Date();
-    const mesActual = fechaActual.getMonth() + 1; // Los meses en JavaScript son base 0, así que sumamos 1
-  
-    // Verificar si el mes del periodo es igual al mes actual
-    //if (mesActual === month) {
-      if (sDia!==''){
-          //restamos 1 al mes, pinche manejo de fecha js
-        const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
-        return formatearFecha(fechaSeleccionada,bformatoBD,sDia); // Retorna la fecha actual formateada
-      }else{
-        return formatearFecha(fechaActual,bformatoBD,sDia); // Retorna la fecha actual formateada
-      }
-    //} else {
-    //  // Retornar el último día del mes del periodo
-    //  const ultimoDiaMes = new Date(year, month, 0); // Al pasar 0 en el día, se obtiene el último día del mes
-    //  return formatearFecha(ultimoDiaMes,bformatoBD);
-    //}
+    
+    /*if (sDia!==''){
+        //restamos 1 al mes, pinche manejo de fecha js
+      const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
+      return formatearFecha(fechaSeleccionada,bformatoBD,sDia); // Retorna la fecha actual formateada
+    }else{
+      return formatearFecha(fechaActual,bformatoBD,sDia); // Retorna la fecha actual formateada
+    }*/
+
+    if (sDia==='' || sDia==='*'){
+      return formatearFecha(fechaActual,bformatoBD,sDia); // Retorna la fecha actual formateada
+    }else{
+      //restamos 1 al mes, pinche manejo de fecha js
+      const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
+      return formatearFecha(fechaSeleccionada,bformatoBD,sDia); // Retorna la fecha actual formateada
+    }
   };
+
   // Función para formatear la fecha en DD/MM/YYYY
   const formatearFecha = (fecha,bformatoBD,sDia) => {
     let dia;
-    if (sDia!==''){
-      dia = sDia;
-    }
-    else {
+    if (sDia==='' || sDia==='*'){
       dia = String(fecha.getDate()).padStart(2, '0');
     }
+    else {
+      dia = sDia;      
+    }
+    
     const mes = String(fecha.getMonth() + 1).padStart(2, '0'); // Los meses en JavaScript son base 0
     const anio = fecha.getFullYear();
     if (bformatoBD) {
@@ -1050,6 +1054,7 @@ const fetchTotalVentas = async () => {
 }; 
 const [recaudaciones, setRecaudaciones] = useState([]);
 const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
+const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
 const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
   setShowModalMostrarRecaudacion(true);
   axios.get(`${back_host}/ad_ventarecaudacion/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
@@ -1073,6 +1078,107 @@ const handleOpenLink = (url) => {
 
  return (
   <>
+               { (showModalMostrarClonar) ?
+                (   <>
+                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                            <Dialog
+                              open={showModalMostrarClonar}
+                              onClose={() => setShowModalMostrarClonar(false)}
+                              maxWidth="md" // Valor predeterminado de 960px
+                              //fullWidth
+                              disableScrollLock // Evita que se modifique el overflow del body
+                              PaperProps={{
+                                style: {
+                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
+                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
+                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
+                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                                  color:'white',
+                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
+                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                },
+                              }}
+                            >
+                            <DialogTitle>Emision</DialogTitle>
+
+                                <TextField variant="outlined" 
+                                        //label="fecha"
+                                        fullWidth
+                                        size="small"
+                                        sx={{display:'flex',
+                                             width: 270, 
+                                            "& .MuiInputBase-input": {
+                                                  color: "white",
+                                                  textAlign: "center"   // ✅ centra el texto del input, incluso en type="date"
+                                                },
+                                             margin:'.5rem 0'}}
+                                        name="r_fecemi"
+                                        type="date"
+                                        //format="yyyy/MM/dd"
+                                        value={obtenerFecha(periodo_trabajo,true,diaSel)}
+                                        //onChange={handleChange}
+                                        inputProps={{ style:{color:'white'} }}
+                                        InputLabelProps={{ style:{color:'white'} }}
+                                />
+
+                                <Button
+                                  variant="contained"
+                                  //color="inherit"
+                                  color="primary"
+                                            onClick={()=>{
+                                                //alert(obtenerFecha(periodo_trabajo,true,diaSel));
+                                                clonarVenta(valorComprobante);
+                                                setShowModalMostrarClonar(false);
+                                              }
+                                            }
+                                  sx={{ //display: "block", 
+                                        display: "flex",          // 🔹 asegura layout en fila
+                                        alignItems: "center",     // centra verticalmente
+                                        margin: ".5rem 0", 
+                                        width: 270, 
+                                        mt: -0.5, 
+                                        //color: "black", 
+                                        fontWeight: "bold",
+                                    }}
+                                  startIcon={<TaskAltIcon />} 
+                                >
+                                  CLONAR
+                                </Button>
+
+                                <Button variant='contained' 
+                                            //color='warning' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  setShowModalMostrarClonar(false);
+                                              }
+                                            }
+                                            sx={{display:'block',
+                                                  margin:'.5rem 0',
+                                                  width: 270, 
+                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                                '&:hover': {
+                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                                    },                                                             
+                                                  mt:-0.5}}
+                                            >
+                                            ESC - CERRAR
+                                </Button>
+
+                            </Dialog>
+                    </>
+                )
+                :
+                (   
+                  <>
+                  </>
+                )
+              }  
+
              { (showModalMostrarRecaudacion) ?
                 (   <>
                             {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}

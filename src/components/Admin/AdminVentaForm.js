@@ -1085,10 +1085,10 @@ export default function AdminVentaForm() {
   const handleSaveComprobante = () =>{
     //Consumir API grabar
     confirmaGrabarComprobante();
+    //alert('origen ref: '+ venta.r_cod_ref+venta.r_serie_ref+venta.r_numero_ref);
 
     //Quitar modal emitir
     setShowModalEmite(false);
-
   }
 
   const handleEditarDetalleClick = ()=>{
@@ -1103,9 +1103,9 @@ export default function AdminVentaForm() {
     //console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
-    const [COD_REF, SERIE_REF, NUMERO_REF] = params.comprobante_ref !== "-" ? 
-                                              params.comprobante_ref.split('-') : [null, null, null];
-  
+    //const [COD_REF, SERIE_REF, NUMERO_REF] = params.comprobante_ref !== "-" ? 
+    //                                          params.comprobante_ref.split('-') : [null, null, null];
+    
     //Alimentar useState venta
     const estadoFinal = {
         id_anfitrion: params.id_anfitrion,
@@ -1128,13 +1128,13 @@ export default function AdminVentaForm() {
         forma_pago2: datosEmitir.forma_pago2,
         vuelto: datosEmitir.vuelto,
 
-        r_cod_ref: COD_REF, //parte de la referencia a emitir
-        r_serie_ref: SERIE_REF,//parte de la referencia a emitir
-        r_numero_ref: NUMERO_REF,//parte de la referencia a emitir
+        r_cod_ref: venta.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        r_serie_ref: venta.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        r_numero_ref: venta.r_numero_ref,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         r_idmotivo_ref: '01',//parte de la referencia a emitir (hardcodeado temporal) anulacion
       };
 
-    console.log(estadoFinal);
+    //console.log(estadoFinal);
 
     const sRuta = `${back_host}/ad_ventacomp`;
     fetch(sRuta, {
