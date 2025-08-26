@@ -699,49 +699,56 @@ export default function AdminVentaForm() {
 
   const cargaPermisosMenuComando = async(idMenu)=>{
     //Realiza la consulta a la API de permisos (obtenerTodosPermisoComandos)
-    fetch(`${back_host}/seguridad/${params.id_anfitrion}/${params.id_invitado}/${idMenu}`, {
-      method: 'GET'
-    })
-    .then(response => response.json())
-    .then(permisosData => {
-      // Guarda los permisos en el estado
-      setPermisosComando(permisosData);
-      console.log('permisosComando: ',permisosComando);
-      let tienePermiso;
-      // Verifica si existe el permiso de acceso 'ventas'
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-01'); //Graba CAB-Cambios
-      if (tienePermiso) {
-        setPVenta010201(true);
-      }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-02'); //Item-Agrega
-      if (tienePermiso) {
-        setPVenta010202(true);
-      }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-03'); //Item-Modifica
-      if (tienePermiso) {
-        setPVenta010203(true);
-      }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-04'); //Item-Elimina
-      if (tienePermiso) {
-        setPVenta010204(true);
-      }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-05'); //Facturar
-      if (tienePermiso) {
-        setPVenta010205(true);
-      }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-06'); //Boletear
-      if (tienePermiso) {
-        setPVenta010206(true);
-      }
-      tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-07'); //Notear
-      if (tienePermiso) {
-        setPVenta010207(true);
-      }
+    if (params.id_anfitrion === params.id_invitado){
+      setPVenta010201(true);
+      setPVenta010202(true);
+      setPVenta010203(true);
+      setPVenta010204(true);
+    }else{
+        fetch(`${back_host}/seguridad/${params.id_anfitrion}/${params.id_invitado}/${idMenu}`, {
+          method: 'GET'
+        })
+        .then(response => response.json())
+        .then(permisosData => {
+          // Guarda los permisos en el estado
+          setPermisosComando(permisosData);
+          console.log('permisosComando: ',permisosComando);
+          let tienePermiso;
+          // Verifica si existe el permiso de acceso 'ventas'
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-01'); //Graba CAB-Cambios
+          if (tienePermiso) {
+            setPVenta010201(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-02'); //Item-Agrega
+          if (tienePermiso) {
+            setPVenta010202(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-03'); //Item-Modifica
+          if (tienePermiso) {
+            setPVenta010203(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-04'); //Item-Elimina
+          if (tienePermiso) {
+            setPVenta010204(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-05'); //Facturar
+          if (tienePermiso) {
+            setPVenta010205(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-06'); //Boletear
+          if (tienePermiso) {
+            setPVenta010206(true);
+          }
+          tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-07'); //Notear
+          if (tienePermiso) {
+            setPVenta010207(true);
+          }
 
-    })
-    .catch(error => {
-      console.log('Error al obtener los permisos:', error);
-    });
+        })
+        .catch(error => {
+          console.log('Error al obtener los permisos:', error);
+        });
+    }
   }
 
   //Rico evento change
