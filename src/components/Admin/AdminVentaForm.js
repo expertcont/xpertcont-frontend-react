@@ -1935,7 +1935,7 @@ export default function AdminVentaForm() {
                                                         },
                                                       }}                                                        
                                                     >
-                                                      <IndeterminateCheckBox  color="warning" style={{ width: 35, height: 35 }} />
+                                                      <IndeterminateCheckBox  color="inherit" style={{ width: 35, height: 35 }} />
                                                     </IconButton>
 
                                                     <IconButton
@@ -1971,7 +1971,18 @@ export default function AdminVentaForm() {
                                                         },
                                                       }}                                                        
                                                     >
-                                                      <Timer10SelectIcon style={{ width: 35, height: 35 }}/>
+                                                        <Box
+                                                          sx={{
+                                                            width: 25, 
+                                                            height: 35, 
+                                                            overflow: 'hidden' // recorta lo que sobre
+                                                          }}
+                                                        >
+                                                          <Timer10SelectIcon 
+                                                            color="success" 
+                                                            sx={{ fontSize: 35 }} 
+                                                          />
+                                                        </Box>
                                                     </IconButton>
                                                   </InputAdornment>
                                                 ),
