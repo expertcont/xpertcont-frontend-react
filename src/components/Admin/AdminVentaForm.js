@@ -82,6 +82,7 @@ export default function AdminVentaForm() {
 
   const [producto_select,setProductoSelect] = useState([]);
   const [precio_select,setPrecioSelect] = useState([]);
+  const [grupo_select,setGrupoSelect] = useState([]); //Util para colores, si es necesario, caso contrario NULL
   
   //Permisos Nivel 02
   const {user, isAuthenticated } = useAuth0();
@@ -538,18 +539,17 @@ export default function AdminVentaForm() {
         console.log(error);
     });
   }
-
-  const handleCuentaSelect = (codigo, descripcion, sNombreCuenta) => {
-      setSearchTextCuenta(codigo);
-      console.log(codigo,descripcion);
-      //confirmaRegistroAsiento(codigo,id_anfitrion,documento_id,periodo_trabajo);
-
-      setShowModal(false);
-  };
-  const handleSearchTextCuentaChange = (event) => {
-    console.log(event.target.value);
-    setSearchTextCuenta(event.target.value.replace('+', '').replace('-',''));
-  };
+  const cargaPopUpGrupo = () =>{
+    //Utilizado para colores, si es necesario
+    axios
+    .get(`${back_host}/ad_grupopopup/${params.id_anfitrion}/${params.documento_id}`)
+    .then((response) => {
+        setGrupoSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
 
 
   const handleSubmit = async(e) => {
@@ -587,6 +587,7 @@ export default function AdminVentaForm() {
     //si cliente existe, renderizarlo, sino en blanco indica que esta en modo Pedido
     //cargaClienteCombo();
     cargaPopUpProducto();
+    cargaPopUpGrupo();//new
     cargaDocSelect();
 
     //NEW codigo para autenticacion y permisos de BD
@@ -1320,7 +1321,7 @@ export default function AdminVentaForm() {
     { name:'DESCRIPCION', 
       selector:row => row.descripcion,
       sortable: true,
-      width: '210px'
+      width: '410px'
       //key:true
     },
     { name:'CANTIDAD', 
@@ -1860,6 +1861,7 @@ export default function AdminVentaForm() {
                                             </Tooltip>
                                                   <ListaPopUp
                                                       registroPopUp={producto_select}
+                                                      gruposPopUp={grupo_select}
                                                       showModal={showModalProductoLista}
                                                       setShowModal={setShowModalProductoLista}
                                                       registro={producto}                    
@@ -1882,8 +1884,8 @@ export default function AdminVentaForm() {
                                               inputProps={{
                                                 style: {
                                                   color: 'white',
-                                                  width: 145,
-                                                  textAlign: 'center',
+                                                  width: 110,
+                                                  textAlign: 'right',
                                                   readOnly: true,
                                                 },
                                               }}
@@ -1911,6 +1913,12 @@ export default function AdminVentaForm() {
                                                       <RestartAltIcon />
                                                     </IconButton>
                                                     
+
+                                                  </InputAdornment>
+                                                ),
+                                                endAdornment: (
+                                                  <InputAdornment position="end">
+
                                                     <IconButton
                                                       color="default"
                                                       aria-label="disminuir en 1"
@@ -1918,7 +1926,7 @@ export default function AdminVentaForm() {
                                                       onClick={handleDecreaseByOne} // Función para retroceder cambios
                                                       sx={{
                                                         padding: '0px',
-                                                        height:'30',
+                                                        height: '48px',      // alto mayor
                                                         marginRight: '0px',
                                                         backgroundColor: 'primary', // Color de fondo del ícono
                                                         borderRadius: '4px', // Bordes redondeados
@@ -1927,13 +1935,9 @@ export default function AdminVentaForm() {
                                                         },
                                                       }}                                                        
                                                     >
-                                                      <IndeterminateCheckBox />
+                                                      <IndeterminateCheckBox  color="warning" style={{ width: 35, height: 35 }} />
                                                     </IconButton>
 
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment: (
-                                                  <InputAdornment position="end">
                                                     <IconButton
                                                       color="default"
                                                       aria-label="aumentar de 1 en 1"
@@ -1949,8 +1953,9 @@ export default function AdminVentaForm() {
                                                         },
                                                       }}                                                        
                                                     >
-                                                      <AddCircleIcon />
+                                                      <AddCircleIcon color="success" style={{ width: 35, height: 35 }}/>
                                                     </IconButton>
+
                                                     <IconButton
                                                       color="default"
                                                       aria-label="aumentar de 10 en 10"
@@ -1966,7 +1971,7 @@ export default function AdminVentaForm() {
                                                         },
                                                       }}                                                        
                                                     >
-                                                      <Timer10SelectIcon />
+                                                      <Timer10SelectIcon style={{ width: 35, height: 35 }}/>
                                                     </IconButton>
                                                   </InputAdornment>
                                                 ),
