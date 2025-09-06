@@ -530,8 +530,14 @@ export default function AdminVentaForm() {
     });
   }
   const cargaPreciosRangoProducto = (sIdProducto) =>{
+    let sProductoOriginal = sIdProducto;
+    //Verificar "-" en id producto, En caso de encontrarlo, tomar solo la parte antes del "-"
+    if (sProductoOriginal.includes('-')) {
+      sProductoOriginal = sProductoOriginal.split('-')[0];
+    }
+
     axios
-    .get(`${back_host}/ad_productopreciorango/${params.id_anfitrion}/${params.documento_id}/${sIdProducto}`)
+    .get(`${back_host}/ad_productopreciorango/${params.id_anfitrion}/${params.documento_id}/${sProductoOriginal}`)
     .then((response) => {
         setPrecioSelect(response.data);
     })
@@ -614,17 +620,20 @@ export default function AdminVentaForm() {
 
       //procesar el auxiliar y desglosar precio_unitario, cont_und, porc_igv
       //producto.cantidad = 1;
-      const [PRECIO_UNITARIO, CONT_UND, PORC_IGV, PRECIO_FACTOR] = producto.auxiliar.split('-');
+      const [PRECIO_UNITARIO, CONT_UND, PORC_IGV, PRECIO_FACTOR, PRODUCTO_SKU] = producto.auxiliar.split('-');
 
       setProducto(prevState => ({ ...prevState
             //,id_producto: producto.id_producto
             ,cantidad: 1
-            ,precio_unitario: PRECIO_UNITARIO
+            ,precio_unitario:PRECIO_UNITARIO
             ,precio_neto:PRECIO_UNITARIO
             ,cont_und:CONT_UND
             ,porc_igv:PORC_IGV
             ,precio_factor:PRECIO_FACTOR
+            ,producto_sku:PRODUCTO_SKU
       }));
+
+      console.log('producto en useEffect: ', producto);
 
       //Aqui debemos cargar precios por rango, en caso columna RANGO = '1'
       if (PRECIO_FACTOR==="1"){
@@ -790,7 +799,7 @@ export default function AdminVentaForm() {
       console.log('modificando cantidad, importe nuevo: ', precio_select);
 
       //new condition para verificar si precio_select tiene datos
-      if (Array.isArray(precio_select) || precio_select.length > 0) {
+      if (Array.isArray(precio_select) && precio_select.length > 0) {
         precio_unitario = obtenerPrecioPorCantidad(e.target.value);
         //new
         producto.precio_unitario = precio_unitario;
@@ -906,6 +915,8 @@ export default function AdminVentaForm() {
     handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) - 1 } }); //new
   };
   const handleIncreaseByOne = () => {
+    console.log('incrementando cantidad en 1, estado del producto', producto);
+
     setProducto((prevProducto) => {
       const newCantidad = parseCantidad(prevProducto.cantidad) + 1;
       const newImporte = (prevProducto.precio_unitario * newCantidad).toFixed(2);
@@ -1463,39 +1474,6 @@ export default function AdminVentaForm() {
             console.log(error);
         });
   };
-
-  const handleUpdateInvoice = () =>{
-    //Consumir API grabar
-    confirmaGrabarDetalle();
-
-    //Resetear useState producto
-    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
-    const estadoInicial = {
-        id_anfitrion: params.id_anfitrion,
-        documento_id: params.documento_id,
-        periodo: params.periodo,
-        r_cod: COD,
-        r_serie: SERIE,
-        r_numero: NUMERO,
-        r_fecemi: venta.r_fecemi,
-            
-        id_producto: '',
-        descripcion: '',
-        cantidad: '',
-        precio_unitario: '',
-        precio_neto: '',
-        auxiliar: '' // calculo de precio_unitario - cont_und - porc_igv
-      };
-    //setProducto(estadoInicial);
-
-    setProducto((prevState) => ({
-      ...prevState,
-      ...estadoInicial
-    }));
-
-    //Quitar modal
-    setShowModalProducto(false);
-  }
 
   const handleFocus = (event) => {
     if (isSmallScreen) {
