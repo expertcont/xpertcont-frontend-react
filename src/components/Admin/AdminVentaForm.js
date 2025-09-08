@@ -6,7 +6,6 @@ import AddIcon from '@mui/icons-material/Add';
 import FindIcon from '@mui/icons-material/FindInPage';
 import InputAdornment from '@mui/material/InputAdornment';
 import Tooltip from '@mui/material/Tooltip';
-import PrintIcon from '@mui/icons-material/Print';
 import ReplyIcon from '@mui/icons-material/Reply';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';

@@ -13,7 +13,9 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 //import PrintIcon from '@mui/icons-material/Print';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import CopyAllIcon from '@mui/icons-material/CopyAll';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 
@@ -45,16 +47,16 @@ import { AdminCajaColumnas } from './AdminColumnas';
 
 import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
 import AdminSunatIcon from './AdminSunatIcon';
+//import Sunat01IconGre from '../../assets/images/sunatgre0.png';
+//import Sunat01Icon from '../../assets/images/sunatgre0.png';
+import AdminSunatGreIcon from './AdminSunatGreIcon';
 
 export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const { confirmDialog } = useDialog(); //unico dialogo
-  const [showModalSunat, setShowModalSunat] = useState(false);
-  const [rutaXml, setRutaXml] = useState("");
-  const [rutaCdr, setRutaCdr] = useState("");
-  const [rutaPdf, setRutaPdf] = useState("");
+  const [fecha_clon, setFechaClon] = useState("");
 
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -136,6 +138,10 @@ export default function AdminVentaList() {
       const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
     }
+    if (e.target.name==="fecha_clon"){
+      setFechaClon(e.target.value);
+    }
+    
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
   
@@ -176,67 +182,6 @@ export default function AdminVentaList() {
   const handleRowSelected = useCallback(state => {
 		setSelectedRows(state.selectedRows);
 	}, []);
-
-  /*const handleRecarga = () => {
-    setUpdateTrigger(Math.random());//experimento
-  };*/
-  
-  /*const handleSunat = async (sComprobante, elemento, sFirma) => {
-
-    const [COD, SERIE, NUMERO] = sComprobante.split('-');
-    if (sFirma !=="" && sFirma !==null ) {
-      //Solo mostrar enlaces, rapidos
-      setRutaXml(`http://74.208.184.113:8080/descargas/${params.documento_id}/${params.documento_id}-${COD}-${SERIE}-${NUMERO}.xml`);
-      setRutaCdr(`http://74.208.184.113:8080/descargas/${params.documento_id}/R-${params.documento_id}-${COD}-${SERIE}-${NUMERO}.xml`);
-      setRutaPdf(`http://74.208.184.113:8080/descargas/${params.documento_id}/${params.documento_id}-${COD}-${SERIE}-${NUMERO}.pdf`);
-      setShowModalSunat(true);
-      return;
-    }
-
-    const result = await confirmDialog({
-        title: "Enviar a SUNAT?",
-        message: `${sComprobante}`,
-        icon: "success", // success | error | info | warning
-        confirmText: "ENVIAR",
-        cancelText: "CANCELAR",
-    });
-    if (result.isConfirmed) {
-        try {
-            // Enviar datos a la API
-            const response = await axios.post(`${back_host}/ad_ventacpe`, {
-                p_periodo: periodo_trabajo,
-                p_id_usuario: params.id_anfitrion,
-                p_documento_id: contabilidad_trabajo,
-                p_r_cod: COD,
-                p_r_serie: SERIE,
-                p_r_numero: NUMERO,
-                p_elemento: elemento
-            });
-            
-            //console.log(response);
-            if (response.data.codigo_hash) {
-                setRutaXml(response.data.ruta_xml);
-                setRutaCdr(response.data.ruta_cdr);
-                setRutaPdf(response.data.ruta_pdf);
-                setShowModalSunat(true);
-            }
-      
-        } catch (error) {
-            //console.error("Error en el envío a SUNAT:", error);
-            await confirmDialog({
-                    title: "Error de envio SUNAT",
-                    message: `${sComprobante}`,
-                    icon: "error", // success | error | info | warning
-                    confirmText: "ACEPTAR",
-                    //cancelText: "CERRAR",
-            });
-        }
-    } else {
-      console.log("❌ Cancelado");
-      return; // Salimos si el usuario cancela
-    }
-    
-  };*/
 
   
   /*const procesaPDF = async (comprobante, nElem, tamaño) => {
@@ -666,10 +611,7 @@ export default function AdminVentaList() {
       setValorVista(st_valorVista);
       }
       if (st_valorVista === 'ventas') {cargaPermisosMenuComando('20');}
-      //if (st_valorVista === 'compras') {cargaPermisosMenuComando('02');}
-      //if (st_valorVista === 'caja') {cargaPermisosMenuComando('03');}
 
-      
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel);
     
@@ -730,7 +672,7 @@ export default function AdminVentaList() {
     columnasComunes = [
       {
         name: '',
-        width: '40px',
+        width: '30px',
         cell: (row) => (
           (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
           (
@@ -753,7 +695,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: '40px',
+        width: '30px',
         cell: (row) => (
           (pVenta0102 || pCompra0202 || pCaja0302) && (row.r_vfirmado == null) ?
           (
@@ -784,7 +726,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: '40px',
+        width: '30px',
         cell: (row) => (
           (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_vfirmado == null) ?
           (
@@ -799,7 +741,7 @@ export default function AdminVentaList() {
           ) 
           : 
           (
-            <ViewAgendaIcon
+            <ContentCopyIcon
               onClick={() => {
                   setShowModalMostrarClonar(true);
                   setValorComprobante(row.comprobante_ref);
@@ -808,13 +750,36 @@ export default function AdminVentaList() {
                 }
               style={{
                 cursor: 'pointer',
-                color: 'skyblue',
+                //color: 'primary',
                 transition: 'color 0.3s ease',
               }}
             />
 
           )
 
+        ),
+        allowOverflow: true,
+        button: true,
+      },
+      {
+        name: '',
+        width: '30px',
+        cell: (row) => (
+          (pVenta0103) && (row.r_cod !== 'NV') ? 
+          (
+            <AdminSunatGreIcon
+              comprobante={row.comprobante_ref}
+              elemento={row.elemento}
+              firma={row.r_vfirmado}
+              documentoId={params.documento_id}
+              periodoTrabajo={periodo_trabajo}
+              idAnfitrion={params.id_anfitrion}
+              contabilidadTrabajo={contabilidad_trabajo}
+              backHost={back_host}
+              onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
+              size={26}
+            />
+          ) : null
         ),
         allowOverflow: true,
         button: true,
@@ -970,7 +935,7 @@ export default function AdminVentaList() {
         documento_id: params.documento_id,
         periodo: periodo_trabajo,
         id_invitado: params.id_invitado,
-        fecha: obtenerFecha(periodo_trabajo,true,diaSel),
+        fecha: fecha_clon,
         r_cod: COD,
         r_serie: SERIE,
         r_numero: NUMERO
@@ -1117,11 +1082,11 @@ const handleOpenLink = (url) => {
                                                   textAlign: "center"   // ✅ centra el texto del input, incluso en type="date"
                                                 },
                                              margin:'.5rem 0'}}
-                                        name="r_fecemi"
+                                        name="fecha_clon"
                                         type="date"
                                         //format="yyyy/MM/dd"
-                                        value={obtenerFecha(periodo_trabajo,true,diaSel)}
-                                        //onChange={handleChange}
+                                        value={fecha_clon}
+                                        onChange={handleChange}
                                         inputProps={{ style:{color:'white'} }}
                                         InputLabelProps={{ style:{color:'white'} }}
                                 />
@@ -1131,7 +1096,6 @@ const handleOpenLink = (url) => {
                                   //color="inherit"
                                   color="primary"
                                             onClick={()=>{
-                                                //alert(obtenerFecha(periodo_trabajo,true,diaSel));
                                                 clonarVenta(valorComprobante);
                                                 setShowModalMostrarClonar(false);
                                               }
