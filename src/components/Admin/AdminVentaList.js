@@ -650,10 +650,10 @@ export default function AdminVentaList() {
 
     //setColumnas([...columnasComunes, ...columnasEspecificas]);
     // Reordenamos (columna 4 → posición 7) Estetica para GRE
-    const ordenado = moveColumn(combinado, 3, 5); 
+    //const ordenado = moveColumn(combinado, 3, 5); 
 
     // Finalmente seteamos
-    setColumnas(ordenado);    
+    setColumnas(combinado);    
 
     //cuando carga x primera vez, sale vacio ... arreglar esto
     cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio
@@ -773,7 +773,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: '0px',
+        width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
           (pVenta0103) && (row.r_cod !== 'NV') ? 
           (
