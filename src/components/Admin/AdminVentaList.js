@@ -645,12 +645,16 @@ export default function AdminVentaList() {
         : AdminCajaColumnas;
     }
 
-    //console.log('permisosComando pVenta0103 cargado: ',pVenta0103);
-    //console.log('permisosComando pCompra0203 cargado: ',pCompra0203);
     cargaColumnasComunes();        
-    //console.log('columnas comunes: ', columnasComunes);
-    setColumnas([...columnasComunes, ...columnasEspecificas]);
-    
+    const combinado = [...columnasComunes, ...columnasEspecificas];
+
+    //setColumnas([...columnasComunes, ...columnasEspecificas]);
+    // Reordenamos (columna 4 → posición 7) Estetica para GRE
+    const ordenado = moveColumn(combinado, 3, 5); 
+
+    // Finalmente seteamos
+    setColumnas(ordenado);    
+
     //cuando carga x primera vez, sale vacio ... arreglar esto
     cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio
 
@@ -660,9 +664,15 @@ export default function AdminVentaList() {
     setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
     setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-    
+
   },[permisosComando, pVenta0101, valorVista, diaSel]) //Solo cuando este completo estado
 
+  function moveColumn(array, fromIndex, toIndex) {
+    const updated = [...array];
+    const [moved] = updated.splice(fromIndex, 1); // saco columna
+    updated.splice(toIndex, 0, moved);            // la inserto en nueva pos
+    return updated;
+  }
 
   //////////////////////////////////////////////////////////
   const cargaColumnasComunes = () =>{
@@ -672,7 +682,7 @@ export default function AdminVentaList() {
     columnasComunes = [
       {
         name: '',
-        width: '30px',
+        width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
           (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
           (
@@ -695,7 +705,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: '30px',
+        width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
           (pVenta0102 || pCompra0202 || pCaja0302) && (row.r_vfirmado == null) ?
           (
@@ -726,7 +736,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: '30px',
+        width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
           (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_vfirmado == null) ?
           (
@@ -763,7 +773,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: '30px',
+        width: '0px',
         cell: (row) => (
           (pVenta0103) && (row.r_cod !== 'NV') ? 
           (

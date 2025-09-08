@@ -15,13 +15,13 @@ export const AdminVentasColumnas = [
     {//11
       name: 'Tp',
       selector: 'r_id_doc',
-      width: '40px',
+      width: '0px',
       sortable: true,
     },
     {//12
-      name: 'Ruc',
+      name: 'Ruc/Dni',
       selector: 'r_documento_id',
-      width: '110px',
+      width: '100px',
       sortable: true,
     },
     {//13
@@ -38,6 +38,7 @@ export const AdminVentasColumnas = [
       name: 'MONEDA',
       selector: 'r_moneda',
       sortable: true,
+      width: '90px',
     },
     {//nuevo
       name: 'EFECTIVO',
