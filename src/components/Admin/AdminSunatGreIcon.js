@@ -183,7 +183,7 @@ const AdminSunatGreIcon = ({
             sx={{display:'block',
                   //margin:'.4rem 0', 
                   mt:-1,
-                  width: '370px',  // Establece el ancho fijo aquí
+                  width: '340px',  // Establece el ancho fijo aquí
                   textAlign: 'center',  // Centrar el texto seleccionado
                   '.MuiSelect-select': { 
                     textAlign: 'center',  // Centrar el valor dentro del Select
@@ -210,7 +210,7 @@ const AdminSunatGreIcon = ({
             sx={{display:'block',
                   //margin:'.4rem 0', 
                   mt:-1,
-                  width: '370px',  // Establece el ancho fijo aquí
+                  width: '340px',  // Establece el ancho fijo aquí
                   textAlign: 'center',  // Centrar el texto seleccionado
                   '.MuiSelect-select': { 
                     textAlign: 'center',  // Centrar el valor dentro del Select
@@ -222,6 +222,59 @@ const AdminSunatGreIcon = ({
           </Select>
         </FormControl>
 
+          <Box sx={{ width: "100%" }}>
+            <TextField
+              size="small"
+              autoComplete="off"
+              label="Ubigeo Partida"
+              name="partida_ubigeo"
+              onChange={handleChange}
+              sx={{ mt:0, }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              InputLabelProps={{ style:{color:'white'} }}
+            />
+            <TextField
+              autoComplete="off"
+              size="small"
+              label="Dirección Partida"
+              name="partida_direccion"
+              onChange={handleChange}
+              sx={{ mt:0, }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              InputLabelProps={{ style:{color:'white'} }}
+            />
+            <TextField
+              autoComplete="off"
+              size="small"
+              label="Ubigeo Llegada"
+              name="llegada_ubigeo"
+              onChange={handleChange}
+              sx={{ mt:0, }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              InputLabelProps={{ style:{color:'white'} }}
+            />
+            <TextField
+              autoComplete="off"
+              size="small"
+              label="Dirección Llegada"
+              name="llegada_direccion"
+              onChange={handleChange}
+              sx={{ mt:0, }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              InputLabelProps={{ style:{color:'white'} }}
+            />
+            <TextField
+              autoComplete="off"
+              size="small"
+              label="Peso Total"
+              name="peso_total"
+              onChange={handleChange}
+              sx={{ mt:0, }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              InputLabelProps={{ style:{color:'white'} }}
+            />
+          </Box>
+
         {/* Campos dinámicos */}
         {modalidad === "01" && (
           <Box sx={{ width: "100%" }}>
@@ -232,7 +285,7 @@ const AdminSunatGreIcon = ({
               name="transp_ruc"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -242,57 +295,7 @@ const AdminSunatGreIcon = ({
               name="transp_razon_social"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              size="small"
-              autoComplete="off"
-              label="Ubigeo Partida"
-              name="partida_ubigeo"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Dirección Partida"
-              name="partida_direccion"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Ubigeo Llegada"
-              name="llegada_ubigeo"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Dirección Llegada"
-              name="llegada_direccion"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Peso Total"
-              name="peso_total"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
           </Box>
@@ -308,7 +311,7 @@ const AdminSunatGreIcon = ({
               name="conductor_dni"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -318,7 +321,7 @@ const AdminSunatGreIcon = ({
               name="conductor_nombres"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -328,7 +331,7 @@ const AdminSunatGreIcon = ({
               name="conductor_apellidos"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -338,7 +341,7 @@ const AdminSunatGreIcon = ({
               name="conductor_licencia"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -348,57 +351,7 @@ const AdminSunatGreIcon = ({
               name="vehiculo_placa"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Ubigeo Partida"
-              name="partida_ubigeo"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Dirección Partida"
-              name="partida_direccion"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Ubigeo Llegada"
-              name="llegada_ubigeo"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Dirección Llegada"
-              name="llegada_direccion"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
-            />
-            <TextField
-              autoComplete="off"
-              size="small"
-              label="Peso Total"
-              name="peso_total"
-              onChange={handleChange}
-              sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 340, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
           </Box>
@@ -413,7 +366,7 @@ const AdminSunatGreIcon = ({
                 display: "flex",          // 🔹 asegura layout en fila
                 alignItems: "center",     // centra verticalmente
                 margin: ".0rem 0", 
-                width: 370, 
+                width: 320, 
                 mt: 0, 
                 //color: "black", 
                 //fontWeight: "bold",
@@ -430,7 +383,7 @@ const AdminSunatGreIcon = ({
             sx={{
               display: "block",
               margin: ".5rem 0",
-              width: 370,
+              width: 320,
               backgroundColor: "rgba(30, 39, 46)",
               "&:hover": { backgroundColor: "rgba(30, 39, 46, 0.1)" },
               mt: -0.5,
@@ -448,7 +401,7 @@ const AdminSunatGreIcon = ({
             sx={{
               display: "block",
               margin: ".5rem 0",
-              width: 370,
+              width: 320,
               backgroundColor: "rgba(30, 39, 46)",
               "&:hover": { backgroundColor: "rgba(30, 39, 46, 0.1)" },
               mt: -0.5,
@@ -466,7 +419,7 @@ const AdminSunatGreIcon = ({
             sx={{
               display: "block",
               margin: ".5rem 0",
-              width: 370,
+              width: 320,
               backgroundColor: "rgba(30, 39, 46)",
               "&:hover": { backgroundColor: "rgba(30, 39, 46, 0.1)" },
               mt: -0.5,
@@ -483,7 +436,7 @@ const AdminSunatGreIcon = ({
           sx={{
             display: "block",
             margin: ".0rem 0",
-            width: 370,
+            width: 320,
             backgroundColor: "rgba(30, 39, 46)",
             "&:hover": { backgroundColor: "rgba(30, 39, 46, 0.1)" },
             mt: 0,
@@ -492,7 +445,7 @@ const AdminSunatGreIcon = ({
           ESC - CERRAR
         </Button>
         </Box>
-        
+
       </Dialog>
     </>
   );
