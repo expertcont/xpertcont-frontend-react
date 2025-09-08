@@ -183,7 +183,7 @@ const AdminSunatGreIcon = ({
             sx={{display:'block',
                   //margin:'.4rem 0', 
                   mt:-1,
-                  width: '340px',  // Establece el ancho fijo aquí
+                  width: '320px',  // Establece el ancho fijo aquí
                   textAlign: 'center',  // Centrar el texto seleccionado
                   '.MuiSelect-select': { 
                     textAlign: 'center',  // Centrar el valor dentro del Select
@@ -210,7 +210,7 @@ const AdminSunatGreIcon = ({
             sx={{display:'block',
                   //margin:'.4rem 0', 
                   mt:-1,
-                  width: '340px',  // Establece el ancho fijo aquí
+                  width: '320px',  // Establece el ancho fijo aquí
                   textAlign: 'center',  // Centrar el texto seleccionado
                   '.MuiSelect-select': { 
                     textAlign: 'center',  // Centrar el valor dentro del Select
@@ -230,7 +230,7 @@ const AdminSunatGreIcon = ({
               name="partida_ubigeo"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -240,7 +240,7 @@ const AdminSunatGreIcon = ({
               name="partida_direccion"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -250,7 +250,7 @@ const AdminSunatGreIcon = ({
               name="llegada_ubigeo"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -260,7 +260,7 @@ const AdminSunatGreIcon = ({
               name="llegada_direccion"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -270,7 +270,7 @@ const AdminSunatGreIcon = ({
               name="peso_total"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
           </Box>
@@ -285,7 +285,7 @@ const AdminSunatGreIcon = ({
               name="transp_ruc"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -295,7 +295,7 @@ const AdminSunatGreIcon = ({
               name="transp_razon_social"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
           </Box>
@@ -311,7 +311,7 @@ const AdminSunatGreIcon = ({
               name="conductor_dni"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -321,7 +321,7 @@ const AdminSunatGreIcon = ({
               name="conductor_nombres"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -331,7 +331,7 @@ const AdminSunatGreIcon = ({
               name="conductor_apellidos"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -341,7 +341,7 @@ const AdminSunatGreIcon = ({
               name="conductor_licencia"
               onChange={handleChange}
               sx={{ my: 0 }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
             <TextField
@@ -351,7 +351,7 @@ const AdminSunatGreIcon = ({
               name="vehiculo_placa"
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 300, textAlign: 'center'} }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
           </Box>
