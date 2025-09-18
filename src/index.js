@@ -41,7 +41,6 @@ function Main() {
         authorizationParams={{
           //redirect_uri: "http://localhost:3000"
           //redirect_uri: "https://expertcont.up.railway.app/"
-          //dfsfsdfsdf
           redirect_uri: "https://expertcont.pe/"
         }}
       >

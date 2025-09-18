@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import axios from "axios";
 import { useDialog } from "./AdminConfirmDialogProvider";
 import {Dialog,DialogTitle,Button,useMediaQuery,TextField,MenuItem,Select,InputLabel,FormControl,Box} from "@mui/material";
@@ -18,12 +18,14 @@ const motivosSunat = [
 ];
 
 const AdminSunatGreIcon = ({
-  comprobante, // ej. "09-T001-321321"
+  comprobante_gre, // ej. "09-T001-321321"
+  comprobante_venta, // ej. "01-F001-12345"
   elemento,
   firma,
   documentoId,
   periodoTrabajo,
   idAnfitrion,
+  idInvitado, //New
   contabilidadTrabajo,
   backHost,
   size = 24,
@@ -43,13 +45,111 @@ const AdminSunatGreIcon = ({
   const { confirmDialog } = useDialog();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
+
+  // 🔹 useEffect para precargar datos si ya existen en BD
+  useEffect(() => {
+    if (!comprobante_gre) {
+      console.log("modo nuevo, sin comprobante GRE");
+      return;
+    }
+    console.log("Cargando datos GRE para:", comprobante_gre);
+    
+
+    //Si existe ref_gre (comprobante), entendemos modo edicion
+    cargaRegistro(periodoTrabajo,idAnfitrion,documentoId, comprobante_gre);
+    setMotivo(formData.guia_motivo_id); // valor de BD
+    setModalidad(formData.guia_modalidad_id); // valor de BD
+  }, [comprobante_gre]);
+
+  const cargaRegistro = async (periodo_trabajo,id_anfitrion,contabilidad_trabajo,comprobanteGre) => {
+    const [COD, SERIE, NUMERO] = comprobanteGre.split('-');
+    //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
+    const response = await fetch(`${back_host}/ad_ventagre/${periodo_trabajo}/${id_anfitrion}/${contabilidad_trabajo}/${COD}/${SERIE}/${NUMERO}`);
+    
+    const data = await response.json();
+    setFormData(data);
+    console.log("Datos GRE encontrados vamos:", data);
+  }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+const handleGrabarBD = async () => {
+    const [R_COD, R_SERIE, R_NUMERO] = (comprobante_venta || "").split("-");
+
+    // Confirmación
+    const result = await confirmDialog({
+      title: "Grabar GRE?",
+      message: `para Venta: ${comprobante_venta}`,
+      icon: "success",
+      confirmText: "GRABAR",
+      cancelText: "CANCELAR",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      // 🚀 Construcción de payload
+      const payload = {
+        periodo: periodoTrabajo,
+        id_anfitrion: idAnfitrion,
+        documento_id: contabilidadTrabajo,
+        id_invitado: idInvitado,
+        cod_emitir: '09', //fijo para GRE, en caso sea transportista, agregar Version
+        // 🔹 nuevos parámetros
+        fecha_emision: formData.fecha_emision,
+        fecha_traslado: formData.fecha_traslado,
+        guia_motivo_id: motivo,
+        guia_modalidad_id: modalidad,
+        transp_ruc: formData.transp_ruc,
+        transp_razon_social: formData.transp_razon_social,
+        conductor_dni: formData.conductor_dni,
+        conductor_nombres: formData.conductor_nombres,
+        conductor_apellidos: formData.conductor_apellidos,
+        conductor_licencia: formData.conductor_licencia,
+        vehiculo_placa: formData.vehiculo_placa,
+        partida_ubigeo: formData.partida_ubigeo,
+        partida_direccion: formData.partida_direccion,
+        llegada_ubigeo: formData.llegada_ubigeo,
+        llegada_direccion: formData.llegada_direccion,
+        peso_total: formData.peso_total,
+        ref_cod: R_COD,
+        ref_serie: R_SERIE,
+        ref_numero: R_NUMERO,
+        // items (el proc almacenado los inserta automatico desde venta real)
+      };
+      const cod_emitir = '09'; //fijo para GRE, en caso sea transportista, agregar Version
+      const response = await axios.post(`${backHost}/ad_ventagreref/${periodoTrabajo}/${idAnfitrion}/${contabilidadTrabajo}/${idInvitado}/${cod_emitir}`, payload);
+      //Respuesta en axios envuelve resultado en (data) contiene cod,serie,numero de BD
+      if (response.data?.cod) {
+        //mostrar en controles
+        alert(`GRE Generada: ${response.data.cod}-${response.data.serie}-${response.data.numero}`);
+        //refrescar datos
+        cargaRegistro(periodoTrabajo,idAnfitrion,documentoId, `${response.data.cod}-${response.data.serie}-${response.data.numero}`);
+        //actualizar comprobante_gre
+        //comprobante_gre = `${response.data.cod}-${response.data.serie}-${response.data.numero}`;
+        //cerrar modal
+        //setShowModal(false);
+        //disparar refresco en padre
+        if (onRefresh) onRefresh();
+      }
+
+    } catch (error) {
+      await confirmDialog({
+        title: "Error de insercion en BD",
+        message: `para Venta: ${comprobante_venta}`,
+        icon: "error",
+        confirmText: "ACEPTAR",
+      });
+    }
+   /*const cod_emitir = '09';
+   alert(`${backHost}/ad_ventagreref/${periodoTrabajo}/${idAnfitrion}/${contabilidadTrabajo}/${idInvitado}/${cod_emitir}`);*/
+  };
+
   const handleSunat = async () => {
-    const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
+    const [COD, SERIE, NUMERO] = (comprobante_gre || "").split("-");
 
     // Si ya está firmado → mostrar links
     if (firma !== "" && firma !== null) {
@@ -64,7 +164,7 @@ const AdminSunatGreIcon = ({
     // Confirmación
     const result = await confirmDialog({
       title: "Enviar a SUNAT?",
-      message: `${comprobante}`,
+      message: `${comprobante_gre}`,
       icon: "success",
       confirmText: "ENVIAR",
       cancelText: "CANCELAR",
@@ -83,7 +183,7 @@ const AdminSunatGreIcon = ({
         p_elemento: elemento,
 
         // 🔹 nuevos parámetros
-        guia: comprobante, // renombrado
+        guia: comprobante_gre, // renombrado
         fecha_emision: "2025-07-17", // puedes poner Date.now()
         hora_emision: "10:10:15",
         fecha_traslado: "2025-07-17",
@@ -115,7 +215,7 @@ const AdminSunatGreIcon = ({
     } catch (error) {
       await confirmDialog({
         title: "Error de envío SUNAT",
-        message: `${comprobante}`,
+        message: `${comprobante_gre}`,
         icon: "error",
         confirmText: "ACEPTAR",
       });
@@ -228,6 +328,7 @@ const AdminSunatGreIcon = ({
               autoComplete="off"
               label="Ubigeo Partida"
               name="partida_ubigeo"
+              value={formData.partida_ubigeo || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -238,6 +339,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Dirección Partida"
               name="partida_direccion"
+              value={formData.partida_direccion || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -248,6 +350,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Ubigeo Llegada"
               name="llegada_ubigeo"
+              value={formData.llegada_ubigeo || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -258,6 +361,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Dirección Llegada"
               name="llegada_direccion"
+              value={formData.llegada_direccion || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -268,6 +372,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Peso Total"
               name="peso_total"
+              value={formData.peso_total || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -283,6 +388,7 @@ const AdminSunatGreIcon = ({
               autoComplete="off"
               label="RUC Transportista"
               name="transp_ruc"
+              value={formData.transp_ruc || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -293,6 +399,7 @@ const AdminSunatGreIcon = ({
               autoComplete="off"
               label="Razón Social Transportista"
               name="transp_razon_social"
+              value={formData.transp_razon_social || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -309,6 +416,7 @@ const AdminSunatGreIcon = ({
               autoComplete="off"
               label="DNI Conductor"
               name="conductor_dni"
+              value={formData.conductor_dni || ''}
               onChange={handleChange}
               sx={{ my: 0 }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -319,6 +427,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Nombres Conductor"
               name="conductor_nombres"
+              value={formData.conductor_nombres || ''}
               onChange={handleChange}
               sx={{ my: 0 }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -329,6 +438,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Apellidos Conductor"
               name="conductor_apellidos"
+              value={formData.conductor_apellidos || ''}
               onChange={handleChange}
               sx={{ my: 0 }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -339,6 +449,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Licencia Conducir"
               name="conductor_licencia"
+              value={formData.conductor_licencia || ''}
               onChange={handleChange}
               sx={{ my: 0 }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -349,6 +460,7 @@ const AdminSunatGreIcon = ({
               size="small"
               label="Placa Vehículo"
               name="vehiculo_placa"
+              value={formData.vehiculo_placa || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
@@ -357,23 +469,59 @@ const AdminSunatGreIcon = ({
           </Box>
         )}
 
+        {!comprobante_gre && (
+          <Box sx={{ width: "100%" }}>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleGrabarBD}
+            sx={{ //display: "block", 
+                  display: "flex",          // 🔹 asegura layout en fila
+                  alignItems: "center",     // centra verticalmente
+                  margin: ".0rem 0", 
+                  width: 320, 
+                  mt: 0, 
+                  //color: "black", 
+                  //fontWeight: "bold",
+              }}
+            disabled={
+                      !formData.partida_ubigeo 
+                      || !formData.partida_direccion
+                      || !formData.llegada_ubigeo 
+                      || !formData.llegada_direccion
+                      || !formData.peso_total
+                      || !motivo 
+                      || !modalidad
+                      || (modalidad === "01" && ( !formData.transp_ruc || !formData.transp_razon_social ))
+                      || (modalidad === "02" && ( !formData.conductor_dni || !formData.conductor_nombres || !formData.conductor_apellidos || !formData.conductor_licencia || !formData.vehiculo_placa ))
+                      }
+          >
+            Grabar GRE
+          </Button>
+          </Box>
+        )}
+
+        
         <Box sx={{ width: "100%" }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSunat}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                margin: ".0rem 0", 
-                width: 320, 
-                mt: 0, 
-                //color: "black", 
-                //fontWeight: "bold",
-             }}
-        >
-          Enviar a SUNAT
-        </Button>
+
+          {comprobante_gre && (  
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSunat}
+            sx={{ //display: "block", 
+                  display: "flex",          // 🔹 asegura layout en fila
+                  alignItems: "center",     // centra verticalmente
+                  margin: ".0rem 0", 
+                  width: 320, 
+                  mt: 0, 
+                  //color: "black", 
+                  //fontWeight: "bold",
+              }}
+          >
+            Enviar a SUNAT
+          </Button>
+          )}
 
         {rutaXml && (
           <Button

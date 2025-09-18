@@ -778,12 +778,14 @@ export default function AdminVentaList() {
           (pVenta0103) && (row.r_cod !== 'NV') ? 
           (
             <AdminSunatGreIcon
-              comprobante={row.comprobante_ref}
-              elemento={row.elemento}
-              firma={row.r_vfirmado}
+              comprobante_gre={row.gre_ref}
+              comprobante_venta={row.comprobante}
+              elemento={row.elemento}  //no se usara, no existe en tabla gre
+              firma={row.gre_vfirmado}
               documentoId={params.documento_id}
               periodoTrabajo={periodo_trabajo}
               idAnfitrion={params.id_anfitrion}
+              idInvitado={params.id_invitado} //new para GRE, identifica serie autorizada 
               contabilidadTrabajo={contabilidad_trabajo}
               backHost={back_host}
               onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
@@ -1179,7 +1181,7 @@ const handleOpenLink = (url) => {
                                 },
                               }}
                             >
-                            <DialogTitle>Datos - Emision</DialogTitle>
+                            <DialogTitle>Datos - Recaudación</DialogTitle>
 
                                 {/* Listado de recaudaciones */}
                                 <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>

@@ -81,7 +81,18 @@ export const AdminVentasColumnas = [
       selector: 'r_numero_ref',
       sortable: true,
     },
-  
+
+    {//33
+      name: 'GRE FIRMA',
+      selector: 'gre_vfirmado',
+      sortable: true,
+    },
+    {//34
+      name: 'GRE',
+      selector: 'gre_ref',
+      sortable: true,
+    },
+    
     // Otras columnas específicas para la vista de Ventas
   ];
   
