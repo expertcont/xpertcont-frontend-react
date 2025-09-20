@@ -780,7 +780,6 @@ export default function AdminVentaList() {
             <AdminSunatGreIcon
               comprobante_gre={row.gre_ref}
               comprobante_venta={row.comprobante}
-              elemento={row.elemento}  //no se usara, no existe en tabla gre
               firma={row.gre_vfirmado}
               documentoId={params.documento_id}
               periodoTrabajo={periodo_trabajo}
