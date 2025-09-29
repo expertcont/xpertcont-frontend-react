@@ -91,6 +91,7 @@ export const AdminVentasColumnas = [
       name: 'GRE',
       selector: 'gre_ref',
       sortable: true,
+      width: '150px',
     },
     
     // Otras columnas específicas para la vista de Ventas

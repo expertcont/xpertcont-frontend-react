@@ -41,7 +41,6 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from '../BotonExcelVentas';
 
-import { AdminComprasColumnas } from './AdminColumnas';
 import { AdminVentasColumnas } from './AdminColumnas';
 import { AdminCajaColumnas } from './AdminColumnas';
 
@@ -150,8 +149,6 @@ export default function AdminVentaList() {
   //Permisos Nivel 01 - Menus (toggleButton)
   const [permisos, setPermisos] = useState([]); //Menu
   const [permisoVentas, setPermisoVentas] = useState(false);
-  const [permisoCompras, setPermisoCompras] = useState(false);
-  const [permisoCaja, setPermisoCaja] = useState(false);
   
   //Permisos Nivel 02 - Comandos (Buttons)
   const [pVenta0101, setPVenta0101] = useState(false); //Nuevo (Casi libre)
@@ -159,17 +156,6 @@ export default function AdminVentaList() {
   const [pVenta0103, setPVenta0103] = useState(false); //ELiminar (Restringido)
   const [pVenta0104, setPVenta0104] = useState(false); //Eliminar Masivo (Casi Nunca solo el administrador)
 
-  const [pCompra0201, setPCompra0201] = useState(false); //Nuevo (Casi libre)
-  const [pCompra0202, setPCompra0202] = useState(false); //Modificar (Restringido)
-  const [pCompra0203, setPCompra0203] = useState(false); //Anular (Restringido)
-  const [pCompra0204, setPCompra0204] = useState(false); //Eliminar (Casi Nunca solo el administrador)
-
-  const [pCaja0301, setPCaja0301] = useState(false); //Nuevo (Casi libre)
-  const [pCaja0302, setPCaja0302] = useState(false); //Modificar (Restringido)
-  const [pCaja0303, setPCaja0303] = useState(false); //Anular (Restringido)
-  const [pCaja0304, setPCaja0304] = useState(false); //Eliminar (Casi Nunca solo el administrador)
-
-  
   // valores adicionales para Carga Archivo
   const [datosCarga, setDatosCarga] = useState({
     id_anfitrion: '',
@@ -412,7 +398,6 @@ export default function AdminVentaList() {
     let idLibro;    
     idLibro = 
             e.target.value === 'ventas' ? '014'
-          : e.target.value === 'compras' ? '008'
           : e.target.value === 'caja' ? '001'
           : '005';
     setValorLibro(idLibro);
@@ -456,17 +441,6 @@ export default function AdminVentaList() {
       setPVenta0102(true); //modificar
       setPVenta0103(true); //eliminar
       setPVenta0104(true); //eliminar masivo
-
-      /*setPCompra0201(true); //nuevo
-      setPCompra0202(true); //modificar
-      setPCompra0203(true); //eliminar
-      setPCompra0204(true); //eliminar masivo
-
-      setPCaja0301(true); //nuevo
-      setPCaja0302(true); //modificar
-      setPCaja0303(true); //eliminar
-      setPCaja0304(true); //eliminar masivo*/
-
     }
     else{
         //Realiza la consulta a la API de permisos
@@ -500,42 +474,7 @@ export default function AdminVentaList() {
             setPVenta0104(true);
           }else {setPVenta0104(false);}
           ////////////////////////////////////////////////
-          /*tienePermiso = permisosData.some(permiso => permiso.id_comando === '02-01'); //Nuevo
-          if (tienePermiso) {
-            setPCompra0201(true);
-          }
           
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '02-02'); //Modificar
-          if (tienePermiso) {
-            setPCompra0202(true);
-          }else {setPCompra0202(false);}
-
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '02-03'); //Eliminar
-          if (tienePermiso) {
-            setPCompra0203(true);
-          }else {setPCompra0203(false);}
-
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '02-04'); //Eliminar Masivo
-          if (tienePermiso) {
-            setPCompra0204(true);
-          }else {setPCompra0204(false);}
-          ////////////////////////////////////////////////
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '03-01'); //Nuevo
-          if (tienePermiso) {
-            setPCaja0301(true);
-          }
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '03-02'); //Modificar
-          if (tienePermiso) {
-            setPCaja0302(true);
-          }else {setPCaja0302(false);}
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '03-03'); //Eliminar
-          if (tienePermiso) {
-            setPCaja0303(true);
-          }else {setPCaja0303(false);}
-          tienePermiso = permisosData.some(permiso => permiso.id_comando === '03-04'); //Eliminar Masivo
-          if (tienePermiso) {
-            setPCaja0304(true);
-          }else {setPCaja0304(false);}*/
           ////////////////////////////////////////////////
 
           //setUpdateTrigger(Math.random());//experimento
@@ -641,7 +580,6 @@ export default function AdminVentaList() {
     }else{
       columnasEspecificas = 
           st_valorVista === 'ventas' ? AdminVentasColumnas
-        : st_valorVista === 'compras' ? AdminComprasColumnas
         : AdminCajaColumnas;
     }
 
@@ -684,7 +622,7 @@ export default function AdminVentaList() {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
-          (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_cod !== 'NV') ? 
+          (pVenta0103) && (row.r_cod !== 'NV') ? 
           (
             <AdminSunatIcon
               comprobante={row.comprobante_ref}
@@ -707,7 +645,7 @@ export default function AdminVentaList() {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
-          (pVenta0102 || pCompra0202 || pCaja0302) && (row.r_vfirmado == null) ?
+          (pVenta0102) && (row.r_vfirmado == null) ?
           (
             <DriveFileRenameOutlineIcon
               onClick={() => handleUpdate(row.comprobante_ref,false)}
@@ -738,7 +676,7 @@ export default function AdminVentaList() {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
-          (pVenta0103 || pCompra0203 || pCaja0303) && (row.r_vfirmado == null) ?
+          (pVenta0103) && (row.r_vfirmado == null) ?
           (
             <DeleteIcon
               onClick={() => handleDelete(row.comprobante_ref, row.elemento)}
@@ -780,6 +718,7 @@ export default function AdminVentaList() {
             <AdminSunatGreIcon
               comprobante_gre={row.gre_ref}
               comprobante_venta={row.comprobante}
+              destinatario_venta={{'destinatario_ruc_dni':row.r_documento_id, 'destinatario_razon_social':row.r_razon_social}}
               firma={row.gre_vfirmado}
               documentoId={params.documento_id}
               periodoTrabajo={periodo_trabajo}
@@ -851,8 +790,6 @@ export default function AdminVentaList() {
     //En caso de anfitrion debemos establecer permisos en true, sin consumir api de consulta 
     if (params.id_anfitrion===params.id_invitado){
       setPermisoVentas(true);
-      setPermisoCompras(true);
-      setPermisoCaja(true);
     }
     else{
         //Realiza la consulta a la API de permisos, puro Menu (obtenerTodosMenu)
@@ -872,14 +809,6 @@ export default function AdminVentaList() {
           tienePermiso = permisosData.some(permiso => permiso.id_menu === '01');
           if (tienePermiso) {
             setPermisoVentas(true);
-          }
-          tienePermiso = permisosData.some(permiso => permiso.id_menu === '02');
-          if (tienePermiso) {
-            setPermisoCompras(true);
-          }
-          tienePermiso = permisosData.some(permiso => permiso.id_menu === '03');
-          if (tienePermiso) {
-            setPermisoCaja(true);
           }
         })
         .catch(error => {
@@ -1339,34 +1268,6 @@ const handleOpenLink = (url) => {
       )
     }
 
-    { permisoCompras ?
-      (    
-    <ToggleButton value="compras"
-                  style={{
-                    backgroundColor: valorVista === 'compras' ? 'lightblue' : 'transparent',
-                    color: valorVista === 'compras' ? 'orange' : 'gray',
-                    borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                  }}
-    >Compras</ToggleButton>
-    ):(
-      <span></span>
-      )
-    }
-
-    { permisoCaja ?
-    (
-    <ToggleButton value="caja"
-                  style={{
-                    backgroundColor: valorVista === 'caja' ? 'lightblue' : 'transparent',
-                    color: valorVista === 'caja' ? 'orange' : 'gray',
-                    borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                                        
-                  }}
-    >Caja</ToggleButton>
-    ):(
-      <span></span>
-      )
-    }
-
 
   </ToggleButtonGroup>      
   </div>
@@ -1392,7 +1293,7 @@ const handleOpenLink = (url) => {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-          { (pVenta0104 || pCompra0204 || pCaja0304 ) ? (
+          { (pVenta0104) ? (
 
             <Tooltip title='ELIMINAR MASIVO' >
             <IconButton color="warning" 

@@ -1209,8 +1209,8 @@ export default function AdminVentaForm() {
   }
 
   const confirmaModificaComprobante = async()=>{
-    console.log('modificando datos previos al envio');
-    console.log(params.comprobante,params.comprobante_ref);
+    //console.log('modificando datos previos al envio');
+    //console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
   
     //Alimentar useState venta

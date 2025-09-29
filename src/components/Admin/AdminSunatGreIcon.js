@@ -7,7 +7,10 @@ import Sunat01Icon from "../../assets/images/sunatgre2.png";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import CodeIcon from "@mui/icons-material/Code";
 import DescriptionIcon from "@mui/icons-material/Description";
-
+import ListaPopUp from '../ListaPopUp';
+import FindIcon from '@mui/icons-material/FindInPage';
+import InputAdornment from '@mui/material/InputAdornment';
+import IconButton from '@mui/material/IconButton';
 // 🔹 Ejemplo motivos SUNAT (puedes ampliar con los oficiales)
 const motivosSunat = [
   { codigo: "01", descripcion: "Venta" },
@@ -20,6 +23,7 @@ const motivosSunat = [
 const AdminSunatGreIcon = ({
   comprobante_gre, // ej. "09-T001-321321"
   comprobante_venta, // ej. "01-F001-12345"
+  destinatario_venta, // ej. {destinatario_tipo,destinatario_ruc_dni,destinatario_razon_social}
   firma,
   documentoId,
   periodoTrabajo,
@@ -32,12 +36,16 @@ const AdminSunatGreIcon = ({
   descargasHost = "http://74.208.184.113:8080",
 }) => {
   const [showModal, setShowModal] = useState(false);
-  const [rutaXml, setRutaXml] = useState("");
-  const [rutaCdr, setRutaCdr] = useState("");
-  const [rutaPdf, setRutaPdf] = useState("");
+  const [rutaXml, setRutaXml] = useState(null);
+  const [rutaCdr, setRutaCdr] = useState(null);
+  const [rutaPdf, setRutaPdf] = useState(null);
+  const [comprobante_gre_grabado, setComprobanteGreGrabado] = useState(null);
 
   // 🔹 nuevos estados
   const [formData, setFormData] = useState({}); // datos dinámicos
+  const [ubigeo_select,setUbigeoSelect] = useState([]);
+  const [showModalUbigeoPartidaLista, setShowModalUbigeoPartidaLista] = useState(false);
+  const [showModalUbigeoLLegadaLista, setShowModalUbigeoLLegadaLista] = useState(false);
 
   const { confirmDialog } = useDialog();
   const theme = useTheme();
@@ -46,27 +54,78 @@ const AdminSunatGreIcon = ({
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
 
   // 🔹 useEffect para precargar datos de BD (NO SE USA), sino se generarn n-incidencias desde formulario anterior 
-
+  const cargaPopUpUbigeo = () =>{
+    axios
+    .get(`${back_host}/ad_ventaubigeo`)
+    .then((response) => {
+        setUbigeoSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
   const cargaRegistro = async (periodo_trabajo,id_anfitrion,contabilidad_trabajo,comprobanteGre) => {
     const [COD, SERIE, NUMERO] = comprobanteGre.split('-');
-    //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
+    //Cargamos datos GRE
     const response = await fetch(`${back_host}/ad_ventagre/${periodo_trabajo}/${id_anfitrion}/${contabilidad_trabajo}/${COD}/${SERIE}/${NUMERO}`);
     
     const data = await response.json();
     setFormData(data);
-    console.log("Datos GRE encontrados vamos:", data);
+    //si existen filas en data
+    setComprobanteGreGrabado(comprobanteGre);
+    console.log("Datos GRE cargados:", data);
+
+    //encaso exista firma, mostrar links
+    if (data.vfirmado !== "" && data.vfirmado !== null) {
+        console.log("Firma encontrada:", data.vfirmado);
+        const baseUrl = `${descargasHost}/descargas/${documentoId}`;
+        setRutaXml(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
+        setRutaCdr(`${baseUrl}/R-${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
+        setRutaPdf(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.pdf`);
+    }
+
+  };
+
+  const cargaDatosIniciales = () => {
+    if (!destinatario_venta) return;
+
+    setFormData(prevData => ({
+      ...prevData,
+      ...destinatario_venta,
+      guia_motivo_id: prevData.guia_motivo_id || "01", // por defecto '01'
+      fecha_emision: prevData.fecha_emision || new Date().toISOString().split("T")[0],
+      fecha_traslado: prevData.fecha_traslado || new Date().toISOString().split("T")[0],
+    }));
   };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-const handleGrabarBD = async () => {
+  const mostrarRazonSocialGenera = (sDocumentoId) => {
+    console.log("mostrarRazonSocialGenera para:", sDocumentoId);
+    axios
+        .post(`${back_host}/correntistagenera`, {
+            ruc: sDocumentoId
+        })
+        .then((response) => {
+            //console.log(response.data);
+            const { nombre_o_razon_social,r_id_doc } = response.data;
+            setFormData(prevState => ({ ...prevState, transp_razon_social: nombre_o_razon_social || '' }));
+            console.log("Razon Social encontrada:", nombre_o_razon_social);
+            console.log(formData);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+  };
+
+  const handleGrabarBD = async () => {
     const [R_COD, R_SERIE, R_NUMERO] = (comprobante_venta || "").split("-");
 
     // Confirmación
     const result = await confirmDialog({
-      title: "Grabar GRE?",
+      title: !comprobante_gre ? "Grabar GRE?" : "Actualizar GRE?",
       message: `para Venta: ${comprobante_venta}`,
       icon: "success",
       confirmText: "GRABAR",
@@ -75,13 +134,16 @@ const handleGrabarBD = async () => {
     if (!result.isConfirmed) return;
 
     try {
+      const [COD = null, SERIE = null, NUMERO = null] = (comprobante_gre ?? "").split("-").map(v => v || null);
       // 🚀 Construcción de payload
       const payload = {
         periodo: periodoTrabajo,
         id_anfitrion: idAnfitrion,
         documento_id: contabilidadTrabajo,
         id_invitado: idInvitado,
-        cod_emitir: '09', //fijo para GRE, en caso sea transportista, agregar Version
+        cod: COD,
+        serie: SERIE,
+        numero: NUMERO,
         // 🔹 nuevos parámetros
         fecha_emision: formData.fecha_emision,
         fecha_traslado: formData.fecha_traslado,
@@ -96,6 +158,16 @@ const handleGrabarBD = async () => {
         conductor_apellidos: formData.conductor_apellidos,
         conductor_licencia: formData.conductor_licencia,
         vehiculo_placa: formData.vehiculo_placa,
+
+        destinatario_tipo: formData.destinatario_ruc_dni?.trim().length === 11 
+                            ? 6 
+                            : formData.destinatario_ruc_dni?.trim().length <= 8 
+                              ? 1 
+                              : null,
+
+        destinatario_ruc_dni: formData.destinatario_ruc_dni,
+        destinatario_razon_social: formData.destinatario_razon_social,
+
         partida_ubigeo: formData.partida_ubigeo,
         partida_direccion: formData.partida_direccion,
         llegada_ubigeo: formData.llegada_ubigeo,
@@ -107,19 +179,47 @@ const handleGrabarBD = async () => {
         // items (el proc almacenado los inserta automatico desde venta real)
       };
       const cod_emitir = '09'; //fijo para GRE, en caso sea transportista, agregar Version
-      const response = await axios.post(`${backHost}/ad_ventagreref/${periodoTrabajo}/${idAnfitrion}/${contabilidadTrabajo}/${idInvitado}/${cod_emitir}`, payload);
-      //Respuesta en axios envuelve resultado en (data) contiene cod,serie,numero de BD
-      if (response.data?.cod) {
-        //mostrar en controles
-        alert(`GRE Generada: ${response.data.cod}-${response.data.serie}-${response.data.numero}`);
-        //refrescar datos
-        //cargaRegistro(periodoTrabajo,idAnfitrion,documentoId, `${response.data.cod}-${response.data.serie}-${response.data.numero}`);
-        //actualizar comprobante_gre
-        //comprobante_gre = `${response.data.cod}-${response.data.serie}-${response.data.numero}`;
-        //cerrar modal
-        //setShowModal(false);
-
+      if (!comprobante_gre_grabado) {
+        //Modo Grabrar
+        const response = await axios.post(`${backHost}/ad_ventagreref/${periodoTrabajo}/${idAnfitrion}/${contabilidadTrabajo}/${idInvitado}/${cod_emitir}`, payload);
+        //Respuesta en axios envuelve resultado en (data) contiene cod,serie,numero de BD
+        if (response.data?.cod) {
+          //mostrar en controles
+            await confirmDialog({
+              title: "GRE Registrada en BD",
+              message: `para Venta: ${comprobante_venta}`,
+              icon: "success",
+              confirmText: "ACEPTAR",
+            });
+          
+          //refrescar datos
+          setComprobanteGreGrabado(`${response.data.cod}-${response.data.serie}-${response.data.numero}`);
+          console.log("GRE grabada:", `${response.data.cod}-${response.data.serie}-${response.data.numero}`);
+          //cerrar modal
+          //setShowModal(false);
+          //onRefresh();
+        }
       }
+      else{
+          //Modo Actualizar
+          const response = await axios.put(`${backHost}/ad_ventagre`, payload);
+          if  (response.data.success) {
+            //alert(`GRE Actualizada: ${COD}-${SERIE}-${NUMERO}`);
+            await confirmDialog({
+              title: "GRE Actualizada",
+              message: `para Venta: ${comprobante_venta}`,
+              icon: "success",
+              confirmText: "ACEPTAR",
+            });
+
+            //setShowModal(false);
+            //onRefresh();
+          }
+          else {
+            alert(response.data.message || "No se pudo actualizar la GRE.");
+          }
+          
+      }      
 
     } catch (error) {
       await confirmDialog({
@@ -134,22 +234,12 @@ const handleGrabarBD = async () => {
   };
 
   const handleSunat = async () => {
-    const [COD, SERIE, NUMERO] = (comprobante_gre || "").split("-");
-
-    // Si ya está firmado → mostrar links
-    if (firma !== "" && firma !== null) {
-      const baseUrl = `${descargasHost}/descargas/${documentoId}`;
-      setRutaXml(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
-      setRutaCdr(`${baseUrl}/R-${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
-      setRutaPdf(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.pdf`);
-      setShowModal(true);
-      return;
-    }
+    const [GRE_COD, GRE_SERIE, GRE_NUMERO] = (comprobante_gre_grabado || "").split("-");
 
     // Confirmación
     const result = await confirmDialog({
       title: "Enviar a SUNAT?",
-      message: `${comprobante_gre}`,
+      message: `${comprobante_gre_grabado}`,
       icon: "success",
       confirmText: "ENVIAR",
       cancelText: "CANCELAR",
@@ -162,27 +252,34 @@ const handleGrabarBD = async () => {
         p_periodo: periodoTrabajo,
         p_id_usuario: idAnfitrion,
         p_documento_id: contabilidadTrabajo,
-        p_r_cod: COD,
-        p_r_serie: SERIE,
-        p_r_numero: NUMERO,
-
-        // Datos dinámicos según modalidad
-        ...formData,
-
+        p_r_cod: GRE_COD,
+        p_r_serie: GRE_SERIE,
+        p_r_numero: GRE_NUMERO,
+        p_comprobante: comprobante_venta,
       };
 
-      const response = await axios.post(`${backHost}/ad_ventacpe`, payload);
+      //console.log("Payload SUNAT GRE:", payload);
+      const response = await axios.post(`${backHost}/ad_ventagresunat`, payload);
 
       if (response.data?.codigo_hash) {
         setRutaXml(response.data.ruta_xml);
         setRutaCdr(response.data.ruta_cdr);
         setRutaPdf(response.data.ruta_pdf);
-        setShowModal(true);
+        //firma = response.data.codigo_hash;
+        //setShowModal(true);
+
+        await confirmDialog({
+          title: "envío exitoso a SUNAT",
+          message: `${comprobante_gre_grabado}`,
+          icon: "success",
+          confirmText: "ACEPTAR",
+        });
+
       }
     } catch (error) {
       await confirmDialog({
         title: "Error de envío SUNAT",
-        message: `${comprobante_gre}`,
+        message: `${comprobante_gre_grabado}`,
         icon: "error",
         confirmText: "ACEPTAR",
       });
@@ -202,13 +299,72 @@ const handleGrabarBD = async () => {
   };
 
   const handleOpenModal = async () => {
+    //cargar ubigeos
+    cargaPopUpUbigeo();
+
     if (comprobante_gre) {
+      //modo editar
       await cargaRegistro(periodoTrabajo,idAnfitrion,documentoId,comprobante_gre);
+    }else{
+      //modo nuevo
+      cargaDatosIniciales();
     }
 
     setShowModal(true);
-    //alert(formData);
-    
+  };
+
+  const handleLiberar = async () => {
+    const [GRE_COD, GRE_SERIE, GRE_NUMERO] = (comprobante_gre_grabado || "").split("-");
+
+    // Confirmación
+    const result = await confirmDialog({
+      title: "Liberar GRE?, Venta asociada quedara sin GRE",
+      message: `${comprobante_gre_grabado}`,
+      icon: "success",
+      confirmText: "LIBERAR",
+      cancelText: "CANCELAR",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      // 🚀 Construcción de payload
+      const payload = {
+        p_periodo: periodoTrabajo,
+        p_id_usuario: idAnfitrion,
+        p_documento_id: contabilidadTrabajo,
+        p_r_cod: GRE_COD,
+        p_r_serie: GRE_SERIE,
+        p_r_numero: GRE_NUMERO,
+        p_comprobante: comprobante_venta,
+      };
+
+      //console.log("Payload SUNAT GRE:", payload);
+      const response = await axios.put(`${backHost}/ad_ventagresunat`, payload);
+
+      if (response.data.success) {
+        setRutaXml(null);
+        setRutaCdr(null);
+        setRutaPdf(null);
+        //firma = response.data.codigo_hash;
+        //setShowModal(true);
+
+        await confirmDialog({
+          title: "Venta Liberada de: ",
+          message: `${comprobante_gre_grabado}`,
+          icon: "success",
+          confirmText: "ACEPTAR",
+        });
+
+        setComprobanteGreGrabado(null);
+      }
+    } catch (error) {
+      await confirmDialog({
+        title: "Error de Liberación: ",
+        message: `${comprobante_gre_grabado}`,
+        icon: "error",
+        confirmText: "ACEPTAR",
+      });
+    }
   };
 
   return (
@@ -245,11 +401,12 @@ const handleGrabarBD = async () => {
             marginTop: "0vh",
             background: "rgba(30, 39, 46, 0.95)",
             color: "white",
-            width: isSmallScreen ? "40%" : "30%",
+            width: isSmallScreen ? "40%" : "26%",
             padding: "1rem",
           },
         }}
       >
+        <Box sx={{ width: "100%" }}>
         <DialogTitle sx={{
                           fontSize: "1.25rem",
                           fontWeight: "bold",
@@ -257,6 +414,26 @@ const handleGrabarBD = async () => {
                           py: 0, // padding vertical
                         }}
         >Emisión GRE</DialogTitle>
+
+        {(comprobante_gre_grabado && rutaXml !== null) && (  
+          <Button
+            variant="contained"
+            //color="inherit"
+            onClick={handleLiberar}
+            sx={{ //display: "block", 
+                  display: "flex",          // 🔹 asegura layout en fila
+                  alignItems: "center",     // centra verticalmente
+                  margin: ".0rem 0", 
+                  width: 320, 
+                  mt: 0, 
+                  backgroundColor: "rgba(30, 49, 46, 0.9)",
+                  "&:hover": { backgroundColor: "rgba(30, 49, 46, 0.9)" },
+              }}
+          >
+            LIBERAR: {comprobante_gre_grabado}
+          </Button>
+        )}
+        </Box>
 
         {/* Motivo */}
         <FormControl fullWidth sx={{ my: 1 }}>
@@ -367,9 +544,54 @@ const handleGrabarBD = async () => {
               value={formData.partida_ubigeo || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
+              //inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
+              InputProps={{
+                style: { color: 'white', width: 320, textAlign: 'center' },
+                startAdornment: (
+                  <InputAdornment position="start">
+                      <IconButton
+                        color="primary"
+                        //color = 'rgba(33, 150, 243, 0.8)'
+                        aria-label="upload picture"
+                        component="label"
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: 0,
+                          transform: 'translateY(-50%)',
+                        }}
+                        onClick={() => {
+                          setShowModalUbigeoPartidaLista(true);
+                        }}
+                      >
+                        <FindIcon />
+                      </IconButton>
+                  </InputAdornment>
+                ),
+
+                // Aquí se ajusta el padding del texto sin afectar el icono
+                inputProps: {
+                  style: {
+                    textAlign: 'center'
+                    //paddingLeft: '32px', // Mueve solo el texto a la derecha
+                      //fontSize: '12px', // Ajusta el tamaño de letra aquí
+                  },
+                },
+              }}
             />
+                <ListaPopUp
+                    registroPopUp={ubigeo_select}
+                    showModal={showModalUbigeoPartidaLista}
+                    setShowModal={setShowModalUbigeoPartidaLista}
+                    registro={formData}
+                    setRegistro={setFormData}
+                    idCodigoKey="partida_ubigeo"
+                    descripcionKey="partida_direccion"
+                    auxiliarKey="auxiliar"
+                />
+
             <TextField
               autoComplete="off"
               size="small"
@@ -381,6 +603,7 @@ const handleGrabarBD = async () => {
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
+
             <TextField
               autoComplete="off"
               size="small"
@@ -389,9 +612,54 @@ const handleGrabarBD = async () => {
               value={formData.llegada_ubigeo || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
+              //inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
+              InputProps={{
+                style: { color: 'white', width: 320, textAlign: 'center' },
+                startAdornment: (
+                  <InputAdornment position="start">
+                      <IconButton
+                        color="primary"
+                        //color = 'rgba(33, 150, 243, 0.8)'
+                        aria-label="upload picture"
+                        component="label"
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: 0,
+                          transform: 'translateY(-50%)',
+                        }}
+                        onClick={() => {
+                          setShowModalUbigeoLLegadaLista(true);
+                        }}
+                      >
+                        <FindIcon />
+                      </IconButton>
+                  </InputAdornment>
+                ),
+
+                // Aquí se ajusta el padding del texto sin afectar el icono
+                inputProps: {
+                  style: {
+                    textAlign: 'center'
+                    //paddingLeft: '32px', // Mueve solo el texto a la derecha
+                      //fontSize: '12px', // Ajusta el tamaño de letra aquí
+                  },
+                },
+              }}
             />
+                <ListaPopUp
+                    registroPopUp={ubigeo_select}
+                    showModal={showModalUbigeoLLegadaLista}
+                    setShowModal={setShowModalUbigeoLLegadaLista}
+                    registro={formData}
+                    setRegistro={setFormData}
+                    idCodigoKey="llegada_ubigeo"
+                    descripcionKey="llegada_direccion"
+                    auxiliarKey="auxiliar"
+                />
+
             <TextField
               autoComplete="off"
               size="small"
@@ -427,8 +695,25 @@ const handleGrabarBD = async () => {
               value={formData.transp_ruc || ''}
               onChange={handleChange}
               sx={{ mt:0, }}
-              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
-              InputLabelProps={{ style:{color:'white'} }}
+              inputProps={{ style:{color:'white',width: 255, textAlign: 'center'} }}
+              //InputLabelProps={{ style:{color:'white'} }}
+              InputLabelProps={{ style: { color: 'white' } }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      color="warning"
+                      onClick={() => {
+                        // acción del botón de búsqueda
+                        mostrarRazonSocialGenera(formData.transp_ruc);
+                      }}
+                      edge="end"
+                    >
+                      <FindIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <TextField
               size="small"
@@ -505,7 +790,7 @@ const handleGrabarBD = async () => {
           </Box>
         )}
 
-        {!comprobante_gre && (
+        {!comprobante_gre_grabado && (
           <Box sx={{ width: "100%" }}>
           <Button
             variant="contained"
@@ -540,7 +825,26 @@ const handleGrabarBD = async () => {
         
         <Box sx={{ width: "100%" }}>
 
-          {comprobante_gre && !rutaXml && (  
+          {(comprobante_gre && rutaXml === null) && (  
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleGrabarBD}
+            sx={{ //display: "block", 
+                  display: "flex",          // 🔹 asegura layout en fila
+                  alignItems: "center",     // centra verticalmente
+                  margin: ".0rem 0", 
+                  width: 320, 
+                  mt: 0, 
+                  //color: "black", 
+                  //fontWeight: "bold",
+              }}
+          >
+            Modificar GRE
+          </Button>
+          )}
+
+          {(comprobante_gre_grabado && rutaXml === null) && (  
           <Button
             variant="contained"
             color="primary"
@@ -555,68 +859,75 @@ const handleGrabarBD = async () => {
                   //fontWeight: "bold",
               }}
           >
-            Enviar a SUNAT
+            Enviar GRE - SUNAT
           </Button>
           )}
 
-        {!rutaXml && (
-          <Box sx={{ width: "100%" }}>
+        {(rutaXml !== "" && rutaXml !== null) && (
+          <Box 
+                sx={{ 
+                    width: isSmallScreen ? "103%" : "320px", 
+                    display: "flex", 
+                    flexDirection: "row",   // 🔹 en fila
+                    gap: 0,                 // 🔹 espacio entre botones
+                    justifyContent: "left"// 🔹 centrados horizontalmente
+                  }}          
+          >
+              <Button
+                variant="contained"
+                //color="primary"
+                color="inherit"
+                onClick={() => handleOpenLink(rutaXml)}
+                sx={{ //display: "block", 
+                      display: "flex",          // 🔹 asegura layout en fila
+                      alignItems: "center",     // centra verticalmente
+                      margin: ".5rem 0", 
+                      width: 106,
+                      color: "black", 
+                      fontWeight: "bold",
+                      }}
+                startIcon={<CodeIcon />} 
+              >
+                XML
+              </Button>
 
-          <Button
-            variant="contained"
-            //color="primary"
-            color="inherit"
-            onClick={() => handleOpenLink(rutaXml)}
-            sx={{ //display: "block", 
-                  display: "flex",          // 🔹 asegura layout en fila
-                  alignItems: "center",     // centra verticalmente
-                  margin: ".5rem 0", 
-                  width: 320,
-                  color: "black", 
-                  fontWeight: "bold",
+              <Button
+                variant="contained"
+                //color="inherit"
+                color="primary"
+                onClick={() => handleOpenLink(rutaCdr)}
+                sx={{ //display: "block", 
+                      display: "flex",          // 🔹 asegura layout en fila
+                      alignItems: "center",     // centra verticalmente
+                      margin: ".5rem 0", 
+                      width: 106, 
+                      //mt: -0.5, 
+                      //color: "black", 
+                      fontWeight: "bold",
                   }}
-            startIcon={<CodeIcon />} 
-          >
-            XML
-          </Button>
+                startIcon={<TaskAltIcon />} 
+              >
+                CDR
+              </Button>
 
-          <Button
-            variant="contained"
-            //color="inherit"
-            color="primary"
-            onClick={() => handleOpenLink(rutaCdr)}
-            sx={{ //display: "block", 
-                  display: "flex",          // 🔹 asegura layout en fila
-                  alignItems: "center",     // centra verticalmente
-                  margin: ".5rem 0", 
-                  width: 320, 
-                  mt: -0.5, 
-                  //color: "black", 
-                  fontWeight: "bold",
-              }}
-            startIcon={<TaskAltIcon />} 
-          >
-            CDR
-          </Button>
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={() => handleOpenLink(rutaPdf)}
+                sx={{ //display: "block", 
+                      display: "flex",          // 🔹 asegura layout en fila
+                      alignItems: "center",     // centra verticalmente
+                      //justifyContent: "flex-start", // texto alineado con el ícono            
+                      margin: ".5rem 0", 
+                      width: "100%", 
+                      //mt: -0.5, 
+                      fontWeight: "bold" }}
+                startIcon={<DescriptionIcon />}
+              >
+                PDF
+              </Button>
 
-          <Button
-            variant="contained"
-            color="warning"
-            onClick={() => handleOpenLink(rutaPdf)}
-            sx={{ //display: "block", 
-                  display: "flex",          // 🔹 asegura layout en fila
-                  alignItems: "center",     // centra verticalmente
-                  //justifyContent: "flex-start", // texto alineado con el ícono            
-                  margin: ".5rem 0", 
-                  width: 320, 
-                  mt: -0.5, 
-                  fontWeight: "bold" }}
-            startIcon={<DescriptionIcon />}
-          >
-            PDF
-          </Button>
-
-            </Box>
+          </Box>
         )}
 
 
@@ -627,13 +938,14 @@ const handleGrabarBD = async () => {
             display: "block",
             margin: ".0rem 0",
             width: 320,
-            backgroundColor: "rgba(30, 39, 46)",
+            backgroundColor: "rgba(30, 39, 46, 0.9)",
             "&:hover": { backgroundColor: "rgba(30, 39, 46, 0.1)" },
             mt: 0,
           }}
         >
           ESC - CERRAR
         </Button>
+
         </Box>
 
       </Dialog>
