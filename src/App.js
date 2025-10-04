@@ -1,12 +1,12 @@
 import {BrowserRouter,Routes,Route} from "react-router-dom";
-import {Container} from "@mui/material";
+import {Box,Container,useMediaQuery} from "@mui/material";
 import NavBar from "./components/NavBar";
 import CorrentistaForm from "./components/CorrentistaForm";
 import CorrentistaList from "./components/CorrentistaList";
 import SeguridadList from "./components/SeguridadList";
 import { useAuth0 } from '@auth0/auth0-react'; 
 import Inicio from "./components/Inicio";
-import { useEffect } from 'react';
+import { useEffect,useState } from 'react';
 
 import AsientoVentaForm from './components/AsientoVentaForm';
 import AsientoCompraForm from './components/AsientoCompraForm';
@@ -34,9 +34,15 @@ import AdminProductoFormPrecio from "./components/Admin/AdminProductoFormPrecio"
 // 👇 Importa el ConfirmProvider
 //import { DialogProvider } from "./components/Admin/AdminConfirmDialogProvider";
 import { AdminConfirmDialogProvider } from "./components/Admin/AdminConfirmDialogProvider";
+import AdminStockList from "./components/Admin/AdminStockList";
+
+import NavSideBar from "./components/NavSideBar";
+import Header from './components/Header'; // Importa el nuevo componente
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
+  const isMobile = useMediaQuery("(max-width:600px)");
+  const [open, setOpen] = useState(false);
 
   useEffect( ()=> {
     if (isAuthenticated && user && user.email) {
@@ -48,15 +54,29 @@ function App(props) {
     <BrowserRouter>
       {/* 👇 Aquí envolvemos TODO dentro del ConfirmProvider */}
       <AdminConfirmDialogProvider>
-        <div>
-          <NavBar 
+      
+      <Box sx={{ display: 'flex', 
+                 //backgroundColor: '#1e272e',
+                 backgroundColor: '#242e36ff',
+                 minHeight: "100vh", // 🔹 ocupa toda la altura disponible
+              }}
+      >
+          {/*     */}
+          <Header />
+          
+          {/* Sidebar fijo a la izquierda */}
+          <NavSideBar 
             idAnfitrion={props.idAnfitrion}
             idInvitado={props.idInvitado}
           />
 
-          <Container>
+
+          {/* Contenido principal con margen izquierdo */}
+          <Container maxWidth="xl" sx={{ paddingTop: isMobile ? 10 : 8.5, paddingLeft: 0, marginLeft:1 }}>
             <Routes>
               {/* tus rutas originales, sin cambios */}
+              <Route path="/ad_stock/:id_anfitrion/:id_invitado/:documento_id" element={<AdminStockList />} />
+
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id" element={<AdminEquipoList />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminEquipoForm />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/:id_equipo/edit" element={<AdminEquipoForm />} />
@@ -112,7 +132,7 @@ function App(props) {
               <Route path="/asientogenerador/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro" element={<AsientoListPrev />} /> 
             </Routes>
           </Container>
-        </div>
+      </Box>
       </AdminConfirmDialogProvider>
     </BrowserRouter>
   );

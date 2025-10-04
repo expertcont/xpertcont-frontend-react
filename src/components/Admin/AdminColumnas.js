@@ -97,10 +97,10 @@ export const AdminVentasColumnas = [
     // Otras columnas específicas para la vista de Ventas
   ];
   
-  export const AdminComprasColumnas = [
+  export const AdminStocksColumnas = [
     {//05
       name: 'Emision',
-      selector: 'r_fecemi',
+      selector: 'fecha_emision',
       width: '100px',
       sortable: true,
     },
@@ -128,102 +128,10 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     ///////////////cambio
-    {//15
-      name: 'B-GRAV',
-      selector: 'r_base001',
-      sortable: true,
-    },
-    {//16
-      name: 'IGV (A)',
-      selector: 'r_igv001',
-      sortable: true,
-    },
   
-    {//17
-      name: 'B-DGNG',
-      selector: 'r_base002',
-      sortable: true,
-    },
-    {//18
-      name: 'IGV (B)',
-      selector: 'r_igv002',
-      sortable: true,
-    },
-  
-    {//19
-      name: 'B-DNG',
-      selector: 'r_base003',
-      sortable: true,
-    },
-    {//20
-      name: 'IGV (C)',
-      selector: 'r_igv003',
-      sortable: true,
-    },
-  
-    {//21
-      name: 'NoGRAV',
-      selector: 'r_base004',
-      sortable: true,
-    },
-    {//22
-      name: 'ISC',
-      selector: 'r_monto_isc',
-      sortable: true,
-    },
-    {//23
-      name: 'ICBP',
-      selector: 'r_monto_icbp',
-      sortable: true,
-    },
-    {//24
-      name: 'OTROS',
-      selector: 'r_monto_otros',
-      sortable: true,
-    },
-    {//25
-      name: 'TOTAL',
-      selector: 'r_monto_total',
-      sortable: true,
-    },
-    {//26 PEN o USD
-      name: 'MONEDA',
-      selector: 'r_moneda',
-      sortable: true,
-    },
     {//27
       name: 'TC',
       selector: 'r_tc',
-      sortable: true,
-    },
-    {//28
-      name: 'REF.Emision',
-      selector: 'r_fecemi_ref',
-      sortable: true,
-    },
-    {//29
-      name: 'REF.TP',
-      selector: 'r_cod_ref',
-      sortable: true,
-    },
-    {//30
-      name: 'REF.SERIE',
-      selector: 'r_serie_ref',
-      sortable: true,
-    },
-    {//31 cambioooo
-      name: 'Aduana',
-      selector: 'r_id_aduana',
-      sortable: true,
-    },
-    {//32
-      name: 'REF.NUM',
-      selector: 'r_numero_ref',
-      sortable: true,
-    },
-    {//33
-      name: 'ID.BSS',
-      selector: 'r_idbss',
       sortable: true,
     },
   

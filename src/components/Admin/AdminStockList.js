@@ -13,8 +13,6 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 //import PrintIcon from '@mui/icons-material/Print';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
-import FileCopyIcon from '@mui/icons-material/FileCopy';
-import CopyAllIcon from '@mui/icons-material/CopyAll';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
@@ -41,16 +39,9 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from '../BotonExcelVentas';
 
-import { AdminVentasColumnas } from './AdminColumnas';
-import { AdminCajaColumnas } from './AdminColumnas';
+import { AdminStocksColumnas } from './AdminColumnas';
 
-import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
-import AdminSunatIcon from './AdminSunatIcon';
-//import Sunat01IconGre from '../../assets/images/sunatgre0.png';
-//import Sunat01Icon from '../../assets/images/sunatgre0.png';
-import AdminSunatGreIcon from './AdminSunatGreIcon';
-
-export default function AdminVentaList() {
+export default function AdminStockList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -95,7 +86,7 @@ export default function AdminVentaList() {
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [toggleCleared, setToggleCleared] = useState(false);
-	//const [data, setData] = useState(tableDataItems);
+    //const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
   const [navegadorMovil, setNavegadorMovil] = useState(false);
@@ -166,8 +157,8 @@ export default function AdminVentaList() {
   });  
 
   const handleRowSelected = useCallback(state => {
-		setSelectedRows(state.selectedRows);
-	}, []);
+        setSelectedRows(state.selectedRows);
+    }, []);
 
   
   /*const procesaPDF = async (comprobante, nElem, tamaño) => {
@@ -340,29 +331,6 @@ export default function AdminVentaList() {
     }
   };
   
-  const calcularSumatoriaMoneda = (columna, filtro) => {
-    return registrosdet.reduce((acumulador, fila) => {
-      // Verificar si el valor del campo de filtro coincide
-      if (fila['r_moneda'] === filtro) {
-        const valorColumna = fila[columna];
-        // Verificar si el valor no es nulo y es numérico antes de sumarlo
-        if (valorColumna !== null && !isNaN(valorColumna)) {
-          return acumulador + parseFloat(valorColumna);
-        }
-      }
-      return acumulador;
-    }, 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-  };  
-  const calcularSumatoriaFilasMoneda = (filtro) => {
-    return registrosdet.reduce((acumulador, fila) => {
-      // Verificar si el valor del campo de filtro coincide
-      if (fila['r_moneda'] === filtro) {
-          return acumulador + 1;
-      }
-      return acumulador;
-    }, 0);
-  };  
-
 
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
@@ -371,11 +339,11 @@ export default function AdminVentaList() {
     console.log("cargaRegistro sDia: ", sDia);
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
     if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-        response = await fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
+        response = await fetch(`${back_host}/ad_stock/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
     }
     else{
         //usamos los historiales
-        response = await fetch(`${back_host}/ad_venta/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
+        response = await fetch(`${back_host}/ad_stock/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
     }
     
     const data = await response.json();
@@ -554,7 +522,6 @@ export default function AdminVentaList() {
       //fcuando carga x primera vez, sale vacio ... arreglar esto
       cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel);
     
-      fetchTotalVentas();
   },[updateTrigger, diaSel]) //Aumentamos
 
   useEffect( ()=> {
@@ -575,13 +542,7 @@ export default function AdminVentaList() {
 
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
-    if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      columnasEspecificas = AdminVentasColumnas;
-    }else{
-      columnasEspecificas = 
-          st_valorVista === 'ventas' ? AdminVentasColumnas
-        : AdminCajaColumnas;
-    }
+    columnasEspecificas = AdminStocksColumnas;
 
     cargaColumnasComunes();        
     const combinado = [...columnasComunes, ...columnasEspecificas];
@@ -618,29 +579,6 @@ export default function AdminVentaList() {
     //Solo el libro en cuestion, validara TRUE OR FALSE
 
     columnasComunes = [
-      {
-        name: '',
-        width: isSmallScreen ?  '40px' : '30px',
-        cell: (row) => (
-          (pVenta0103) && (row.r_cod !== 'NV') ? 
-          (
-            <AdminSunatIcon
-              comprobante={row.comprobante_ref}
-              elemento={row.elemento}
-              firma={row.r_vfirmado}
-              documentoId={params.documento_id}
-              periodoTrabajo={periodo_trabajo}
-              idAnfitrion={params.id_anfitrion}
-              contabilidadTrabajo={contabilidad_trabajo}
-              backHost={back_host}
-              onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
-              size={26}
-            />
-          ) : null
-        ),
-        allowOverflow: true,
-        button: true,
-      },
       {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
@@ -705,31 +643,6 @@ export default function AdminVentaList() {
 
           )
 
-        ),
-        allowOverflow: true,
-        button: true,
-      },
-      {
-        name: '',
-        width: isSmallScreen ?  '40px' : '30px',
-        cell: (row) => (
-          (pVenta0103) && (row.r_cod !== 'NV') ? 
-          (
-            <AdminSunatGreIcon
-              comprobante_gre={row.gre_ref}
-              comprobante_venta={row.comprobante}
-              destinatario_venta={{'destinatario_ruc_dni':row.r_documento_id, 'destinatario_razon_social':row.r_razon_social}}
-              firma={row.gre_vfirmado}
-              documentoId={params.documento_id}
-              periodoTrabajo={periodo_trabajo}
-              idAnfitrion={params.id_anfitrion}
-              idInvitado={params.id_invitado} //new para GRE, identifica serie autorizada 
-              contabilidadTrabajo={contabilidad_trabajo}
-              backHost={back_host}
-              onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
-              size={26}
-            />
-          ) : null
         ),
         allowOverflow: true,
         button: true,
@@ -841,7 +754,7 @@ export default function AdminVentaList() {
   const generaVenta = async () => {
     try {
       //dia
-      const response = await axios.post(`${back_host}/ad_venta`, {
+      const response = await axios.post(`${back_host}/ad_stock`, {
         id_anfitrion: params.id_anfitrion,
         documento_id: params.documento_id,
         periodo: periodo_trabajo,
@@ -854,7 +767,7 @@ export default function AdminVentaList() {
         const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1'; //aumentamos elemento
         const sComprobanteAbiertoRef = '-'; //modo directo sin ref
         //enviamos la edicion del registro abierto
-        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
+        navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
       } else {
         //setError(response.data.message);
         console.log(response.data.message);
@@ -870,7 +783,7 @@ export default function AdminVentaList() {
       const [COD, SERIE, NUMERO] = sComprobante.split('-');
       
       //dia
-      const response = await axios.post(`${back_host}/ad_ventaclon`, {
+      const response = await axios.post(`${back_host}/ad_stockclon`, {
         id_anfitrion: params.id_anfitrion,
         documento_id: params.documento_id,
         periodo: periodo_trabajo,
@@ -886,7 +799,7 @@ export default function AdminVentaList() {
         const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1';//aumentamos elemento
         const sComprobanteAbiertoRef = sComprobante; //modo clonar con ref
         //enviamos la edicion del registro abierto
-        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
+        navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
       } else {
         //setError(response.data.message);
         console.log(response.data.message);
@@ -947,16 +860,6 @@ const handleDayFilter = (selectedDay) => {
   
 const [totalVentas, setTotalVentas] = useState(0);
 const [isSuper, setIsSuper] = useState(false);
-const fetchTotalVentas = async () => {
-    try {
-      const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${diaSel}`);
-      console.log('Tottales ventas: ', res.data);
-      setTotalVentas(res.data.total);
-      setIsSuper(res.data.super);
-    } catch (error) {
-      console.error('Error al obtener total de ventas', error);
-    }
-}; 
 const [recaudaciones, setRecaudaciones] = useState([]);
 const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
 const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
@@ -983,14 +886,6 @@ const handleOpenLink = (url) => {
 
  return (
   <>
-   <div style={{ backgroundColor: '#1e272e', 
-                 //minHeight: '100vh', 
-                 //padding: '20px', 
-                 //marginTop: 30,  
-                 //marginLeft: -65, 
-                 margin: 0,
-                 width: "100%" }}
-    > 
                { (showModalMostrarClonar) ?
                 (   <>
                             {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
@@ -1175,15 +1070,6 @@ const handleOpenLink = (url) => {
                   </>
                 )
               }  
-  <div>
-    <Modal
-      open={abierto}
-      onClose={abrirCerrarModal}
-      style={modalStyles}
-      >
-      <AsientoCobranzaCredito datos={datosPopUp} onClose={handleCerrar} id_anfitrion={params.id_anfitrion} documento_id={contabilidad_trabajo} periodo_trabajo={periodo_trabajo} contabilidad_nombre={contabilidad_nombre}/>
-    </Modal>
-  </div>
 
   <Grid container spacing={0}
       direction={isSmallScreen ? 'column' : 'row'}
@@ -1234,18 +1120,6 @@ const handleOpenLink = (url) => {
       </Grid>
 
       <Grid item xs={2} sm={2}>
-      {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
-        <Button variant="contained" 
-                color="primary" 
-                onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
-                fullWidth
-        >
-          {`Total: S/ ${parseFloat(totalVentas).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`}
-        </Button>
-      )}
 
       </Grid>
 
@@ -1255,29 +1129,7 @@ const handleOpenLink = (url) => {
   <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
   
   <div>
-  <ToggleButtonGroup
-    color="success"
-    value={valorVista}
-    exclusive
-    onChange={actualizaValorVista}
-    aria-label="Platform"
-  >
-    { permisoVentas ?
-      (    
-      <ToggleButton value="ventas"
-                    style={{
-                      backgroundColor: valorVista === 'ventas' ? 'gray' : 'transparent',
-                      color: valorVista === 'ventas' ? "orange" : "gray"
-                    }}
 
-      >Ventas</ToggleButton>
-      ):(
-      <span></span>
-      )
-    }
-
-
-  </ToggleButtonGroup>      
   </div>
     
   <Grid container spacing={0}
@@ -1387,7 +1239,7 @@ const handleOpenLink = (url) => {
   </Grid>
 
   <Datatable
-      //title="Registro - Pedidos"
+      //title="Registro - Almacen"
       theme="solarized"
       columns={columnas}
       data={registrosdet}
@@ -1406,7 +1258,7 @@ const handleOpenLink = (url) => {
       dense={true}
   >
   </Datatable>
-</div>
+
   </>
   );
 }

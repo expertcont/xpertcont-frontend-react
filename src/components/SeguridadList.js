@@ -56,8 +56,7 @@ export default function SeguridadList() {
   }
   const handleClone = async() => {
     //setRegdet(datosModal => ({ ...datosModal, id_anfitrion: params.id_anfitrion }));    
-    datosModal.id_anfitrion = params.id_anfitrion;
-    //datosModal.id_usuario2 = id_;
+    setdatosModal(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
     console.log("clonado email");
     console.log(datosModal);
     await fetch(`${back_host}/seguridadclonar`, {
