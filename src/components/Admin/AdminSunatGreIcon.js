@@ -393,15 +393,15 @@ const AdminSunatGreIcon = ({
         disableScrollLock
         PaperProps={{
           style: {
-            top: isSmallScreen ? "-40vh" : "0vh",
-            left: isSmallScreen ? "-25%" : "0%",
+            top: isSmallScreen ? "-10vh" : "0vh",
+            left: isSmallScreen ? "-5%" : "0%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             marginTop: "0vh",
             background: "rgba(30, 39, 46, 0.95)",
             color: "white",
-            width: isSmallScreen ? "40%" : "26%",
+            width: isSmallScreen ? "70%" : "26%",
             padding: "1rem",
           },
         }}

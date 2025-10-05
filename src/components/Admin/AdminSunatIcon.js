@@ -116,15 +116,15 @@ const AdminSunatIcon = ({
         disableScrollLock
         PaperProps={{
           style: {
-            top: isSmallScreen ? "-40vh" : "0vh",
-            left: isSmallScreen ? "-25%" : "0%",
+            top: isSmallScreen ? "-20vh" : "0vh",
+            left: isSmallScreen ? "0%" : "0%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             marginTop: "10vh",
             background: "rgba(30, 39, 46, 0.95)",
             color: "white",
-            width: isSmallScreen ? "40%" : "30%",
+            width: isSmallScreen ? "60%" : "30%",
           },
         }}
       >

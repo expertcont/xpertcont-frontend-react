@@ -26,15 +26,15 @@ const AdminConfirmDialog = ({ open, options, onClose }) => {
             onClose={() => onClose(false)}
             PaperProps={{
               style: {
-                top: isSmallScreen ? "-30vh" : "0vh",
-                left: isSmallScreen ? "-25%" : "0%",
+                top: isSmallScreen ? "-10vh" : "0vh",
+                left: isSmallScreen ? "0%" : "0%",
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 marginTop: '10vh',
                 background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia
                 color:'white',
-                width: isSmallScreen ? ('50%') : ('30%'),
+                width: isSmallScreen ? ('100%') : ('30%'),
               },
             }}
     >

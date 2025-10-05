@@ -148,15 +148,15 @@ const ListaPopUp = ({
       disableScrollLock
       PaperProps={{
         style: {
-          top: isSmallScreen ? '-40vh' : '0vh',
-          left: isSmallScreen ? '-25%' : '0%',
+          top: isSmallScreen ? '-10vh' : '0vh',
+          left: isSmallScreen ? '0%' : '0%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           marginTop: '10vh',
           background: '#1e272e',
           color: 'white',
-          width: isSmallScreen ? '40%' : '60%'
+          width: isSmallScreen ? '70%' : '60%'
         }
       }}
     >
