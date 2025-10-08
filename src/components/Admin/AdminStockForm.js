@@ -35,9 +35,8 @@ import { NumerosALetras } from 'numero-a-letras';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useDialog } from "./AdminConfirmDialogProvider";
 import AdminSunatIcon from './AdminSunatIcon';
-import AdminSunatIconPdf from './AdminSunatIconPdf';
 
-export default function AdminVentaForm() {
+export default function AdminStockForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
@@ -576,11 +575,11 @@ export default function AdminVentaForm() {
     if (params.comprobante){
 
       // Dividir el string por el guion "-"
-      const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
-      console.log('comprobante key: ', COD, SERIE, NUMERO, ELEM);
+      const [COD, SERIE, NUMERO] = params.comprobante.split('-');
+      console.log('comprobante key: ', COD, SERIE, NUMERO);
 
-      mostrarVenta(COD, SERIE, NUMERO, ELEM); //falta escpecificar elemento
-      mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
+      mostrarMovimiento(COD, SERIE, NUMERO); //falta escpecificar elemento
+      mostrarMovimientoDetalle(COD, SERIE, NUMERO);
       
     }else{
       //click nuevo, genera = verificar si existe caso contrario inserta y siempre devuelve datos
@@ -650,10 +649,10 @@ export default function AdminVentaForm() {
 
   useEffect( ()=> {
       //mostrar detalle actualizado y encabezado mas por el rico total
-      const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
+      const [COD, SERIE, NUMERO] = params.comprobante.split('-');
 
-      mostrarVenta(COD, SERIE, NUMERO, ELEM); 
-      mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
+      mostrarMovimiento(COD, SERIE, NUMERO); 
+      mostrarMovimientoDetalle(COD, SERIE, NUMERO);
       console.log('cabecera actualizado: ', venta);
       console.log('detalle actualizado: ', registrosdet);
 
@@ -840,47 +839,43 @@ export default function AdminVentaForm() {
   };
 
   //funcion para mostrar data de formulario, modo edicion
-  const mostrarVenta = async (cod,serie,num,elem) => {
-    const res = await fetch(`${back_host}/ad_venta/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
+  const mostrarMovimiento = async (cod,serie,num) => {
+    const res = await fetch(`${back_host}/ad_stock/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}`);
     const data = await res.json();
+    console.log('data mst_movimiento: ',data);
+
     //Actualiza datos para enlace con controles, al momento de modo editar
     setVenta((prevState) => ({
       ...prevState, // Mantiene el resto del estado anterior
       razon_social: data.razon_social, //datos para impresion
-      direccion: data.direccion, //datos para impresion
-      r_cod: data.r_cod,
-      r_serie: data.r_serie,
-      r_numero: data.r_numero,
-      elemento: data.elemento,
-      r_fecemi: data.fecemi, // cambio de var, por la conversión a varchar
       
-      r_id_doc: data.r_id_doc, // cliente
-      r_documento_id: data.r_documento_id, // cliente
-      r_razon_social: data.r_razon_social, // cliente
-      r_direccion: data.r_direccion, // cliente
+      cod: data.cod,                //datos generales
+      serie: data.serie,            //datos generales
+      numero: data.numero,          //datos generales
+      fecemi: data.fecemi,          //datos generales
       
-      debe: data.debe,
-      r_base002: data.r_base002,
-      r_igv002: data.r_igv002,
-      r_monto_total: data.r_monto_total,
-      r_moneda: data.r_moneda,
-      r_tc: data.r_tc,
+      id_motivo: data.id_motivo,    //datos generales
+      id_almacen: data.id_almacen,  //datos generales
+      peso_total: data.peso_total,  //datos generales
+      registrado: data.registrado,  //datos generales
 
-      peso_total: data.peso_total,
-      r_cod_ref: data.r_cod_ref,       // ref
-      r_serie_ref: data.r_serie_ref,   // ref
-      r_numero_ref: data.r_numero_ref, // ref
-      r_fecemi_ref: data.r_fecemi_ref, // ref
-      registrado: data.registrado,
-      r_vfirmado: data.r_vfirmado //new
+      r_id_doc: data.r_id_doc,              //datos ingreso
+      r_documento_id: data.r_documento_id,  //datos ingreso
+      r_razon_social: data.r_razon_social,  //datos ingreso
+      r_cod: data.r_cod,                    //datos ingreso
+      r_serie: data.r_serie,                //datos ingreso
+      r_numero: data.r_numero,              //datos ingreso
+      r_cod: data.gre_cod,                  //datos ingreso
+      r_serie: data.gre_serie,              //datos ingreso
+      r_numero: data.gre_numero,            //datos ingreso
     }));
       
     //console.log(data);
     setSearchText(data.r_documento_id); //data de cliente para form
   };
   
-  const mostrarVentaDetalle = async (cod,serie,num,elem) => {
-    const res = await fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
+  const mostrarMovimientoDetalle = async (cod,serie,num) => {
+    const res = await fetch(`${back_host}/ad_stockdet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}`);
     const dataDet = await res.json();
     setRegistrosdet(dataDet);
   };
@@ -1362,28 +1357,28 @@ export default function AdminVentaForm() {
   ];
 
   const handleRowSelected = useCallback(state => {
-		setSelectedRows(state.selectedRows);
-	}, []);
+        setSelectedRows(state.selectedRows);
+    }, []);
   
   const contextActions = useMemo(() => {
     //console.log("asaaa");
 
     const handleUpdate = () => {
-			var strSeleccionado;
+            var strSeleccionado;
       strSeleccionado = selectedRows.map(r => r.documento_id);
-			navigate(`/contabilidad/${strSeleccionado}/edit`);
-		};
+            navigate(`/contabilidad/${strSeleccionado}/edit`);
+        };
 
-		return (
+        return (
       <>
-			<Button key="modificar" onClick={handleUpdate} >
+            <Button key="modificar" onClick={handleUpdate} >
         MODIFICAR
       <UpdateIcon/>
-			</Button>
+            </Button>
 
       </>
-		);
-	}, [registrosdet, selectedRows]);
+        );
+    }, [registrosdet, selectedRows]);
 
   
   const actions = (
@@ -1410,20 +1405,6 @@ export default function AdminVentaForm() {
       onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
       size={26}
     />
-
-    <AdminSunatIconPdf
-      comprobante={params.comprobante}
-      elemento={params.comprobante.split("-").pop()}   // ✅ último valor después del último "-"
-      firma={venta.r_vfirmado}
-      documentoId={params.documento_id}
-      periodoTrabajo={params.periodo}
-      idAnfitrion={params.id_anfitrion}
-      contabilidadTrabajo={params.documento_id}
-      backHost={back_host}
-      onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
-      size={26}
-    />
-
     
     { pVenta010202 && !visualizando ?
     (
@@ -1539,12 +1520,12 @@ export default function AdminVentaForm() {
                                     )
                                     :
                                     (
-                                      params.comprobante.includes('NP') ?
-                                      ('NP en Proceso')
+                                      params.comprobante.includes('MV') ?
+                                      ('MV en Proceso')
                                       :
                                       (  //cambiamos la vista del comprobante a mostrar
                                         (venta.r_cod_ref==null) ?
-                                        venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero
+                                        venta.cod+"-"+venta.serie+"-"+venta.numero
                                         :
                                         venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
                                       ) 
@@ -1560,10 +1541,10 @@ export default function AdminVentaForm() {
                                         size="small"
                                         sx={{display:'block',
                                               margin:'.5rem 0'}}
-                                        name="r_fecemi"
+                                        name="fecha_emision"
                                         type="date"
                                         //format="yyyy/MM/dd"
-                                        value={venta.r_fecemi}
+                                        value={venta.fecemi}
                                         onChange={handleChange}
                                         inputProps={{ style:{color:'white'} }}
                                         InputLabelProps={{ style:{color:'white'} }}
@@ -1571,52 +1552,22 @@ export default function AdminVentaForm() {
                               </Grid>
 
                               <Grid item xs={isSmallScreen ? 12 : 4}>
-                                <Typography variant='h5' color='white' textAlign='center'>
-                                  {
-                                    (`Total: S/ ${parseFloat(venta.r_monto_total).toLocaleString('en-US', {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2
-                                    })}`) 
-                                  }
-                                </Typography>
+                                  <Typography variant='h5' color='white' textAlign='center'>
+                                    SELECT ALMACEN
+                                  </Typography>
                               </Grid>
 
                               
                               <Grid item xs={isSmallScreen ? 12 : 2.8}>
-                                  <TextField
-                                    variant="outlined"
-                                    placeholder="ATENDIDO POR"
-                                    size="small"
-                                    sx={{ mt: 1 }}
-                                    fullWidth
-                                    name="atencion"
-                                    value={venta.ctrl_atencion}
-                                    onChange={handleChange}
-                                    onKeyDown={handleCodigoKeyDown}
-                                    inputProps={{ style: { color: 'white' } }}
-                                    InputLabelProps={{ style: { color: 'white' } }}
-                                    InputProps={{
-                                      endAdornment: (
-                                        <InputAdornment position="end">
-                                          <IconButton
-                                            color="warning"
-                                            onClick={() => {
-                                              // Esta opcion solo debe estar habilitado para administrador
-                                            }}
-                                            edge="end"
-                                          >
-                                            <FindIcon />
-                                          </IconButton>
-                                        </InputAdornment>
-                                      ),
-                                    }}
-                                  />                                
+                                  <Typography variant='h5' color='white' textAlign='center'>
+                                    SELECT MOTIVO
+                                  </Typography>
                               </Grid>
 
 
                               <Grid item xs={isSmallScreen ? 12 : 1.2}>
-                              {//En caso de NP en Proceso, solo se emite comprobante
-                               params.comprobante.includes('NP') ?
+                              {//En caso de MV en Proceso, solo se emite comprobante
+                               params.comprobante.includes('MV') ?
                                (
                                   <Button variant='contained' 
                                           color='primary' 
@@ -1676,7 +1627,7 @@ export default function AdminVentaForm() {
 
                               </Grid>
 
-                              {!params.comprobante.includes('NP') && (
+                              {!params.comprobante.includes('MV') && (
                               <Grid container spacing={0}
                                       //direction= {isSmallScreen ? "column": "row"} 
                                       alignItems="center"
@@ -1728,9 +1679,10 @@ export default function AdminVentaForm() {
                                         />
                                     </Grid>
 
-                                    <Grid item xs={isSmallScreen ? 12 : 6}>
+                                    <Grid item xs={isSmallScreen ? 12 : 5}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                                         <TextField variant="outlined" 
-                                                placeholder="DIRECCION"
+                                                placeholder="COD"
                                                 fullWidth
                                                 size="small"
                                                 //sx={{display:'block',
@@ -1742,6 +1694,77 @@ export default function AdminVentaForm() {
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
                                         />
+                                        <TextField variant="outlined" 
+                                                placeholder="SERIE"
+                                                fullWidth
+                                                size="small"
+                                                //sx={{display:'block',
+                                                //      margin:'.5rem 0'}}
+                                                sx={{mt:1}}
+                                                name="r_direccion"
+                                                value={venta.r_direccion}
+                                                onChange={handleChange}
+                                                inputProps={{ style:{color:'white'} }}
+                                                InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                        <TextField variant="outlined" 
+                                                placeholder="NUMERO"
+                                                fullWidth
+                                                size="small"
+                                                //sx={{display:'block',
+                                                //      margin:'.5rem 0'}}
+                                                sx={{mt:1}}
+                                                name="r_direccion"
+                                                value={venta.r_direccion}
+                                                onChange={handleChange}
+                                                inputProps={{ style:{color:'white'} }}
+                                                InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                        <TextField variant="outlined" 
+                                                placeholder="FECHA"
+                                                fullWidth
+                                                size="small"
+                                                //sx={{display:'block',
+                                                //      margin:'.5rem 0'}}
+                                                sx={{mt:1}}
+                                                name="r_direccion"
+                                                value={venta.r_direccion}
+                                                onChange={handleChange}
+                                                inputProps={{ style:{color:'white'} }}
+                                                InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                      </Box>
+                                    </Grid>
+
+                                    <Grid item xs={isSmallScreen ? 12 : 1.5}>
+                                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                        <TextField variant="outlined" 
+                                                placeholder="GRE-SERIE"
+                                                fullWidth
+                                                size="small"
+                                                //sx={{display:'block',
+                                                //      margin:'.5rem 0'}}
+                                                sx={{mt:1}}
+                                                name="r_direccion"
+                                                value={venta.r_direccion}
+                                                onChange={handleChange}
+                                                inputProps={{ style:{color:'white'} }}
+                                                InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                        <TextField variant="outlined" 
+                                                placeholder="GRE-NUMERO"
+                                                fullWidth
+                                                size="small"
+                                                //sx={{display:'block',
+                                                //      margin:'.5rem 0'}}
+                                                sx={{mt:1}}
+                                                name="r_direccion"
+                                                value={venta.r_direccion}
+                                                onChange={handleChange}
+                                                inputProps={{ style:{color:'white'} }}
+                                                InputLabelProps={{ style:{color:'white'} }}
+                                        />
+                                      </Box>
                                     </Grid>
 
                               </Grid>

@@ -38,6 +38,7 @@ import AdminStockList from "./components/Admin/AdminStockList";
 
 import NavSideBar from "./components/NavSideBar";
 import Header from './components/Header'; // Importa el nuevo componente
+import AdminStockForm from "./components/Admin/AdminStockForm";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -72,10 +73,13 @@ function App(props) {
 
 
           {/* Contenido principal con margen izquierdo */}
-          <Container maxWidth="xl" sx={{ paddingTop: isMobile ? 10 : 8.5, paddingLeft: 0, marginLeft:1 }}>
+          <Container maxWidth="xl" sx={{ paddingTop: isMobile ? 10 : 9, paddingLeft: 0, marginLeft:1 }}>
             <Routes>
               {/* tus rutas originales, sin cambios */}
               <Route path="/ad_stock/:id_anfitrion/:id_invitado/:documento_id" element={<AdminStockList />} />
+              <Route path="/ad_stock/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminStockForm />} />
+              <Route path="/ad_stock/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/:comprobante_ref" element={<AdminStockForm />} />
+              <Route path="/ad_stock/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminStockForm />} />
 
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id" element={<AdminEquipoList />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminEquipoForm />} />          

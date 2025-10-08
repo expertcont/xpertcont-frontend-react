@@ -2,51 +2,62 @@
 import { useState } from "react";
 import axios from "axios";
 import { useDialog } from "./AdminConfirmDialogProvider";
-import { Dialog, DialogTitle, Button, useMediaQuery } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  Button,
+  useMediaQuery,
+  DialogActions,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import Sunat01Icon from '../../assets/images/sunat0.png';
-import TaskAltIcon from "@mui/icons-material/TaskAlt";   
-import CodeIcon from '@mui/icons-material/Code';
-import DescriptionIcon from '@mui/icons-material/Description';
+import Sunat01Icon from "../../assets/images/pdf01.png";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import CodeIcon from "@mui/icons-material/Code";
+import DescriptionIcon from "@mui/icons-material/Description";
 
-const AdminSunatIcon = ({
-  comprobante,            // ej. "01-F001-12345"
-  elemento,               // tu valor de elemento
-  firma,                  // string o null
-  documentoId,            // params.documento_id
-  periodoTrabajo,         // periodo_trabajo
-  idAnfitrion,            // params.id_anfitrion
-  contabilidadTrabajo,    // contabilidad_trabajo
-  backHost,               // ej. "https://tu-backend.com"
-  size = 24,              // tamaño del ícono
-  onRefresh,              // ✅ función opcional para refrescar al cerrar el modal
-  descargasHost = "http://74.208.184.113:8080", // opcional, por si cambia el host
+const AdminSunatIconPdf = ({
+  comprobante, // ej. "01-F001-12345"
+  elemento,
+  firma,
+  documentoId,
+  periodoTrabajo,
+  idAnfitrion,
+  contabilidadTrabajo,
+  backHost,
+  size = 24,
+  onRefresh,
+  descargasHost = "http://74.208.184.113:8080",
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [rutaXml, setRutaXml] = useState("");
   const [rutaCdr, setRutaCdr] = useState("");
   const [rutaPdf, setRutaPdf] = useState("");
-  const { confirmDialog } = useDialog(); //unico dialogo
+  const [showFormatoDialog, setShowFormatoDialog] = useState(false);
+  const { confirmDialog } = useDialog();
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const handleSunat = async () => {
+  const handlePdf = async () => {
     const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
 
     // Si ya está firmado, solo mostrar links
-    if (firma !== "" && firma !== null) {
+    /*if (firma !== "" && firma !== null) {
       const baseUrl = `${descargasHost}/descargas/${documentoId}`;
       setRutaXml(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
       setRutaCdr(`${baseUrl}/R-${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
       setRutaPdf(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.pdf`);
       setShowModal(true);
       return;
-    }
+    }*/
+    const baseUrl = `${descargasHost}/descargas/${documentoId}`;
+    setRutaXml(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
+    setRutaCdr(`${baseUrl}/R-${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
+    setRutaPdf(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.pdf`);
 
     // Confirmación antes de enviar
     const result = await confirmDialog({
-      title: "Enviar a SUNAT?",
+      title: "Procesar PDF?",
       message: `${comprobante}`,
       icon: "success",
       confirmText: "ENVIAR",
@@ -55,8 +66,16 @@ const AdminSunatIcon = ({
 
     if (!result.isConfirmed) return;
 
+    // Mostrar el diálogo para seleccionar el formato
+    setShowFormatoDialog(true);
+  };
+
+  const generarPdf = async (formato) => {
+    const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
+    setShowFormatoDialog(false);
+    console.log('Generando PDF formato:', formato);
     try {
-      const response = await axios.post(`${backHost}/ad_ventacpe`, {
+      const response = await axios.post(`${backHost}/ad_ventacpepdf`, {
         p_periodo: periodoTrabajo,
         p_id_usuario: idAnfitrion,
         p_documento_id: contabilidadTrabajo,
@@ -64,8 +83,10 @@ const AdminSunatIcon = ({
         p_r_serie: SERIE,
         p_r_numero: NUMERO,
         p_elemento: elemento,
+        p_formato: formato,
       });
-
+      console.log(response);
+      
       if (response.data?.codigo_hash) {
         setRutaXml(response.data.ruta_xml);
         setRutaCdr(response.data.ruta_cdr);
@@ -74,7 +95,7 @@ const AdminSunatIcon = ({
       }
     } catch (error) {
       await confirmDialog({
-        title: "Error de envío SUNAT",
+        title: "Error al generar PDF",
         message: `${comprobante}`,
         icon: "error",
         confirmText: "ACEPTAR",
@@ -87,7 +108,6 @@ const AdminSunatIcon = ({
   };
 
   const handleCloseModal = () => {
-    // ✅ dispara el refresco si te pasaron la función
     if (onRefresh) onRefresh();
     setShowModal(false);
   };
@@ -97,18 +117,19 @@ const AdminSunatIcon = ({
       {/* Ícono */}
       <img
         src={Sunat01Icon}
-        onClick={handleSunat}
-        alt="Icono Sunat01"
+        onClick={handlePdf}
+        alt="Icono PDF"
         style={{
           cursor: "pointer",
-          filter: (firma == null || firma === "") ? "grayscale(0.8)" : "grayscale(0)",
+          //filter: (firma == null || firma === "") ? "grayscale(0.8)" : "grayscale(0)",
+
           transition: "color 0.3s ease",
           width: size,
           height: size,
         }}
       />
 
-      {/* Modal interno */}
+      {/* Modal principal (enlaces XML/CDR/PDF) */}
       <Dialog
         open={showModal}
         onClose={handleCloseModal}
@@ -117,14 +138,13 @@ const AdminSunatIcon = ({
         PaperProps={{
           style: {
             top: isSmallScreen ? "-20vh" : "0vh",
-            left: isSmallScreen ? "0%" : "0%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
             marginTop: "10vh",
             background: "rgba(30, 39, 46, 0.95)",
             color: "white",
             width: isSmallScreen ? "70%" : "30%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           },
         }}
       >
@@ -132,37 +152,34 @@ const AdminSunatIcon = ({
 
         <Button
           variant="contained"
-          //color="primary"
           color="inherit"
           onClick={() => handleOpenLink(rutaXml)}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                margin: ".5rem 0", 
-                width: 270,
-                color: "black", 
-                fontWeight: "bold",
-                }}
-          startIcon={<CodeIcon />} 
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            margin: ".5rem 0",
+            width: 270,
+            color: "black",
+            fontWeight: "bold",
+          }}
+          startIcon={<CodeIcon />}
         >
           XML
         </Button>
 
         <Button
           variant="contained"
-          //color="inherit"
           color="primary"
           onClick={() => handleOpenLink(rutaCdr)}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                margin: ".5rem 0", 
-                width: 270, 
-                mt: -0.5, 
-                //color: "black", 
-                fontWeight: "bold",
-             }}
-          startIcon={<TaskAltIcon />} 
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            margin: ".5rem 0",
+            width: 270,
+            mt: -0.5,
+            fontWeight: "bold",
+          }}
+          startIcon={<TaskAltIcon />}
         >
           CDR
         </Button>
@@ -171,14 +188,14 @@ const AdminSunatIcon = ({
           variant="contained"
           color="warning"
           onClick={() => handleOpenLink(rutaPdf)}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                //justifyContent: "flex-start", // texto alineado con el ícono            
-                margin: ".5rem 0", 
-                width: 270, 
-                mt: -0.5, 
-                fontWeight: "bold" }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            margin: ".5rem 0",
+            width: 270,
+            mt: -0.5,
+            fontWeight: "bold",
+          }}
           startIcon={<DescriptionIcon />}
         >
           PDF
@@ -199,8 +216,43 @@ const AdminSunatIcon = ({
           ESC - CERRAR
         </Button>
       </Dialog>
+
+      {/* Diálogo para elegir formato */}
+      <Dialog
+        open={showFormatoDialog}
+        onClose={() => setShowFormatoDialog(false)}
+        maxWidth="xs"
+        PaperProps={{
+          style: {
+            textAlign: "center",
+            padding: "20px",
+          },
+        }}
+      >
+        <DialogTitle>Seleccionar formato de PDF</DialogTitle>
+        <DialogActions
+          sx={{ justifyContent: "center", flexDirection: "column", gap: 1 }}
+        >
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => generarPdf("A4")}
+            sx={{ width: "150px", fontWeight: "bold" }}
+          >
+            A4
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => generarPdf("80mm")}
+            sx={{ width: "150px", fontWeight: "bold" }}
+          >
+            80 mm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
 
-export default AdminSunatIcon;
+export default AdminSunatIconPdf;

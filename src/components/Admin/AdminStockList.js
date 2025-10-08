@@ -204,9 +204,9 @@ export default function AdminStockList() {
     //var num_asiento;
     if (bModoVista) {
       //Validamos
-      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/view`);
+      navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/view`);
     } else {
-      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/-`);
+      navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/-`);
     }    
   };
   const handleDelete = (comprobante,elemento) => {
@@ -751,9 +751,10 @@ export default function AdminStockList() {
     setAbierto(false); // Cierra el modal
   };
   //////////////////////////////////////////////////////
-  const generaVenta = async () => {
+  const generaMovimiento = async () => {
     try {
       //dia
+      //console.log('antes de response.data');
       const response = await axios.post(`${back_host}/ad_stock`, {
         id_anfitrion: params.id_anfitrion,
         documento_id: params.documento_id,
@@ -761,10 +762,10 @@ export default function AdminStockList() {
         id_invitado: params.id_invitado,
         fecha: obtenerFecha(periodo_trabajo,true,diaSel),
       });
-      
+      //console.log(response.data);
 
       if (response.data.success) {
-        const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1'; //aumentamos elemento
+        const sComprobanteAbierto = 'MV-0001-' + response.data.numero;
         const sComprobanteAbiertoRef = '-'; //modo directo sin ref
         //enviamos la edicion del registro abierto
         navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
@@ -796,7 +797,7 @@ export default function AdminStockList() {
       
 
       if (response.data.success) {
-        const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1';//aumentamos elemento
+        const sComprobanteAbierto = 'MV-0001-' + response.data.numero;
         const sComprobanteAbiertoRef = sComprobante; //modo clonar con ref
         //enviamos la edicion del registro abierto
         navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
@@ -863,26 +864,6 @@ const [isSuper, setIsSuper] = useState(false);
 const [recaudaciones, setRecaudaciones] = useState([]);
 const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
 const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
-const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
-  setShowModalMostrarRecaudacion(true);
-  axios.get(`${back_host}/ad_ventarecaudacion/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
-          .then(res => {
-            if (res.data.success) {
-              setRecaudaciones(res.data.data);
-              console.log('Recaudaciones: ', res.data.data);
-            }
-          })
-          .catch(err => console.error(err));
-};
-const handleOpenLink = (url) => {
-    if (url) {
-      window.open(url, "_blank"); 
-      // "_blank" abre en nueva pestaña
-      // "_self" reemplaza la pestaña actual
-    } else {
-      alert("⚠️ No hay documento disponible");
-    }
-  };
 
  return (
   <>
@@ -1144,7 +1125,7 @@ const handleOpenLink = (url) => {
                             //style={{ padding: '0px'}}
                             style={{ padding: '0px', color: 'gray' }}
                             onClick={() => {
-                              generaVenta();
+                              generaMovimiento();
                             }}
             >
                   <AddBoxIcon style={{ fontSize: '40px' }}/>
