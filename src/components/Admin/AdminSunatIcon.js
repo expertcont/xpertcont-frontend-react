@@ -82,8 +82,16 @@ const AdminSunatIcon = ({
     }
   };
 
-  const handleOpenLink = (url) => {
+  /*const handleOpenLink = (url) => {
     if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };*/
+  const handleOpenLink = (url) => {
+    if (!url) return;
+
+    // 👇 Agregamos un parámetro temporal para evitar que el navegador use la versión en caché
+    const urlConBypassCache = `${url}?t=${Date.now()}`;
+
+    window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
   };
 
   const handleCloseModal = () => {
