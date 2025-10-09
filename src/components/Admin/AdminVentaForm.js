@@ -127,297 +127,6 @@ export default function AdminVentaForm() {
     return bytes;
   }
   
-  const createPdfTicket = async (size) => {
-    const pdfDoc = await PDFDocument.create()
-
-    // Definir el ancho según el tamaño del ticket
-    const width = (size === '80mm') ? 226.77 : 164.41; // 80mm o 58mm
-    const fontSize = (size === '80mm') ? 10 : 8; // 80mm o 58mm
-    const marginLeftSize = (size === '80mm') ? 0 : 62.36; // 80mm o 58mm
-
-    const lineHeight = fontSize * 1.2;
-
-    //caso contrario restar 22mm a la izquierda y disminuir la fuente en 2 puntos, probando
-
-    // Altura inicial (puedes ajustarla dinámicamente)
-    let height = 800;
-    const page = pdfDoc.addPage([width, height]);
-
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontNegrita = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    // Add logo to the top of the page
-    //const logoImage = pdfDoc.embedPng(logo);
-    const pngImage = await pdfDoc.embedPng(logo);
-    const pngDims = pngImage.scale(0.6)
-    const margin = 5;
-
-    page.drawImage(pngImage, {
-      x: margin+50-(marginLeftSize/2),
-      y: 730,
-      width: pngDims.width,
-      height: pngDims.height,
-    })
-
-    let x = margin;
-    let y = 720;
-
-    //Documento electronico y logo expertcont
-    const COD = params.comprobante.slice(0,2);
-    const documentos = {
-      '01': 'FACTURA ELECTRONICA',
-      '03': 'BOLETA ELECTRONICA',
-      '07': 'NOTA CRED. ELECTRONICA',
-      '08': 'NOTA DEB. ELECTRONICA'
-    };
-    const sDocumento = documentos[COD] || 'DOCUMENTO'; // Manejo de caso por defecto
-
-    const ticketWidth = 227; // Ancho del ticket en puntos (80mm)
-   
-    //////////////////
-    let textWidth = fontNegrita.widthOfTextAtSize(sDocumento, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(sDocumento, { x, y, size: fontSize, font:fontNegrita });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(('RUC '+params.documento_id), fontSize+1);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText('RUC '+params.documento_id, { x, y, size: fontSize+1, font:fontNegrita });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.razon_social, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(venta.razon_social, { x, y, size: fontSize });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.direccion, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = ((ticketWidth - textWidth)/2)>0 ? ((ticketWidth - textWidth)/2) : margin;
-    page.drawText(venta.direccion, { x, y, size: 8 });
-    y=y-12; //aumentamos linea nueva
-
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(params.comprobante.slice(3), 12);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(params.comprobante.slice(3), { x, y, size: 12, font:fontNegrita });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize("FECHA: " + venta.r_fecemi, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("FECHA: " + venta.r_fecemi, { x, y, size: fontSize });
-    y=y-15 //aumentamos linea nueva
-    //y=y-12; //aumentamos linea nueva
-
-    page.drawRectangle({
-      x: margin,
-      y: y-2,
-      width: (page.getWidth()-margin-5), //TODA ANCHO DE LA HOJA
-      height: (lineHeight+2),
-      borderWidth: 1,
-      color: rgb(0.778, 0.778, 0.778),
-      borderColor: rgb(0.8,0.8,0.8)
-    });
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize("DATOS CLIENTE: ", fontSize-1);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("DATOS DEL CLIENTE: ", { x, y, size: fontSize-1 });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.r_razon_social, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(venta.r_razon_social?.toString() ?? "", { x, y, size: fontSize});
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize("RUC/DNI: " + venta.r_documento_id, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("RUC/DNI: " + venta.r_documento_id?.toString() ?? "", { x, y, size: fontSize });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.r_direccion, fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(venta.r_direccion?.toString() ?? "", { x, y, size: fontSize });
-    y=y-12; //aumentamos linea nueva
-
-    ////////////////// cambiar por ctrl_us_crea correo que lo registro
-    textWidth = fontNegrita.widthOfTextAtSize("VENTA: "+params.id_invitado.split('@')[0].slice(0,14), fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("VENTA: "+params.id_invitado.split('@')[0].slice(0,14), { x, y, size: fontSize });
-    y=y-12; //aumentamos linea nueva
-
-    //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize("PAGO: CONTADO", fontSize);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("PAGO: CONTADO", { x, y, size: fontSize });
-    
-    y=y-15; //aumentamos linea nueva
-    //y=y-12; //aumentamos linea nueva
-    
-    ////////////////////////////////////////////////////////////////////
-    // Draw table data
-    let row = 1;
-    let espaciadoDet = 0; //iniciamos en la 1era fila
-    
-    //let precio_total = 0;
-    espaciadoDet = espaciadoDet+20; ///NEW
-
-    page.drawRectangle({
-      x: margin,
-      y: y-2,
-      width: (page.getWidth()-margin-5), //TODA ANCHO DE LA HOJA
-      height: (lineHeight+2),
-      borderWidth: 1,
-      color: rgb(0.778, 0.778, 0.778),
-      borderColor: rgb(0.8,0.8,0.8)
-    });
-
-    page.drawText("DESCRIPCION", { x:margin, y, size: fontSize-1 });
-
-    textWidth = fontNegrita.widthOfTextAtSize('P.UNIT', fontSize-1);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - margin - 50 - marginLeftSize); //50 por columna IMPORTE
-    page.drawText("P.UNIT", { x, y, size: fontSize-1 });    
-
-    textWidth = fontNegrita.widthOfTextAtSize('IMPORTE', fontSize-1);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText("IMPORTE", { x, y, size: fontSize-1 });
-    
-    
-    registrosdet.forEach((person) => {
-      const text = `${person.descripcion}`;
-      const textY = y - lineHeight; //corregimos aca, porque se duplicaba espacio en cada grupo
-
-      //1ERA LINEA
-      //page.drawText(person.cont_und?.toString() ?? "", { x:x+40, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
-      page.drawText(text, { x:margin, y:y+4-espaciadoDet, size: fontSize-1, font }); //Texto de Titulo de Barra ()
-
-      //2da Linea
-      espaciadoDet = espaciadoDet+10;
-      page.drawText('Cant: '+person.cantidad, { x:margin, y:y+4-espaciadoDet, size: fontSize-1 });
-
-      textWidth = fontNegrita.widthOfTextAtSize(numeral(person.precio_unitario).format('0,0.00'), fontSize);
-      // Calcular el punto x para alinear a la derecha
-      x = (ticketWidth - textWidth - margin - 50 - marginLeftSize); //50 por columna precio_neto
-      page.drawText(person.precio_unitario, { x, y:y+4-espaciadoDet, size: fontSize-1 });
-      
-      textWidth = fontNegrita.widthOfTextAtSize(numeral(person.precio_neto).format('0,0.00'), fontSize);
-      // Calcular el punto x para alinear a la derecha
-      x = (ticketWidth - textWidth - margin - marginLeftSize);
-      page.drawText(person.precio_neto, { x, y:y+4-espaciadoDet, size: fontSize-1 });
-
-      page.drawLine({
-        start: { x: margin, y: y + 2 - espaciadoDet }, // Punto inicial
-        end: { x: page.getWidth() - margin - 5, y: y + 2 - espaciadoDet }, // Punto final
-        thickness: 1, // Grosor de la línea
-        color: rgb(0.778, 0.778, 0.778), // Color de la línea
-      });
-
-      //al final del bucle, aumentamos una linea simple :) claro pi ...
-      espaciadoDet = espaciadoDet+10;
-      row++;
-    });
-    
-    y=y-15; //aumentamos linea nueva
-    y=y-15; //aumentamos linea nueva
-
-    let MontoEnLetras = NumerosALetras(venta.r_monto_total, {
-      plural: 'SOLES', //pinches opciones no funcionan, tengo q arreglarlas en la siguiente linea
-      singular: 'SOL', //todos mis movimientos estan friamente calculados
-      centPlural: 'CÉNTIMOS', //siganme los buenos ...  :)
-      centSingular: 'CÉNTIMO',
-    });
-    MontoEnLetras = 'SON: ' + MontoEnLetras.toUpperCase().replace('PESOS', 'SOLES CON').replace('PESO', 'SOL CON').replace('M.N.','');
-    page.drawText(MontoEnLetras, { x:margin, y:y-espaciadoDet+30, size: 8 }); //Actualizar urgente
-
-
-    const moneda = {
-      'PEN': 'S/',
-      'USD': '$ USD'
-    };
-    const sMoneda = moneda[venta.r_moneda] || ''; // Manejo de caso por defecto
-    console.log(venta.r_moneda, sMoneda);
-
-    //////////////////
-    x = margin;
-    page.drawText("BASE:",{ x, y:y-espaciadoDet+4, size: 9 });
-
-    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_base002).format('0,0.00'), fontSize+2);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText(numeral(venta.r_base002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
-
-    x = margin;
-    page.drawText("IGV.: ",{ x, y:y-espaciadoDet+4-10, size: 9 });
-
-    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_igv002).format('0,0.00'), fontSize+2);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText(numeral(venta.r_igv002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-10, size: 10, font }); //Actualizar urgente
-
-    x = margin;
-    page.drawText("TOTAL.:" + sMoneda,{ x, y:y-espaciadoDet+4-25, size: fontSize+2, font:fontNegrita });
-
-    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_monto_total).format('0,0.00'), fontSize+2);
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText(numeral(venta.r_monto_total).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-25, size: fontSize+2, font:fontNegrita }); //Actualizar urgente
-
-    
-    //SeccionQR
-    // Generar el código QR como base64
-    const partes = comprobante.split('-');
-    const numeroFormateado = partes[2].padStart(8, '0');
-    const comprobanteConvertido = `${partes[0]}|${partes[1]}|${numeroFormateado}`;
-
-    const qrImage = await QRCode.toDataURL(params.documento_id + '|' + comprobanteConvertido + '|' + venta.r_igv002 + '|' + venta.r_monto_total + '|' + venta.r_fecemi + '|' + venta.r_id_doc + '|' + venta.r_documento_id + '|');
-    // Convertir la imagen base64 a formato compatible con pdf-lib
-    const qrImageBytes = qrImage.split(',')[1]; // Eliminar el encabezado base64
-    //const qrImageBuffer = Uint8Array.from(atob(qrImageBytes), (c) => c.charCodeAt(0));
-    const qrImageBuffer = base64ToUint8Array(qrImageBytes);
-    
-    const qrImageEmbed = await pdfDoc.embedPng(qrImageBuffer);
-    // Obtener dimensiones de la imagen
-    const qrWidth = 45;
-    const qrHeight = 45;
-    // Calcular el punto x para alinear a la derecha
-    x = (ticketWidth - 45 - marginLeftSize)/2;
-
-    // Dibujar el código QR en el PDF
-    page.drawImage(qrImageEmbed, {
-      x,
-      y: y-espaciadoDet-26-45,
-      width: qrWidth,
-      height: qrHeight,
-    });
-
-    const pdfBytes = await pdfDoc.save();
-
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    // Crea una URL de objeto para el archivo Blob
-    const url = URL.createObjectURL(blob);
-    // Abre la URL en una nueva pestaña del navegador
-    window.open(url, '_blank');
-  }
-
   const [venta,setVenta] = useState({
       fecemi:'',
       r_documento_id:'', //cliente
@@ -469,7 +178,7 @@ export default function AdminVentaForm() {
     vuelto:'0',         //default
     forma_pago2:'YAPE', //default
     efectivo2:'0',      //default
-    r_direccion:''
+    r_direccion:'-'
   });
 
   const handleCodigoKeyDown = async (event) => {
@@ -497,28 +206,14 @@ export default function AdminVentaForm() {
     setShowModal(false);
     console.log(venta.documento_id,venta.razon_social);
   };
-  const handleSearchTextChange = (event) => {
-    setSearchText(event.target.value.replace('+', '').replace('-',''));
-    setVenta({...venta, documento_id:event.target.value.replace('+', '').replace('-','')});
-  };
   const filteredClientes = cliente_select.filter((c) =>
   `${c.documento_id} ${c.razon_social}`.toLowerCase().includes(searchText.toLowerCase())
   );
-  const handleCobrar = () => {
-    //mostramos modal de cuenta contable
-    setShowModal(true);
-    
-  };
   
   const [cargando,setCargando] = useState(false);
   
   const navigate = useNavigate();
 
-  const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
-  const [searchTextCuenta, setSearchTextCuenta] = useState('');
-  const filteredCuentas = cuenta_select.filter((c) =>
-    `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchTextCuenta.toLowerCase())
-  );
   const cargaPopUpProducto = () =>{
     axios
     .get(`${back_host}/ad_productopopup/${params.id_anfitrion}/${params.documento_id}`)
@@ -872,9 +567,21 @@ export default function AdminVentaForm() {
       r_numero_ref: data.r_numero_ref, // ref
       r_fecemi_ref: data.r_fecemi_ref, // ref
       registrado: data.registrado,
-      r_vfirmado: data.r_vfirmado //new
-    }));
       
+      efectivo: data.efectivo, //new
+      forma_pago2: data.forma_pago2, //new
+      efectivo2: data.efectivo2, //new
+
+      r_vfirmado: data.r_vfirmado
+    }));
+
+    setDatosEmitir((prevState) => 
+      ({...prevState, 
+        efectivo: data.efectivo,
+        forma_pago2: data.forma_pago2,
+        efectivo2: data.efectivo2
+      }));
+    
     //console.log(data);
     setSearchText(data.r_documento_id); //data de cliente para form
   };
@@ -1224,14 +931,17 @@ export default function AdminVentaForm() {
         r_cod: COD,
         r_serie: SERIE,
         r_numero: NUMERO,
-        elemento: ELEM, //new
+        elemento: ELEM, 
         fecha: venta.r_fecemi,
         
         r_id_doc: venta.r_id_doc,
         r_documento_id: venta.r_documento_id,
         r_razon_social: venta.r_razon_social,
         r_direccion: venta.r_direccion,
-
+        
+        efectivo: datosEmitir.efectivo,       //new
+        forma_pago2: datosEmitir.forma_pago2, //new
+        efectivo2: datosEmitir.efectivo2,     //new
       };
 
     console.log(estadoFinal);
@@ -1482,7 +1192,8 @@ export default function AdminVentaForm() {
             
             setDatosEmitir(prevState => ({ ...prevState, r_id_doc: r_id_doc }));
             setDatosEmitir(prevState => ({ ...prevState, r_razon_social: nombre_o_razon_social }));
-            setDatosEmitir(prevState => ({ ...prevState, r_direccion: direccion_completa }));
+            setDatosEmitir(prevState => ({ ...prevState, r_direccion: direccion_completa? direccion_completa:'-' }));
+            console.log(datosEmitir);
         })
         .catch((error) => {
             console.log(error);
@@ -1582,34 +1293,60 @@ export default function AdminVentaForm() {
                               </Grid>
 
                               
-                              <Grid item xs={isSmallScreen ? 12 : 2.8}>
+                              <Grid item xs={isSmallScreen ? 12 : 1}>
                                   <TextField
                                     variant="outlined"
-                                    placeholder="ATENDIDO POR"
+                                    //placeholder="EFECTIVO"
+                                    label="EFECTIVO"
                                     size="small"
                                     sx={{ mt: 1 }}
                                     fullWidth
-                                    name="atencion"
-                                    value={venta.ctrl_atencion}
-                                    onChange={handleChange}
+                                    name="efectivo"
+                                    //value={venta.efectivo}
+                                    //onChange={handleChange}
+                                    value={datosEmitir.efectivo}
+                                    onChange={(e) => handleChangeEmite("efectivo", e.target.value)}
+
                                     onKeyDown={handleCodigoKeyDown}
                                     inputProps={{ style: { color: 'white' } }}
-                                    InputLabelProps={{ style: { color: 'white' } }}
-                                    InputProps={{
-                                      endAdornment: (
-                                        <InputAdornment position="end">
-                                          <IconButton
-                                            color="warning"
-                                            onClick={() => {
-                                              // Esta opcion solo debe estar habilitado para administrador
-                                            }}
-                                            edge="end"
-                                          >
-                                            <FindIcon />
-                                          </IconButton>
-                                        </InputAdornment>
-                                      ),
-                                    }}
+                                    InputLabelProps={{ style: {color: 'white'}, shrink: true }}
+                                  />                                
+                              </Grid>
+                              <Grid item xs={isSmallScreen ? 12 : 0.8}>
+                                  <Select
+                                        size='small'
+                                        value={datosEmitir.forma_pago2}
+                                        name="forma_pago2"
+                                        sx={{display:'block',
+                                        margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
+                                        onChange={(e) => handleChangeEmite("forma_pago2", e.target.value)}
+                                        >
+                                          <MenuItem value="default">SELECCIONA </MenuItem>
+                                        {   
+                                            formasPago.map(elemento => (
+                                            <MenuItem key={elemento} value={elemento}>
+                                              {elemento}
+                                            </MenuItem>)) 
+                                        }
+                                  </Select>
+                              </Grid>
+                              <Grid item xs={isSmallScreen ? 12 : 1}>
+                                  <TextField
+                                    variant="outlined"
+                                    //placeholder="OTROS"
+                                    label="OTROS"
+                                    size="small"
+                                    sx={{ mt: 1 }}
+                                    fullWidth
+                                    name="efectivo2"
+                                    //value={venta.efectivo2}
+                                    //onChange={handleChange}
+                                    value={datosEmitir.efectivo2}
+                                    onChange={(e) => handleChangeEmite("efectivo2", e.target.value)}
+
+                                    onKeyDown={handleCodigoKeyDown}
+                                    inputProps={{ style: { color: 'white' } }}
+                                    InputLabelProps={{ style: { color:'white'}, shrink: true }}
                                   />                                
                               </Grid>
 
