@@ -60,7 +60,7 @@ const AdminSunatIconPdf = ({
       title: "Procesar PDF?",
       message: `${comprobante}`,
       icon: "success",
-      confirmText: "ENVIAR",
+      confirmText: "PROCESAR",
       cancelText: "CANCELAR",
     });
 
@@ -73,7 +73,7 @@ const AdminSunatIconPdf = ({
   const generarPdf = async (formato) => {
     const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
     setShowFormatoDialog(false);
-    console.log('Generando PDF formato:', formato);
+    //console.log('Generando PDF formato:', formato);
     try {
       const response = await axios.post(`${backHost}/ad_ventacpepdf`, {
         p_periodo: periodoTrabajo,
@@ -85,13 +85,10 @@ const AdminSunatIconPdf = ({
         p_elemento: elemento,
         p_formato: formato,
       });
-      console.log(response);
+      //console.log(response);
       
-      if (response.data?.codigo_hash) {
-        setRutaXml(response.data.ruta_xml);
-        setRutaCdr(response.data.ruta_cdr);
-        setRutaPdf(response.data.ruta_pdf);
-        setShowModal(true);
+      if (response.data?.ruta_pdf) {
+        handleOpenLink(rutaPdf);
       }
     } catch (error) {
       await confirmDialog({
@@ -101,6 +98,12 @@ const AdminSunatIconPdf = ({
         confirmText: "ACEPTAR",
       });
     }
+
+    //abrir modal con links
+    //setShowModal(true);
+
+    //Abri de freente el pdf
+    //handleOpenLink(rutaPdf);
   };
 
   /*const handleOpenLink = (url) => {
@@ -111,6 +114,7 @@ const AdminSunatIconPdf = ({
 
     // 👇 Agregamos un parámetro temporal para evitar que el navegador use la versión en caché
     const urlConBypassCache = `${url}?t=${Date.now()}`;
+    console.log(urlConBypassCache);
 
     window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
   };
@@ -229,23 +233,41 @@ const AdminSunatIconPdf = ({
       <Dialog
         open={showFormatoDialog}
         onClose={() => setShowFormatoDialog(false)}
-        maxWidth="xs"
+        maxWidth="md"
+        disableScrollLock
+        //PaperProps={{
+        //  style: {
+        //    textAlign: "center",
+        //    padding: "20px",
+        //  },
+        //}}
         PaperProps={{
           style: {
-            textAlign: "center",
-            padding: "20px",
+            top: isSmallScreen ? "-20vh" : "0vh",
+            marginTop: "10vh",
+            background: "rgba(30, 39, 46, 0.95)",
+            color: "white",
+            width: isSmallScreen ? "70%" : "30%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           },
         }}
+
       >
         <DialogTitle>Seleccionar formato de PDF</DialogTitle>
-        <DialogActions
-          sx={{ justifyContent: "center", flexDirection: "column", gap: 1 }}
-        >
           <Button
             variant="contained"
             color="primary"
             onClick={() => generarPdf("A4")}
-            sx={{ width: "150px", fontWeight: "bold" }}
+            //sx={{ width: "150px", fontWeight: "bold", margin: "0px" }}
+            sx={{
+              display: "block",
+              margin: ".5rem 0",
+              width: 270,
+              mt: -0.5,
+            }}
+
           >
             A4
           </Button>
@@ -253,11 +275,16 @@ const AdminSunatIconPdf = ({
             variant="contained"
             color="secondary"
             onClick={() => generarPdf("80mm")}
-            sx={{ width: "150px", fontWeight: "bold" }}
+            //sx={{ width: "150px", fontWeight: "bold", margin: "0px"}}
+            sx={{
+              display: "block",
+              margin: ".5rem 0",
+              width: 270,
+              mt: -0.5,
+            }}
           >
             80 mm
           </Button>
-        </DialogActions>
       </Dialog>
     </>
   );
