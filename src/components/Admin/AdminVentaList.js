@@ -729,7 +729,27 @@ export default function AdminVentaList() {
               onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
               size={26}
             />
-          ) : null
+          ) 
+          : 
+          ( //Auxiliamos con clonar para pedidos, en caso modo simple
+          (pVenta0103) && (row.r_cod === 'NV') ? 
+          (
+            <ContentCopyIcon
+              onClick={() => {
+                  setShowModalMostrarClonar(true);
+                  setValorComprobante(row.comprobante_ref);
+                  //clonarVenta(row.comprobante_ref);
+                  }
+                }
+              style={{
+                cursor: 'pointer',
+                //color: 'primary',
+                transition: 'color 0.3s ease',
+              }}
+            />
+          )
+          : null
+          )
         ),
         allowOverflow: true,
         button: true,

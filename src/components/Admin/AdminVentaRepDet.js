@@ -201,8 +201,9 @@ export default function AdminVentaRepDet() {
       const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
       const documentoId = elemento.r_documento_id?.toString().toLowerCase() || '';
       const comprobante = elemento.comprobante?.toString().toLowerCase() || '';
-  
-      if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase())) {
+      const descripcion = elemento.descripcion?.toString().toLowerCase() || '';
+
+      if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase()) || descripcion.includes(strBusca.toLowerCase())) {
         return elemento;
       }
       return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
@@ -623,7 +624,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                                     sx={{display:'block',
                                           margin:'.0rem 0'}}
                                     name="busqueda"
-                                    placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE'
+                                    placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE  DESCRIPCION'
                                     onChange={actualizaValorFiltro}
                                     inputProps={{ style:{color:'white'} }}
                                     InputProps={{
