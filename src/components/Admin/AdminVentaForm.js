@@ -47,7 +47,6 @@ export default function AdminVentaForm() {
   const { confirmDialog } = useDialog(); //unico dialogo
   const inputProductoRef = useRef(null); // Crear referencia al TextField
   const [updateTrigger, setUpdateTrigger] = useState({});
-  const [cliente_select,setClienteSelect] = useState([]);
   const [doc_select,setDocSelect] = useState([]);
   //////////////////////////////////////////////////////////
   const [visualizando,setVisualizando] = useState(false);
@@ -68,7 +67,7 @@ export default function AdminVentaForm() {
 
   /////////
   const [showModal, setShowModal] = useState(false);
-  const [showModalProducto, setShowModalProducto] = useState(false);
+  //const [showModalProducto, setShowModalProducto] = useState(false);
   const [showModalProductoLista, setShowModalProductoLista] = useState(false);
 
   const [showModalEmite, setShowModalEmite] = useState(false);
@@ -83,6 +82,7 @@ export default function AdminVentaForm() {
   const [producto_select,setProductoSelect] = useState([]);
   const [precio_select,setPrecioSelect] = useState([]);
   const [grupo_select,setGrupoSelect] = useState([]); //Util para colores, si es necesario, caso contrario NULL
+  const [cod_select,setCodSelect] = useState([]); //Util para comprobantes habilitados segun usuario
   
   //Permisos Nivel 02
   const {user, isAuthenticated } = useAuth0();
@@ -106,7 +106,7 @@ export default function AdminVentaForm() {
   }
   
   const cargaDocSelect = () =>{
-    console.log(`${back_host}/iddoc`);
+    //console.log(`${back_host}/iddoc`);
     axios
     .get(`${back_host}/iddoc`)
     .then((response) => {
@@ -116,6 +116,28 @@ export default function AdminVentaForm() {
         console.log(error);
     });
   };
+
+  const cargaCodSeg = () =>{
+    //console.log(`${back_host}/ad_ventasegcod/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}`);
+    axios
+    .get(`${back_host}/ad_ventasegcod/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}`)
+    .then((response) => {
+        setCodSelect(response.data.data);
+        //Si es un solo registro, setear valorEmite
+        //console.log(`Verificando de codigos `, response.data.data.length, response.data.data[0].r_cod);
+        if (response.data.data.length === 1) {
+          setValorEmite(response.data.data[0].r_cod);
+        }
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  };
+  // Función para verificar si un código está permitido
+  const isAllowed = (codigo) => {
+    //console.log(`Verificando si el código ${codigo} está permitido`,cod_select);
+    return cod_select.some(item => item.r_cod === codigo);
+  }
 
   function base64ToUint8Array(base64) {
     const binaryString = window.atob(base64); // Decodificar Base64 a binario
@@ -145,12 +167,12 @@ export default function AdminVentaForm() {
     r_cod:'',
     r_serie:'',
     r_numero:'',
-    elemento:1,
+    elemento:1, //antes habia 1
     r_fecemi:'',
     //datos propios del producto
     id_producto:'',
     descripcion:'',
-    cantidad:'1',
+    cantidad:null, //antes habia 1
     precio_unitario:'',
     precio_neto:'',
     porc_igv:'',
@@ -191,7 +213,7 @@ export default function AdminVentaForm() {
     //console.log(event.key);
     if (event.key === 'Enter') {
       //Selecciona el 1er elemento de la lista, en caso no haya filtrado nada
-      handleClienteSelect(filteredClientes[0].documento_id, filteredClientes[0].razon_social);
+      //handleClienteSelect(filteredClientes[0].documento_id, filteredClientes[0].razon_social);
 
       setShowModal(false);
     }
@@ -204,11 +226,8 @@ export default function AdminVentaForm() {
     venta.razon_social = cliente;
 
     setShowModal(false);
-    console.log(venta.documento_id,venta.razon_social);
+    //console.log(venta.documento_id,venta.razon_social);
   };
-  const filteredClientes = cliente_select.filter((c) =>
-  `${c.documento_id} ${c.razon_social}`.toLowerCase().includes(searchText.toLowerCase())
-  );
   
   const [cargando,setCargando] = useState(false);
   
@@ -272,10 +291,11 @@ export default function AdminVentaForm() {
 
       // Dividir el string por el guion "-"
       const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
-      console.log('comprobante key: ', COD, SERIE, NUMERO, ELEM);
+      //console.log('comprobante key: ', COD, SERIE, NUMERO, ELEM);
 
       mostrarVenta(COD, SERIE, NUMERO, ELEM); //falta escpecificar elemento
       mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
+      
       
     }else{
       //click nuevo, genera = verificar si existe caso contrario inserta y siempre devuelve datos
@@ -290,6 +310,7 @@ export default function AdminVentaForm() {
     cargaPopUpProducto();
     cargaPopUpGrupo();//new
     cargaDocSelect();
+    cargaCodSeg(); //new array con lista de comprobantes habilitados segun usuario, utiles para control de emitir
 
     //NEW codigo para autenticacion y permisos de BD
     if (isAuthenticated && user.email) {
@@ -305,16 +326,15 @@ export default function AdminVentaForm() {
 
     setVisualizando(location.pathname.includes('view'));
     //console.log('view prueba:  ',location.pathname.includes('view'));
-    //desactivar botones de modificacion
+    //desactivar botones de modificac
+    
 
   },[params.comprobante, isAuthenticated, textFieldRef.current]);
 
   useEffect( ()=> {
     //Control de producto elegido
-      console.log("click aceptar Lista Producto");
+      //console.log("click aceptar Lista Producto");
 
-      //procesar el auxiliar y desglosar precio_unitario, cont_und, porc_igv
-      //producto.cantidad = 1;
       const [PRECIO_UNITARIO, CONT_UND, PORC_IGV, PRECIO_FACTOR, PRODUCTO_SKU] = producto.auxiliar.split('-');
 
       setProducto(prevState => ({ ...prevState
@@ -328,18 +348,19 @@ export default function AdminVentaForm() {
             ,producto_sku:PRODUCTO_SKU
       }));
 
-      console.log('producto en useEffect: ', producto);
+      //console.log('producto en useEffect: ', producto);
 
       //Aqui debemos cargar precios por rango, en caso columna RANGO = '1'
       if (PRECIO_FACTOR==="1"){
         //Alimentar precio_select
         cargaPreciosRangoProducto(producto.id_producto);
-        console.log('cargaPreciosRango: ', precio_select);
+        //console.log('cargaPreciosRango: ', precio_select);
         //Luego en evento cambio cantidad, se actualiza precio_unitario
       }else{
         //Liberar contenido precio_select
         setPrecioSelect([]);
       }
+      
 
   },[producto.auxiliar]);
 
@@ -349,8 +370,9 @@ export default function AdminVentaForm() {
 
       mostrarVenta(COD, SERIE, NUMERO, ELEM); 
       mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
-      console.log('cabecera actualizado: ', venta);
-      console.log('detalle actualizado: ', registrosdet);
+      //console.log('cabecera actualizado: ', venta);
+      //console.log('detalle actualizado: ', registrosdet);
+      
 
   },[updateTrigger]) //Aumentamos IsAuthenticated y user
 
@@ -384,7 +406,7 @@ export default function AdminVentaForm() {
       setDatosEmitir(prevState => ({ ...prevState, efectivo: venta.r_monto_total }));
       //setDatosEmitir({...datosEmitir, efectivo: venta.r_monto_total });
     }
-
+    
   },[valorEmite]) //Cambios en Emision, actualiza 'datosEmitir'
 
   useEffect(() => {
@@ -417,7 +439,7 @@ export default function AdminVentaForm() {
         .then(permisosData => {
           // Guarda los permisos en el estado
           setPermisosComando(permisosData);
-          console.log('permisosComando: ',permisosComando);
+          //console.log('permisosComando: ',permisosComando);
           let tienePermiso;
           // Verifica si existe el permiso de acceso 'ventas'
           tienePermiso = permisosData.some(permiso => permiso.id_comando === '20-02-01'); //Graba CAB-Cambios
@@ -517,6 +539,7 @@ export default function AdminVentaForm() {
     }
     
     setProducto({...producto, [e.target.name]: e.target.value});
+    console.log('oyeeee: ',producto);
   }
 
   // Función que devuelve el precio según cantidad
@@ -594,7 +617,7 @@ export default function AdminVentaForm() {
 
   //Seccion Elimina Item
   const handleDelete = (item) => {
-    console.log(item);
+    //console.log(item);
     const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
     confirmaEliminarDetalle(COD, SERIE, NUMERO,ELEM,item);
   };
@@ -606,12 +629,12 @@ export default function AdminVentaForm() {
     return isNaN(parsedCantidad) ? 0 : parsedCantidad;
   };
   const handleResetCantidad = () => {
-    //setProducto({ ...producto, cantidad: '1' });
     setProducto((prevProducto) => {
       const newCantidad = 1;
       const newImporte = prevProducto.precio_unitario * newCantidad;
       return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
     });
+    //console.log('oyeeee: ',producto);
   };
   const handleDecreaseByOne = () => {
     setProducto((prevProducto) => {
@@ -620,6 +643,7 @@ export default function AdminVentaForm() {
       return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };      
     });
     handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) - 1 } }); //new
+    //console.log('oyeeee: ',producto);
   };
   const handleIncreaseByOne = () => {
     console.log('incrementando cantidad en 1, estado del producto', producto);
@@ -630,6 +654,7 @@ export default function AdminVentaForm() {
       return { ...prevProducto, cantidad: newCantidad.toString(), precio_neto:newImporte };
     });
     handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) + 1 } }); //new
+    //console.log('oyeeee: ',producto);
   };
   const handleIncreaseByTen = () => {
     setProducto((prevProducto) => {
@@ -668,8 +693,9 @@ export default function AdminVentaForm() {
         ...estadoInicial
       }));
 
-      //Quitar modal
-      setShowModalProducto(false);
+      console.log('producto reseteado: ', producto);
+      //Quitar modal, con el producto.cantidad = ''
+      //setShowModalProducto(false);
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   const confirmaGrabarDetalle = async()=>{
@@ -822,7 +848,7 @@ export default function AdminVentaForm() {
     
 
     //mostrar modal del producto
-    setShowModalProducto(true);
+    //setShowModalProducto(true);
   }
 
   const confirmaGrabarComprobante = async()=>{
@@ -1140,7 +1166,8 @@ export default function AdminVentaForm() {
     <IconButton color="primary" 
       onClick = {()=> {
                   //Agregar Producto
-                  setShowModalProducto(true);                  
+                  //setShowModalProducto(true);                  
+                  setShowModalProductoLista(true);
                 }
               }
     >
@@ -1294,62 +1321,89 @@ export default function AdminVentaForm() {
 
                               
                               <Grid item xs={isSmallScreen ? 12 : 1}>
-                                  <TextField
-                                    variant="outlined"
-                                    //placeholder="EFECTIVO"
-                                    label="EFECTIVO"
-                                    size="small"
-                                    sx={{ mt: 1 }}
-                                    fullWidth
-                                    name="efectivo"
-                                    //value={venta.efectivo}
-                                    //onChange={handleChange}
-                                    value={datosEmitir.efectivo}
-                                    onChange={(e) => handleChangeEmite("efectivo", e.target.value)}
+                                  {//En caso de NP en Proceso, n o se muestra este campo
+                                  params.comprobante.includes('NP') ?
+                                  (
+                                    <div></div>
+                                  )
+                                  :
+                                  (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
+                                      <TextField
+                                        variant="outlined"
+                                        //placeholder="EFECTIVO"
+                                        label="EFECTIVO"
+                                        size="small"
+                                        sx={{ mt: 1 }}
+                                        fullWidth
+                                        name="efectivo"
+                                        //value={venta.efectivo}
+                                        //onChange={handleChange}
+                                        value={datosEmitir.efectivo}
+                                        onChange={(e) => handleChangeEmite("efectivo", e.target.value)}
 
-                                    onKeyDown={handleCodigoKeyDown}
-                                    inputProps={{ style: { color: 'white' } }}
-                                    InputLabelProps={{ style: {color: 'white'}, shrink: true }}
-                                  />                                
+                                        onKeyDown={handleCodigoKeyDown}
+                                        inputProps={{ style: { color: 'white' } }}
+                                        InputLabelProps={{ style: {color: 'white'}, shrink: true }}
+                                      />                                
+                                  )
+                                  }
                               </Grid>
+
                               <Grid item xs={isSmallScreen ? 12 : 0.8}>
-                                  <Select
-                                        size='small'
-                                        value={datosEmitir.forma_pago2}
-                                        name="forma_pago2"
-                                        sx={{display:'block',
-                                        margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
-                                        onChange={(e) => handleChangeEmite("forma_pago2", e.target.value)}
-                                        >
-                                          <MenuItem value="default">SELECCIONA </MenuItem>
-                                        {   
-                                            formasPago.map(elemento => (
-                                            <MenuItem key={elemento} value={elemento}>
-                                              {elemento}
-                                            </MenuItem>)) 
-                                        }
-                                  </Select>
+                                  {//En caso de NP en Proceso, n o se muestra este campo
+                                  params.comprobante.includes('NP') ?
+                                  (
+                                    <div></div>
+                                  )
+                                  :
+                                  (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
+                                    <Select
+                                          size='small'
+                                          value={datosEmitir.forma_pago2}
+                                          name="forma_pago2"
+                                          sx={{display:'block',
+                                          margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
+                                          onChange={(e) => handleChangeEmite("forma_pago2", e.target.value)}
+                                          >
+                                            <MenuItem value="default">SELECCIONA </MenuItem>
+                                          {   
+                                              formasPago.map(elemento => (
+                                              <MenuItem key={elemento} value={elemento}>
+                                                {elemento}
+                                              </MenuItem>)) 
+                                          }
+                                    </Select>
+                                  )
+                                  }
                               </Grid>
                               <Grid item xs={isSmallScreen ? 12 : 1}>
-                                  <TextField
-                                    variant="outlined"
-                                    //placeholder="OTROS"
-                                    label="OTROS"
-                                    size="small"
-                                    sx={{ mt: 1 }}
-                                    fullWidth
-                                    name="efectivo2"
-                                    //value={venta.efectivo2}
-                                    //onChange={handleChange}
-                                    value={datosEmitir.efectivo2}
-                                    onChange={(e) => handleChangeEmite("efectivo2", e.target.value)}
+                                  {//En caso de NP en Proceso, n o se muestra este campo
+                                  params.comprobante.includes('NP') ?
+                                  (
+                                    <div></div>
+                                  )
+                                  :
+                                  (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
+                                    <TextField
+                                      variant="outlined"
+                                      //placeholder="OTROS"
+                                      label="OTROS"
+                                      size="small"
+                                      sx={{ mt: 1 }}
+                                      fullWidth
+                                      name="efectivo2"
+                                      //value={venta.efectivo2}
+                                      //onChange={handleChange}
+                                      value={datosEmitir.efectivo2}
+                                      onChange={(e) => handleChangeEmite("efectivo2", e.target.value)}
 
-                                    onKeyDown={handleCodigoKeyDown}
-                                    inputProps={{ style: { color: 'white' } }}
-                                    InputLabelProps={{ style: { color:'white'}, shrink: true }}
-                                  />                                
+                                      onKeyDown={handleCodigoKeyDown}
+                                      inputProps={{ style: { color: 'white' } }}
+                                      InputLabelProps={{ style: { color:'white'}, shrink: true }}
+                                    />                                
+                                  )
+                                  }
                               </Grid>
-
 
                               <Grid item xs={isSmallScreen ? 12 : 1.2}>
                               {//En caso de NP en Proceso, solo se emite comprobante
@@ -1363,7 +1417,7 @@ export default function AdminVentaForm() {
                                           margin:'.5rem 0'}}
                                           onClick = { () => {
                                             //Valores deafult
-                                            setValorEmite('03'); //por default
+                                            //setValorEmite('03'); //por default
                                             setDatosEmitir(prevState => ({
                                               ...prevState,
                                               efectivo: venta.r_monto_total
@@ -1483,17 +1537,41 @@ export default function AdminVentaForm() {
 
                               </Grid>
                               )}                            
-
                           </Grid>
+                          
+                          { (showModalProductoLista) ?
+                            (
+                              <ListaPopUp
+                                  registroPopUp={producto_select}
+                                  gruposPopUp={grupo_select}
+                                  showModal={showModalProductoLista}
+                                  setShowModal={setShowModalProductoLista}
+                                  registro={producto}                    
+                                  setRegistro={setProducto}                    
+                                  idCodigoKey="id_producto"
+                                  descripcionKey="descripcion"
+                                  auxiliarKey="auxiliar"
+                              />
+                            )
+                            :
+                            (
+                              <></>
+                            )
+                          }
 
-                          { (showModalProducto) ?
+                          { (producto.cantidad && producto.precio_neto) ?
                             (   <>
                                         {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
                                         <Dialog
-                                          open={showModalProducto}
-                                          onClose={() => setShowModalProducto(false)}
+                                          //open={showModalProducto}
+                                          //onClose={() => setShowModalProducto(false)}
+                                          open={true}
+                                          onClose={() => {
+                                            setProducto({ ...producto, cantidad: '' });
+                                            }
+                                          } // o setProducto({})                                          
+                                          //onClose={() => setProducto(prev => ({ ...prev, cantidad: '' }))} // o setProducto({})                                          
                                           maxWidth="md" // Valor predeterminado de 960px
-                                          //fullWidth
                                           disableScrollLock // Evita que se modifique el overflow del body
                                           PaperProps={{
                                             style: {
@@ -1588,17 +1666,18 @@ export default function AdminVentaForm() {
                                               }}
                                             />
                                             </Tooltip>
+                                                  {/*
                                                   <ListaPopUp
                                                       registroPopUp={producto_select}
                                                       gruposPopUp={grupo_select}
                                                       showModal={showModalProductoLista}
-                                                      setShowModal={setShowModalProductoLista}
+                                                      setShowModal={0}
                                                       registro={producto}                    
                                                       setRegistro={setProducto}                    
                                                       idCodigoKey="id_producto"
                                                       descripcionKey="descripcion"
                                                       auxiliarKey="auxiliar"
-                                                  />
+                                                  /> */}
 
                                             <TextField
                                               variant="outlined"
@@ -1750,7 +1829,11 @@ export default function AdminVentaForm() {
                                                         color='success' 
                                                         //size='small'
                                                         //startIcon={<AssessmentRoundedIcon />}
-                                                        onClick={handleSaveDetail}
+                                                        onClick={ ()=> {
+                                                          handleSaveDetail();
+                                                          setProducto({ ...producto, cantidad: '' });
+                                                          }
+                                                        }
                                                         sx={{display:'block',margin:'.5rem 0', width: 270}}
                                                         //sx={{margin:'.5rem 0', height:55}}
                                                         >
@@ -1760,7 +1843,8 @@ export default function AdminVentaForm() {
                                                         //color='warning' 
                                                         //size='small'
                                                         onClick={()=>{
-                                                              setShowModalProducto(false);
+                                                              //setShowModalProducto(false);
+                                                              setProducto({ ...producto, cantidad: '' });
                                                           }
                                                         }
                                                         sx={{display:'block',
@@ -1830,6 +1914,8 @@ export default function AdminVentaForm() {
                                                   margin: '0.5rem 0', // Opcional: márgenes
                                                 }}                                                
                                             >
+                                                {/*asignar permisos a cada ToggleButton, desde conf seguridad_serie (r_cod) cod_select*/}
+                                              {isAllowed('01') && (
                                               <ToggleButton value="01"
                                                             sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
                                                             style={{
@@ -1838,7 +1924,9 @@ export default function AdminVentaForm() {
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
                                               >FACT</ToggleButton>
+                                              )}  
 
+                                              {isAllowed('03') && (
                                               <ToggleButton value="03"
                                                             sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
                                                             style={{
@@ -1847,7 +1935,9 @@ export default function AdminVentaForm() {
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
                                               >BOL</ToggleButton>
+                                              )}  
 
+                                              {isAllowed('NV') && (
                                               <ToggleButton value="NV"
                                                             sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
                                                             style={{
@@ -1856,7 +1946,9 @@ export default function AdminVentaForm() {
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
                                               >NV</ToggleButton>
+                                              )}  
 
+                                              {isAllowed('07') && (
                                               <ToggleButton value="07"
                                                             sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
                                                             style={{
@@ -1865,6 +1957,7 @@ export default function AdminVentaForm() {
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
                                               >NCred</ToggleButton>
+                                              )}  
 
                                             </ToggleButtonGroup>
 

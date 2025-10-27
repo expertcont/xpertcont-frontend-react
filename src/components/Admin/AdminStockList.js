@@ -339,10 +339,12 @@ export default function AdminStockList() {
     console.log("cargaRegistro sDia: ", sDia);
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
     if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
+        console.log(`${back_host}/ad_stock/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
         response = await fetch(`${back_host}/ad_stock/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
     }
     else{
         //usamos los historiales
+        console.log(`${back_host}/ad_stock/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
         response = await fetch(`${back_host}/ad_stock/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
     }
     
@@ -586,7 +588,7 @@ export default function AdminStockList() {
           (pVenta0102) && (row.r_vfirmado == null) ?
           (
             <DriveFileRenameOutlineIcon
-              onClick={() => handleUpdate(row.comprobante_ref,false)}
+              onClick={() => handleUpdate(row.comprobante,false)}
               style={{
                 cursor: 'pointer',
                 color: 'skyblue',
@@ -597,7 +599,7 @@ export default function AdminStockList() {
           : 
           (
             <FindInPageIcon
-              onClick={() => handleUpdate(row.comprobante_ref,true)}
+              onClick={() => handleUpdate(row.comprobante,true)}
               style={{
                 cursor: 'pointer',
                 color: 'gray',
@@ -617,7 +619,7 @@ export default function AdminStockList() {
           (pVenta0103) && (row.r_vfirmado == null) ?
           (
             <DeleteIcon
-              onClick={() => handleDelete(row.comprobante_ref, row.elemento)}
+              onClick={() => handleDelete(row.comprobante, row.elemento)}
               style={{
                 cursor: 'pointer',
                 color: 'orange',
@@ -630,7 +632,7 @@ export default function AdminStockList() {
             <ContentCopyIcon
               onClick={() => {
                   setShowModalMostrarClonar(true);
-                  setValorComprobante(row.comprobante_ref);
+                  setValorComprobante(row.comprobante);
                   //clonarVenta(row.comprobante_ref);
                   }
                 }

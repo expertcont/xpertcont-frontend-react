@@ -96,7 +96,81 @@ export const AdminVentasColumnas = [
     
     // Otras columnas específicas para la vista de Ventas
   ];
-  
+
+  export const AdminVentasDetColumnas = [
+    {//05
+      name: 'Emision',
+      selector: 'r_fecemi',
+      width: '100px',
+      sortable: true,
+    },
+    {//13
+      name: 'Id Producto',
+      selector: 'id_producto',
+      width: '0px',
+      sortable: true,
+    },    
+    {//13
+      name: 'Descripcion',
+      selector: 'descripcion',
+      width: '200px',
+      sortable: true,
+    },
+    {//13
+      name: 'Cantidad',
+      selector: 'cantidad',
+      width: '100px',
+      sortable: true,
+    },
+    {//13
+      name: 'Und',
+      selector: 'cont_und',
+      width: '80px',
+      sortable: true,
+    },
+    {//07-08-10
+      name: 'Comprobante',
+      selector: 'comprobante', //campo unido
+      width: '150px',
+      sortable: true,
+    },
+    {//12
+      name: 'Ruc/Dni',
+      selector: 'r_documento_id',
+      width: '100px',
+      sortable: true,
+    },
+    {//13
+      name: 'Razon Social',
+      selector: 'r_razon_social',
+      sortable: true,
+    },
+    {//13
+      name: 'Id Almacen',
+      selector: 'id_almacen',
+      sortable: true,
+    },    
+
+    {//26
+      name: 'IMPORTE',
+      selector: 'precio_neto',
+      sortable: true,
+    },
+    {//27 PEN o USD
+      name: 'MONEDA',
+      selector: 'r_moneda',
+      sortable: true,
+      width: '90px',
+    },
+    {//28
+      name: 'TC',
+      selector: 'r_tc',
+      sortable: true,
+    },
+    
+    // Otras columnas específicas para la vista de Ventas
+  ];
+
   export const AdminStocksColumnas = [
     {//05
       name: 'Emision',

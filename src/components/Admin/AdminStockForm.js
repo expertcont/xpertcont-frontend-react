@@ -32,9 +32,7 @@ import ListaPopUp from '../ListaPopUp';
 import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useDialog } from "./AdminConfirmDialogProvider";
-import AdminSunatIcon from './AdminSunatIcon';
 
 export default function AdminStockForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -74,7 +72,7 @@ export default function AdminStockForm() {
 
   const [searchText, setSearchText] = useState('');
   const textFieldRef = useRef(null); //foco del buscador
-  const [valorEmite, setValorEmite] = useState('03');
+  const [valorEmite, setValorEmite] = useState('IA');
   const [comprobanteEmitido, setComprobanteEmitido] = useState(null);
   const [razonSocialBusca, setRazonSocialBusca] = useState('');
   //////////////////////////////////////////////////////////
@@ -97,11 +95,18 @@ export default function AdminStockForm() {
 
   const [registrosdet,setRegistrosdet] = useState([]);
   //const fecha_actual = new Date();
-  const formasPago = ['YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'];
+  const [almacen_select,setAlmacenSelect] = useState([]);
+  const [almacen_trabajo,setAlmacenTrabajo] = useState('');
+
+  const [motivo_select,setMotivoSelect] = useState([]);
+  //const [motivo_movimiento,setMotivoMovimiento] = useState('');
 
   const actualizaValorEmite = (e) => {
     setValorEmite(e.target.value);
     setDatosEmitir(prevState => ({ ...prevState, r_cod_emitir: e.target.value }));
+    //Cambiar motivos
+    cargaMotivoSelect(e.target.value);
+
   }
   
   const cargaDocSelect = () =>{
@@ -188,17 +193,17 @@ export default function AdminStockForm() {
     y=y-12; //aumentamos linea nueva
 
     //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.razon_social, fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize(formulario.razon_social, fontSize);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(venta.razon_social, { x, y, size: fontSize });
+    page.drawText(formulario.razon_social, { x, y, size: fontSize });
     y=y-12; //aumentamos linea nueva
 
     //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.direccion, fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize(formulario.direccion, fontSize);
     // Calcular el punto x para alinear a la derecha
     x = ((ticketWidth - textWidth)/2)>0 ? ((ticketWidth - textWidth)/2) : margin;
-    page.drawText(venta.direccion, { x, y, size: 8 });
+    page.drawText(formulario.direccion, { x, y, size: 8 });
     y=y-12; //aumentamos linea nueva
 
 
@@ -210,10 +215,10 @@ export default function AdminStockForm() {
     y=y-12; //aumentamos linea nueva
 
     //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize("FECHA: " + venta.r_fecemi, fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize("FECHA: " + formulario.fecemi, fontSize);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("FECHA: " + venta.r_fecemi, { x, y, size: fontSize });
+    page.drawText("FECHA: " + formulario.fecemi, { x, y, size: fontSize });
     y=y-15 //aumentamos linea nueva
     //y=y-12; //aumentamos linea nueva
 
@@ -234,31 +239,31 @@ export default function AdminStockForm() {
     y=y-12; //aumentamos linea nueva
 
     //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.r_razon_social, fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize(formulario.r_razon_social, fontSize);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(venta.r_razon_social?.toString() ?? "", { x, y, size: fontSize});
+    page.drawText(formulario.r_razon_social?.toString() ?? "", { x, y, size: fontSize});
     y=y-12; //aumentamos linea nueva
 
     //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize("RUC/DNI: " + venta.r_documento_id, fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize("RUC/DNI: " + formulario.r_documento_id, fontSize);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("RUC/DNI: " + venta.r_documento_id?.toString() ?? "", { x, y, size: fontSize });
+    page.drawText("RUC/DNI: " + formulario.r_documento_id?.toString() ?? "", { x, y, size: fontSize });
     y=y-12; //aumentamos linea nueva
 
     //////////////////
-    textWidth = fontNegrita.widthOfTextAtSize(venta.r_direccion, fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize(formulario.r_direccion, fontSize);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText(venta.r_direccion?.toString() ?? "", { x, y, size: fontSize });
+    page.drawText(formulario.r_direccion?.toString() ?? "", { x, y, size: fontSize });
     y=y-12; //aumentamos linea nueva
 
     ////////////////// cambiar por ctrl_us_crea correo que lo registro
-    textWidth = fontNegrita.widthOfTextAtSize("VENTA: "+params.id_invitado.split('@')[0].slice(0,14), fontSize);
+    textWidth = fontNegrita.widthOfTextAtSize("USUARIO: "+params.id_invitado.split('@')[0].slice(0,14), fontSize);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - marginLeftSize)/2;
-    page.drawText("VENTA: "+params.id_invitado.split('@')[0].slice(0,14), { x, y, size: fontSize });
+    page.drawText("USUARIO: "+params.id_invitado.split('@')[0].slice(0,14), { x, y, size: fontSize });
     y=y-12; //aumentamos linea nueva
 
     //////////////////
@@ -338,7 +343,7 @@ export default function AdminStockForm() {
     y=y-15; //aumentamos linea nueva
     y=y-15; //aumentamos linea nueva
 
-    let MontoEnLetras = NumerosALetras(venta.r_monto_total, {
+    let MontoEnLetras = NumerosALetras(formulario.r_monto_total, {
       plural: 'SOLES', //pinches opciones no funcionan, tengo q arreglarlas en la siguiente linea
       singular: 'SOL', //todos mis movimientos estan friamente calculados
       centPlural: 'CÉNTIMOS', //siganme los buenos ...  :)
@@ -352,42 +357,41 @@ export default function AdminStockForm() {
       'PEN': 'S/',
       'USD': '$ USD'
     };
-    const sMoneda = moneda[venta.r_moneda] || ''; // Manejo de caso por defecto
-    console.log(venta.r_moneda, sMoneda);
+    const sMoneda = moneda[formulario.r_moneda] || ''; // Manejo de caso por defecto
+    console.log(formulario.r_moneda, sMoneda);
 
     //////////////////
     x = margin;
     page.drawText("BASE:",{ x, y:y-espaciadoDet+4, size: 9 });
 
-    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_base002).format('0,0.00'), fontSize+2);
+    textWidth = fontNegrita.widthOfTextAtSize(numeral(formulario.r_base002).format('0,0.00'), fontSize+2);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText(numeral(venta.r_base002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
+    page.drawText(numeral(formulario.r_base002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet, size: 10, font }); //Actualizar urgente
 
     x = margin;
     page.drawText("IGV.: ",{ x, y:y-espaciadoDet+4-10, size: 9 });
 
-    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_igv002).format('0,0.00'), fontSize+2);
+    textWidth = fontNegrita.widthOfTextAtSize(numeral(formulario.r_igv002).format('0,0.00'), fontSize+2);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText(numeral(venta.r_igv002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-10, size: 10, font }); //Actualizar urgente
+    page.drawText(numeral(formulario.r_igv002).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-10, size: 10, font }); //Actualizar urgente
 
     x = margin;
     page.drawText("TOTAL.:" + sMoneda,{ x, y:y-espaciadoDet+4-25, size: fontSize+2, font:fontNegrita });
 
-    textWidth = fontNegrita.widthOfTextAtSize(numeral(venta.r_monto_total).format('0,0.00'), fontSize+2);
+    textWidth = fontNegrita.widthOfTextAtSize(numeral(formulario.r_monto_total).format('0,0.00'), fontSize+2);
     // Calcular el punto x para alinear a la derecha
     x = (ticketWidth - textWidth - margin - marginLeftSize);
-    page.drawText(numeral(venta.r_monto_total).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-25, size: fontSize+2, font:fontNegrita }); //Actualizar urgente
+    page.drawText(numeral(formulario.r_monto_total).format('0,0.00')?.toString() ?? "", { x, y:y+4-espaciadoDet-25, size: fontSize+2, font:fontNegrita }); //Actualizar urgente
 
-    
     //SeccionQR
     // Generar el código QR como base64
     const partes = comprobante.split('-');
     const numeroFormateado = partes[2].padStart(8, '0');
     const comprobanteConvertido = `${partes[0]}|${partes[1]}|${numeroFormateado}`;
 
-    const qrImage = await QRCode.toDataURL(params.documento_id + '|' + comprobanteConvertido + '|' + venta.r_igv002 + '|' + venta.r_monto_total + '|' + venta.r_fecemi + '|' + venta.r_id_doc + '|' + venta.r_documento_id + '|');
+    const qrImage = await QRCode.toDataURL(params.documento_id + '|' + comprobanteConvertido + '|' + formulario.r_igv002 + '|' + formulario.r_monto_total + '|' + formulario.fecemi + '|' + formulario.r_id_doc + '|' + formulario.r_documento_id + '|');
     // Convertir la imagen base64 a formato compatible con pdf-lib
     const qrImageBytes = qrImage.split(',')[1]; // Eliminar el encabezado base64
     //const qrImageBuffer = Uint8Array.from(atob(qrImageBytes), (c) => c.charCodeAt(0));
@@ -417,11 +421,23 @@ export default function AdminStockForm() {
     window.open(url, '_blank');
   }
 
-  const [venta,setVenta] = useState({
+  const [formulario,setFormulario] = useState({
       fecemi:'',
-      r_documento_id:'', //cliente
-      r_razon_social:'', //cliente
-      debe:'0',
+      r_documento_id:'',  //correntista
+      r_razon_social:'',  //correntista
+      r_cod:'',           //correntista
+      r_serie:'',         //correntista
+      r_numero:'',        //correntista
+      r_fecemi:'',        //correntista
+      gre_serie:'',       //correntista
+      gre_numero:'',      //correntista
+      
+      id_almacen:'',
+      almacen:'', 
+      
+      id_motivo:'',
+      motivo:'', 
+      
       peso_total:'0',
       ctrl_atencion: '', //alias vendedor
       registrado:'1'
@@ -432,11 +448,10 @@ export default function AdminStockForm() {
     id_anfitrion:'',
     documento_id:'',
     periodo:'',
-    r_cod:'',
-    r_serie:'',
-    r_numero:'',
-    elemento:1,
-    r_fecemi:'',
+    cod:'',
+    serie:'',
+    numero:'',
+    fecemi:'',
     //datos propios del producto
     id_producto:'',
     descripcion:'',
@@ -445,6 +460,12 @@ export default function AdminStockForm() {
     precio_neto:'',
     porc_igv:'',
     cont_und:'',
+
+    r_cod:'',
+    r_serie:'',
+    r_numero:'',
+    r_fecemi:'',
+
     auxiliar:'' //precio_unitario - cont_und - porc_igv
   });
 
@@ -456,7 +477,6 @@ export default function AdminStockForm() {
     r_cod:'',
     r_serie:'',
     r_numero:'',
-    elemento:1,
     r_fecemi:'',
     //datos propios del comprobante a generar y correntista a registrar
     //solo emitidos 01,03,NV ... los 07 y 08 los generamos desde clonar para mayor facilidad
@@ -464,10 +484,6 @@ export default function AdminStockForm() {
     r_documento_id:'',
     r_id_doc:'',
     r_razon_social:'',
-    efectivo:'',       
-    vuelto:'0',         //default
-    forma_pago2:'YAPE', //default
-    efectivo2:'0',      //default
     r_direccion:''
   });
 
@@ -490,15 +506,15 @@ export default function AdminStockForm() {
     setSearchText(codigo);
     //setVenta(prevState => ({ ...prevState, documento_id: codigo, razon_social:cliente}));
     /*setVenta({...venta, documento_id:codigo, razon_social:cliente});*/
-    venta.documento_id = codigo;
-    venta.razon_social = cliente;
+    formulario.documento_id = codigo;
+    formulario.razon_social = cliente;
 
     setShowModal(false);
-    console.log(venta.documento_id,venta.razon_social);
+    console.log(formulario.documento_id,formulario.razon_social);
   };
   const handleSearchTextChange = (event) => {
     setSearchText(event.target.value.replace('+', '').replace('-',''));
-    setVenta({...venta, documento_id:event.target.value.replace('+', '').replace('-','')});
+    setFormulario({...formulario, documento_id:event.target.value.replace('+', '').replace('-','')});
   };
   const filteredClientes = cliente_select.filter((c) =>
   `${c.documento_id} ${c.razon_social}`.toLowerCase().includes(searchText.toLowerCase())
@@ -513,11 +529,23 @@ export default function AdminStockForm() {
   
   const navigate = useNavigate();
 
-  const [cuenta_select,setCuentaSelect] = useState([]); //Cuenta 6X
-  const [searchTextCuenta, setSearchTextCuenta] = useState('');
-  const filteredCuentas = cuenta_select.filter((c) =>
-    `${c.id_cuenta} ${c.descripcion}`.toLowerCase().includes(searchTextCuenta.toLowerCase())
-  );
+  const cargaMotivoSelect = (sValorEmitir) =>{
+    axios
+    .get(`${back_host}/ad_stockmotivo/${sValorEmitir}`)
+    .then((response) => {
+        setMotivoSelect(response.data);
+        //console.log('motivos cargados: ', response.data);
+        if (response.data.length > 0) {
+          setFormulario(prevState => ({ ...prevState, id_motivo: response.data[0].id_motivo })); // o el campo correcto del API
+          setFormulario({ ...formulario, id_motivo: response.data[0].id_motivo }); // o el campo correcto del API
+          console.log('motivo por defecto: ', response.data[0].id_motivo);
+        }
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+
   const cargaPopUpProducto = () =>{
     axios
     .get(`${back_host}/ad_productopopup/${params.id_anfitrion}/${params.documento_id}`)
@@ -578,7 +606,7 @@ export default function AdminStockForm() {
       const [COD, SERIE, NUMERO] = params.comprobante.split('-');
       console.log('comprobante key: ', COD, SERIE, NUMERO);
 
-      mostrarMovimiento(COD, SERIE, NUMERO); //falta escpecificar elemento
+      mostrarMovimiento(COD, SERIE, NUMERO); 
       mostrarMovimientoDetalle(COD, SERIE, NUMERO);
       
     }else{
@@ -590,7 +618,7 @@ export default function AdminStockForm() {
 
     //consideraciones finales de renderizado
     //si cliente existe, renderizarlo, sino en blanco indica que esta en modo Pedido
-    //cargaClienteCombo();
+    //cargaMotivoSelect(valorEmite);
     cargaPopUpProducto();
     cargaPopUpGrupo();//new
     cargaDocSelect();
@@ -653,43 +681,14 @@ export default function AdminStockForm() {
 
       mostrarMovimiento(COD, SERIE, NUMERO); 
       mostrarMovimientoDetalle(COD, SERIE, NUMERO);
-      console.log('cabecera actualizado: ', venta);
+      console.log('cabecera actualizado: ', formulario);
       console.log('detalle actualizado: ', registrosdet);
 
   },[updateTrigger]) //Aumentamos IsAuthenticated y user
 
-  useEffect( ()=> {
-    //Datos de emision
-    if (valorEmite === '03' || valorEmite === 'NV'){
-      //Regla en Boletas 
-      setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '00000001' }));
-      setDatosEmitir(prevState => ({ ...prevState, r_razon_social: 'VARIOS' }));
-      setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '1' }));
-      setIdDocBusca('1');
-      setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
-      
-      if (venta.r_monto_total > 700 && valorEmite === '03'){
-        setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '' }));
-        setDatosEmitir(prevState => ({ ...prevState, r_razon_social: '' }));
-        setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '1' }));
-        setIdDocBusca('1');
-        setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
-      }
-      setDatosEmitir(prevState => ({ ...prevState, efectivo: venta.r_monto_total }));
-      //setDatosEmitir({...datosEmitir, efectivo: venta.r_monto_total });
-    }
-    if (valorEmite === '01' || valorEmite === '07' || valorEmite === '08'){
-      setDatosEmitir(prevState => ({ ...prevState, r_documento_id: '' }));
-      setDatosEmitir(prevState => ({ ...prevState, r_razon_social: '' }));
-      setDatosEmitir(prevState => ({ ...prevState, r_id_doc: '6' }));
-      setIdDocBusca('6');
-      setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
-
-      setDatosEmitir(prevState => ({ ...prevState, efectivo: venta.r_monto_total }));
-      //setDatosEmitir({...datosEmitir, efectivo: venta.r_monto_total });
-    }
-
-  },[valorEmite]) //Cambios en Emision, actualiza 'datosEmitir'
+  /*useEffect( ()=> {
+    cargaMotivoSelect(valorEmite);
+  },[valorEmite])*/
 
   useEffect(() => {
     //Falta Consultar activo en parametros, precio por cantidad
@@ -762,31 +761,16 @@ export default function AdminStockForm() {
 
   //Rico evento change
   const handleChangeEmite = (name, value) => {
-    //calcular monto efectivo2 si efectivo < venta.r_monto_total
-    if (name === 'efectivo' && (parseFloat(value) < parseFloat(venta.r_monto_total) || parseFloat(value) === parseFloat(venta.r_monto_total) )) {
-      setDatosEmitir(prevState => ({
-        ...prevState,
-        efectivo2: parseFloat(venta.r_monto_total - parseFloat(value)).toFixed(2)
-      }));
-      //dice que no debe usarse de modo directo el valor del useState en un mismo evento
-      datosEmitir.efectivo2 = parseFloat(venta.r_monto_total - parseFloat(value)).toFixed(2)
-    }
-
-    if (name === 'efectivo2' && (parseFloat(value) < parseFloat(venta.r_monto_total) || parseFloat(value) === parseFloat(venta.r_monto_total) )) {
-      setDatosEmitir(prevState => ({
-        ...prevState,
-        efectivo: parseFloat(venta.r_monto_total - parseFloat(value)).toFixed(2)
-      }));
-      //dice que no debe usarse de modo directo el valor del useState en un mismo evento
-      datosEmitir.efectivo = parseFloat(venta.r_monto_total - parseFloat(value)).toFixed(2)
-    }
-    
-    console.log('handleChangeEmite: ', datosEmitir);
     setDatosEmitir({...datosEmitir, [name]: value});
+    console.log('handleChangeEmite: ', datosEmitir);
   }
     
   const handleChange = e => {
-    setVenta({...venta, [e.target.name]: e.target.value});
+    /*if (e.target.name === "id_motivo"){
+      setMotivoMovimiento(e.target.value);
+    }*/
+
+    setFormulario({...formulario, [e.target.name]: e.target.value});
   }
   const handleChangeProductoDatos = e => {
     let precio_unitario;
@@ -833,7 +817,6 @@ export default function AdminStockForm() {
       return cantidadNum >= min && cantidadNum <= max;
     });
 
-    //return rango ? parseFloat(rango.precio_venta/rango.unidades) : 0; // 0 si no encuentra rango
     return rango  ? parseFloat((rango.precio_venta / rango.unidades).toFixed(2)) : 0;
 
   };
@@ -845,7 +828,7 @@ export default function AdminStockForm() {
     console.log('data mst_movimiento: ',data);
 
     //Actualiza datos para enlace con controles, al momento de modo editar
-    setVenta((prevState) => ({
+    setFormulario((prevState) => ({
       ...prevState, // Mantiene el resto del estado anterior
       razon_social: data.razon_social, //datos para impresion
       
@@ -865,9 +848,11 @@ export default function AdminStockForm() {
       r_cod: data.r_cod,                    //datos ingreso
       r_serie: data.r_serie,                //datos ingreso
       r_numero: data.r_numero,              //datos ingreso
-      r_cod: data.gre_cod,                  //datos ingreso
-      r_serie: data.gre_serie,              //datos ingreso
-      r_numero: data.gre_numero,            //datos ingreso
+      r_fecemi: data.r_fecemi,              //datos ingreso
+      
+      gre_cod: data.gre_cod,                  //datos ingreso
+      gre_serie: data.gre_serie,              //datos ingreso
+      gre_numero: data.gre_numero,            //datos ingreso
     }));
       
     //console.log(data);
@@ -877,14 +862,15 @@ export default function AdminStockForm() {
   const mostrarMovimientoDetalle = async (cod,serie,num) => {
     const res = await fetch(`${back_host}/ad_stockdet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}`);
     const dataDet = await res.json();
+    console.log('data detalle: ',dataDet);
     setRegistrosdet(dataDet);
   };
 
   //Seccion Elimina Item
   const handleDelete = (item) => {
     console.log(item);
-    const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
-    confirmaEliminarDetalle(COD, SERIE, NUMERO,ELEM,item);
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');
+    confirmaEliminarDetalle(COD, SERIE, NUMERO,item);
   };
 
    //////////////////////////////////funciones control cantidad//////////////////////////////////////////
@@ -940,7 +926,7 @@ export default function AdminStockForm() {
           r_cod: COD,
           r_serie: SERIE,
           r_numero: NUMERO,
-          r_fecemi: venta.r_fecemi,
+          r_fecemi: formulario.r_fecemi,
               
           id_producto: '',
           descripcion: '',
@@ -962,20 +948,19 @@ export default function AdminStockForm() {
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   const confirmaGrabarDetalle = async()=>{
     //console.log('antes de comprobante y setProducto');
-    const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');    
+    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
     producto.id_anfitrion = params.id_anfitrion;
     producto.documento_id = params.documento_id;
     producto.periodo = params.periodo;
-    producto.r_cod = COD;
-    producto.r_serie = SERIE;
-    producto.r_numero = NUMERO;
-    producto.elemento = ELEM; //verificar
-    producto.r_fecemi = venta.r_fecemi;
+    producto.cod = COD;
+    producto.serie = SERIE;
+    producto.numero = NUMERO;
+    producto.fecemi = formulario.fecemi;
 
-    console.log(producto);
+    console.log('json producto: ',producto);
 
-    const sRuta = `${back_host}/ad_ventadet`;
+    const sRuta = `${back_host}/ad_stockdet`;
     fetch(sRuta, {
       method: "POST",
       body: JSON.stringify(producto), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
@@ -1008,57 +993,8 @@ export default function AdminStockForm() {
     });
   }
 
-  /*const confirmaModificarDetalle = async(cod,serie,num,elem,item)=>{
-    //console.log('antes de comprobante y setProducto');
-    const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
-    producto.id_anfitrion = params.id_anfitrion;
-    producto.documento_id = params.documento_id;
-    producto.periodo = params.periodo;
-    producto.r_cod = COD;
-    producto.r_serie = SERIE;
-    producto.r_numero = NUMERO;
-    producto.r_fecemi = venta.r_fecemi;
-
-    console.log(producto);
-
-    const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
-    fetch(sRuta, {
-      method: "POST",
-      body: JSON.stringify(producto), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
-      headers: {"Content-Type":"application/json"}
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            //console.log('La operación fue exitosa');
-            swal({
-              text:"Detalle actualizado con exito",
-              icon:"success",
-              timer:"2000"
-            });
-            
-            setUpdateTrigger(Math.random());//actualizad vista detalle
-
-        } else {
-            console.log('La operación falló');
-            // Aquí puedes agregar lógica adicional para manejar una respuesta fallida
-            swal({
-              text:"La Operacion fallo, intentelo nuevamente",
-              icon:"warning",
-              timer:"2000"
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Hubo un problema con la solicitud fetch:', error);
-        //ahora si
-        // Aquí puedes agregar lógica adicional para manejar errores en la solicitud
-    });
-  }*/
-
-
-  const confirmaEliminarDetalle = async(cod,serie,num,elem,item)=>{
+  const confirmaEliminarDetalle = async(cod,serie,num,item)=>{
     const result = await confirmDialog({
             title: "Eliminar Item?",
             //message: `${sComprobante}`,
@@ -1068,7 +1004,9 @@ export default function AdminStockForm() {
     });
     //console.log(result);
     if (result.isConfirmed) {
-        const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}/${item}`;
+        const sRuta = `${back_host}/ad_stockdet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${item}`;
+        console.log(sRuta);
+        
         fetch(sRuta, {
           method: "DELETE"
         })
@@ -1099,7 +1037,6 @@ export default function AdminStockForm() {
   const handleSaveComprobante = () =>{
     //Consumir API grabar
     confirmaGrabarComprobante();
-    //alert('origen ref: '+ venta.r_cod_ref+venta.r_serie_ref+venta.r_numero_ref);
 
     //Quitar modal emitir
     setShowModalEmite(false);
@@ -1137,23 +1074,18 @@ export default function AdminStockForm() {
         r_razon_social: datosEmitir.r_razon_social,
         r_direccion: datosEmitir.r_direccion,
 
-        efectivo: datosEmitir.efectivo,
-        efectivo2: datosEmitir.efectivo2,
-        forma_pago2: datosEmitir.forma_pago2,
-        vuelto: datosEmitir.vuelto,
-
-        r_cod_ref: venta.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
-        r_serie_ref: venta.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
-        r_numero_ref: venta.r_numero_ref,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        r_cod_ref: formulario.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        r_serie_ref: formulario.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        r_numero_ref: formulario.r_numero_ref,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         r_idmotivo_ref: '01',//parte de la referencia a emitir (hardcodeado temporal) anulacion
       };
 
     //console.log(estadoFinal);
 
-    const sRuta = `${back_host}/ad_ventacomp`;
+    const sRuta = `${back_host}/ad_stockcomp`;
     fetch(sRuta, {
       method: "POST",
-      body: JSON.stringify(estadoFinal), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+      body: JSON.stringify(estadoFinal), 
       headers: {"Content-Type":"application/json"}
     })
     .then(response => response.json())
@@ -1175,11 +1107,11 @@ export default function AdminStockForm() {
             }));
             //console.log(params);
             //console.log(data);
-            console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero + '-' + data.elemento);
+            console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero);
             
-            const sComprobanteGenerado = data.r_cod + '-' + data.r_serie + '-' + data.r_numero + '-' + data.elemento;
+            const sComprobanteGenerado = data.r_cod + '-' + data.r_serie + '-' + data.r_numero;
             //renderizado automatico
-            navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${sComprobanteGenerado}/view`,
+            navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${sComprobanteGenerado}/view`,
                     { replace: true }
                     );
 
@@ -1216,26 +1148,25 @@ export default function AdminStockForm() {
         periodo: params.periodo,
         id_invitado: params.id_invitado,
 
-        r_cod: COD,
-        r_serie: SERIE,
-        r_numero: NUMERO,
-        elemento: ELEM, //new
-        fecha: venta.r_fecemi,
-        
-        r_id_doc: venta.r_id_doc,
-        r_documento_id: venta.r_documento_id,
-        r_razon_social: venta.r_razon_social,
-        r_direccion: venta.r_direccion,
+        cod: COD,
+        serie: SERIE,
+        numero: NUMERO,
+        fecemi: formulario.fecemi,
+
+        r_id_doc: formulario.r_id_doc,
+        r_documento_id: formulario.r_documento_id,
+        r_razon_social: formulario.r_razon_social,
+        r_direccion: formulario.r_direccion,
 
       };
 
     console.log(estadoFinal);
     
-    const sRuta = `${back_host}/ad_venta`;
+    const sRuta = `${back_host}/ad_stock`;
     console.log(sRuta);
     fetch(sRuta, {
       method: "PUT",
-      body: JSON.stringify(estadoFinal), //cambiazo de elementosSeleccionados por soloNumAsientos, tamaño minimo json para evitar rechazo en backend railway
+      body: JSON.stringify(estadoFinal), 
       headers: {"Content-Type":"application/json"}
     })
     .then(response => response.json())
@@ -1393,19 +1324,7 @@ export default function AdminStockForm() {
       <ReplyIcon />
     </IconButton>
 
-    <AdminSunatIcon
-      comprobante={params.comprobante}
-      elemento={params.comprobante.split("-").pop()}   // ✅ último valor después del último "-"
-      firma={venta.r_vfirmado}
-      documentoId={params.documento_id}
-      periodoTrabajo={params.periodo}
-      idAnfitrion={params.id_anfitrion}
-      contabilidadTrabajo={params.documento_id}
-      backHost={back_host}
-      onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
-      size={26}
-    />
-    
+   
     { pVenta010202 && !visualizando ?
     (
     <IconButton color="primary" 
@@ -1482,18 +1401,6 @@ export default function AdminStockForm() {
   };
 
   // Función para intercambiar valores al hacer clic en la flecha
-  const handleSwitch = (from) => {
-    setDatosEmitir((prev) => {
-      if (from === "efectivo") {
-        return { ...prev, efectivo2: prev.efectivo, efectivo: 0 };
-      }
-      if (from === "efectivo2") {
-        return { ...prev, efectivo: prev.efectivo2, efectivo2: 0 };
-      }
-      return prev;
-    });
-  };
-
   return (
   <div> 
       <div></div>
@@ -1524,10 +1431,10 @@ export default function AdminStockForm() {
                                       ('MV en Proceso')
                                       :
                                       (  //cambiamos la vista del comprobante a mostrar
-                                        (venta.r_cod_ref==null) ?
-                                        venta.cod+"-"+venta.serie+"-"+venta.numero
+                                        (formulario.r_cod_ref==null) ?
+                                        formulario.cod+"-"+formulario.serie+"-"+formulario.numero
                                         :
-                                        venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
+                                        formulario.r_cod_ref+"-"+formulario.r_serie_ref+"-"+formulario.r_numero_ref
                                       ) 
                                     )
                                   }
@@ -1541,10 +1448,10 @@ export default function AdminStockForm() {
                                         size="small"
                                         sx={{display:'block',
                                               margin:'.5rem 0'}}
-                                        name="fecha_emision"
+                                        name="fecemi"
                                         type="date"
                                         //format="yyyy/MM/dd"
-                                        value={venta.fecemi}
+                                        value={formulario.fecemi}
                                         onChange={handleChange}
                                         inputProps={{ style:{color:'white'} }}
                                         InputLabelProps={{ style:{color:'white'} }}
@@ -1552,18 +1459,65 @@ export default function AdminStockForm() {
                               </Grid>
 
                               <Grid item xs={isSmallScreen ? 12 : 4}>
-                                  <Typography variant='h5' color='white' textAlign='center'>
-                                    SELECT ALMACEN
-                                  </Typography>
+                                  {params.comprobante.includes('MV') ?
+                                    (
+                                      <Typography variant='h6' color='white' textAlign='center'>
+                                          Almacen: {formulario.id_almacen}
+                                      </Typography>
+                                    ):
+                                    (
+                                      <Select
+                                          labelId="almacen_select"
+                                          size='small'
+                                          value={formulario.id_almacen}
+                                          name="almacen"
+                                          sx={{display:'block',
+                                          margin:'.1rem 0', color:"white", fontSize: '13px' }}
+                                          label="Almacen"
+                                          onChange={handleChange}
+                                          >
+                                          <MenuItem value="default">SELECCIONA </MenuItem>
+                                          {   
+                                              almacen_select.map(elemento => (
+                                              <MenuItem key={elemento.id_almacen} value={elemento.id_almacen}>
+                                                {elemento.nombre}
+                                              </MenuItem>)) 
+                                          }
+                                      </Select>
+                                    )
+                                  }
                               </Grid>
 
                               
                               <Grid item xs={isSmallScreen ? 12 : 2.8}>
-                                  <Typography variant='h5' color='white' textAlign='center'>
-                                    SELECT MOTIVO
-                                  </Typography>
+                                  {params.comprobante.includes('MV') ?
+                                    (
+                                      <Typography variant='h6' color='white' textAlign='center'>
+                                          Motivo: {formulario.id_motivo}
+                                      </Typography>
+                                    ):
+                                    (
+                                      <Select
+                                            labelId="motivo_select"
+                                            size='small'
+                                            value={formulario.id_motivo}
+                                            name="id_motivo"
+                                            sx={{display:'block',
+                                            margin:'.1rem 0', color:"white", fontSize: '13px' }}
+                                            label="Motivo"
+                                            onChange={handleChange}
+                                            >
+                                              <MenuItem value="default">SELECCIONA </MenuItem>
+                                            {   
+                                                motivo_select.map(elemento => (
+                                                <MenuItem key={elemento.id_motivo} value={elemento.id_motivo}>
+                                                  {elemento.nombre}
+                                                </MenuItem>)) 
+                                            }
+                                      </Select>
+                                    )
+                                  }
                               </Grid>
-
 
                               <Grid item xs={isSmallScreen ? 12 : 1.2}>
                               {//En caso de MV en Proceso, solo se emite comprobante
@@ -1577,20 +1531,13 @@ export default function AdminStockForm() {
                                           margin:'.5rem 0'}}
                                           onClick = { () => {
                                             //Valores deafult
-                                            setValorEmite('03'); //por default
-                                            setDatosEmitir(prevState => ({
-                                              ...prevState,
-                                              efectivo: venta.r_monto_total
-                                            }));
-                                            setDatosEmitir(prevState => ({
-                                              ...prevState,
-                                              efectivo2: 0
-                                            }));
+                                            setValorEmite('IA'); //por default
+                                            cargaMotivoSelect('IA'); //por default
                                             setShowModalEmite(true);
                                             }
                                           }
                                           disabled={
-                                                    !venta.r_fecemi 
+                                                    !formulario.fecemi 
                                                     }
                                           >
                                           { cargando ? (
@@ -1601,7 +1548,7 @@ export default function AdminStockForm() {
                                   </Button>
                                )
                                :
-                               (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
+                               (  //Caso contrario, solo se modifica pero 'NV' (Notas)
                                   //Comprobantes Sunat NO, porque ya estan declarados en OSE-sunat
                                   <Button variant='contained' 
                                           color='primary' 
@@ -1610,7 +1557,7 @@ export default function AdminStockForm() {
                                           sx={{display:'block',
                                           margin:'.5rem 0'}}
                                           disabled={
-                                                    !venta.r_fecemi 
+                                                    !formulario.fecemi 
                                                     //|| !venta.r_documento_id 
                                                     //|| !pVenta010201 
                                                     //|| !params.comprobante.includes('NV')
@@ -1641,7 +1588,7 @@ export default function AdminStockForm() {
                                           sx={{ mt: 1 }}
                                           fullWidth
                                           name="r_documento_id"
-                                          value={venta.r_documento_id}
+                                          value={formulario.r_documento_id}
                                           onChange={handleChange}
                                           onKeyDown={handleCodigoKeyDown}
                                           inputProps={{ style: { color: 'white' } }}
@@ -1671,7 +1618,7 @@ export default function AdminStockForm() {
                                                     sx={{mt:1}}
                                                     fullWidth
                                                     name="r_razon_social"
-                                                    value={venta.r_razon_social}
+                                                    value={formulario.r_razon_social}
                                                     onChange={handleChange} //new para busqueda
                                                     onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                     inputProps={{ style:{color:'white'} }}
@@ -1688,8 +1635,8 @@ export default function AdminStockForm() {
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_direccion"
-                                                value={venta.r_direccion}
+                                                name="r_cod"
+                                                value={formulario.r_cod}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
@@ -1701,8 +1648,8 @@ export default function AdminStockForm() {
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_direccion"
-                                                value={venta.r_direccion}
+                                                name="r_serie"
+                                                value={formulario.r_serie}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
@@ -1714,8 +1661,8 @@ export default function AdminStockForm() {
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_direccion"
-                                                value={venta.r_direccion}
+                                                name="r_numero"
+                                                value={formulario.r_numero}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
@@ -1727,8 +1674,8 @@ export default function AdminStockForm() {
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_direccion"
-                                                value={venta.r_direccion}
+                                                name="r_fecemi"
+                                                value={formulario.r_fecemi}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
@@ -1745,8 +1692,8 @@ export default function AdminStockForm() {
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_direccion"
-                                                value={venta.r_direccion}
+                                                name="gre_serie"
+                                                value={formulario.gre_serie}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
@@ -1758,8 +1705,8 @@ export default function AdminStockForm() {
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_direccion"
-                                                value={venta.r_direccion}
+                                                name="gre_numero"
+                                                value={formulario.gre_numero}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
@@ -2116,43 +2063,55 @@ export default function AdminStockForm() {
                                                   margin: '0.5rem 0', // Opcional: márgenes
                                                 }}                                                
                                             >
-                                              <ToggleButton value="01"
+                                              <ToggleButton value="IA"
                                                             sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
                                                             style={{
-                                                              backgroundColor: valorEmite === '01' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === '01' ? "orange" : "gray",
+                                                              backgroundColor: valorEmite === 'IA' ? 'lightblue' : 'transparent',
+                                                              color: valorEmite === 'IA' ? "orange" : "gray",
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
-                                              >FACT</ToggleButton>
+                                              >INGRESO</ToggleButton>
 
-                                              <ToggleButton value="03"
+                                              <ToggleButton value="SA"
                                                             sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
                                                             style={{
-                                                              backgroundColor: valorEmite === '03' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === '03' ? 'orange' : 'gray',
+                                                              backgroundColor: valorEmite === 'SA' ? 'lightblue' : 'transparent',
+                                                              color: valorEmite === 'SA' ? 'orange' : 'gray',
                                                               borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
                                                             }}
-                                              >BOL</ToggleButton>
+                                              >SALIDA</ToggleButton>
 
-                                              <ToggleButton value="NV"
-                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
-                                                            style={{
-                                                              backgroundColor: valorEmite === 'NV' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === 'NV' ? 'orange' : 'gray',
-                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                                                            }}
-                                              >NV</ToggleButton>
-
-                                              <ToggleButton value="07"
-                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
-                                                            style={{
-                                                              backgroundColor: valorEmite === '07' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === '07' ? 'orange' : 'gray',
-                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                                                            }}
-                                              >NCred</ToggleButton>
 
                                             </ToggleButtonGroup>
+                                            
+                                             <Select
+                                                    labelId="motivo_select"
+                                                    value={formulario.id_motivo}  // 
+                                                    size='small'
+                                                    name="id_motivo"
+                                                    //fullWidth
+                                                    sx={{display:'block',
+                                                         //margin:'.4rem 0', 
+                                                         mt:0,
+                                                         top: '-7px',
+                                                         width: '270px',  // Establece el ancho fijo aquí
+                                                         textAlign: 'center',  // Centrar el texto seleccionado
+                                                         '.MuiSelect-select': { 
+                                                           textAlign: 'center',  // Centrar el valor dentro del Select
+                                                         },                                                         
+                                                         color:"white"}}
+                                                    label="Motivo"
+                                                    onChange={handleChange}
+                                             >
+                                                    {   
+                                                        motivo_select.map(elemento => (
+                                                        <MenuItem key={elemento.id_motivo} value={elemento.id_motivo}
+                                                                  sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
+                                                        >
+                                                        {elemento.nombre}
+                                                        </MenuItem>)) 
+                                                    }
+                                             </Select>
 
                                             <TextField
                                                     variant="outlined"
@@ -2232,9 +2191,7 @@ export default function AdminStockForm() {
 
                                             <Tooltip title={datosEmitir.r_razon_social}>
                                                 <TextField variant="outlined" 
-                                                          //maxWidth="md"
                                                           placeholder='RAZON SOCIAL'
-                                                          //label='RAZON SOCIAL'
                                                           autoFocus
                                                           size="small"
                                                           autoComplete="off"
@@ -2247,117 +2204,108 @@ export default function AdminStockForm() {
                                                           InputLabelProps={{ style:{color:'white'} }}
                                                 />
                                             </Tooltip>
+                                            
+                                            <Box>
                                             <TextField variant="outlined" 
                                                       //maxWidth="md"
-                                                      placeholder='DIRECCION'
-                                                      //label='DIRECCION'
+                                                      placeholder='COD'
                                                       autoFocus
                                                       size="small"
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
-                                                      name="r_direccion"
-                                                      value={datosEmitir.r_direccion}
-                                                      //onChange={handleSearchTextCuentaChange} //new para busqueda
-                                                      onChange={(e) => handleChangeEmite('r_direccion', e.target.value)}
+                                                      name="r_cod"
+                                                      value={formulario.r_cod}
+                                                      onChange={handleChange}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
+                                                      inputProps={{ style:{color:'white',width: 40, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
                                             />
-
-                                          {/* Campo EFECTIVO */}
-                                          <Box sx={{ display: "inline-block" }}>
-                                            <TextField
-                                              variant="outlined"
-                                              autoFocus
-                                              size="small"
-                                              autoComplete="off"
-                                              name="efectivo"
-                                              value={datosEmitir.efectivo}
-                                              onChange={(e) => handleChangeEmite("efectivo", e.target.value)}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <Box sx={{ color: "gray", fontSize: "0.85rem" }}>EFECTIVO</Box>
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment:
-                                                  datosEmitir.efectivo > 0 && (
-                                                    <InputAdornment position="end">
-                                                      <IconButton size="small" onClick={() => handleSwitch("efectivo")}>
-                                                        <CompareArrowsIcon sx={{ color: "white" }} />
-                                                      </IconButton>
-                                                    </InputAdornment>
-                                                  ),
-                                              }}
-                                              sx={{
-                                                width: 270,
-                                                "& input": {
-                                                  textAlign: "center",
-                                                  color: "white",
-                                                },
-                                                "& .MuiOutlinedInput-root": {
-                                                  paddingRight: "4px", // para que el botón no corte el borde
-                                                },
-                                              }}
-
-                                              InputLabelProps={{ style: { color: "white" } }}
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='SERIE'
+                                                      autoFocus
+                                                      size="small"
+                                                      autoComplete="off"
+                                                      //sx={{mt:-1}}
+                                                      name="r_serie"
+                                                      value={formulario.r_serie}
+                                                      onChange={handleChange}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 45, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
                                             />
-                                          </Box>
-
-                                          {/* Campo EFECTIVO2 */}
-                                          <Box sx={{ position: "relative", width: 270 }}>
-                                            <TextField
-                                              variant="outlined"
-                                              size="small"
-                                              autoComplete="off"
-                                              name="efectivo2"
-                                              value={datosEmitir.efectivo2}
-                                              onChange={(e) => handleChangeEmite("efectivo2", e.target.value)}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <Select
-                                                      value={datosEmitir.forma_pago2 || "YAPE"}
-                                                      onChange={(e) => handleChangeEmite("forma_pago2", e.target.value)}
-                                                      variant="standard"
-                                                      disableUnderline
-                                                      sx={{
-                                                        color: "gray",
-                                                        fontSize: "0.85rem",
-                                                        width: 90,
-                                                        "& .MuiSelect-icon": { color: "gray" },
-                                                      }}
-                                                    >
-                                                      {formasPago.map((forma) => (
-                                                        <MenuItem key={forma} value={forma}>
-                                                          {forma}
-                                                        </MenuItem>
-                                                      ))}
-                                                    </Select>
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment: datosEmitir.efectivo2 > 0 && (
-                                                  <InputAdornment position="end">
-                                                    <IconButton size="small" onClick={() => handleSwitch("efectivo2")}>
-                                                      <CompareArrowsIcon sx={{ color: "white" }} />
-                                                    </IconButton>
-                                                  </InputAdornment>
-                                                ),
-                                              }}
-                                              sx={{
-                                                width: 270,
-                                                "& input": {
-                                                  textAlign: "center",
-                                                  color: "white",
-                                                },
-                                                "& .MuiOutlinedInput-root": {
-                                                  paddingRight: "4px", // para que el botón no corte el borde
-                                                },
-                                              }}
-                                              InputLabelProps={{ style: { color: "white" } }}
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='NUMERO'
+                                                      autoFocus
+                                                      size="small"
+                                                      autoComplete="off"
+                                                      //sx={{mt:-1}}
+                                                      name="r_numero"
+                                                      value={formulario.r_numero}
+                                                      onChange={handleChange}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 95, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
                                             />
-                                          </Box>
+                                            </Box>
 
+                                            <TextField variant="outlined" 
+                                                    placeholder="FECHA"
+                                                    size="small"
+                                                    type="date"
+                                                    sx={{mt:1}}
+                                                    name="r_fecemi"
+                                                    value={formulario.r_fecemi}
+                                                    onChange={handleChange}
+                                                    inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
+                                                    InputLabelProps={{ style:{color:'white'} }}
+                                            />
+
+                                            <Box>
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='GRE'
+                                                      autoFocus
+                                                      size="small"
+                                                      autoComplete="off"
+                                                      //sx={{mt:-1}}
+                                                      name="gre_cod"
+                                                      value={formulario.gre_cod}
+                                                      onChange={handleChange}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 40, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
+                                            />
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='GSERIE'
+                                                      autoFocus
+                                                      size="small"
+                                                      autoComplete="off"
+                                                      //sx={{mt:-1}}
+                                                      name="gre_serie"
+                                                      value={formulario.gre_serie}
+                                                      onChange={handleChange}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 45, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
+                                            />
+                                            <TextField variant="outlined" 
+                                                      //maxWidth="md"
+                                                      placeholder='GNUM'
+                                                      autoFocus
+                                                      size="small"
+                                                      autoComplete="off"
+                                                      //sx={{mt:-1}}
+                                                      name="gre_numero"
+                                                      value={formulario.gre_numero}
+                                                      onChange={handleChange}
+                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
+                                                      inputProps={{ style:{color:'white',width: 95, textAlign: 'center',  readOnly: true} }}
+                                                      InputLabelProps={{ style:{color:'white'} }}
+                                            />
+                                            </Box>
 
                                             <Button variant='contained' 
                                                         color='primary' 

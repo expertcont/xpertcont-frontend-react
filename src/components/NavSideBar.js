@@ -64,6 +64,7 @@ export default function NavSideBar(props) {
   const [contabilidad_select, setContabilidadesSelect] = useState([]);
   
   const [openStocks, setOpenStocks] = useState(false);
+  const [openVentas, setOpenVentas] = useState(false);
   
   const handleClick = (buttonId) => {
     setSelectedButton(buttonId);
@@ -86,6 +87,10 @@ export default function NavSideBar(props) {
 
   const handleStocksClick = () => {
     setOpenStocks(!openStocks);
+  };
+
+  const handleVentasClick = () => {
+    setOpenVentas(!openVentas);
   };
 
   useEffect(() => {
@@ -381,7 +386,7 @@ export default function NavSideBar(props) {
           }}
         />
 
-        {accesoAdmin && (
+        {/*accesoAdmin && (
           <MenuItem
             icon={<ShoppingCartIcon />}
             label="Ventas"
@@ -391,6 +396,49 @@ export default function NavSideBar(props) {
               handleClick('icono02');
             }}
           />
+        )*/}
+        {accesoAdmin && (
+          <>
+            <MenuItem
+              icon={<ShoppingCartIcon />}
+              label="Ventas"
+              //isActive={selectedButton === 'icono02'}
+              onClick={handleVentasClick}
+              hasSubmenu={true}
+              isSubmenuOpen={openVentas}
+            />
+            <Collapse in={openVentas} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <SubMenuItem
+                  //icon={<ShoppingCartIcon />}
+                  label="Movimientos"
+                  isActive={selectedButton === 'icono02-1'}
+                  onClick={() => {
+                  navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  handleClick('icono02-1');
+                  }}
+                />
+                <SubMenuItem
+                  //icon={<ShoppingCartIcon />}
+                  label="Detalle"
+                  isActive={selectedButton === 'icono02-2'}
+                  onClick={() => {
+                    navigate(`/ad_ventarepdet/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono02-2');
+                  }}
+                />
+                <SubMenuItem
+                  //icon={<ShoppingCartIcon />}
+                  label="Resumen"
+                  isActive={selectedButton === 'icono02-3'}
+                  onClick={() => {
+                    navigate(`/ad_ventarepres/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono02-3');
+                  }}
+                />
+              </List>
+            </Collapse>
+          </>
         )}
 
         {accesoAdmin && (

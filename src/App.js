@@ -39,6 +39,7 @@ import AdminStockList from "./components/Admin/AdminStockList";
 import NavSideBar from "./components/NavSideBar";
 import Header from './components/Header'; // Importa el nuevo componente
 import AdminStockForm from "./components/Admin/AdminStockForm";
+import AdminVentaRepDet from "./components/Admin/AdminVentaRepDet";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -85,6 +86,7 @@ function App(props) {
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminEquipoForm />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/:id_equipo/edit" element={<AdminEquipoForm />} />
 
+              <Route path="/ad_ventarepdet/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepDet />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaForm />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/:comprobante_ref" element={<AdminVentaForm />} />
