@@ -475,21 +475,30 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  icon={<ShoppingCartIcon />}
-                  label="Kardex"
+                  //icon={<ShoppingCartIcon />}
+                  label="Detalle"
                   isActive={selectedButton === 'icono10-2'}
                   onClick={() => {
-                    navigate(`/ad_stock_ingreso/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
+                    navigate(`/ad_stockrepdet/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono10-2');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<ShoppingCartIcon />}
+                  label="Kardex"
+                  isActive={selectedButton === 'icono10-3'}
+                  onClick={() => {
+                    navigate(`/ad_stock_ingreso/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
+                    handleClick('icono10-3');
                   }}
                 />
                 <SubMenuItem
                   icon={<HomeIcon />}
                   label="Inventarios"
-                  isActive={selectedButton === 'icono10-3'}
+                  isActive={selectedButton === 'icono10-4'}
                   onClick={() => {
-                    navigate(`/ad_stock_salida/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
-                    handleClick('icono10-3');
+                    navigate(`/ad_stockrepinventario/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono10-4');
                   }}
                 />
               </List>

@@ -100,7 +100,7 @@ export const AdminVentasColumnas = [
   export const AdminVentasDetColumnas = [
     {//05
       name: 'Emision',
-      selector: 'r_fecemi',
+      selector: 'fecha_emision',
       width: '100px',
       sortable: true,
     },
@@ -113,12 +113,18 @@ export const AdminVentasColumnas = [
     {//13
       name: 'Descripcion',
       selector: 'descripcion',
-      width: '200px',
+      width: '300px',
       sortable: true,
     },
     {//13
-      name: 'Cantidad',
-      selector: 'cantidad',
+      name: 'Ingreso',
+      selector: 'ingreso',
+      width: '100px',
+      sortable: true,
+    },
+    {//13
+      name: 'Egreso',
+      selector: 'egreso',
       width: '100px',
       sortable: true,
     },
@@ -135,7 +141,7 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     {//12
-      name: 'Ruc/Dni',
+      name: 'Ruc',
       selector: 'r_documento_id',
       width: '100px',
       sortable: true,
@@ -169,6 +175,58 @@ export const AdminVentasColumnas = [
     },
     
     // Otras columnas específicas para la vista de Ventas
+  ];
+
+  export const AdminInventarioColumnas = [
+    {//01
+      name: 'Id Producto',
+      selector: 'id_producto',
+      width: '0px',
+      sortable: true,
+    },    
+    {//02
+      name: 'Descripcion',
+      selector: 'descripcion',
+      width: '400px',
+      sortable: true,
+    },
+    {//03
+      name: 'Inicial',
+      selector: 'saldo_inicial',
+      width: '100px',
+      sortable: true,
+    },
+    {//04
+      name: 'Ingreso',
+      selector: 'ingresos',
+      width: '100px',
+      sortable: true,
+    },
+    {//05
+      name: 'Egreso',
+      selector: 'egresos',
+      width: '100px',
+      sortable: true,
+    },
+    {//06
+      name: 'Saldo',
+      selector: 'saldo',
+      width: '100px',
+      sortable: true,
+    },
+    {//07
+      name: 'Und',
+      selector: 'cont_und',
+      width: '80px',
+      sortable: true,
+    },
+    {//08
+      name: 'Almacen',
+      selector: 'id_almacen',
+      width: '80px',
+      sortable: true,
+    },
+
   ];
 
   export const AdminStocksColumnas = [

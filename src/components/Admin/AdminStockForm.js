@@ -33,6 +33,7 @@ import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
 import { useDialog } from "./AdminConfirmDialogProvider";
+import { da } from 'date-fns/locale';
 
 export default function AdminStockForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -99,6 +100,7 @@ export default function AdminStockForm() {
   const [almacen_trabajo,setAlmacenTrabajo] = useState('');
 
   const [motivo_select,setMotivoSelect] = useState([]);
+  const [serie_select,setSerieSelect] = useState([]);
   //const [motivo_movimiento,setMotivoMovimiento] = useState('');
 
   const actualizaValorEmite = (e) => {
@@ -106,6 +108,7 @@ export default function AdminStockForm() {
     setDatosEmitir(prevState => ({ ...prevState, r_cod_emitir: e.target.value }));
     //Cambiar motivos
     cargaMotivoSelect(e.target.value);
+    cargaSeguridadSeriesSelect(e.target.value);
 
   }
   
@@ -474,6 +477,10 @@ export default function AdminStockForm() {
     id_anfitrion:'',
     documento_id:'',
     periodo:'',
+    id_almacen:'',  //new
+    id_serie:'',    //new
+    id_motivo:'',   //new
+    
     r_cod:'',
     r_serie:'',
     r_numero:'',
@@ -484,7 +491,7 @@ export default function AdminStockForm() {
     r_documento_id:'',
     r_id_doc:'',
     r_razon_social:'',
-    r_direccion:''
+
   });
 
   const handleCodigoKeyDown = async (event) => {
@@ -538,8 +545,20 @@ export default function AdminStockForm() {
         if (response.data.length > 0) {
           setFormulario(prevState => ({ ...prevState, id_motivo: response.data[0].id_motivo })); // o el campo correcto del API
           setFormulario({ ...formulario, id_motivo: response.data[0].id_motivo }); // o el campo correcto del API
-          console.log('motivo por defecto: ', response.data[0].id_motivo);
+          //console.log('motivo por defecto: ', response.data[0].id_motivo);
         }
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
+
+  const cargaSeguridadSeriesSelect = (sValorEmitir) =>{
+    axios
+    .get(`${back_host}/seguridadserie/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}/${sValorEmitir}`)
+    .then((response) => {
+        setSerieSelect(response.data);
+        console.log('series cargadas: ', response.data);
     })
     .catch((error) => {
         console.log(error);
@@ -761,9 +780,32 @@ export default function AdminStockForm() {
 
   //Rico evento change
   const handleChangeEmite = (name, value) => {
-    setDatosEmitir({...datosEmitir, [name]: value});
-    console.log('handleChangeEmite: ', datosEmitir);
-  }
+    // Si el campo que cambia es "id_almacen"
+    if (name === 'id_almacen') {
+      // Buscar el almacén seleccionado en tu arreglo
+      const almacenSeleccionado = serie_select.find(item => item.id_almacen === value);
+
+      if (almacenSeleccionado) {
+        // Extraer la parte antes del guion ("0001" de "0001-CENTRAL")
+        const idSerie = almacenSeleccionado.descripcion.split('-')[0].trim();
+
+        // Actualizar tanto el id_almacen como el código extraído
+        setDatosEmitir(prev => ({
+          ...prev,
+          id_almacen: value,
+          id_serie: idSerie, // puedes guardar el código en un nuevo campo
+        }));
+
+        console.log('Código de serie:', idSerie);
+      } else {
+        // Si no se encuentra el almacén, solo actualiza normalmente
+        setDatosEmitir(prev => ({ ...prev, [name]: value }));
+      }
+    } else {
+      // Para otros campos, actualización normal
+      setDatosEmitir(prev => ({ ...prev, [name]: value }));
+    }
+  };
     
   const handleChange = e => {
     /*if (e.target.name === "id_motivo"){
@@ -1063,26 +1105,32 @@ export default function AdminStockForm() {
         documento_id: params.documento_id,
         periodo: params.periodo,
         id_invitado: params.id_invitado,
-
-        r_cod: COD,
-        r_serie: SERIE,
-        r_numero: NUMERO,
         r_cod_emitir: valorEmite,
         
+        id_motivo: datosEmitir.id_motivo,
+        id_almacen: datosEmitir.id_almacen,
+        id_serie: datosEmitir.id_serie,
+
         r_id_doc: datosEmitir.r_id_doc,
         r_documento_id: datosEmitir.r_documento_id,
         r_razon_social: datosEmitir.r_razon_social,
-        r_direccion: datosEmitir.r_direccion,
+        r_cod: datosEmitir.r_cod,
+        r_serie: datosEmitir.r_serie,
+        r_numero: datosEmitir.r_numero,
+        r_fecemi: datosEmitir.r_fecemi,
 
-        r_cod_ref: formulario.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
-        r_serie_ref: formulario.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
-        r_numero_ref: formulario.r_numero_ref,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
-        r_idmotivo_ref: '01',//parte de la referencia a emitir (hardcodeado temporal) anulacion
+        gre_cod: datosEmitir.gre_cod,
+        gre_serie: datosEmitir.gre_serie,
+        gre_numero: datosEmitir.gre_numero,
+
+        ref_cod: COD,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        ref_serie: SERIE,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+        ref_numero: NUMERO,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
       };
 
-    //console.log(estadoFinal);
+    console.log('estadoFinal: ', estadoFinal);
 
-    const sRuta = `${back_host}/ad_stockcomp`;
+    const sRuta = `${back_host}/ad_stockcomp/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}/${valorEmite}`;
     fetch(sRuta, {
       method: "POST",
       body: JSON.stringify(estadoFinal), 
@@ -1103,18 +1151,17 @@ export default function AdminStockForm() {
             //setUpdateTrigger(Math.random());//actualizad vista detalle
             setParams(prevParams => ({
               ...prevParams,         // Mantenemos los valores previos
-              comprobante: (data.r_cod + '-' + data.r_serie + '-' + data.r_numero ) //actualizamos comprobante
+              comprobante: (data.cod + '-' + data.serie + '-' + data.numero ) //actualizamos comprobante
             }));
             //console.log(params);
             //console.log(data);
-            console.log(data.r_cod + '-' + data.r_serie + '-' + data.r_numero);
+            console.log(data.cod + '-' + data.serie + '-' + data.numero);
             
-            const sComprobanteGenerado = data.r_cod + '-' + data.r_serie + '-' + data.r_numero;
+            const sComprobanteGenerado = data.cod + '-' + data.serie + '-' + data.numero;
             //renderizado automatico
             navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}/${sComprobanteGenerado}/view`,
                     { replace: true }
                     );
-
 
         } else {
             //console.log('La operación falló');
@@ -1533,6 +1580,7 @@ export default function AdminStockForm() {
                                             //Valores deafult
                                             setValorEmite('IA'); //por default
                                             cargaMotivoSelect('IA'); //por default
+                                            cargaSeguridadSeriesSelect('IA'); //por default
                                             setShowModalEmite(true);
                                             }
                                           }
@@ -2083,10 +2131,39 @@ export default function AdminStockForm() {
 
 
                                             </ToggleButtonGroup>
-                                            
+
+                                             <Select
+                                                    labelId="serie_select"
+                                                    value={datosEmitir.id_almacen}  // 
+                                                    size='small'
+                                                    name="id_almacen"
+                                                    //fullWidth
+                                                    sx={{display:'block',
+                                                         //margin:'.4rem 0', 
+                                                         mt:0,
+                                                         top: '-7px',
+                                                         width: '270px',  // Establece el ancho fijo aquí
+                                                         textAlign: 'center',  // Centrar el texto seleccionado
+                                                         '.MuiSelect-select': { 
+                                                           textAlign: 'center',  // Centrar el valor dentro del Select
+                                                         },                                                         
+                                                         color:"white"}}
+                                                    label="Serie"
+                                                    onChange={(e) => handleChangeEmite('id_almacen', e.target.value)}
+                                             >
+                                                    {   
+                                                        serie_select.map(elemento => (
+                                                        <MenuItem key={elemento.id_almacen} value={elemento.id_almacen}
+                                                                  sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
+                                                        >
+                                                        {elemento.descripcion}
+                                                        </MenuItem>)) 
+                                                    }
+                                             </Select>
+
                                              <Select
                                                     labelId="motivo_select"
-                                                    value={formulario.id_motivo}  // 
+                                                    value={datosEmitir.id_motivo}  // 
                                                     size='small'
                                                     name="id_motivo"
                                                     //fullWidth
@@ -2101,7 +2178,7 @@ export default function AdminStockForm() {
                                                          },                                                         
                                                          color:"white"}}
                                                     label="Motivo"
-                                                    onChange={handleChange}
+                                                    onChange={(e) => handleChangeEmite('id_motivo', e.target.value)}
                                              >
                                                     {   
                                                         motivo_select.map(elemento => (
@@ -2214,8 +2291,8 @@ export default function AdminStockForm() {
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
                                                       name="r_cod"
-                                                      value={formulario.r_cod}
-                                                      onChange={handleChange}
+                                                      value={datosEmitir.r_cod}
+                                                      onChange={(e) => handleChangeEmite('r_cod', e.target.value)}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                       inputProps={{ style:{color:'white',width: 40, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
@@ -2228,8 +2305,8 @@ export default function AdminStockForm() {
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
                                                       name="r_serie"
-                                                      value={formulario.r_serie}
-                                                      onChange={handleChange}
+                                                      value={datosEmitir.r_serie}
+                                                      onChange={(e) => handleChangeEmite('r_serie', e.target.value)}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                       inputProps={{ style:{color:'white',width: 45, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
@@ -2242,8 +2319,8 @@ export default function AdminStockForm() {
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
                                                       name="r_numero"
-                                                      value={formulario.r_numero}
-                                                      onChange={handleChange}
+                                                      value={datosEmitir.r_numero}
+                                                      onChange={(e) => handleChangeEmite('r_numero', e.target.value)}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                       inputProps={{ style:{color:'white',width: 95, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
@@ -2256,8 +2333,8 @@ export default function AdminStockForm() {
                                                     type="date"
                                                     sx={{mt:1}}
                                                     name="r_fecemi"
-                                                    value={formulario.r_fecemi}
-                                                    onChange={handleChange}
+                                                    value={datosEmitir.r_fecemi}
+                                                    onChange={(e) => handleChangeEmite('r_fecemi', e.target.value)}
                                                     inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
                                                     InputLabelProps={{ style:{color:'white'} }}
                                             />
@@ -2271,8 +2348,8 @@ export default function AdminStockForm() {
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
                                                       name="gre_cod"
-                                                      value={formulario.gre_cod}
-                                                      onChange={handleChange}
+                                                      value={datosEmitir.gre_cod}
+                                                      onChange={(e) => handleChangeEmite('gre_cod', e.target.value)}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                       inputProps={{ style:{color:'white',width: 40, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
@@ -2285,8 +2362,8 @@ export default function AdminStockForm() {
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
                                                       name="gre_serie"
-                                                      value={formulario.gre_serie}
-                                                      onChange={handleChange}
+                                                      value={datosEmitir.gre_serie}
+                                                      onChange={(e) => handleChangeEmite('gre_serie', e.target.value)}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                       inputProps={{ style:{color:'white',width: 45, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
@@ -2299,8 +2376,8 @@ export default function AdminStockForm() {
                                                       autoComplete="off"
                                                       //sx={{mt:-1}}
                                                       name="gre_numero"
-                                                      value={formulario.gre_numero}
-                                                      onChange={handleChange}
+                                                      value={datosEmitir.gre_numero}
+                                                      onChange={(e) => handleChangeEmite('gre_numero', e.target.value)}
                                                       //onKeyDown={handleCodigoKeyDown} //new para busqueda
                                                       inputProps={{ style:{color:'white',width: 95, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
@@ -2312,6 +2389,12 @@ export default function AdminStockForm() {
                                                         //size='small'
                                                         onClick={handleSaveComprobante}
                                                         sx={{display:'block',margin:'.5rem 0', width: 270}}
+                                                        disabled={
+                                                                  !datosEmitir.id_almacen 
+                                                                  || !datosEmitir.id_motivo 
+                                                                  //|| !pVenta010201 
+                                                                  //|| !params.comprobante.includes('NV')
+                                                                  }
                                                         >
                                                         GRABAR
                                             </Button>
