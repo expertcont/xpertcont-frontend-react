@@ -1166,7 +1166,11 @@ export default function AdminVentaForm() {
     <IconButton color="primary" 
       onClick = {()=> {
                   //Agregar Producto
-                  //setShowModalProducto(true);                  
+                  //setShowModalProducto(true);   
+                  setProducto(prevState => ({ ...prevState, cantidad: '', auxiliar: '' }));
+                  setProducto({ ...producto, cantidad: '', auxiliar: '' }); //limpia cantidad para nuevo ingreso
+
+                  console.log('producto estado actual: ', producto);
                   setShowModalProductoLista(true);
                 }
               }
@@ -1559,7 +1563,7 @@ export default function AdminVentaForm() {
                             )
                           }
 
-                          { (producto.cantidad && producto.precio_neto) ?
+                          { (producto.cantidad && producto.auxiliar) ?
                             (   <>
                                         {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
                                         <Dialog
@@ -1567,7 +1571,8 @@ export default function AdminVentaForm() {
                                           //onClose={() => setShowModalProducto(false)}
                                           open={true}
                                           onClose={() => {
-                                            setProducto({ ...producto, cantidad: '' });
+                                            setProducto({ ...producto, auxiliar: '' });
+
                                             }
                                           } // o setProducto({})                                          
                                           //onClose={() => setProducto(prev => ({ ...prev, cantidad: '' }))} // o setProducto({})                                          
@@ -1844,7 +1849,11 @@ export default function AdminVentaForm() {
                                                         //size='small'
                                                         onClick={()=>{
                                                               //setShowModalProducto(false);
-                                                              setProducto({ ...producto, cantidad: '' });
+                                                              //setProducto(prevState => ({ ...prevState, cantidad: '' }));
+                                                              //setProducto({ ...producto, cantidad: '' });
+                                                              setProducto(prevState => ({ ...prevState, cantidad: '', auxiliar: '' }));
+                                                              setProducto({ ...producto, cantidad: '', auxiliar: '' }); //limpia cantidad para nuevo ingreso
+                                                              //actualizar el estado previo tambien
                                                           }
                                                         }
                                                         sx={{display:'block',

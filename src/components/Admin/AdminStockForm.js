@@ -1095,6 +1095,7 @@ export default function AdminStockForm() {
   const confirmaGrabarComprobante = async()=>{
     //console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
+    const [ID_MOT, SA_TRANSF, SA_TRASL] = datosEmitir.id_motivo.split('-');    
 
     //const [COD_REF, SERIE_REF, NUMERO_REF] = params.comprobante_ref !== "-" ? 
     //                                          params.comprobante_ref.split('-') : [null, null, null];
@@ -1107,7 +1108,9 @@ export default function AdminStockForm() {
         id_invitado: params.id_invitado,
         r_cod_emitir: valorEmite,
         
-        id_motivo: datosEmitir.id_motivo,
+        id_motivo: ID_MOT,
+        sa_transf: SA_TRANSF, //Nuevo, convierte id_producto en id_producto2 en caso '1'
+        sa_trasl: SA_TRASL, //Nuevo, convierteexisge almacen destino en caso '1'(frontend)
         id_almacen: datosEmitir.id_almacen,
         id_serie: datosEmitir.id_serie,
 
