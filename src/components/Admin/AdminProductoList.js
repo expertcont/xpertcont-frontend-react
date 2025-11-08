@@ -139,7 +139,7 @@ export default function AdminProductoList() {
     },
     { name:'NOMBRE', 
       selector:row => row.nombre,
-      width: '250px',
+      width: '350px',
       sortable: true
     },
     { name:'DESCRIPCION', 

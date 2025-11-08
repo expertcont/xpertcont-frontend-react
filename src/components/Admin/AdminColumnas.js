@@ -100,22 +100,22 @@ export const AdminVentasColumnas = [
   export const AdminVentasDetColumnas = [
     {//05
       name: 'Emision',
-      selector: 'fecha_emision',
+      selector: 'emision',
       width: '100px',
+      sortable: true,
+    },
+    {//13
+      name: 'Descripcion',
+      selector: 'descripcion',
+      width: '400px',
       sortable: true,
     },
     {//13
       name: 'Id Producto',
       selector: 'id_producto',
-      width: '0px',
+      width: '120px',
       sortable: true,
     },    
-    {//13
-      name: 'Descripcion',
-      selector: 'descripcion',
-      width: '300px',
-      sortable: true,
-    },
     {//13
       name: 'Ingreso',
       selector: 'ingreso',

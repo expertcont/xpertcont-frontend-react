@@ -19,7 +19,10 @@ export default function ProductoForm() {
       precio_venta:0,
       porc_igv:18,
       origen:'MANUAL',
-      cont_und:''
+      cont_und:'',
+      cantidad_und2:0,  //new campo numerico en bd
+      id_producto2:'',    //new
+      cont_und2:''     //new
   })
 
   const [cargando,setCargando] = useState(false);
@@ -110,7 +113,10 @@ export default function ProductoForm() {
                     descripcion:data.descripcion, 
                     precio_venta:data.precio_venta, 
                     cont_und:data.cont_und,
-                    porc_igv:data.porc_igv
+                    porc_igv:data.porc_igv,
+                    cantidad_und2:data.cantidad_und2,  //new
+                    id_producto2:data.id_producto2,      //new
+                    cont_und2:data.cont_und2         //new
                   });
     //console.log(data.relacionado);
     setEditando(true);
@@ -246,6 +252,43 @@ export default function ProductoForm() {
                                    onChange={handleChange}
                                    inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
                                    InputLabelProps={{ style:{color:'white'} }}
+                        />
+
+                        <TextField variant="outlined" 
+                                   label="Id Prod.Transformacion"
+                                   fullWidth
+                                   size='small'
+                                   sx={{display:'block',
+                                        margin:'.5rem 1'}}
+                                   name="id_producto2"
+                                   value={producto.id_producto2}
+                                   onChange={handleChange}
+                                   inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
+                                   InputLabelProps={{ style:{color:'white'},  shrink: true }}
+                        />
+                        <TextField variant="outlined" 
+                                   label="Cantidad Transformacion"
+                                   fullWidth
+                                   size='small'
+                                   sx={{display:'block',
+                                        margin:'.5rem 1'}}
+                                   name="cantidad_und2"
+                                   value={producto.cantidad_und2}
+                                   onChange={handleChange}
+                                   inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
+                                   InputLabelProps={{ style:{color:'white'},  shrink: true }}
+                        />
+                        <TextField variant="outlined" 
+                                   label="Unidad Transformacion"
+                                   fullWidth
+                                   size='small'
+                                   sx={{display:'block',
+                                        margin:'.5rem 1'}}
+                                   name="cont_und2"
+                                   value={producto.cont_und2}
+                                   onChange={handleChange}
+                                   inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
+                                   InputLabelProps={{ style:{color:'white'},  shrink: true }}
                         />
 
 

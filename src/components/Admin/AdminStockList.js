@@ -209,11 +209,11 @@ export default function AdminStockList() {
       navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobante}/-`);
     }    
   };
-  const handleDelete = (comprobante,elemento) => {
+  const handleDelete = (comprobante) => {
     //Recuerda que el comprobante enviado es el comprobante_ref --> contiene el key del registro ;)
-    confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante,elemento);
+    confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante);
   };
-  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento)=>{
+  const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante)=>{
     const result = await confirmDialog({
         title: "Eliminar Comprobante?",
         message: `${sComprobante}`,
@@ -223,7 +223,7 @@ export default function AdminStockList() {
     });
     if (result.isConfirmed) {
           console.log("✅ Eliminado:", sComprobante);
-          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento);
+          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante);
           setToggleCleared(!toggleCleared);
           setRegistrosdet(registrosdet.filter(
                           registrosdet => registrosdet.comprobante !== sComprobante
@@ -236,7 +236,7 @@ export default function AdminStockList() {
       return; // Salimos si el usuario cancela
     }
   }
-  const eliminarRegistroSeleccionado = async (sAnfitrion, sDocumentoId, sPeriodo, sComprobante, sElemento) => {
+  const eliminarRegistroSeleccionado = async (sAnfitrion, sDocumentoId, sPeriodo, sComprobante) => {
     const [COD, SERIE, NUMERO] = sComprobante.split('-');
     const datosEnvio = {
       periodo: sPeriodo,
@@ -244,25 +244,19 @@ export default function AdminStockList() {
       documento_id: sDocumentoId,
       r_cod: COD,
       r_serie: SERIE,
-      r_numero: NUMERO,
-      elemento: sElemento
+      r_numero: NUMERO
     }
-    //console.log('datosEnvio',datosEnvio);
-
+    console.log('datosEnvio Stocks: ',datosEnvio);
+    
     try {
-        const response = await axios.delete(`${back_host}/ad_ventadel`, {
+        const response = await axios.delete(`${back_host}/ad_stockdel`, {
             data: datosEnvio
         });
 
         // Verifica la respuesta del backend
         if (response.data.success) {
-          /*swal({
-            text:"Venta se ha eliminado con exito",
-            icon:"success",
-            timer:"2000"
-          });*/
           confirmDialog({
-                  title: "Venta se ha eliminado con exito",
+                  title: "Movimiento de Almacen eliminado con exito",
                   //message: `${sComprobante}`,
                   icon: "success", // success | error | info | warning
                   confirmText: "ACEPTAR"
@@ -270,21 +264,22 @@ export default function AdminStockList() {
           });
         } else {
           confirmDialog({
-            title: "No se puede Eliminar Venta, solo la ultima",
+            title: "No se puede Eliminar Movimiento de Almacen, solo el ultimo",
             icon: "error",
             confirmText: "ACEPTAR"
           });
-          //console.log("No se pudo eliminar la venta, no es la ultima: " + response.data.message);
+          //console.log("No se pudo eliminar Movimiento de Almacen, no es el ultimo: " + response.data.message);
         }
     } catch (error) {
-        //console.error("Error eliminando venta:", error);
+        //console.error("Error eliminando Movimiento de Almacen:", error);
           swal({
-            text:"No se puede Eliminar Venta",
+            text:"No se puede Eliminar Movimiento de Almacen",
             icon:"error",
             timer:"2000"
           });
         
     }
+
 };
 
   const handleDeleteOrigen = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro) => {
@@ -619,7 +614,7 @@ export default function AdminStockList() {
           (pVenta0103) && (row.r_vfirmado == null) ?
           (
             <DeleteIcon
-              onClick={() => handleDelete(row.comprobante, row.elemento)}
+              onClick={() => handleDelete(row.comprobante)}
               style={{
                 cursor: 'pointer',
                 color: 'orange',

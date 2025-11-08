@@ -34,6 +34,7 @@ import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
 import { useDialog } from "./AdminConfirmDialogProvider";
 import { da } from 'date-fns/locale';
+import { ConstructionOutlined } from '@mui/icons-material';
 
 export default function AdminStockForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -101,7 +102,11 @@ export default function AdminStockForm() {
 
   const [motivo_select,setMotivoSelect] = useState([]);
   const [serie_select,setSerieSelect] = useState([]);
+  const [serie_selectIA,setSerieSelectIA] = useState([]);
   //const [motivo_movimiento,setMotivoMovimiento] = useState('');
+
+  const [opTransformacion, setOpTransformacion] = useState(false);
+  const [opTraslado, setOpTraslado] = useState(false);
 
   const actualizaValorEmite = (e) => {
     setValorEmite(e.target.value);
@@ -564,6 +569,17 @@ export default function AdminStockForm() {
         console.log(error);
     });
   }
+const cargaSeguridadSeriesSelectIA = () =>{
+    axios
+    .get(`${back_host}/seguridadserie/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}/IA`) //Solo para Ingresos Almacen
+    .then((response) => {
+        setSerieSelectIA(response.data);
+        console.log('series cargadas: ', response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  }
 
   const cargaPopUpProducto = () =>{
     axios
@@ -780,6 +796,47 @@ export default function AdminStockForm() {
 
   //Rico evento change
   const handleChangeEmite = (name, value) => {
+    if (name === 'id_motivo') {
+      const [ID_MOT, SA_TRANSF, SA_TRASL] = value.split('-');    
+      console.log('Motivo seleccionado: ', ID_MOT, SA_TRANSF, SA_TRASL);
+      
+      //Actualizar useState opTraslado y opTransformacion
+      if (SA_TRASL === '1'){
+        setOpTraslado(true);
+        //cargar select_almacen2 para IA
+        cargaSeguridadSeriesSelectIA();
+      }else{
+        setOpTraslado(false);
+      }
+      if (SA_TRANSF === '1'){
+        setOpTransformacion(true);
+      }else{
+        setOpTransformacion(false);
+      }
+    }
+
+    if (name === 'id_almacen_ia') {
+       // Buscar el almacén seleccionado en tu arreglo
+      const almacenSeleccionadoIA = serie_selectIA.find(item => item.id_almacen === value);
+
+      if (almacenSeleccionadoIA) {
+        // Extraer la parte antes del guion ("0001" de "0001-CENTRAL")
+        const idSerieIA = almacenSeleccionadoIA.descripcion.split('-')[0].trim();
+
+        // Actualizar tanto el id_almacen como el código extraído
+        setDatosEmitir(prev => ({
+          ...prev,
+          id_almacen_ia: value,
+          serie_ia: idSerieIA, // puedes guardar el código en un nuevo campo
+        }));
+
+        console.log('Código de serie IA:', idSerieIA);
+      } else {
+        // Si no se encuentra el almacén, solo actualiza normalmente
+        setDatosEmitir(prev => ({ ...prev, [name]: value }));
+      }
+    }
+
     // Si el campo que cambia es "id_almacen"
     if (name === 'id_almacen') {
       // Buscar el almacén seleccionado en tu arreglo
@@ -1109,8 +1166,6 @@ export default function AdminStockForm() {
         r_cod_emitir: valorEmite,
         
         id_motivo: ID_MOT,
-        sa_transf: SA_TRANSF, //Nuevo, convierte id_producto en id_producto2 en caso '1'
-        sa_trasl: SA_TRASL, //Nuevo, convierteexisge almacen destino en caso '1'(frontend)
         id_almacen: datosEmitir.id_almacen,
         id_serie: datosEmitir.id_serie,
 
@@ -1129,6 +1184,12 @@ export default function AdminStockForm() {
         ref_cod: COD,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         ref_serie: SERIE,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         ref_numero: NUMERO,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
+
+        id_almacen_ia: datosEmitir.id_almacen_ia,
+        serie_ia: datosEmitir.serie_ia,
+        sa_transf: SA_TRANSF, //Nuevo, convierte id_producto en id_producto2 en caso '1'
+        sa_trasl: SA_TRASL, //Nuevo, convierteexisge almacen destino en caso '1'(frontend)
+
       };
 
     console.log('estadoFinal: ', estadoFinal);
@@ -2192,6 +2253,42 @@ export default function AdminStockForm() {
                                                         </MenuItem>)) 
                                                     }
                                              </Select>
+                                             
+                                            { (opTraslado) ?
+                                            (   
+                                              <Select
+                                                      value={datosEmitir.id_almacen_ia}  // 
+                                                      size='small'
+                                                      name="id_almacen_ia"
+                                                      //fullWidth
+                                                      sx={{display:'block',
+                                                          //margin:'.4rem 0', 
+                                                          mt:0,
+                                                          top: '-7px',
+                                                          width: '270px',  // Establece el ancho fijo aquí
+                                                          textAlign: 'center',  // Centrar el texto seleccionado
+                                                          '.MuiSelect-select': { 
+                                                            textAlign: 'center',  // Centrar el valor dentro del Select
+                                                          },                                                         
+                                                          color:"white"}}
+                                                      onChange={(e) => handleChangeEmite('id_almacen_ia', e.target.value)}
+                                              >
+                                                      {   
+                                                          serie_selectIA.map(elemento => (
+                                                          <MenuItem key={elemento.id_almacen} value={elemento.id_almacen}
+                                                                    sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
+                                                          >
+                                                          {elemento.descripcion}
+                                                          </MenuItem>)) 
+                                                      }
+                                              </Select>
+                                            )
+                                            :
+                                            (
+                                              <></>
+                                            )
+                                            }
+
 
                                             <TextField
                                                     variant="outlined"
