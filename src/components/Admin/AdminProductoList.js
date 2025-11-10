@@ -39,6 +39,7 @@ import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from '../BotonExcelVentas';
+import BotonExcelGeneral from '../BotonExcelGeneral';
 import AdminFileProducto from './AdminFileProducto';
 import { saveAs } from 'file-saver';
 
@@ -480,7 +481,11 @@ export default function AdminProductoList() {
 
       <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
         <Tooltip title='EXPORTAR XLS' >
-            <BotonExcelVentas registrosdet={registrosdet} 
+            <BotonExcelGeneral datos={registrosdet} 
+                                nombreArchivo="Reporte_Productos"
+                                tituloReporte="Reporte de Productos"
+                                columnasNumericas={['porc_igv', 'precio_venta', 'cantidad']}
+                                columnasExcluidas={['auxiliar','origen']}
             />
         </Tooltip>
       </Grid>

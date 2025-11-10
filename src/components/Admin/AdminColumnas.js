@@ -186,7 +186,7 @@ export const AdminVentasColumnas = [
     },    
     {//02
       name: 'Descripcion',
-      selector: 'descripcion',
+      selector: 'nombre_producto',
       width: '400px',
       sortable: true,
     },

@@ -20,7 +20,7 @@ import Tooltip from '@mui/material/Tooltip';
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelVentas from '../BotonExcelVentas';
+import BotonExcelGeneral from '../BotonExcelGeneral';
 
 import { AdminVentasDetColumnas } from './AdminColumnas';
 
@@ -575,7 +575,11 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='EXPORTAR XLS' >
-              <BotonExcelVentas registrosdet={registrosdet} 
+              <BotonExcelGeneral datos={registrosdet} 
+                                  nombreArchivo="Detalle_Stocks"
+                                  tituloReporte={`Detalle de Stocks:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
+                                  columnasNumericas={['ingreso','egreso','precio_neto','porc_igv']}
+                                  columnasExcluidas={['cod','serie','numero']}
               />
           </Tooltip>
         </Grid>

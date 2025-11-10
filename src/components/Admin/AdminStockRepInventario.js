@@ -20,7 +20,7 @@ import Tooltip from '@mui/material/Tooltip';
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelVentas from '../BotonExcelVentas';
+import BotonExcelGeneral from '../BotonExcelGeneral';
 
 import { AdminInventarioColumnas } from './AdminColumnas';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
@@ -620,7 +620,11 @@ const generarSaldos = async () => {
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='EXPORTAR XLS' >
-              <BotonExcelVentas registrosdet={registrosdet} 
+              <BotonExcelGeneral datos={registrosdet} 
+                                  nombreArchivo="Inventario"
+                                  tituloReporte={`Inventario:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
+                                  columnasNumericas={['ingresos','egresos','saldo']}
+                                  //columnasExcluidas={['r_cod','r_serie','r_numero','r_cod_ref','r_serie_ref','r_numero_ref']}
               />
           </Tooltip>
         </Grid>

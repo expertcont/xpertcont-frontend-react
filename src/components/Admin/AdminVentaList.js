@@ -39,7 +39,7 @@ import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutli
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelVentas from '../BotonExcelVentas';
+import BotonExcelGeneral from '../BotonExcelGeneral';
 
 import { AdminVentasColumnas } from './AdminColumnas';
 import { AdminCajaColumnas } from './AdminColumnas';
@@ -517,6 +517,7 @@ export default function AdminVentaList() {
         //cuidado con eliminar un ruc, el ambiente de trabajo podria desaparecer y generar bug ... ****
         cargaContabilidadesAnfitrion(st_contabilidad_trabajo,st_contabilidad_nombre);
         setContabilidadTrabajo(st_contabilidad_trabajo);
+        setContabilidadNombre(st_contabilidad_nombre);
       }
       
       /////////////////////////////
@@ -604,13 +605,6 @@ export default function AdminVentaList() {
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
 
   },[permisosComando, pVenta0101, valorVista, diaSel]) //Solo cuando este completo estado
-
-  function moveColumn(array, fromIndex, toIndex) {
-    const updated = [...array];
-    const [moved] = updated.splice(fromIndex, 1); // saco columna
-    updated.splice(toIndex, 0, moved);            // la inserto en nueva pos
-    return updated;
-  }
 
   //////////////////////////////////////////////////////////
   const cargaColumnasComunes = () =>{
@@ -1346,7 +1340,11 @@ const handleOpenLink = (url) => {
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='EXPORTAR XLS' >
-              <BotonExcelVentas registrosdet={registrosdet} 
+              <BotonExcelGeneral datos={registrosdet} 
+                                  nombreArchivo="Reporte_Ventas"
+                                  tituloReporte={`Registro de Ventas:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
+                                  columnasNumericas={['r_monto_total', 'base', 'igv','exonera','inafecta']}
+                                  columnasExcluidas={['r_fecvcto','r_cod','r_serie','r_numero','r_cod_ref','r_serie_ref','r_numero_ref']}
               />
           </Tooltip>
         </Grid>
