@@ -156,6 +156,11 @@ export const AdminVentasColumnas = [
       selector: 'id_almacen',
       sortable: true,
     },    
+    {//13
+      name: 'Motivo',
+      selector: 'nombre',
+      sortable: true,
+    },
 
     {//26
       name: 'IMPORTE',
@@ -249,7 +254,7 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     {//13
-      name: 'Ruc',
+      name: 'Identidad',
       selector: 'r_documento_id',
       width: '110px',
       sortable: true,
@@ -257,10 +262,17 @@ export const AdminVentasColumnas = [
     {//14
       name: 'Razon Social',
       selector: 'r_razon_social',
+      width: '200px',
       sortable: true,
     },
     ///////////////cambio
-  
+    {//07-08-10
+      name: 'Motivo',
+      selector: 'nombre', //campo unido
+      width: '200px',
+      sortable: true,
+    },
+ 
     {//27
       name: 'TC',
       selector: 'r_tc',

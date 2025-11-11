@@ -430,13 +430,13 @@ export default function AdminStockForm() {
   }
 
   const [formulario,setFormulario] = useState({
-      fecemi:'',
+      fecha_emision:'',
       r_documento_id:'',  //correntista
       r_razon_social:'',  //correntista
       r_cod:'',           //correntista
       r_serie:'',         //correntista
       r_numero:'',        //correntista
-      r_fecemi:'',        //correntista
+      fecemi:'',        //correntista
       gre_serie:'',       //correntista
       gre_numero:'',      //correntista
       
@@ -931,6 +931,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
       ...prevState, // Mantiene el resto del estado anterior
       razon_social: data.razon_social, //datos para impresion
       
+      fecha_emision: data.fecha_emision, //datos generales
       cod: data.cod,                //datos generales
       serie: data.serie,            //datos generales
       numero: data.numero,          //datos generales
@@ -1055,7 +1056,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
     producto.cod = COD;
     producto.serie = SERIE;
     producto.numero = NUMERO;
-    producto.fecemi = formulario.fecemi;
+    producto.fecha_emision = formulario.fecha_emision;
 
     console.log('json producto: ',producto);
 
@@ -1259,6 +1260,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
         periodo: params.periodo,
         id_invitado: params.id_invitado,
 
+        fecha_emision: formulario.fecha_emision,
         cod: COD,
         serie: SERIE,
         numero: NUMERO,
@@ -1267,7 +1269,9 @@ const cargaSeguridadSeriesSelectIA = () =>{
         r_id_doc: formulario.r_id_doc,
         r_documento_id: formulario.r_documento_id,
         r_razon_social: formulario.r_razon_social,
-        r_direccion: formulario.r_direccion,
+        r_cod: formulario.r_cod,
+        r_serie: formulario.r_serie,
+        r_numero: formulario.r_numero,
 
       };
 
@@ -1559,10 +1563,10 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                         size="small"
                                         sx={{display:'block',
                                               margin:'.5rem 0'}}
-                                        name="fecemi"
+                                        name="fecha_emision"
                                         type="date"
                                         //format="yyyy/MM/dd"
-                                        value={formulario.fecemi}
+                                        value={formulario.fecha_emision}
                                         onChange={handleChange}
                                         inputProps={{ style:{color:'white'} }}
                                         InputLabelProps={{ style:{color:'white'} }}
@@ -1649,7 +1653,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                             }
                                           }
                                           disabled={
-                                                    !formulario.fecemi 
+                                                    !formulario.fecha_emision 
                                                     }
                                           >
                                           { cargando ? (
@@ -1786,8 +1790,8 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
                                                 sx={{mt:1}}
-                                                name="r_fecemi"
-                                                value={formulario.r_fecemi}
+                                                name="fecemi"
+                                                value={formulario.fecemi}
                                                 onChange={handleChange}
                                                 inputProps={{ style:{color:'white'} }}
                                                 InputLabelProps={{ style:{color:'white'} }}
