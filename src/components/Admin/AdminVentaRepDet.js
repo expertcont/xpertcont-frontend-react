@@ -454,7 +454,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                                             pb: 0.5
                                           }}
                                         >
-                                          <Typography variant="body1">{item.cont_und}</Typography>
+                                          <Typography variant="body1">{item.descripcion}</Typography>
                                           
                                           <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                             {Number(item.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
