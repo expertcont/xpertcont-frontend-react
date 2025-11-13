@@ -51,7 +51,8 @@ const AdminDias = ({ period, onDaySelect }) => {
     <Box
       sx={{
         display: "flex",
-        justifyContent: isMobile ? "center" : "start",
+        //justifyContent: isMobile ? "center" : "start",
+        justifyContent: isMobile ? "start" : "start",
         overflowX: isMobile ? "scroll" : "auto",
         p: 0,
       }}

@@ -97,22 +97,10 @@ export const AdminVentasColumnas = [
     // Otras columnas específicas para la vista de Ventas
   ];
 
-  export const AdminVentasDetColumnas = [
+  /*export const AdminVentasDetColumnas = [
     {//05
       name: 'Emision',
       selector: 'emision',
-      width: '100px',
-      sortable: true,
-    },
-    {//13
-      name: 'Descripcion',
-      selector: 'descripcion',
-      width: '400px',
-      sortable: true,
-    },
-    {//13
-      name: 'Ingreso',
-      selector: 'ingreso',
       width: '100px',
       sortable: true,
     },
@@ -126,6 +114,18 @@ export const AdminVentasColumnas = [
       name: 'UN',
       selector: 'cont_und',
       width: '70px',
+      sortable: true,
+    },
+    {//13
+      name: 'Descripcion',
+      selector: 'descripcion',
+      width: '400px',
+      sortable: true,
+    },
+    {//13
+      name: 'Ingreso',
+      selector: 'ingreso',
+      width: '100px',
       sortable: true,
     },
     {//26
@@ -180,7 +180,44 @@ export const AdminVentasColumnas = [
     },
     
     // Otras columnas específicas para la vista de Ventas
+  ];*/
+// 📁 columnas.js
+
+export const getColumnasDet = (tipo = 'ventas') => {
+  const columnasBase0 = [
+    { name: 'Emision', selector: 'emision', width: '100px', sortable: true },
   ];
+
+  const columnasBase1 = [
+    { name: 'UN', selector: 'cont_und', width: '40px', compact: true, sortable: true },
+    { name: 'Descripcion', selector: 'descripcion', width: '400px', compact: true, sortable: true },
+    { name: 'IMPORTE', selector: 'precio_neto', width: '100px', compact: true,sortable: true },
+    { name: 'MONEDA', selector: 'r_moneda', width: '70px', compact: true,sortable: true },
+    { name: 'Comprobante', selector: 'comprobante', width: '120px', compact: true,sortable: true },
+    { name: 'Id Producto', selector: 'id_producto', width: '100px',compact: true, sortable: true },
+    { name: 'Ruc', selector: 'r_documento_id', width: '100px', compact: true,sortable: true },
+    { name: 'Razon Social', selector: 'r_razon_social', compact: true,sortable: true },
+    { name: 'Id Almacen', selector: 'id_almacen', width: '80px', compact: true,sortable: true },
+    { name: 'Motivo', selector: 'nombre', width: '80px', compact: true,sortable: true },
+    { name: 'TC', selector: 'r_tc', compact: true,sortable: true },
+  ];
+
+  const columnaIngreso = { name: 'Ingreso', selector: 'ingreso', width: '80px', compact: true, sortable: true };
+  const columnaEgreso = { name: 'Egreso', selector: 'egreso', width: '80px', compact: true, sortable: true };
+
+  if (tipo === 'ventas') {
+    // Solo agregamos la columna Egreso
+    return [...columnasBase0, columnaEgreso, ...columnasBase1];
+  }
+
+  if (tipo === 'stocks') {
+    // Mostramos ambas columnas (Ingreso y Egreso)
+    return [...columnasBase0, columnaIngreso, columnaEgreso, ...columnasBase1];
+  }
+
+  // Tipo por defecto, todo
+  return [...columnasBase0, columnaIngreso, columnaEgreso, ...columnasBase1];
+};
 
   export const AdminInventarioColumnas = [
     {//01

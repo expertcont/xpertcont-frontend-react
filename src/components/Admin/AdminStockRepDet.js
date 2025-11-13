@@ -22,7 +22,8 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelGeneral from '../BotonExcelGeneral';
 
-import { AdminVentasDetColumnas } from './AdminColumnas';
+//import { AdminVentasDetColumnas } from './AdminColumnas';
+import { getColumnasDet } from './AdminColumnas';
 
 
 export default function AdminStockRepDet() {
@@ -58,6 +59,26 @@ export default function AdminStockRepDet() {
     },
   }, 'dark');
 
+const customStyles = {
+  headCells: {
+    style: {
+      paddingLeft: '10px',   // espacio izquierda
+      paddingRight: '0px',  // espacio derecha
+    },
+  },
+  cells: {
+    style: {
+      paddingLeft: '10px',
+      paddingRight: '0px',
+    },
+  },
+  table: {
+    style: {
+      width: '50%',
+      tableLayout: 'fixed', // fuerza el ancho exacto definido en las columnas
+    },
+  },
+};  
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
 
@@ -298,7 +319,7 @@ export default function AdminStockRepDet() {
 
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
-    columnasEspecificas = AdminVentasDetColumnas;
+    columnasEspecificas = getColumnasDet('stock');
 
     // Finalmente seteamos
     setColumnas(columnasEspecificas);    
@@ -665,6 +686,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
+      //customStyles={customStyles}
   >
   </Datatable>
 </div>

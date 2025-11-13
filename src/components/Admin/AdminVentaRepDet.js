@@ -22,7 +22,8 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelGeneral from '../BotonExcelGeneral';
 
-import { AdminVentasDetColumnas } from './AdminColumnas';
+//import { AdminVentasDetColumnas } from './AdminColumnas';
+import { getColumnasDet } from './AdminColumnas';
 
 
 export default function AdminVentaRepDet() {
@@ -266,7 +267,7 @@ export default function AdminVentaRepDet() {
 
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
-    columnasEspecificas = AdminVentasDetColumnas;
+    columnasEspecificas = getColumnasDet('ventas');
 
     // Finalmente seteamos
     setColumnas(columnasEspecificas);    
