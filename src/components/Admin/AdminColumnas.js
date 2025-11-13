@@ -111,12 +111,6 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     {//13
-      name: 'Id Producto',
-      selector: 'id_producto',
-      width: '120px',
-      sortable: true,
-    },    
-    {//13
       name: 'Ingreso',
       selector: 'ingreso',
       width: '100px',
@@ -129,10 +123,21 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     {//13
-      name: 'Und',
+      name: 'UN',
       selector: 'cont_und',
-      width: '80px',
+      width: '70px',
       sortable: true,
+    },
+    {//26
+      name: 'IMPORTE',
+      selector: 'precio_neto',
+      sortable: true,
+    },
+    {//27 PEN o USD
+      name: 'MONEDA',
+      selector: 'r_moneda',
+      sortable: true,
+      width: '90px',
     },
     {//07-08-10
       name: 'Comprobante',
@@ -140,6 +145,12 @@ export const AdminVentasColumnas = [
       width: '150px',
       sortable: true,
     },
+    {//13
+      name: 'Id Producto',
+      selector: 'id_producto',
+      width: '120px',
+      sortable: true,
+    },    
     {//12
       name: 'Ruc',
       selector: 'r_documento_id',
@@ -162,17 +173,6 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
 
-    {//26
-      name: 'IMPORTE',
-      selector: 'precio_neto',
-      sortable: true,
-    },
-    {//27 PEN o USD
-      name: 'MONEDA',
-      selector: 'r_moneda',
-      sortable: true,
-      width: '90px',
-    },
     {//28
       name: 'TC',
       selector: 'r_tc',

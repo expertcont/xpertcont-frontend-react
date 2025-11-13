@@ -106,20 +106,9 @@ export default function AdminVentaRepDet() {
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
     }
     
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
+    //setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
   
-  // Agrega íconos al inicio de cada columna
-  
-  // valores adicionales para Carga Archivo
-  const [datosCarga, setDatosCarga] = useState({
-    id_anfitrion: '',
-    documento_id: '',
-    periodo: '',
-    id_libro: '',
-    id_invitado: '',
-  });  
-
   const handleRowSelected = useCallback(state => {
         setSelectedRows(state.selectedRows);
     }, []);
@@ -252,33 +241,12 @@ export default function AdminVentaRepDet() {
 
   },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
 
-  /*useEffect( ()=> {
+  useEffect( ()=> {
     
-      //Carga por cada cambio de seleccion en toggleButton
-      console.log('2do useeffect periodo_trabajo: ',periodo_trabajo);
-
-      //Verifica historial id_libro
-      const st_id_libro = sessionStorage.getItem('id_libro');
-      const st_valorVista = (sessionStorage.getItem('valorVista') || 'ventas'); //new para el toggleButton
-
-      if (st_id_libro) {
-        //Establecer valor historial al toggleButton
-        setValorVista(st_valorVista);
-      }
-
-      if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-
-      setValorVista('ventas'); //Por default, la 1era vez
-      //st_valorVista = 'ventas'; //new 
-      }else{
-      setValorVista(st_valorVista);
-      }
 
       //fcuando carga x primera vez, sale vacio ... arreglar esto
-      cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel);
     
-      fetchTotalVentas();
-  },[updateTrigger, diaSel]) //Aumentamos*/
+  },[updateTrigger, diaSel])
 
 
   useEffect( ()=> {
@@ -307,13 +275,8 @@ export default function AdminVentaRepDet() {
     cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio
 
     //Datos listos en caso de volver por aqui, para envio
-    setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: st_periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
-    setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
     
-    fetchTotalVentas();
+    //fetchTotalVentas();
   },[valorVista, diaSel]) //Solo cuando este completo estado
 
 
@@ -373,31 +336,16 @@ const handleDayFilter = (selectedDay) => {
   setDiaSel(dia);
 };
   
-const [totalVentas, setTotalVentas] = useState(0);
-const [isSuper, setIsSuper] = useState(false);
-const fetchTotalVentas = async () => {
-    try {
-      const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${diaSel}`);
-      console.log('Tottales ventas: ', res.data);
-      setTotalVentas(res.data.total);
-      setIsSuper(res.data.super);
-    } catch (error) {
-      console.error('Error al obtener total de ventas', error);
-    }
-}; 
-const [recaudaciones, setRecaudaciones] = useState([]);
-const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
 
 const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
-  setShowModalMostrarRecaudacion(true);
   axios.get(`${back_host}/ad_ventaunidades/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
           .then(res => {
             if (res.data.success) {
-              setRecaudaciones(res.data.data);
-              console.log('Recaudaciones: ', res.data.data);
+              setRegistrosdet(res.data.data);
             }
           })
           .catch(err => console.error(err));
+  setUpdateTrigger(Math.random());//experimento para actualizar el dom        
 };
 
  return (
@@ -410,94 +358,6 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                  margin: 0,
                  width: "100%" }}
     > 
-
-             { (showModalMostrarRecaudacion) ?
-                (   <>
-                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                            <Dialog
-                              open={showModalMostrarRecaudacion}
-                              onClose={() => setShowModalMostrarRecaudacion(false)}
-                              maxWidth="md" // Valor predeterminado de 960px
-                              //fullWidth
-                              disableScrollLock // Evita que se modifique el overflow del body
-                              PaperProps={{
-                                style: {
-                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                  left: isSmallScreen ? "0%" : "0%", // Centrado horizontal
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                  color:'white',
-                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                },
-                              }}
-                            >
-                            <DialogTitle>Total - Unidades</DialogTitle>
-
-                                {/* Listado de recaudaciones */}
-                                <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>
-                                  <CardContent>
-                                    {recaudaciones.length > 0 ? (
-                                      recaudaciones.map((item, index) => (
-                                        <Box
-                                          key={index}
-                                          sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            mb: 1,
-                                            borderBottom: '1px solid rgba(255,255,255,0.2)',
-                                            pb: 0.5
-                                          }}
-                                        >
-                                          <Typography variant="body1">{item.descripcion}</Typography>
-                                          
-                                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                            {Number(item.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                          </Typography>
-                                        </Box>
-                                      ))
-                                    ) : (
-                                      <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay unidades</Typography>
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-
-                                <Button variant='contained' 
-                                            //color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  setShowModalMostrarRecaudacion(false);
-                                              }
-                                            }
-                                            sx={{display:'block',
-                                                  margin:'.5rem 0',
-                                                  width: 270, 
-                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                '&:hover': {
-                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                    },                                                             
-                                                  mt:-0.5}}
-                                            >
-                                            ESC - CERRAR
-                                </Button>
-
-                            </Dialog>
-                    </>
-                )
-                :
-                (   
-                  <>
-                  </>
-                )
-              }  
-  <div>
-  </div>
 
   <Grid container spacing={0}
       direction={isSmallScreen ? 'column' : 'row'}
@@ -548,14 +408,13 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       </Grid>
 
       <Grid item xs={2} sm={2}>
-      {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
+
         <Button variant="contained" 
                 color="primary" 
                 onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
                 fullWidth
         >TOTAL UNIDADES
         </Button>
-      )}
 
       </Grid>
 
