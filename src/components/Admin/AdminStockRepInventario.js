@@ -24,6 +24,7 @@ import BotonExcelGeneral from '../BotonExcelGeneral';
 
 import { AdminInventarioColumnas } from './AdminColumnas';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 
 export default function AdminStockRepInventario() {
   //Control de useffect en retroceso de formularios
@@ -76,6 +77,27 @@ export default function AdminStockRepInventario() {
   const {user, isAuthenticated } = useAuth0();
   
   const [columnas, setColumnas] = useState([]);
+  const columnasCabecera = [
+    {
+      name: '',
+      width: '50px',
+      cell: (row) => (
+          <PlaylistAddCheckIcon
+            onClick={() => console.log('Kardex para: ',row.item)}
+            //color='success'
+            style={{
+              cursor: 'pointer',
+              color: 'skyblue',
+              transition: 'color 0.3s ease',
+              fontSize: '32px'
+            }}
+          />
+      ),
+      allowOverflow: true,
+      //agranadar el tamaño del icono
+      button: true,
+    },
+  ];
 
   const [periodo_trabajo, setPeriodoTrabajo] = useState("");
   const [periodo_select,setPeriodosSelect] = useState([]);
@@ -304,9 +326,11 @@ export default function AdminStockRepInventario() {
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
     columnasEspecificas = AdminInventarioColumnas;
+    //Unir columnasCabecera + columnasEspecificas
+    const columnasCompletas = [...columnasCabecera, ...columnasEspecificas];
 
     // Finalmente seteamos
-    setColumnas(columnasEspecificas);    
+    setColumnas(columnasCompletas);    
 
     //cuando carga x primera vez, sale vacio ... arreglar esto
     cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio

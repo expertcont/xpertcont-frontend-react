@@ -34,7 +34,6 @@ import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
 import { useDialog } from "./AdminConfirmDialogProvider";
 import { da } from 'date-fns/locale';
-import { ConstructionOutlined } from '@mui/icons-material';
 
 export default function AdminStockForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');

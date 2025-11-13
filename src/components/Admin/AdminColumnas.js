@@ -220,16 +220,11 @@ export const getColumnasDet = (tipo = 'ventas') => {
 };
 
   export const AdminInventarioColumnas = [
-    {//01
-      name: 'Id Producto',
-      selector: 'id_producto',
-      width: '0px',
-      sortable: true,
-    },    
     {//02
       name: 'Descripcion',
       selector: 'nombre_producto',
       width: '400px',
+      compact: true,
       sortable: true,
     },
     {//03
@@ -268,7 +263,12 @@ export const getColumnasDet = (tipo = 'ventas') => {
       width: '80px',
       sortable: true,
     },
-
+    {//01
+      name: 'Id Producto',
+      selector: 'id_producto',
+      width: '0px',
+      sortable: true,
+    },    
   ];
 
   export const AdminStocksColumnas = [

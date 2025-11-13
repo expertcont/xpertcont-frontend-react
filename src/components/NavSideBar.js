@@ -10,6 +10,11 @@ import { blueGrey } from '@mui/material/colors';
 import NextWeekIcon from '@mui/icons-material/NextWeek';
 import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpdateGood';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import SummarizeIcon from '@mui/icons-material/Summarize';
+import TableRowsIcon from '@mui/icons-material/TableRows';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import CropFreeIcon from '@mui/icons-material/CropFree';
+
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -386,17 +391,6 @@ export default function NavSideBar(props) {
           }}
         />
 
-        {/*accesoAdmin && (
-          <MenuItem
-            icon={<ShoppingCartIcon />}
-            label="Ventas"
-            isActive={selectedButton === 'icono02'}
-            onClick={() => {
-              navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-              handleClick('icono02');
-            }}
-          />
-        )*/}
         {accesoAdmin && (
           <>
             <MenuItem
@@ -410,8 +404,8 @@ export default function NavSideBar(props) {
             <Collapse in={openVentas} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 <SubMenuItem
-                  //icon={<ShoppingCartIcon />}
-                  label="Movimientos"
+                  icon={<CropFreeIcon />}
+                  label="Registros"
                   isActive={selectedButton === 'icono02-1'}
                   onClick={() => {
                   navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
@@ -419,7 +413,7 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  //icon={<ShoppingCartIcon />}
+                  icon={<TableRowsIcon />}
                   label="Detalle"
                   isActive={selectedButton === 'icono02-2'}
                   onClick={() => {
@@ -475,7 +469,7 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  //icon={<ShoppingCartIcon />}
+                  icon={<CompareArrowsIcon />}
                   label="Detalle"
                   isActive={selectedButton === 'icono10-2'}
                   onClick={() => {
@@ -484,21 +478,12 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  icon={<ShoppingCartIcon />}
-                  label="Kardex"
+                  icon={<SummarizeIcon />}
+                  label="Inventarios Kardex"
                   isActive={selectedButton === 'icono10-3'}
                   onClick={() => {
-                    navigate(`/ad_stock_ingreso/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
-                    handleClick('icono10-3');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<HomeIcon />}
-                  label="Inventarios"
-                  isActive={selectedButton === 'icono10-4'}
-                  onClick={() => {
                     navigate(`/ad_stockrepinventario/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono10-4');
+                    handleClick('icono10-3');
                   }}
                 />
               </List>
