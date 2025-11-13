@@ -59,26 +59,6 @@ export default function AdminStockRepDet() {
     },
   }, 'dark');
 
-const customStyles = {
-  headCells: {
-    style: {
-      paddingLeft: '10px',   // espacio izquierda
-      paddingRight: '0px',  // espacio derecha
-    },
-  },
-  cells: {
-    style: {
-      paddingLeft: '10px',
-      paddingRight: '0px',
-    },
-  },
-  table: {
-    style: {
-      width: '50%',
-      tableLayout: 'fixed', // fuerza el ancho exacto definido en las columnas
-    },
-  },
-};  
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
 
@@ -394,31 +374,18 @@ const handleDayFilter = (selectedDay) => {
   setDiaSel(dia);
 };
   
-const [totalVentas, setTotalVentas] = useState(0);
-const [isSuper, setIsSuper] = useState(false);
-const fetchTotalVentas = async () => {
-    try {
-      const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${diaSel}`);
-      console.log('Tottales ventas: ', res.data);
-      setTotalVentas(res.data.total);
-      setIsSuper(res.data.super);
-    } catch (error) {
-      console.error('Error al obtener total de ventas', error);
-    }
-}; 
-const [recaudaciones, setRecaudaciones] = useState([]);
-const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
 
 const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
-  setShowModalMostrarRecaudacion(true);
-  axios.get(`${back_host}/ad_ventaunidades/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
+  //setShowModalMostrarRecaudacion(true);
+  axios.get(`${back_host}/ad_stockunidades/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
           .then(res => {
             if (res.data.success) {
-              setRecaudaciones(res.data.data);
-              console.log('Recaudaciones: ', res.data.data);
+              setRegistrosdet(res.data.data);
             }
           })
           .catch(err => console.error(err));
+  //setUpdateTrigger(Math.random());//experimento para actualizar el dom        
+
 };
 
  return (
@@ -432,91 +399,6 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                  width: "100%" }}
     > 
 
-             { (showModalMostrarRecaudacion) ?
-                (   <>
-                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                            <Dialog
-                              open={showModalMostrarRecaudacion}
-                              onClose={() => setShowModalMostrarRecaudacion(false)}
-                              maxWidth="md" // Valor predeterminado de 960px
-                              //fullWidth
-                              disableScrollLock // Evita que se modifique el overflow del body
-                              PaperProps={{
-                                style: {
-                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                  left: isSmallScreen ? "0%" : "0%", // Centrado horizontal
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                  color:'white',
-                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                },
-                              }}
-                            >
-                            <DialogTitle>Total - Unidades</DialogTitle>
-
-                                {/* Listado de recaudaciones */}
-                                <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>
-                                  <CardContent>
-                                    {recaudaciones.length > 0 ? (
-                                      recaudaciones.map((item, index) => (
-                                        <Box
-                                          key={index}
-                                          sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            mb: 1,
-                                            borderBottom: '1px solid rgba(255,255,255,0.2)',
-                                            pb: 0.5
-                                          }}
-                                        >
-                                          <Typography variant="body1">{item.cont_und}</Typography>
-                                          
-                                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                            {Number(item.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                          </Typography>
-                                        </Box>
-                                      ))
-                                    ) : (
-                                      <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay unidades</Typography>
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-
-                                <Button variant='contained' 
-                                            //color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  setShowModalMostrarRecaudacion(false);
-                                              }
-                                            }
-                                            sx={{display:'block',
-                                                  margin:'.5rem 0',
-                                                  width: 270, 
-                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                '&:hover': {
-                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                    },                                                             
-                                                  mt:-0.5}}
-                                            >
-                                            ESC - CERRAR
-                                </Button>
-
-                            </Dialog>
-                    </>
-                )
-                :
-                (   
-                  <>
-                  </>
-                )
-              }  
   <div>
   </div>
 
@@ -569,15 +451,12 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       </Grid>
 
       <Grid item xs={2} sm={2}>
-      {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
         <Button variant="contained" 
                 color="primary" 
                 onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
                 fullWidth
-        >TOTAL UNIDADES
+        >TOTAL UND STOCKS
         </Button>
-      )}
-
       </Grid>
 
   </Grid>
@@ -673,10 +552,6 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       theme="solarized"
       columns={columnas}
       data={registrosdet}
-      //selectableRows
-      //selectableRowsSingle 
-      //contextActions={contextActions}
-      //actions={actions}
       onSelectedRowsChange={handleRowSelected}
       clearSelectedRows={toggleCleared}
       pagination
@@ -686,7 +561,6 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
-      //customStyles={customStyles}
   >
   </Datatable>
 </div>
