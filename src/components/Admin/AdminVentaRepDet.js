@@ -525,6 +525,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
+      highlightOnHover //resalta la fila
   >
   </Datatable>
 </div>

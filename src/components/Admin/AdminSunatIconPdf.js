@@ -16,7 +16,8 @@ import CodeIcon from "@mui/icons-material/Code";
 import DescriptionIcon from "@mui/icons-material/Description";
 
 const AdminSunatIconPdf = ({
-  comprobante, // ej. "01-F001-12345"
+  comprobante_key, // ej. "01-F001-12345-1" llega el comprobante completo key
+  comprobante,            // ej. "07-F001-1" pero es para mostrar links
   elemento,
   firma,
   documentoId,
@@ -39,7 +40,9 @@ const AdminSunatIconPdf = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handlePdf = async () => {
-    const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
+    const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
+    //comprobante(0) PARA MOSTRAR LINKS
+    const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
 
     // Si ya está firmado, solo mostrar links
     /*if (firma !== "" && firma !== null) {
@@ -51,9 +54,9 @@ const AdminSunatIconPdf = ({
       return;
     }*/
     const baseUrl = `${descargasHost}/descargas/${documentoId}`;
-    setRutaXml(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
-    setRutaCdr(`${baseUrl}/R-${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
-    setRutaPdf(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.pdf`);
+    setRutaXml(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
+    setRutaCdr(`${baseUrl}/R-${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
+    setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
 
     // Confirmación antes de enviar
     const result = await confirmDialog({
@@ -71,7 +74,7 @@ const AdminSunatIconPdf = ({
   };
 
   const generarPdf = async (formato) => {
-    const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
+    const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
     setShowFormatoDialog(false);
     //console.log('Generando PDF formato:', formato);
     try {

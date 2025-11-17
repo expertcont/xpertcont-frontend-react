@@ -852,12 +852,8 @@ export default function AdminVentaForm() {
   }
 
   const confirmaGrabarComprobante = async()=>{
-    //console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
 
-    //const [COD_REF, SERIE_REF, NUMERO_REF] = params.comprobante_ref !== "-" ? 
-    //                                          params.comprobante_ref.split('-') : [null, null, null];
-    
     //Alimentar useState venta
     const estadoFinal = {
         id_anfitrion: params.id_anfitrion,
@@ -944,7 +940,6 @@ export default function AdminVentaForm() {
 
   const confirmaModificaComprobante = async()=>{
     //console.log('modificando datos previos al envio');
-    //console.log(params.comprobante,params.comprobante_ref);
     const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
   
     //Alimentar useState venta
@@ -1135,7 +1130,13 @@ export default function AdminVentaForm() {
     </IconButton>
 
     <AdminSunatIcon
-      comprobante={params.comprobante}
+      comprobante_key={params.comprobante} //Por default llega el key completo, 
+      // Procesar en el comprobante para links
+      comprobante = { (venta.r_cod_ref==null) ?
+                      venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero
+                      :
+                      venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
+      }
       elemento={params.comprobante.split("-").pop()}   // ✅ último valor después del último "-"
       firma={venta.r_vfirmado}
       documentoId={params.documento_id}
@@ -1148,7 +1149,12 @@ export default function AdminVentaForm() {
     />
 
     <AdminSunatIconPdf
-      comprobante={params.comprobante}
+      comprobante_key={params.comprobante}
+      comprobante = { (venta.r_cod_ref==null) ?
+                      venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero
+                      :
+                      venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
+      }
       elemento={params.comprobante.split("-").pop()}   // ✅ último valor después del último "-"
       firma={venta.r_vfirmado}
       documentoId={params.documento_id}

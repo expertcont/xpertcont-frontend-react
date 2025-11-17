@@ -46,8 +46,6 @@ import { AdminCajaColumnas } from './AdminColumnas';
 
 import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
 import AdminSunatIcon from './AdminSunatIcon';
-//import Sunat01IconGre from '../../assets/images/sunatgre0.png';
-//import Sunat01Icon from '../../assets/images/sunatgre0.png';
 import AdminSunatGreIcon from './AdminSunatGreIcon';
 
 export default function AdminVentaList() {
@@ -219,7 +217,7 @@ export default function AdminVentaList() {
     }    
   };
   const handleDelete = (comprobante,elemento) => {
-    //Recuerda que el comprobante enviado es el comprobante_ref --> contiene el key del registro ;)
+    //Recuerda que el comprobante enviado es el comprobante_key --> contiene el key del registro ;)
     confirmaEliminacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante,elemento);
   };
   const confirmaEliminacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento)=>{
@@ -619,7 +617,8 @@ export default function AdminVentaList() {
           (pVenta0103) && (row.r_cod !== 'NV') ? 
           (
             <AdminSunatIcon
-              comprobante={row.comprobante_ref}
+              comprobante_key={row.comprobante_key}
+              comprobante={row.comprobante}
               elemento={row.elemento}
               firma={row.r_vfirmado}
               documentoId={params.documento_id}
@@ -642,7 +641,7 @@ export default function AdminVentaList() {
           (pVenta0102) && (row.r_vfirmado == null) ?
           (
             <DriveFileRenameOutlineIcon
-              onClick={() => handleUpdate(row.comprobante_ref,false)}
+              onClick={() => handleUpdate(row.comprobante_key,false)}
               style={{
                 cursor: 'pointer',
                 color: 'skyblue',
@@ -653,7 +652,7 @@ export default function AdminVentaList() {
           : 
           (
             <FindInPageIcon
-              onClick={() => handleUpdate(row.comprobante_ref,true)}
+              onClick={() => handleUpdate(row.comprobante_key,true)}
               style={{
                 cursor: 'pointer',
                 color: 'gray',
@@ -673,7 +672,7 @@ export default function AdminVentaList() {
           (pVenta0103) && (row.r_vfirmado == null) ?
           (
             <DeleteIcon
-              onClick={() => handleDelete(row.comprobante_ref, row.elemento)}
+              onClick={() => handleDelete(row.comprobante_key, row.elemento)}
               style={{
                 cursor: 'pointer',
                 color: 'orange',
@@ -686,8 +685,8 @@ export default function AdminVentaList() {
             <ContentCopyIcon
               onClick={() => {
                   setShowModalMostrarClonar(true);
-                  setValorComprobante(row.comprobante_ref);
-                  //clonarVenta(row.comprobante_ref);
+                  setValorComprobante(row.comprobante_key);
+                  //clonarVenta(row.comprobante_key);
                   }
                 }
               style={{
@@ -731,8 +730,8 @@ export default function AdminVentaList() {
             <ContentCopyIcon
               onClick={() => {
                   setShowModalMostrarClonar(true);
-                  setValorComprobante(row.comprobante_ref);
-                  //clonarVenta(row.comprobante_ref);
+                  setValorComprobante(row.comprobante_key);
+                  //clonarVenta(row.comprobante_key);
                   }
                 }
               style={{
@@ -1422,6 +1421,7 @@ const handleOpenLink = (url) => {
       selectableRowsComponent={Checkbox} // Pass the function only
       sortIcon={<ArrowDownward />}  
       dense={true}
+      highlightOnHover //resalta la fila
   >
   </Datatable>
 </div>

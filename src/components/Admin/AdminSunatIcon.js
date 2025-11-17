@@ -10,7 +10,8 @@ import CodeIcon from '@mui/icons-material/Code';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 const AdminSunatIcon = ({
-  comprobante,            // ej. "01-F001-12345"
+  comprobante_key,            // ej. "01-F001-12345" pero es KEY del registro
+  comprobante,            // ej. "01-F001-12345" pero es para mostrar links
   elemento,               // tu valor de elemento
   firma,                  // string o null
   documentoId,            // params.documento_id
@@ -32,14 +33,17 @@ const AdminSunatIcon = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleSunat = async () => {
-    const [COD, SERIE, NUMERO] = (comprobante || "").split("-");
+    //kEY PARA PROCESAMIENTO SUNAT
+    const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
+    //comprobante(0) PARA MOSTRAR LINKS
+    const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
 
     // Si ya está firmado, solo mostrar links
     if (firma !== "" && firma !== null) {
       const baseUrl = `${descargasHost}/descargas/${documentoId}`;
-      setRutaXml(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
-      setRutaCdr(`${baseUrl}/R-${documentoId}-${COD}-${SERIE}-${NUMERO}.xml`);
-      setRutaPdf(`${baseUrl}/${documentoId}-${COD}-${SERIE}-${NUMERO}.pdf`);
+      setRutaXml(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
+      setRutaCdr(`${baseUrl}/R-${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
+      setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
       setShowModal(true);
       return;
     }

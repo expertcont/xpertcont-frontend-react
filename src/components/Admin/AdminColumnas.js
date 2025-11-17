@@ -10,50 +10,70 @@ export const AdminVentasColumnas = [
       name: 'Comprobante',
       selector: 'comprobante', //campo unido
       width: '150px',
+      compact: true,
       sortable: true,
     },
     {//11
       name: 'Tp',
       selector: 'r_id_doc',
       width: '0px',
+      compact: true,
       sortable: true,
     },
     {//12
       name: 'Ruc/Dni',
       selector: 'r_documento_id',
       width: '100px',
+      compact: true,
       sortable: true,
     },
     {//13
       name: 'Razon Social',
       selector: 'r_razon_social',
+      width: '300px',
+      compact: true,
       sortable: true,
     },
     {//26
       name: 'TOTAL',
       selector: 'r_monto_total',
+      width: '100px',
+      compact: true,
       sortable: true,
     },
     {//27 PEN o USD
       name: 'MONEDA',
       selector: 'r_moneda',
       sortable: true,
+      compact: true,
       width: '90px',
     },
     {//nuevo
       name: 'EFECTIVO',
       selector: 'efectivo',
       sortable: true,
+      width: '80px',
+      compact: true
     },
     {//nuevo
       name: 'OTROS',
       selector: 'efectivo2',
       sortable: true,
+      compact: true,
+      width: '80px',
     },
     {//nuevo
       name: 'PAGO',
       selector: 'forma_pago2',
       sortable: true,
+      compact: true
+    },
+    {//31
+      name: 'REFERENCIA',
+      selector: 'comprobante_ref',
+      sortable: true,
+      width: '120px',
+      compact: true
     },
 
     {//28
@@ -66,7 +86,8 @@ export const AdminVentasColumnas = [
       selector: 'r_fecemi_ref',
       sortable: true,
     },
-    {//30
+
+    /*{//30
       name: 'REF.TP',
       selector: 'r_cod_ref',
       sortable: true,
@@ -80,7 +101,7 @@ export const AdminVentasColumnas = [
       name: 'REF.NUM',
       selector: 'r_numero_ref',
       sortable: true,
-    },
+    },*/
 
     {//33
       name: 'GRE FIRMA',
