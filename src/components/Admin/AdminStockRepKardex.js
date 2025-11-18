@@ -3,6 +3,8 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { Card,CardContent,Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
+import IconButton from '@mui/material/IconButton';
+import ReplyIcon from '@mui/icons-material/Reply';
 
 import Datatable, {createTheme} from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
@@ -20,7 +22,7 @@ import axios from 'axios';
 import BotonExcelGeneral from '../BotonExcelGeneral';
 
 //import { AdminVentasDetColumnas } from './AdminColumnas';
-import { getColumnasDet } from './AdminColumnas';
+import { AdminKardexColumnas } from './AdminColumnas';
 
 
 export default function AdminStockRepKardex() {
@@ -69,16 +71,9 @@ export default function AdminStockRepKardex() {
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
-  const [valorVista, setValorVista] = useState("ventas");
-  
+    
   const [columnas, setColumnas] = useState([]);
 
-  const [periodo_trabajo, setPeriodoTrabajo] = useState("");
-  
-  const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
-  const [contabilidad_nombre, setContabilidadNombre] = useState("");
-  const [contabilidad_select,setContabilidadesSelect] = useState([]);
-   
   // Agrega íconos al inicio de cada columna
   
   const handleRowSelected = useCallback(state => {
@@ -90,6 +85,7 @@ export default function AdminStockRepKardex() {
   const cargaRegistro = async (sPeriodo, sIdAnfitrion, sDocumentoId,sDia, sIdProducto, sIdAlmacen) => {
     let response;
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
+    console.log('kardex obtenido: ',`${back_host}/ad_stockkardex/${sPeriodo}/${sIdAnfitrion}/${sDocumentoId}/${sDia}/${sIdProducto}/${sIdAlmacen}`);
     response = await fetch(`${back_host}/ad_stockkardex/${sPeriodo}/${sIdAnfitrion}/${sDocumentoId}/${sDia}/${sIdProducto}/${sIdAlmacen}`);
     
     const data = await response.json();
@@ -130,28 +126,15 @@ export default function AdminStockRepKardex() {
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
     //Carga de Registros con permisos
-    console.log('3ero useeffect periodo_trabajo: ',periodo_trabajo);
-
-    const st_id_libro = sessionStorage.getItem('id_libro');
-    const st_valorVista = sessionStorage.getItem('valorVista'); //para el toggleButton
-    console.log('3ero useeffect st_id_libro: ',st_id_libro);
-    if (st_id_libro) {
-      //Establecer valor historial al toggleButton
-      setValorVista(st_valorVista);
-    }
-
-    const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo'); //parametro necesario
-    const st_contabilidad_trabajo = sessionStorage.getItem('contabilidad_trabajo'); //parametro necesario
-
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
-    columnasEspecificas = getColumnasDet('stock');
+    columnasEspecificas = AdminKardexColumnas;
 
     // Finalmente seteamos
     setColumnas(columnasEspecificas);    
 
     //cuando carga x primera vez, sale vacio ... arreglar esto
-    cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio
+    cargaRegistro(params.periodo, params.id_anfitrion, params.documento_id, params.dia, params.id_producto, params.id_almacen); //new cambio
 
     //Datos listos en caso de volver por aqui, para envio
     
@@ -202,8 +185,8 @@ export default function AdminStockRepKardex() {
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
           <Tooltip title='EXPORTAR XLS' >
               <BotonExcelGeneral datos={registrosdet} 
-                                  nombreArchivo="Detalle_Stocks"
-                                  tituloReporte={`Detalle de Stocks:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
+                                  nombreArchivo="Kardex Fisico"
+                                  tituloReporte={`Kardex Fisico:  ${params.periodo}  ${params.documento_id}`}
                                   columnasNumericas={['ingreso','egreso','precio_neto','porc_igv']}
                                   columnasExcluidas={['cod','serie','numero']}
               />
@@ -211,7 +194,15 @@ export default function AdminStockRepKardex() {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-            <div></div>
+            <IconButton color="warning" 
+              onClick = {()=> {
+                          //Icono retroceder pagina
+                          navigate(-1, { replace: true });
+                        }
+                      }
+            >
+              <ReplyIcon />
+            </IconButton>
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >

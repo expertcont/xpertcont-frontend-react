@@ -83,7 +83,12 @@ export default function AdminStockRepInventario() {
       width: '50px',
       cell: (row) => (
           <PlaylistAddCheckIcon
-            onClick={() => console.log('Kardex para: ',row.item)}
+            onClick={() => {
+                    //Navegar a Kardex Fisico 
+                    //console.log('Kardex para: ',`/ad_stockrepkardex/${params.id_anfitrion}/${periodo_trabajo}/${contabilidad_trabajo}/${diaSel}/${row.id_producto}/${row.id_almacen}`);
+                    navigate(`/ad_stockrepkardex/${params.id_anfitrion}/${periodo_trabajo}/${contabilidad_trabajo}/${diaSel}/${row.id_producto}/${row.id_almacen}`);
+                    }
+            }
             //color='success'
             style={{
               cursor: 'pointer',
@@ -404,16 +409,6 @@ const handleDayFilter = (selectedDay) => {
   
 const [totalVentas, setTotalVentas] = useState(0);
 const [isSuper, setIsSuper] = useState(false);
-const fetchTotalVentas = async () => {
-    try {
-      const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${diaSel}`);
-      console.log('Tottales ventas: ', res.data);
-      setTotalVentas(res.data.total);
-      setIsSuper(res.data.super);
-    } catch (error) {
-      console.error('Error al obtener total de ventas', error);
-    }
-}; 
 const [recaudaciones, setRecaudaciones] = useState([]);
 const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
 

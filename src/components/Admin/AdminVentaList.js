@@ -602,7 +602,7 @@ export default function AdminVentaList() {
     setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
 
-  },[permisosComando, pVenta0101, valorVista, diaSel]) //Solo cuando este completo estado
+  },[permisosComando, pVenta0101, diaSel]) //Solo cuando este completo estado
 
   //////////////////////////////////////////////////////////
   const cargaColumnasComunes = () =>{
@@ -1253,7 +1253,7 @@ const handleOpenLink = (url) => {
                 onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
                 fullWidth
         >
-          {`Total: S/ ${parseFloat(totalVentas).toLocaleString('en-US', {
+          {`VENTAS: S/ ${parseFloat(totalVentas).toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           })}`}
@@ -1268,29 +1268,6 @@ const handleOpenLink = (url) => {
   <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
   
   <div>
-  <ToggleButtonGroup
-    color="success"
-    value={valorVista}
-    exclusive
-    onChange={actualizaValorVista}
-    aria-label="Platform"
-  >
-    { permisoVentas ?
-      (    
-      <ToggleButton value="ventas"
-                    style={{
-                      backgroundColor: valorVista === 'ventas' ? 'gray' : 'transparent',
-                      color: valorVista === 'ventas' ? "orange" : "gray"
-                    }}
-
-      >Ventas</ToggleButton>
-      ):(
-      <span></span>
-      )
-    }
-
-
-  </ToggleButtonGroup>      
   </div>
     
   <Grid container spacing={0}

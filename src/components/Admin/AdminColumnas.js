@@ -118,10 +118,23 @@ export const AdminVentasColumnas = [
     // Otras columnas específicas para la vista de Ventas
   ];
 
-  /*export const AdminVentasDetColumnas = [
+  export const AdminKardexColumnas = [
     {//05
       name: 'Emision',
       selector: 'emision',
+      width: '120px',
+      sortable: true,
+    },
+    {//05
+      name: 'Operacion',
+      selector: 'op_contable',
+      width: '120px',
+      sortable: true,
+    },
+
+    {//13
+      name: 'Ingreso',
+      selector: 'ingreso',
       width: '100px',
       sortable: true,
     },
@@ -138,27 +151,25 @@ export const AdminVentasColumnas = [
       sortable: true,
     },
     {//13
-      name: 'Descripcion',
-      selector: 'descripcion',
-      width: '400px',
-      sortable: true,
-    },
-    {//13
-      name: 'Ingreso',
-      selector: 'ingreso',
+      name: 'Saldo',
+      selector: 'saldo',
       width: '100px',
       sortable: true,
-    },
-    {//26
-      name: 'IMPORTE',
-      selector: 'precio_neto',
-      sortable: true,
-    },
-    {//27 PEN o USD
-      name: 'MONEDA',
-      selector: 'r_moneda',
-      sortable: true,
-      width: '90px',
+      cell: row => {
+          const value = Number(row.saldo);
+          return value.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+      },      
+      conditionalCellStyles: [
+          {
+            when: row => Number(row.saldo) < 0,
+            style: {
+              color: 'orange',
+            },
+          },
+        ],      
     },
     {//07-08-10
       name: 'Comprobante',
@@ -166,12 +177,6 @@ export const AdminVentasColumnas = [
       width: '150px',
       sortable: true,
     },
-    {//13
-      name: 'Id Producto',
-      selector: 'id_producto',
-      width: '120px',
-      sortable: true,
-    },    
     {//12
       name: 'Ruc',
       selector: 'r_documento_id',
@@ -193,16 +198,9 @@ export const AdminVentasColumnas = [
       selector: 'nombre',
       sortable: true,
     },
-
-    {//28
-      name: 'TC',
-      selector: 'r_tc',
-      sortable: true,
-    },
     
     // Otras columnas específicas para la vista de Ventas
-  ];*/
-// 📁 columnas.js
+  ];
 
 export const getColumnasDet = (tipo = 'ventas') => {
   const columnasBase0 = [

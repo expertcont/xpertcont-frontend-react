@@ -1,24 +1,17 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
+import { Modal,Grid, Button,useMediaQuery,Select, Dialog,DialogTitle} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import FindIcon from '@mui/icons-material/FindInPage';
-import UpdateIcon from '@mui/icons-material/UpdateSharp';
-import Add from '@mui/icons-material/Add';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
-import BoltIcon from '@mui/icons-material/Bolt';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import DownloadIcon from '@mui/icons-material/Download';
 import { blueGrey } from '@mui/material/colors';
 import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-
+import TaskAltIcon from "@mui/icons-material/TaskAlt";   
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
@@ -95,6 +88,11 @@ export default function AdminProductoList() {
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
   const {user, isAuthenticated } = useAuth0();
   const [valorVista, setValorVista] = useState("productos");
+  
+  const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
+  const [id_producto, setIdProducto] = useState("");
+  const [id_producto_nuevo, setIdProductoNuevo] = useState("");
+  const [nombre_nuevo, setNombreNuevo] = useState("");
 
   // Agrega íconos al inicio de cada columna
   const columnas = [
@@ -120,6 +118,26 @@ export default function AdminProductoList() {
       name: '',
       width: '40px',
       cell: (row) => (
+            <ContentCopyIcon
+              onClick={() => {
+                  setShowModalMostrarClonar(true);
+                  setIdProducto(row.id_producto);
+                  }
+                }
+              style={{
+                cursor: 'pointer',
+                //color: 'primary',
+                transition: 'color 0.3s ease',
+              }}
+            />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: '40px',
+      cell: (row) => (
           <DeleteIcon
             onClick={() => handleDelete(row.id_producto)}
             style={{
@@ -135,17 +153,20 @@ export default function AdminProductoList() {
     { name:'ID', 
       selector:row => row.id_producto,
       sortable: true,
-      width: '110px'
+      compact: true,
+      width: '80px'
       //key:true
     },
     { name:'NOMBRE', 
       selector:row => row.nombre,
       width: '350px',
+      compact: true,
       sortable: true
     },
     { name:'DESCRIPCION', 
       selector:row => row.descripcion,
       width: '100px',
+      compact: true,
       sortable: true
     },
     { name:'PRECIO', 
@@ -419,10 +440,188 @@ export default function AdminProductoList() {
 
     //Lo dejaremos terminar el evento de cambio o change
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
-  }
+  };
 
+  const clonarProducto = async (sIdProducto, sIdProductoNuevo, sNombreNuevo) => {
+    try {
+      const response = await axios.post(
+        `${back_host}/ad_productoclon`,
+        {
+          id_anfitrion: params.id_anfitrion,        // o como lo tengas guardado
+          documento_id: params.documento_id,      // desde tu contexto o estado
+          id_producto: sIdProducto,
+          id_producto_nuevo: sIdProductoNuevo,
+          nombre_nuevo: sNombreNuevo
+        }
+      );
+
+      const { exito, mensaje } = response.data;
+
+      // Opcional: mostrar alertas o snackbars
+      if (exito) {
+        alert(mensaje);
+      } else {
+        alert(mensaje);
+      }
+
+      return { exito, mensaje };
+
+    } catch (error) {
+      console.error("Error al clonar producto:", error);
+
+      alert("Error al clonar producto (conexión o servidor).");
+
+      return { exito: false, mensaje: "Error de conexión o servidor" };
+    }
+  };
+
+  const handleChange = e => {
+    //Para todos los demas casos ;)
+    if (e.target.name==="id_producto_nuevo"){
+      setIdProductoNuevo(e.target.value);
+    }
+    if (e.target.name==="nombre_nuevo"){
+      setNombreNuevo(e.target.value);
+    }
+    
+    setUpdateTrigger(Math.random());//experimento para actualizar el dom
+  };
+  
  return (
   <>
+               { (showModalMostrarClonar) ?
+                (   <>
+                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
+                            <Dialog
+                              open={showModalMostrarClonar}
+                              onClose={() => setShowModalMostrarClonar(false)}
+                              maxWidth="md" // Valor predeterminado de 960px
+                              //fullWidth
+                              disableScrollLock // Evita que se modifique el overflow del body
+                              PaperProps={{
+                                style: {
+                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
+                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
+                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
+                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
+                                  color:'white',
+                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
+                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
+                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
+                                },
+                              }}
+                            >
+                            <DialogTitle>Emision</DialogTitle>
+
+                                <TextField variant="outlined" 
+                                        label="Original"
+                                        fullWidth
+                                        size="small"
+                                        sx={{display:'flex',
+                                             width: 270, 
+                                            "& .MuiInputBase-input": {
+                                                  color: "white",
+                                                  textAlign: "center"   // ✅ centra el texto del input, incluso en type="date"
+                                                },
+                                             margin:'.5rem 0'}}
+                                        name="id_producto"
+                                        value={id_producto}
+                                        onChange={handleChange}
+                                        inputProps={{ style:{color:'white'} }}
+                                        InputLabelProps={{ style:{color:'white'} }}
+                                />
+
+                                <TextField variant="outlined" 
+                                        label="Nuevo"
+                                        fullWidth
+                                        size="small"
+                                        sx={{display:'flex',
+                                             width: 270, 
+                                            "& .MuiInputBase-input": {
+                                                  color: "white",
+                                                  textAlign: "center"   // ✅ centra el texto del input, incluso en type="date"
+                                                },
+                                             margin:'.5rem 0'}}
+                                        name="id_producto_nuevo"
+                                        value={id_producto_nuevo}
+                                        onChange={handleChange}
+                                        inputProps={{ style:{color:'white'} }}
+                                        InputLabelProps={{ style:{color:'white'} }}
+                                />
+
+                                <TextField variant="outlined" 
+                                        label="Nombre Nuevo"
+                                        fullWidth
+                                        size="small"
+                                        sx={{display:'flex',
+                                             width: 270, 
+                                            "& .MuiInputBase-input": {
+                                                  color: "white",
+                                                  textAlign: "center"   // ✅ centra el texto del input, incluso en type="date"
+                                                },
+                                             margin:'.5rem 0'}}
+                                        name="nombre_nuevo"
+                                        value={nombre_nuevo}
+                                        onChange={handleChange}
+                                        inputProps={{ style:{color:'white'} }}
+                                        InputLabelProps={{ style:{color:'white'} }}
+                                />
+
+                                <Button
+                                  variant="contained"
+                                  //color="inherit"
+                                  color="primary"
+                                            onClick={()=>{
+                                                clonarProducto(id_producto, id_producto_nuevo, nombre_nuevo);
+                                                setShowModalMostrarClonar(false);
+                                              }
+                                            }
+                                  sx={{ //display: "block", 
+                                        display: "flex",          // 🔹 asegura layout en fila
+                                        alignItems: "center",     // centra verticalmente
+                                        margin: ".5rem 0", 
+                                        width: 270, 
+                                        mt: -0.5, 
+                                        //color: "black", 
+                                        fontWeight: "bold",
+                                    }}
+                                  startIcon={<TaskAltIcon />} 
+                                >
+                                  CLONAR
+                                </Button>
+
+                                <Button variant='contained' 
+                                            //color='warning' 
+                                            //size='small'
+                                            onClick={()=>{
+                                                  setShowModalMostrarClonar(false);
+                                              }
+                                            }
+                                            sx={{display:'block',
+                                                  margin:'.5rem 0',
+                                                  width: 270, 
+                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
+                                                '&:hover': {
+                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
+                                                    },                                                             
+                                                  mt:-0.5}}
+                                            >
+                                            ESC - CERRAR
+                                </Button>
+
+                            </Dialog>
+                    </>
+                )
+                :
+                (   
+                  <>
+                  </>
+                )
+              }  
 
   <div>
   </div>

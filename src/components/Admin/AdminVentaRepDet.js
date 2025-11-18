@@ -414,7 +414,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
                 color="primary" 
                 onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
                 fullWidth
-        >TOTAL UND VENTAS
+        >AGRUPAR DET.VENTAS
         </Button>
 
       </Grid>
