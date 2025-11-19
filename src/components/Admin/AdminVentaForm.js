@@ -99,12 +99,24 @@ export default function AdminVentaForm() {
   const [registrosdet,setRegistrosdet] = useState([]);
   //const fecha_actual = new Date();
   const formasPago = ['YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'];
+  const [motivo_select, setMotivoSelect] = useState([]);
 
   const actualizaValorEmite = (e) => {
     setValorEmite(e.target.value);
     setDatosEmitir(prevState => ({ ...prevState, r_cod_emitir: e.target.value }));
   }
-  
+
+  const cargaMotivosSelect = () =>{
+    //console.log(`${back_host}/iddoc`);
+    axios
+    .get(`${back_host}/motivonota/07`)
+    .then((response) => {
+        setMotivoSelect(response.data);
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  };
   const cargaDocSelect = () =>{
     //console.log(`${back_host}/iddoc`);
     axios
@@ -200,7 +212,8 @@ export default function AdminVentaForm() {
     vuelto:'0',         //default
     forma_pago2:'YAPE', //default
     efectivo2:'0',      //default
-    r_direccion:'-'
+    r_direccion:'-',
+    r_idmotivo_ref:'' //new
   });
 
   const handleCodigoKeyDown = async (event) => {
@@ -311,6 +324,7 @@ export default function AdminVentaForm() {
     cargaPopUpGrupo();//new
     cargaDocSelect();
     cargaCodSeg(); //new array con lista de comprobantes habilitados segun usuario, utiles para control de emitir
+    cargaMotivosSelect(); //new
 
     //NEW codigo para autenticacion y permisos de BD
     if (isAuthenticated && user.email) {
@@ -404,6 +418,7 @@ export default function AdminVentaForm() {
       setDatosEmitir(prevState => ({ ...prevState, r_direccion: '-' }));
 
       setDatosEmitir(prevState => ({ ...prevState, efectivo: venta.r_monto_total }));
+      setDatosEmitir(prevState => ({ ...prevState, r_idmotivo_ref: '01' })); //Default anulacion
       //setDatosEmitir({...datosEmitir, efectivo: venta.r_monto_total });
     }
     
@@ -879,7 +894,8 @@ export default function AdminVentaForm() {
         r_cod_ref: venta.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         r_serie_ref: venta.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         r_numero_ref: venta.r_numero_ref,//parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
-        r_idmotivo_ref: '01',//parte de la referencia a emitir (hardcodeado temporal) anulacion
+        //r_idmotivo_ref: '01',//parte de la referencia a emitir (hardcodeado temporal) anulacion
+        r_idmotivo_ref: datosEmitir.r_idmotivo_ref,//Actualizado :)parte de la referencia a emitir (seleccionado en combo)
       };
 
     //console.log(estadoFinal);
@@ -1569,7 +1585,7 @@ export default function AdminVentaForm() {
                             )
                           }
 
-                          { (producto.cantidad && producto.auxiliar) ?
+                          { (producto.auxiliar) ?
                             (   <>
                                         {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
                                         <Dialog
@@ -1842,7 +1858,7 @@ export default function AdminVentaForm() {
                                                         //startIcon={<AssessmentRoundedIcon />}
                                                         onClick={ ()=> {
                                                           handleSaveDetail();
-                                                          setProducto({ ...producto, cantidad: '' });
+                                                          setProducto({ ...producto, cantidad: '', auxiliar: '' });
                                                           }
                                                         }
                                                         sx={{display:'block',margin:'.5rem 0', width: 270}}
@@ -2085,6 +2101,35 @@ export default function AdminVentaForm() {
                                                       inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
                                                       InputLabelProps={{ style:{color:'white'} }}
                                             />
+                                            {(valorEmite==='07') && (
+                                            <Select
+                                                    labelId="motivo_select"
+                                                    label="motivo"
+                                                    value={datosEmitir.r_idmotivo_ref}  // 
+                                                    size='small'
+                                                    name="r_idmotivo_ref"
+                                                    //fullWidth
+                                                    sx={{display:'block',
+                                                         //margin:'.4rem 0', 
+                                                         mt:0,
+                                                         width: '270px',  // Establece el ancho fijo aquí
+                                                         textAlign: 'center',  // Centrar el texto seleccionado
+                                                         '.MuiSelect-select': { 
+                                                           textAlign: 'center',  // Centrar el valor dentro del Select
+                                                         },                                                         
+                                                         color:"white"}}
+                                                    onChange={(e) => handleChangeEmite('r_idmotivo_ref', e.target.value)}
+                                            >
+                                                    {   
+                                                        motivo_select.map(elemento => (
+                                                        <MenuItem key={elemento.codigo} value={elemento.codigo}
+                                                                  sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
+                                                        >
+                                                        {elemento.descripcion}
+                                                        </MenuItem>)) 
+                                                    }
+                                            </Select>)}
+
 
                                           {/* Campo EFECTIVO */}
                                           <Box sx={{ display: "inline-block" }}>
