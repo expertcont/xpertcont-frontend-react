@@ -75,7 +75,13 @@ export const AdminVentasColumnas = [
       width: '120px',
       compact: true
     },
-
+    {//31
+      name: 'SUNAT',
+      selector: 'cdr_descripcion',
+      sortable: true,
+      width: '350px',
+      compact: true
+    },
     {//28
       name: 'TC',
       selector: 'r_tc',
@@ -86,23 +92,6 @@ export const AdminVentasColumnas = [
       selector: 'r_fecemi_ref',
       sortable: true,
     },
-
-    /*{//30
-      name: 'REF.TP',
-      selector: 'r_cod_ref',
-      sortable: true,
-    },
-    {//31
-      name: 'REF.SERIE',
-      selector: 'r_serie_ref',
-      sortable: true,
-    },
-    {//32
-      name: 'REF.NUM',
-      selector: 'r_numero_ref',
-      sortable: true,
-    },*/
-
     {//33
       name: 'GRE FIRMA',
       selector: 'gre_vfirmado',
