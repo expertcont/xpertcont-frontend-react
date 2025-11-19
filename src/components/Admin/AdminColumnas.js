@@ -5,6 +5,14 @@ export const AdminVentasColumnas = [
       selector: 'r_fecemi',
       width: '100px',
       sortable: true,
+      cell: row => {
+          const isNotaCredito = row.comprobante?.startsWith("07");
+          return (
+            <span style={{ color: isNotaCredito ? 'skyblue' : 'inherit' }}>
+              {row.r_fecemi}
+            </span>
+          );
+      }      
     },
     {//07-08-10
       name: 'Comprobante',
@@ -12,6 +20,14 @@ export const AdminVentasColumnas = [
       width: '150px',
       compact: true,
       sortable: true,
+      cell: row => {
+          const isNotaCredito = row.comprobante?.startsWith("07");
+          return (
+            <span style={{ color: isNotaCredito ? 'skyblue' : 'inherit' }}>
+              {row.comprobante}
+            </span>
+          );
+      }      
     },
     {//11
       name: 'Tp',
@@ -34,13 +50,32 @@ export const AdminVentasColumnas = [
       compact: true,
       sortable: true,
     },
-    {//26
+    {
       name: 'TOTAL',
-      selector: 'r_monto_total',
+      selector: row => row.r_monto_total,
       width: '100px',
       compact: true,
       sortable: true,
+      cell: row => {
+        const isNotaCredito = row.comprobante?.startsWith("07");
+
+        // Convertimos a número
+        let valor = Number(row.r_monto_total) || 0;
+
+        // Formato de miles con coma
+        const valorFormateado = valor.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+        return (
+          <span style={{ color: isNotaCredito ? 'skyblue' : 'inherit' }}>
+            {valorFormateado}
+          </span>
+        );
+      }
     },
+
     {//27 PEN o USD
       name: 'MONEDA',
       selector: 'r_moneda',
