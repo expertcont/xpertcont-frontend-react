@@ -619,6 +619,7 @@ export default function AdminVentaList() {
             <AdminSunatIcon
               comprobante_key={row.comprobante_key}
               comprobante={row.comprobante}
+              cdr_pendiente={row.cdr_pendiente} //new
               elemento={row.elemento}
               firma={row.r_vfirmado}
               documentoId={params.documento_id}

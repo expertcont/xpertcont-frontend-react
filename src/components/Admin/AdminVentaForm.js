@@ -1153,6 +1153,7 @@ export default function AdminVentaForm() {
                       :
                       venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
       }
+      cdr_pendiente={venta.cdr_pendiente} //new
       elemento={params.comprobante.split("-").pop()}   // ✅ último valor después del último "-"
       firma={venta.r_vfirmado}
       documentoId={params.documento_id}

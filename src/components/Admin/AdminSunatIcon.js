@@ -12,6 +12,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 const AdminSunatIcon = ({
   comprobante_key,            // ej. "01-F001-12345" pero es KEY del registro
   comprobante,            // ej. "01-F001-12345" pero es para mostrar links
+  cdr_pendiente,          // '1' o '0' o null  NEWW
   elemento,               // tu valor de elemento
   firma,                  // string o null
   documentoId,            // params.documento_id
@@ -33,33 +34,55 @@ const AdminSunatIcon = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleSunat = async () => {
-    //kEY PARA PROCESAMIENTO SUNAT
-    const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
-    //comprobante(0) PARA MOSTRAR LINKS
-    const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
+    try {
+      //kEY PARA PROCESAMIENTO SUNAT
+      //const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
+      //comprobante(0) PARA MOSTRAR LINKS
+      const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
 
-    // Si ya está firmado, solo mostrar links
-    if (firma !== "" && firma !== null) {
-      const baseUrl = `${descargasHost}/descargas/${documentoId}`;
-      setRutaXml(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
-      setRutaCdr(`${baseUrl}/R-${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
-      setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
-      setShowModal(true);
-      return;
+      // Si ya está firmado, solo mostrar links
+      //Pero si tiene cdr_pendiente, enviar de nuevo, api lo maneja
+
+      if (firma !== "" && firma !== null) {
+        const baseUrl = `${descargasHost}/descargas/${documentoId}`;
+        setRutaXml(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
+        setRutaCdr(`${baseUrl}/R-${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
+        setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        setShowModal(true);
+        return;
+      }
+
+      // Confirmación antes de enviar
+      await enviaSunat();
+
+    } catch (error) {
+      await confirmDialog({
+        title: "Error en procesamiento Interno",
+        message: `${error.message}`, //new
+        icon: "error",
+        confirmText: "ACEPTAR",
+      });
     }
 
-    // Confirmación antes de enviar
-    const result = await confirmDialog({
-      title: "Enviar a SUNAT?",
-      message: `${comprobante}`,
-      icon: "success",
-      confirmText: "ENVIAR",
-      cancelText: "CANCELAR",
-    });
+  };
 
-    if (!result.isConfirmed) return;
+  const enviaSunat = async () => {
+      //kEY PARA PROCESAMIENTO SUNAT
+      const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
+      //comprobante(0) PARA MOSTRAR LINKS
+      //const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
 
-    try {
+      // Confirmación antes de enviar
+      const result = await confirmDialog({
+        title: "Enviar a SUNAT?",
+        message: `${comprobante}`,
+        icon: "success",
+        confirmText: "ENVIAR",
+        cancelText: "CANCELAR",
+      });
+
+      if (!result.isConfirmed) return;
+
       const response = await axios.post(`${backHost}/ad_ventacpe`, {
         p_periodo: periodoTrabajo,
         p_id_usuario: idAnfitrion,
@@ -75,21 +98,66 @@ const AdminSunatIcon = ({
         setRutaCdr(response.data.ruta_cdr);
         setRutaPdf(response.data.ruta_pdf);
         setShowModal(true);
+      }else{
+        await confirmDialog({
+          title: "Error de envío SUNAT",
+           message: `${comprobante} \n${response.data?.respuesta_sunat_descripcion || "SIN DETALLE"}`, //new
+          icon: "error",
+          confirmText: "ACEPTAR",
+        });
       }
-    } catch (error) {
-      await confirmDialog({
-        title: "Error de envío SUNAT",
-        message: `${comprobante}`,
-        icon: "error",
-        confirmText: "ACEPTAR",
-      });
-    }
   };
 
-  /*const handleOpenLink = (url) => {
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  };*/
-  const handleOpenLink = (url) => {
+  const enviaSunatReprocesoCDR = async () => {
+      //kEY PARA PROCESAMIENTO SUNAT
+      const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
+      //comprobante(0) PARA MOSTRAR LINKS
+      //const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
+
+      // Confirmación antes de enviar
+      const result = await confirmDialog({
+        title: "Solicitar a Sunat Descarga CDR?",
+        message: `${comprobante}`,
+        icon: "success",
+        confirmText: "ENVIAR",
+        cancelText: "CANCELAR",
+      });
+
+      if (!result.isConfirmed) return;
+
+      const response = await axios.post(`${backHost}/ad_ventacpe`, {
+        p_periodo: periodoTrabajo,
+        p_id_usuario: idAnfitrion,
+        p_documento_id: contabilidadTrabajo,
+        p_r_cod: COD,
+        p_r_serie: SERIE,
+        p_r_numero: NUMERO,
+        p_elemento: elemento,
+      });
+      
+      //console.log('response del reproceso: ', response);
+      if (response.data?.estado) {
+        setRutaXml(response.data.ruta_xml);
+        setRutaCdr(response.data.ruta_cdr);
+        setRutaPdf(response.data.ruta_pdf);
+      }else{
+        await confirmDialog({
+          title: "Error de solicitud CDR SUNAT",
+           message: `${comprobante} \n${response.data?.respuesta_sunat_descripcion || "SIN DETALLE"}`, //new
+          icon: "error",
+          confirmText: "ACEPTAR",
+        });
+      }
+  };
+
+  const handleOpenLink = async (url) => {
+    if (cdr_pendiente === '1') {
+      // Si el CDR está pendiente, intentar reprocesar
+      if (url.includes('R-')) {
+        //console.log('Sí contiene R-');
+        await enviaSunatReprocesoCDR();
+      }
+    }
     if (!url) return;
 
     // 👇 Agregamos un parámetro temporal para evitar que el navegador use la versión en caché
