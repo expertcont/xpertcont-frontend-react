@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { Card,CardContent,Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
+import AutoDeleteIcon from '@mui/icons-material/AutoDelete';
 import FindIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import { blueGrey } from '@mui/material/colors';
@@ -279,9 +280,82 @@ export default function AdminStockList() {
           });
         
     }
+  };
 
-};
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  const handleAnula = (comprobante) => {
+    //Recuerda que el comprobante enviado es el comprobante_ref --> contiene el key del registro ;)
+    confirmaAnulacion(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,comprobante);
+  };
+  const confirmaAnulacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante)=>{
+    const result = await confirmDialog({
+        title: "Anular Comprobante?",
+        message: `${sComprobante}`,
+        icon: "warning", // success | error | info | warning
+        confirmText: "ANULAR",
+        cancelText: "CANCELAR",
+    });
+    if (result.isConfirmed) {
+          console.log("✅ Anulado:", sComprobante);
+          anularRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante);
+          setToggleCleared(!toggleCleared);
+          setRegistrosdet(registrosdet.filter(
+                          registrosdet => registrosdet.comprobante !== sComprobante
+                          ));
+          setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+              setUpdateTrigger(Math.random());//experimento
+          }, 200);
+    } else {
+      console.log("❌ Cancelado");
+      return; // Salimos si el usuario cancela
+    }
+  }
+  const anularRegistroSeleccionado = async (sAnfitrion, sDocumentoId, sPeriodo, sComprobante) => {
+    const [COD, SERIE, NUMERO] = sComprobante.split('-');
+    const datosEnvio = {
+      periodo: sPeriodo,
+      id_anfitrion: sAnfitrion,
+      documento_id: sDocumentoId,
+      cod: COD,
+      serie: SERIE,
+      numero: NUMERO
+    }
+    //console.log('datosEnvio Stocks: ',datosEnvio);
+    
+    try {
+        const response = await axios.put(`${back_host}/ad_stockanula`, {
+            data: datosEnvio
+        });
 
+        // Verifica la respuesta del backend
+        if (response.data.success) {
+          confirmDialog({
+                  title: "Movimiento de Almacen anulado con exito",
+                  //message: `${sComprobante}`,
+                  icon: "success", // success | error | info | warning
+                  confirmText: "ACEPTAR"
+                  //cancelText: "CERRAR",
+          });
+        } else {
+          confirmDialog({
+            title: "No se puede Anular Movimiento de Almacen",
+            icon: "error",
+            confirmText: "ACEPTAR"
+          });
+          //console.log("No se pudo eliminar Movimiento de Almacen, no es el ultimo: " + response.data.message);
+        }
+    } catch (error) {
+        //console.error("Error eliminando Movimiento de Almacen:", error);
+          swal({
+            text:"No se puede Anular Movimiento de Almacen",
+            icon:"error",
+            timer:"2000"
+          });
+        
+    }
+  };
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
   const handleDeleteOrigen = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro) => {
     const { value: selectedOrigen } = await swal2.fire({
       title: 'Eliminar registros',
@@ -580,8 +654,6 @@ export default function AdminStockList() {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
-          (pVenta0102) && (row.r_vfirmado == null) ?
-          (
             <DriveFileRenameOutlineIcon
               onClick={() => handleUpdate(row.comprobante,false)}
               style={{
@@ -590,19 +662,6 @@ export default function AdminStockList() {
                 transition: 'color 0.3s ease',
               }}
             />
-          )  
-          : 
-          (
-            <FindInPageIcon
-              onClick={() => handleUpdate(row.comprobante,true)}
-              style={{
-                cursor: 'pointer',
-                color: 'gray',
-                transition: 'color 0.3s ease',
-              }}
-            />
-
-          )
         ),
         allowOverflow: true,
         button: true,
@@ -611,8 +670,6 @@ export default function AdminStockList() {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
         cell: (row) => (
-          (pVenta0103) && (row.r_vfirmado == null) ?
-          (
             <DeleteIcon
               onClick={() => handleDelete(row.comprobante)}
               style={{
@@ -621,9 +678,33 @@ export default function AdminStockList() {
                 transition: 'color 0.3s ease',
               }}
             />
-          ) 
-          : 
-          (
+        ),
+        allowOverflow: true,
+        button: true,
+      },
+      {
+        name: '',
+        width: isSmallScreen ?  '40px' : '30px',
+        cell: (row) => (
+            <AutoDeleteIcon
+              onClick={() => {
+                  handleAnula(row.comprobante); 
+                }
+              }
+              style={{
+                cursor: 'pointer',
+                color: 'gray',
+                transition: 'color 0.3s ease',
+              }}
+            />
+        ),
+        allowOverflow: true,
+        button: true,
+      },
+      {
+        name: '',
+        width: isSmallScreen ?  '40px' : '30px',
+        cell: (row) => (
             <ContentCopyIcon
               onClick={() => {
                   setShowModalMostrarClonar(true);
@@ -637,9 +718,6 @@ export default function AdminStockList() {
                 transition: 'color 0.3s ease',
               }}
             />
-
-          )
-
         ),
         allowOverflow: true,
         button: true,

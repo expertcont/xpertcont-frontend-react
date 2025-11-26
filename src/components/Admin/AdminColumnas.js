@@ -325,6 +325,7 @@ export const getColumnasDet = (tipo = 'ventas') => {
       name: 'Comprobante',
       selector: 'comprobante', //campo unido
       width: '150px',
+      compact: true,
       sortable: true,
     },
     {//12
@@ -337,29 +338,38 @@ export const getColumnasDet = (tipo = 'ventas') => {
       name: 'Identidad',
       selector: 'r_documento_id',
       width: '110px',
+      compact: true,
       sortable: true,
     },
     {//14
       name: 'Razon Social',
       selector: 'r_razon_social',
       width: '200px',
+      compact: true,
       sortable: true,
     },
     ///////////////cambio
+    {//07-08-10
+      name: 'Estado',
+      selector: 'estado', //campo unido
+      width: '100px',
+      compact: true,
+      sortable: true,
+    },
     {//07-08-10
       name: 'Motivo',
       selector: 'nombre', //campo unido
       width: '200px',
       sortable: true,
+      compact: true,
     },
- 
-    {//27
+     {//27
       name: 'TC',
       selector: 'r_tc',
       sortable: true,
+      compact: true,
     },
-  
-    // Otras columnas específicas para la vista de Compras
+     // Otras columnas específicas para la vista de Compras
     //Ya no se usa datos detraccion, pero se podria manejar en campos auxiliar no obligatorios
     //numero_constancia
     //fecha_constancia
