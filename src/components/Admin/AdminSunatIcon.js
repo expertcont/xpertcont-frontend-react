@@ -2,12 +2,13 @@
 import { useState } from "react";
 import axios from "axios";
 import { useDialog } from "./AdminConfirmDialogProvider";
-import { Dialog, DialogTitle, Button, useMediaQuery } from "@mui/material";
+import { Dialog, DialogTitle, Button, useMediaQuery, InputAdornment, IconButton, TextField, Box, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import Sunat01Icon from '../../assets/images/sunat0.png';
 import TaskAltIcon from "@mui/icons-material/TaskAlt";   
 import CodeIcon from '@mui/icons-material/Code';
 import DescriptionIcon from '@mui/icons-material/Description';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 
 const AdminSunatIcon = ({
   comprobante_key,            // ej. "01-F001-12345" pero es KEY del registro
@@ -32,6 +33,7 @@ const AdminSunatIcon = ({
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const [phone, setPhone] = useState("");
 
   const handleSunat = async () => {
     try {
@@ -166,6 +168,30 @@ const AdminSunatIcon = ({
     window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
   };
 
+  const handleOpenLinkWhatsApp = async (sNumero) => {
+    // Elimina cualquier caracter que no sea dígito
+    let telefono = sNumero.replace(/\D/g, '');
+    //agregar código de país si es necesario
+    if (!telefono.startsWith('51')) {
+      telefono = '51' + telefono; // Agrega código de país Perú
+    }
+    const mensaje =
+      `expertcont.pe 👋\n` +
+      `Te comparte tu comprobante electrónico:\n\n` +
+      `📄 PDF:\n${rutaPdf}\n` +
+      `📦 XML:\n${rutaXml}\n` +
+      `✅ CDR:\n${rutaCdr}\n` + 
+      `Copia y Pega en tu navegador`;
+
+    const waUrl =
+      `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+
+    // 🔥 LÍNEA CLAVE
+    window.open(waUrl, '_blank');
+
+    //window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
+  };
+
   const handleCloseModal = () => {
     // ✅ dispara el refresco si te pasaron la función
     if (onRefresh) onRefresh();
@@ -263,6 +289,79 @@ const AdminSunatIcon = ({
         >
           PDF
         </Button>
+
+    <Box sx={{ position: "relative", width: 270 }}>
+      {/* Centro: Icono + WSP */}
+      <Box
+        onClick={() => handleOpenLinkWhatsApp(phone)}
+        sx={{
+          position: "absolute",
+          left: "42%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+          //backgroundColor: "#374151",
+          color: "#fff",
+          px: 1.2,
+          py: 0.4,
+          borderRadius: 1,
+          zIndex: 10,
+          cursor: phone.length >= 9 ? "pointer" : "default",
+          opacity: phone.length >= 9 ? 1 : 0.6,
+          "&:hover": {
+            backgroundColor:
+              phone.length >= 9 ? "#4B5563" : "#374151"
+          }
+        }}
+      >
+        <WhatsAppIcon fontSize="medium" />
+      </Box>
+
+      {/* Input */}
+      <TextField
+        size="small"
+        placeholder="Teléfono"
+        value={phone}
+        onChange={(e) =>
+          setPhone(e.target.value.replace(/\D/g, ""))
+        }
+        sx={{
+          width: "100%",
+          height: 45,
+          color: "white",
+          "& .MuiInputBase-root": {
+            color: "white",
+            backgroundColor: "rgba(255, 255, 255, 0.1)",
+          },
+          "& input": {
+            paddingLeft: "133px"
+          }
+        }}
+      />
+    </Box>
+
+        {/*
+        <Button
+          variant="contained"
+          //color="info"
+          onClick={() => handleOpenLinkWhatsApp('973586639')} //número de prueba
+          sx={{ //display: "block", 
+                display: "flex",          // 🔹 asegura layout en fila
+                alignItems: "center",     // centra verticalmente
+                //justifyContent: "flex-start", // texto alineado con el ícono            
+                margin: ".5rem 0", 
+                width: 270, 
+                backgroundColor: "#374151", // color gris oscuro
+                "&:hover": { backgroundColor: "#4B5563" }, // color gris más claro al pasar el mouse
+                mt: -0.5, 
+                fontWeight: "bold" }}
+          startIcon={<WhatsAppIcon />}
+        >
+          WSP
+        </Button>
+        */} 
 
         <Button
           variant="contained"
