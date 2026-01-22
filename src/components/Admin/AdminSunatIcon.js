@@ -323,6 +323,7 @@ const AdminSunatIcon = ({
       <TextField
         size="small"
         placeholder="Teléfono"
+        autoComplete="off"
         value={phone}
         onChange={(e) =>
           setPhone(e.target.value.replace(/\D/g, ""))
