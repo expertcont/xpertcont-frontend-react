@@ -168,28 +168,49 @@ const AdminSunatIcon = ({
     window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
   };
 
-  const handleOpenLinkWhatsApp = async (sNumero) => {
-    // Elimina cualquier caracter que no sea dígito
-    let telefono = sNumero.replace(/\D/g, '');
-    //agregar código de país si es necesario
-    if (!telefono.startsWith('51')) {
-      telefono = '51' + telefono; // Agrega código de país Perú
+const handleOpenLinkWhatsApp = async (sNumero) => {
+  // 📞 limpiar número
+  let telefono = sNumero.replace(/\D/g, '');
+  if (!telefono.startsWith('51')) {
+    telefono = '51' + telefono;
+  }
+  const BACKEND_DESCARGAS = 'https://xpertcont-backend-js-production-50e6.up.railway.app';
+  
+  // 🔧 normalizar rutas
+  const pathPdf = normalizarRutaDescarga(rutaPdf);
+  const pathXml = normalizarRutaDescarga(rutaXml);
+  const pathCdr = normalizarRutaDescarga(rutaCdr);
+
+  // 🌍 nuevas rutas limpias
+  const pdfFinal = `${BACKEND_DESCARGAS}${pathPdf}`;
+  const xmlFinal = `${BACKEND_DESCARGAS}${pathXml}`;
+  const cdrFinal = `${BACKEND_DESCARGAS}${pathCdr}`;
+
+  // 💬 mensaje WhatsApp
+  const mensaje =
+    `expertcont.pe 👋\n` +
+    `Te comparte tu comprobante electrónico:\n\n` +
+    `📄 PDF:\n${pdfFinal}\n` +
+    `📦 XML:\n${xmlFinal}\n` +
+    `✅ CDR:\n${cdrFinal}\n\n` +
+    `Copia y pega en tu navegador de preferencia.`;
+
+  const waUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+
+  window.open(waUrl, '_blank');
+};
+  
+  const normalizarRutaDescarga = (urlOriginal) => {
+    if (!urlOriginal) return '';
+
+    try {
+      const url = new URL(urlOriginal);
+      return url.pathname; // 👉 /descargas/20614126435/archivo.pdf
+    } catch (error) {
+      // fallback por si llega algo raro
+      const index = urlOriginal.indexOf('/descargas/');
+      return index !== -1 ? urlOriginal.substring(index) : '';
     }
-    const mensaje =
-      `expertcont.pe 👋\n` +
-      `Te comparte tu comprobante electrónico:\n\n` +
-      `📄 PDF:\n${rutaPdf}\n` +
-      `📦 XML:\n${rutaXml}\n` +
-      `✅ CDR:\n${rutaCdr}\n` + 
-      `Copia y Pega en tu navegador`;
-
-    const waUrl =
-      `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-
-    // 🔥 LÍNEA CLAVE
-    window.open(waUrl, '_blank');
-
-    //window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
   };
 
   const handleCloseModal = () => {
