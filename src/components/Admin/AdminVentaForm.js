@@ -533,9 +533,11 @@ export default function AdminVentaForm() {
       //new condition para verificar si precio_select tiene datos
       if (Array.isArray(precio_select) && precio_select.length > 0) {
         precio_unitario = obtenerPrecioPorCantidad(e.target.value);
-        //new
-        producto.precio_unitario = precio_unitario;
-        //precio_neto = precio_unitario * e.target.value;
+        
+        //redondeamos a 2 decimales, presentacion en formulario
+        producto.precio_unitario = parseFloat(precio_unitario).toFixed(2);
+        
+        //pero el calculo lo hacemos con todos los decimales de (precio_unitario), para evitar errores de redondeo
         precio_neto = parseFloat((precio_unitario * e.target.value).toFixed(2));
       }else{
         precio_neto = producto.precio_unitario * e.target.value;
@@ -567,8 +569,9 @@ export default function AdminVentaForm() {
       return cantidadNum >= min && cantidadNum <= max;
     });
 
-    //return rango ? parseFloat(rango.precio_venta/rango.unidades) : 0; // 0 si no encuentra rango
-    return rango  ? parseFloat((rango.precio_venta / rango.unidades).toFixed(2)) : 0;
+    //devolvemos todos los decimales, para evitar errores de redondeo
+    return rango ? parseFloat(rango.precio_venta/rango.unidades) : 0; // 0 si no encuentra rango
+    //return rango  ? parseFloat((rango.precio_venta / rango.unidades).toFixed(2)) : 0;
 
   };
 
