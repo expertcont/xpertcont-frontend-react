@@ -17,6 +17,7 @@ export default function ProductoFormPrecio() {
       id_producto:'',
       unidades:'',
       precio_venta:0,
+      unidades:'',
       cant_min:'',
       cant_max:'',
       origen:'MANUAL'
@@ -34,7 +35,8 @@ export default function ProductoFormPrecio() {
     console.log('antes:', producto_precio);
 
     //Cambiooo para controlar Edicion
-    if (editando){
+    if (params.accion === 'edit'){
+      //Aqui es put
       await fetch(`${back_host}/ad_productoprecio/${params.id_anfitrion}/${params.documento_id}/${params.id_producto}/${params.unidades}`, {
         method: "PUT",
         body: JSON.stringify(producto_precio),
@@ -43,9 +45,16 @@ export default function ProductoFormPrecio() {
     }else{
       producto_precio.id_anfitrion = params.id_anfitrion;
       producto_precio.documento_id = params.documento_id;
-      console.log('antes de grabar:', producto_precio);
+      producto_precio.id_producto = params.id_producto;
+      //valores contenidos en el formulario
+      //producto_precio.unidades 
+      //producto_precio.cant_min
+      //producto_precio.cant_max
+      //producto_precio.precio_venta
 
-      await fetch(`${back_host}/ad_productoprecio`, {
+      console.log('antes de insertar:', producto_precio);
+      //Aqui es post
+      await fetch(`${back_host}/ad_productoprecio/${params.id_anfitrion}/${params.documento_id}/${params.id_producto}/${producto_precio.unidades}`, {
         method: "POST",
         body: JSON.stringify(producto_precio),
         headers: {"Content-Type":"application/json"}
@@ -59,12 +68,23 @@ export default function ProductoFormPrecio() {
   //Aqui se leen parametros en caso lleguen
   useEffect( ()=> {
     
-    if (params.id_producto){
-    console.log('Editando precio:', params.id_anfitrion,params.documento_id,params.id_producto, params.unidades);
+    if (params.accion === 'edit'){
+      console.log('Editando precio:', params.id_anfitrion,params.documento_id,params.id_producto, params.unidades);
       mostrarProductoPrecio(params.id_anfitrion,params.documento_id,params.id_producto, params.unidades);
       setEditando(true);
     }
     else{
+      //Unico caso, es clonar precio
+      console.log('Clonando precio:', params.id_anfitrion,params.documento_id,params.id_producto, params.unidades);
+      mostrarProductoPrecio(params.id_anfitrion,params.documento_id,params.id_producto, params.unidades);
+      //Blanqueamos campos de formulario
+      setProductoPrecio({
+        unidades:'',
+        precio_venta:0,
+        cant_min:'',
+        cant_max:'',
+      });
+
       setEditando(false);
     }
     
@@ -105,11 +125,12 @@ export default function ProductoFormPrecio() {
                     id_producto:data.id_producto, 
                     nombre:data.nombre, 
                     precio_venta:data.precio_venta, 
+                    unidades:data.unidades,
                     cant_min:data.cant_min,
                     cant_max:data.cant_max
                   });
     //console.log(data.relacionado);
-    setEditando(true);
+    //setEditando(true);
   };
 
 
@@ -128,7 +149,7 @@ export default function ProductoFormPrecio() {
                   }}
                   >
                 <Typography variant='subtitle2' color='white' textAlign='center'>
-                    {editando ? "EDITAR PRODUCTO" : "CREAR PRODUCTO"}
+                    {editando ? "EDITAR PRECIO" : "CLONAR PRECIO"}
                 </Typography>
                 <CardContent >
                     <form onSubmit={handleSubmit} autoComplete="off">
@@ -174,6 +195,21 @@ export default function ProductoFormPrecio() {
                                    inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
                                    InputLabelProps={{ style:{color:'white'} }}
                         />
+
+                        <TextField variant="outlined" 
+                                   label="Unidades"
+                                   fullWidth
+                                   size='small'
+                                   //multiline
+                                   sx={{display:'block',
+                                        margin:'.5rem 1'}}
+                                   name="unidades"
+                                   value={producto_precio.unidades}
+                                   onChange={handleChange}
+                                   inputProps={{ style:{color:'white', textTransform: 'uppercase'} }}
+                                   InputLabelProps={{ style:{color:'white'} }}
+                        />
+
 
                         <TextField variant="outlined" 
                                    label="Cant Min"

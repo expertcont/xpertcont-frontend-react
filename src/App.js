@@ -101,7 +101,7 @@ function App(props) {
               <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoList />} />          
               <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminProductoForm />} />          
               <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/:id_producto/edit" element={<AdminProductoForm />} />
-              <Route path="/ad_productoprecio/:id_anfitrion/:id_invitado/:documento_id/:id_producto/:unidades/edit" element={<AdminProductoFormPrecio />} />
+              <Route path="/ad_productoprecio/:id_anfitrion/:id_invitado/:documento_id/:id_producto/:unidades/:accion" element={<AdminProductoFormPrecio />} />
 
               <Route path="/reporte/:id_anfitrion/:id_invitado" element={<ReportesList />} />
 

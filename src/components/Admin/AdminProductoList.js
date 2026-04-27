@@ -120,10 +120,15 @@ export default function AdminProductoList() {
       cell: (row) => (
             <ContentCopyIcon
               onClick={() => {
-                  setShowModalMostrarClonar(true);
-                  setIdProducto(row.id_producto);
-                  }
+                    if (valorVista === 'precios') {	
+                      //unidades = row.descripcion
+                      navigate(`/ad_productoprecio/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${row.id_producto}/${row.descripcion}/clonar`);
+                    } else {	
+                      setShowModalMostrarClonar(true);
+                      setIdProducto(row.id_producto);
+                    }
                 }
+              }
               style={{
                 cursor: 'pointer',
                 //color: 'primary',
@@ -665,12 +670,13 @@ export default function AdminProductoList() {
                           //style={{ padding: '0px'}}
                           style={{ padding: '0px', color: blueGrey[700] }}
                           onClick={() => {
-                            if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
+                            /*if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
                               //movil
                                 navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/new`);
                             } else {
                                 navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/new`);
-                            }
+                            }*/
+                              navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/new`);
                           }}
           >
                 <AddBoxIcon style={{ fontSize: '40px' }}/>
