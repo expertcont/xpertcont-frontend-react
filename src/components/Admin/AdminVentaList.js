@@ -124,6 +124,8 @@ export default function AdminVentaList() {
       //En cada cambio, actualizar ultimo periodo seleccionado 
       sessionStorage.setItem('periodo_trabajo', e.target.value);
       //console.log('handleChange periodo_trabajo', e.target.value);
+
+      setDiaSel("*"); //todo cambio de mes, evita dias incorrectos en meses 30,31,28,29
     }
     if (e.target.name==="contabilidad"){
       console.log('cambiando en contabilidad');
@@ -134,6 +136,7 @@ export default function AdminVentaList() {
       //filtramos su nombre para historial
       const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
+      
     }
     if (e.target.name==="fecha_clon"){
       setFechaClon(e.target.value);
