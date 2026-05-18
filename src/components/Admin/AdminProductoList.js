@@ -653,7 +653,7 @@ export default function AdminProductoList() {
                     backgroundColor: valorVista === 'precios' ? 'lightblue' : 'transparent',
                     color: valorVista === 'precios' ? 'orange' : 'gray',
                   }}
-    >Precios</ToggleButton>
+    >Rango de Precios</ToggleButton>
 
 
   </ToggleButtonGroup>      

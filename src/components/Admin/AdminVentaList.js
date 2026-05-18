@@ -885,7 +885,11 @@ export default function AdminVentaList() {
     try {
       //console.log('dia sel para clonado: ... ', diaSel);
       const [COD, SERIE, NUMERO] = sComprobante.split('-');
-      
+
+       // Generar nuevo periodo desde fecha_clon
+      const periodo_nuevo = fecha_clon.substring(0, 7);
+      console.log('periodo_nuevo: ', periodo_nuevo);
+
       //dia
       const response = await axios.post(`${back_host}/ad_ventaclon`, {
         id_anfitrion: params.id_anfitrion,
@@ -903,7 +907,7 @@ export default function AdminVentaList() {
         const sComprobanteAbierto = 'NP-0001-' + response.data.r_numero+'-1';//aumentamos elemento
         const sComprobanteAbiertoRef = sComprobante; //modo clonar con ref
         //enviamos la edicion del registro abierto
-        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
+        navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_nuevo}/${contabilidad_trabajo}/${sComprobanteAbierto}/${sComprobanteAbiertoRef}`);
       } else {
         //setError(response.data.message);
         console.log(response.data.message);
