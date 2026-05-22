@@ -1,7 +1,7 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { Card,CardContent,Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography} from "@mui/material";
-import { useNavigate,useParams } from "react-router-dom";
+import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import FindIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
@@ -57,6 +57,8 @@ export default function AdminVentaList() {
 
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
+
+  const location = useLocation();
 
   createTheme('solarized', {
     text: {
@@ -137,6 +139,10 @@ export default function AdminVentaList() {
       const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
       
+      //debemos cambiar navigate, pra actualizar el dom
+      fetchTotalVentas();
+      setUpdateTrigger(Math.random());//experimento para actualizar el dom
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo}/${e.target.value}`);
     }
     if (e.target.name==="fecha_clon"){
       setFechaClon(e.target.value);
@@ -528,6 +534,11 @@ export default function AdminVentaList() {
       }
 
   },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
+
+  /*useEffect(() => {
+    console.log('useEffect location.pathname: ',location.pathname);
+    fetchTotalVentas();
+  }, [location.pathname]);*/
 
   useEffect( ()=> {
     
@@ -970,7 +981,7 @@ const [totalVentas, setTotalVentas] = useState(0);
 const [isSuper, setIsSuper] = useState(false);
 const fetchTotalVentas = async () => {
     try {
-      const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${diaSel}`);
+      const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${diaSel}`);
       console.log('Tottales ventas: ', res.data);
       setTotalVentas(res.data.total);
       setIsSuper(res.data.super);
