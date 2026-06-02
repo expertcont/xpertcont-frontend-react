@@ -1,15 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-import {
-  Grid,
-  TextField,
-  Button,
-  Typography,
-  Checkbox,
-  useMediaQuery,
-  InputAdornment,
-  Paper
-} from '@mui/material';
+import {Grid,TextField,Button,Typography,Checkbox,useMediaQuery,InputAdornment,Paper} from '@mui/material';
 
 import Datatable from 'react-data-table-component';
 
@@ -32,10 +23,9 @@ import swal from 'sweetalert';
 | Mostrar pedidos pendientes y permitir seleccionar múltiples pedidos
 | SOLO del mismo cliente (documento_id).
 |
-| Luego:
-| - Obtener productos agrupados
-| - Obtener referencias de pedidos
-| - Retornar resultado al formulario padre
+| Retorna estructura compatible con:
+|
+| fve_ventaref_inserta_grupoproducto(JSONB)
 |
 |--------------------------------------------------------------------------
 |
@@ -48,58 +38,21 @@ import swal from 'sweetalert';
 |--------------------------------------------------------------------------
 */
 
-const AdminVentaFormFactPedido = ({
-  id_anfitrion,
-  periodo_trabajo,
-  onClose
-}) => {
-
-  /*
-  |--------------------------------------------------------------------------
-  | RESPONSIVE
-  |--------------------------------------------------------------------------
-  */
+const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, r_cod, r_serie, r_numero, r_fecemi, onClose}) => {
 
   const isSmallScreen = useMediaQuery('(max-width:600px)');
+  const back_host = process.env.BACK_HOST || 'https://xpertcont-backend-js-production-50e6.up.railway.app';
 
-  /*
-  |--------------------------------------------------------------------------
-  | BACKEND
-  |--------------------------------------------------------------------------
-  */
-
-  const back_host =
-    process.env.BACK_HOST ||
-    'https://xpertcont-backend-js-production-50e6.up.railway.app';
-
-  /*
-  |--------------------------------------------------------------------------
-  | ESTADOS PRINCIPALES
-  |--------------------------------------------------------------------------
-  */
-
-  //Listado original API
   const [datos, setDatos] = useState([]);
-
-  //Listado filtrado buscador
   const [filteredData, setFilteredData] = useState([]);
-
-  //Filas seleccionadas
   const [selectedRows, setSelectedRows] = useState([]);
-
-  //Texto buscador
   const [searchText, setSearchText] = useState('');
 
   /*
   |--------------------------------------------------------------------------
   | CLIENTE SELECCIONADO
   |--------------------------------------------------------------------------
-  |
-  | Restricción:
-  | Solo se pueden seleccionar pedidos del mismo cliente
-  |
   */
-
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
 
   /*
@@ -107,48 +60,33 @@ const AdminVentaFormFactPedido = ({
   | CARGA INICIAL
   |--------------------------------------------------------------------------
   */
-
   useEffect(() => {
     cargarPedidosPendientes();
+
   }, []);
 
   /*
   |--------------------------------------------------------------------------
-  | CARGAR PEDIDOS DESDE API
+  | CARGAR PEDIDOS
   |--------------------------------------------------------------------------
   */
-
   const cargarPedidosPendientes = async () => {
-
     try {
 
-      const response = await axios.get(
-        `${back_host}/ad_ventaspendientes/${periodo_trabajo}/${id_anfitrion}`
-      );
-
+      const response = await axios.get(`${back_host}/ad_ventaspendientes/${periodo_trabajo}/${id_anfitrion}`);
+      console.log(`${back_host}/ad_ventaspendientes/${periodo_trabajo}/${id_anfitrion}`);
       /*
       |--------------------------------------------------------------------------
-      | ESTRUCTURA API
+      | RESPUESTA API
       |--------------------------------------------------------------------------
-      |
-      | {
-      |   success:true,
-      |   data:[...]
-      | }
-      |
       */
-
       const apiData = response.data.data || [];
 
       /*
       |--------------------------------------------------------------------------
-      | AGREGAMOS ID INTERNO
+      | ID INTERNO TABLA
       |--------------------------------------------------------------------------
-      |
-      | react-data-table-component trabaja mejor con un id unico
-      |
       */
-
       const dataConId = apiData.map((item, index) => ({
         ...item,
         id: index + 1
@@ -158,9 +96,7 @@ const AdminVentaFormFactPedido = ({
       setFilteredData(dataConId);
 
     } catch (error) {
-
       console.log(error);
-
       swal({
         text: 'Error cargando pedidos pendientes',
         icon: 'error'
@@ -173,7 +109,6 @@ const AdminVentaFormFactPedido = ({
   | BUSCADOR
   |--------------------------------------------------------------------------
   */
-
   const handleFilterSearch = (value) => {
 
     setSearchText(value);
@@ -184,9 +119,23 @@ const AdminVentaFormFactPedido = ({
         `${item.r_cod}-${item.r_serie}-${item.r_numero}`;
 
       return (
-        item.razon_social?.toLowerCase().includes(value.toLowerCase()) ||
-        item.documento_id?.toLowerCase().includes(value.toLowerCase()) ||
-        comprobante.toLowerCase().includes(value.toLowerCase())
+
+        item.razon_social
+          ?.toLowerCase()
+          .includes(value.toLowerCase())
+
+        ||
+
+        item.documento_id
+          ?.toLowerCase()
+          .includes(value.toLowerCase())
+
+        ||
+
+        comprobante
+          .toLowerCase()
+          .includes(value.toLowerCase())
+
       );
     });
 
@@ -198,68 +147,60 @@ const AdminVentaFormFactPedido = ({
   | VALIDACION SELECCION
   |--------------------------------------------------------------------------
   |
-  | REGLA:
-  | Solo seleccionar pedidos del mismo cliente
+  | SOLO CLIENTES DEL MISMO DOCUMENTO
   |
+  |--------------------------------------------------------------------------
   */
-
-  const handleSelectedRowsChange = ({ selectedRows }) => {
-
+  const handleSelectedRowsChange = ({selectedRows}) => {
     /*
     |--------------------------------------------------------------------------
-    | SI NO HAY SELECCION
+    | LIMPIAR
     |--------------------------------------------------------------------------
     */
-
     if (selectedRows.length === 0) {
-
       setSelectedRows([]);
       setClienteSeleccionado(null);
-
       return;
     }
 
     /*
     |--------------------------------------------------------------------------
-    | OBTENER CLIENTE BASE
+    | CLIENTE BASE
     |--------------------------------------------------------------------------
     */
-
     const clienteActual = selectedRows[0].documento_id;
 
     /*
     |--------------------------------------------------------------------------
-    | VALIDAR QUE TODOS PERTENEZCAN AL MISMO CLIENTE
+    | VALIDAR MISMO CLIENTE
     |--------------------------------------------------------------------------
     */
-
-    const clienteValido = selectedRows.every(
-      row => row.documento_id === clienteActual
-    );
+    const clienteValido =
+      selectedRows.every(
+        row =>
+          row.documento_id === clienteActual
+      );
 
     /*
     |--------------------------------------------------------------------------
-    | SI NO SON DEL MISMO CLIENTE
+    | INVALIDO
     |--------------------------------------------------------------------------
     */
 
     if (!clienteValido) {
 
       swal({
-        text: 'Solo puede seleccionar pedidos del mismo cliente',
+        text:
+          'Solo puede seleccionar pedidos del mismo cliente',
         icon: 'warning',
         timer: 2000
       });
 
-      /*
-      |--------------------------------------------------------------------------
-      | QUEDARNOS SOLO CON LOS VALIDOS
-      |--------------------------------------------------------------------------
-      */
-
-      const filasValidas = selectedRows.filter(
-        row => row.documento_id === clienteSeleccionado
-      );
+      const filasValidas =
+        selectedRows.filter(
+          row =>
+            row.documento_id === clienteSeleccionado
+        );
 
       setSelectedRows(filasValidas);
 
@@ -271,9 +212,7 @@ const AdminVentaFormFactPedido = ({
     | TODO OK
     |--------------------------------------------------------------------------
     */
-
     setClienteSeleccionado(clienteActual);
-
     setSelectedRows(selectedRows);
   };
 
@@ -282,21 +221,18 @@ const AdminVentaFormFactPedido = ({
   | PROCESAR FACTURACION
   |--------------------------------------------------------------------------
   |
-  | Obtiene:
+  | Retorna estructura JSON compatible con:
   |
-  | - productosAgrupados
-  | - refPedidos
+  | fve_ventaref_inserta_grupoproducto(JSONB)
   |
+  |--------------------------------------------------------------------------
   */
-
   const procesarFacturacion = async () => {
-
     /*
     |--------------------------------------------------------------------------
     | VALIDACION
     |--------------------------------------------------------------------------
     */
-
     if (selectedRows.length === 0) {
 
       swal({
@@ -311,65 +247,36 @@ const AdminVentaFormFactPedido = ({
 
       /*
       |--------------------------------------------------------------------------
-      | SOLO REFERENCIAS
+      | PAYLOAD FINAL
       |--------------------------------------------------------------------------
       */
+      const payload = {
+        // CABECERA
+        periodo: periodo_trabajo,
+        id_usuario: id_anfitrion,
+        documento_id: documento_id,
+        //estos r_cod,r_serie,r_numero (NP en proceso, no es factura todavia)
+        r_cod: r_cod,
+        r_serie: r_serie,
+        r_numero: r_numero,
+        r_fecemi: r_fecemi,
 
-      const pedidos = selectedRows.map(item => ({
-        r_cod: item.r_cod,
-        r_serie: item.r_serie,
-        r_numero: item.r_numero
-      }));
-
-      /*
-      |--------------------------------------------------------------------------
-      | CONSUMIR API BACKEND
-      |--------------------------------------------------------------------------
-      */
-
-      const response = await axios.post(
-        `${back_host}/agruparpedidos`,
-        {
-          pedidos,
-          periodo: periodo_trabajo,
-          id_anfitrion
-        }
-      );
-
-      /*
-      |--------------------------------------------------------------------------
-      | RESPUESTA ESPERADA
-      |--------------------------------------------------------------------------
-      |
-      | {
-      |   success:true,
-      |   productosAgrupados:[...],
-      |   refPedidos:[...]
-      | }
-      |
-      */
-
-      const resultado = {
-
-        cliente: {
-          documento_id: selectedRows[0].documento_id,
-          razon_social: selectedRows[0].razon_social
-        },
-
-        productosAgrupados:
-          response.data.productosAgrupados || [],
-
-        refPedidos:
-          response.data.refPedidos || []
+        // REFERENCIAS
+        referencias:
+          selectedRows.map(item => ({
+            nv_cod: item.r_cod,
+            nv_serie: item.r_serie,
+            nv_num: item.r_numero
+          }))
       };
 
       /*
       |--------------------------------------------------------------------------
-      | RETORNAR AL FORMULARIO PADRE
+      | RETORNAR AL FORM PADRE
       |--------------------------------------------------------------------------
       */
 
-      onClose(resultado);
+      onClose(payload);
 
     } catch (error) {
 
@@ -387,7 +294,6 @@ const AdminVentaFormFactPedido = ({
   | BOTON CONTEXTUAL TABLA
   |--------------------------------------------------------------------------
   */
-
   const contextActions = useMemo(() => {
 
     return (
@@ -412,42 +318,35 @@ const AdminVentaFormFactPedido = ({
   */
 
   const columnas = useMemo(() => [
-
     {
       name: 'Comprobante',
-      selector: row =>
-        `${row.r_cod}-${row.r_serie}-${row.r_numero}`,
+      selector: row => `${row.r_cod}-${row.r_serie}-${row.r_numero}`,
       sortable: true,
       width: '180px'
     },
-
     {
       name: 'Fecha',
       selector: row => row.r_fecemi,
       sortable: true,
       width: '120px'
     },
-
     {
       name: 'Documento',
       selector: row => row.documento_id,
       sortable: true,
       width: '140px'
     },
-
     {
       name: 'Cliente',
       selector: row => row.razon_social,
       sortable: true,
       width: '300px'
     },
-
     {
       name: 'Moneda',
       selector: row => row.r_moneda,
       width: '100px'
     },
-
     {
       name: 'Monto Total',
       selector: row => row.r_monto_total,
@@ -455,7 +354,6 @@ const AdminVentaFormFactPedido = ({
       right: true,
       width: '140px'
     }
-
   ], []);
 
   /*
@@ -533,9 +431,9 @@ const AdminVentaFormFactPedido = ({
 
     <div>
 
-      {/* ============================================================= */}
+      {/* ========================================================== */}
       {/* CABECERA */}
-      {/* ============================================================= */}
+      {/* ========================================================== */}
 
       <Grid
         container
@@ -543,9 +441,9 @@ const AdminVentaFormFactPedido = ({
         alignItems="center"
       >
 
-        {/* ========================================================= */}
+        {/* ====================================================== */}
         {/* BUSCADOR */}
-        {/* ========================================================= */}
+        {/* ====================================================== */}
 
         <Grid item xs={12} md={8}>
 
@@ -571,9 +469,9 @@ const AdminVentaFormFactPedido = ({
 
         </Grid>
 
-        {/* ========================================================= */}
+        {/* ====================================================== */}
         {/* BOTON CERRAR */}
-        {/* ========================================================= */}
+        {/* ====================================================== */}
 
         <Grid item xs={12} md={2}>
 
@@ -590,9 +488,9 @@ const AdminVentaFormFactPedido = ({
 
       </Grid>
 
-      {/* ============================================================= */}
+      {/* ========================================================== */}
       {/* CLIENTE SELECCIONADO */}
-      {/* ============================================================= */}
+      {/* ========================================================== */}
 
       {
         clienteSeleccionado && (
@@ -620,10 +518,13 @@ const AdminVentaFormFactPedido = ({
               {
                 selectedRows[0]?.documento_id
               }
+
               {' - '}
+
               {
                 selectedRows[0]?.razon_social
               }
+
             </Typography>
 
           </Paper>
@@ -631,51 +532,36 @@ const AdminVentaFormFactPedido = ({
         )
       }
 
-      {/* ============================================================= */}
+      {/* ========================================================== */}
       {/* TABLA */}
-      {/* ============================================================= */}
+      {/* ========================================================== */}
 
       <div style={{ marginTop: '15px' }}>
 
         <Datatable
-
           title={`Pedidos Pendientes - ${periodo_trabajo}`}
-
           theme="solarized"
-
           columns={columnas}
-
           data={filteredData}
-
           pagination
-
           paginationPerPage={10}
-
           selectableRows
-
           selectableRowsComponent={Checkbox}
-
           onSelectedRowsChange={handleSelectedRowsChange}
-
           contextActions={contextActions}
-
           sortIcon={<ArrowDownward />}
-
           customStyles={tablaStyles}
-
           highlightOnHover
-
           pointerOnHover
-
           dense
-
+          responsive
         />
 
       </div>
 
-      {/* ============================================================= */}
+      {/* ========================================================== */}
       {/* RESUMEN */}
-      {/* ============================================================= */}
+      {/* ========================================================== */}
 
       <div
         style={{
@@ -687,7 +573,9 @@ const AdminVentaFormFactPedido = ({
         <Typography variant="body2">
 
           Pedidos seleccionados:
+
           {' '}
+
           <strong>
             {selectedRows.length}
           </strong>

@@ -36,6 +36,9 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useDialog } from "./AdminConfirmDialogProvider";
 import AdminSunatIcon from './AdminSunatIcon';
 import AdminSunatIconPdf from './AdminSunatIconPdf';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+
+import AdminVentaFormFactPedido from './AdminVentaFormFactPedido';
 
 export default function AdminVentaForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -69,6 +72,8 @@ export default function AdminVentaForm() {
   const [showModal, setShowModal] = useState(false);
   //const [showModalProducto, setShowModalProducto] = useState(false);
   const [showModalProductoLista, setShowModalProductoLista] = useState(false);
+  const [showModalFactPedidos, setShowModalFactPedidos] = useState(false);
+  const [referenciasSeleccionadas, setReferenciasSeleccionadas] = useState([]); //New recibir resultados si op. grabar es exitosa
 
   const [showModalEmite, setShowModalEmite] = useState(false);
 
@@ -97,9 +102,63 @@ export default function AdminVentaForm() {
   const [pVenta010207, setPVenta010207] = useState(false); //Notear
 
   const [registrosdet,setRegistrosdet] = useState([]);
+  const [registrosref,setRegistrosref] = useState([]);
   //const fecha_actual = new Date();
   const formasPago = ['YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'];
   const [motivo_select, setMotivoSelect] = useState([]);
+
+  const abrirModalPedidos = () => {
+    setShowModalFactPedidos(true);
+  };
+  const cerrarModalPedidos = () => {
+    setShowModalFactPedidos(false);
+  };
+  const handleCloseFactPedidos = async (payload) => {
+    if (!payload) {
+      cerrarModalPedidos();
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${back_host}/ad_ventainsrefgrupo`,payload);
+
+      if (response.data?.success === true) {
+        //GUARDAR SOLO REFERENCIAS
+        setReferenciasSeleccionadas(
+          payload.referencias || []
+        );
+
+        cerrarModalPedidos();
+
+        /*swal({
+          text:
+            'Pedidos agrupados correctamente',
+          icon: 'success',
+          timer: 2000
+        });*/
+        setUpdateTrigger(Math.random());//actualizad vista detalle
+        alert('Pedidos agrupados correctamente');
+      } else {
+          /*swal({
+            text:
+              response.data?.message ||
+              'Error procesando pedidos',
+            icon: 'error'
+          });*/
+          alert('Error procesando pedidos');
+      }
+
+    } catch (error) {
+      console.log(error);
+      /*swal({
+        text:
+          'Error conectando con servidor',
+        icon: 'error'
+      });*/
+      alert('Error conectando con servidor');
+    }
+  };
+
 
   const actualizaValorEmite = (e) => {
     setValorEmite(e.target.value);
@@ -308,7 +367,7 @@ export default function AdminVentaForm() {
 
       mostrarVenta(COD, SERIE, NUMERO, ELEM); //falta escpecificar elemento
       mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
-      
+      mostrarVentaRef(COD, SERIE, NUMERO);
       
     }else{
       //click nuevo, genera = verificar si existe caso contrario inserta y siempre devuelve datos
@@ -384,6 +443,7 @@ export default function AdminVentaForm() {
 
       mostrarVenta(COD, SERIE, NUMERO, ELEM); 
       mostrarVentaDetalle(COD, SERIE, NUMERO, ELEM);
+      mostrarVentaRef(COD, SERIE, NUMERO);
       //console.log('cabecera actualizado: ', venta);
       //console.log('detalle actualizado: ', registrosdet);
       
@@ -631,6 +691,14 @@ export default function AdminVentaForm() {
     const res = await fetch(`${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}/${elem}`);
     const dataDet = await res.json();
     setRegistrosdet(dataDet);
+  };
+
+  const mostrarVentaRef = async (cod,serie,num) => {
+    console.log(`${back_host}/ad_ventadetref/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}`);
+    const res = await fetch(`${back_host}/ad_ventadetref/${params.id_anfitrion}/${params.documento_id}/${cod}/${serie}/${num}`);
+    const dataDet = await res.json();
+    setRegistrosref(dataDet);
+    //console.log(dataDet);
   };
 
   //Seccion Elimina Item
@@ -1036,6 +1104,85 @@ export default function AdminVentaForm() {
     
   }
 
+  
+  //Usamos funcion eliminar para liberar proceso
+  const handleLiberarProceso = (comprobante,elemento) => {
+    //Recuerda que el comprobante enviado es el comprobante_key --> contiene el key del registro ;)
+    confirmaLiberacion(params.id_anfitrion,params.documento_id,params.periodo,comprobante,elemento);
+  };
+  const confirmaLiberacion = async(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento)=>{
+    const result = await confirmDialog({
+        title: "Eliminar Comprobante?",
+        message: `${sComprobante}`,
+        icon: "warning", // success | error | info | warning
+        confirmText: "ELIMINAR",
+        cancelText: "CANCELAR",
+    });
+    if (result.isConfirmed) {
+          console.log("✅ Liberado:", sComprobante);
+          eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento);
+          //navegar a la pagina anterior
+          navigate(-1, { replace: true });
+
+          //setToggleCleared(!toggleCleared);
+          //setRegistrosdet(registrosdet.filter(registrosdet => registrosdet.comprobante !== sComprobante));
+          //setTimeout(() => { setUpdateTrigger(Math.random());}, 200);
+    } else {
+      console.log("❌ Cancelado");
+      return; // Salimos si el usuario cancela
+    }
+  };
+  const eliminarRegistroSeleccionado = async (sAnfitrion, sDocumentoId, sPeriodo, sComprobante, sElemento) => {
+    const [COD, SERIE, NUMERO] = sComprobante.split('-');
+    const datosEnvio = {
+      periodo: sPeriodo,
+      id_anfitrion: sAnfitrion,
+      documento_id: sDocumentoId,
+      r_cod: COD,
+      r_serie: SERIE,
+      r_numero: NUMERO,
+      elemento: sElemento
+    }
+    //console.log('datosEnvio',datosEnvio);
+
+    try {
+        const response = await axios.delete(`${back_host}/ad_ventadel`, {
+            data: datosEnvio
+        });
+
+        // Verifica la respuesta del backend
+        if (response.data.success) {
+          /*swal({
+            text:"Venta se ha eliminado con exito",
+            icon:"success",
+            timer:"2000"
+          });*/
+          confirmDialog({
+                  title: "Proceso se ha eliminado con exito",
+                  //message: `${sComprobante}`,
+                  icon: "success", // success | error | info | warning
+                  confirmText: "ACEPTAR"
+                  //cancelText: "CERRAR",
+          });
+        } else {
+          confirmDialog({
+            title: "No se puede Eliminar Proceso, solo la ultima",
+            icon: "error",
+            confirmText: "ACEPTAR"
+          });
+          //console.log("No se pudo eliminar la venta, no es la ultima: " + response.data.message);
+        }
+    } catch (error) {
+        //console.error("Error eliminando venta:", error);
+          confirmDialog({
+            title: "No se puede Eliminar Venta",
+            icon: "error",
+            confirmText: "ACEPTAR"
+          });
+        
+    }
+  };
+
 
   /////////////////////////////////////////////////seccion datatable/////////////
   const [selectedRows, setSelectedRows] = useState([]);
@@ -1109,6 +1256,38 @@ export default function AdminVentaForm() {
       width: '100px'
       //key:true
     },
+  ];
+  const columnasref = [
+    { name:'', 
+      selector:row => '',
+      sortable: true,
+      width: '40px'
+      //key:true
+    },
+    { name:'', 
+      selector:row => '',
+      sortable: true,
+      width: '40px'
+      //key:true
+    },
+    { name:'REFERENCIA', 
+      selector:row => row.nv_cod + '-' + row.nv_serie + '-' + row.nv_num,
+      sortable: true,
+      width: '200px'
+      //key:true
+    },
+    /*{ name:'SERIE', 
+      selector:row => row.nv_serie,
+      sortable: true,
+      width: '100px'
+      //key:true
+    },
+    { name:'NUMERO', 
+      selector:row => row.nv_num,
+      sortable: true,
+      width: '120px'
+      //key:true
+    },*/
   ];
 
   const handleRowSelected = useCallback(state => {
@@ -1190,6 +1369,7 @@ export default function AdminVentaForm() {
     { pVenta010202 && !visualizando ?
     (
     <IconButton color="primary" 
+      sx={{ width: 40, height: 40 }}
       onClick = {()=> {
                   //Agregar Producto
                   //setShowModalProducto(true);   
@@ -1201,7 +1381,23 @@ export default function AdminVentaForm() {
                 }
               }
     >
-      <AddIcon />
+      <AddIcon sx={{ fontSize: 50 }} />
+    </IconButton>
+    ):
+    (<div></div>)
+    }
+
+    { pVenta010202 && !visualizando ?
+    (
+    <IconButton color="primary" 
+      sx={{ width: 40, height: 40 }}
+      onClick = {()=> {
+                  //Agregar Pedidos en forma de popup form AdminventaFormFactPedido
+                  abrirModalPedidos();
+                }
+              }
+    >
+      <AssignmentTurnedInIcon sx={{ fontSize: 40 }}/>
     </IconButton>
     ):
     (<div></div>)
@@ -1284,6 +1480,34 @@ export default function AdminVentaForm() {
   return (
   <div> 
       <div></div>
+            {/* ========================================================== */}
+            {/* MODAL PEDIDOS */}
+            {/* ========================================================== */}
+            <Dialog
+              open={showModalFactPedidos}
+              onClose={cerrarModalPedidos}
+              maxWidth="xl"
+              fullWidth
+            >
+              <DialogContent
+                sx={{
+                  background: '#1e272e',
+                  padding: 2
+                }}
+              >
+                <AdminVentaFormFactPedido
+                  id_anfitrion={params.id_anfitrion}
+                  documento_id={params.documento_id}
+                  r_cod={venta.r_cod}
+                  r_serie={venta.r_serie}
+                  r_numero={venta.r_numero}
+                  r_fecemi={venta.r_fecemi}
+                  periodo_trabajo={params.periodo}
+                  onClose={handleCloseFactPedidos}
+                />
+              </DialogContent>
+            </Dialog>
+
             <Card sx={{mt:1}}
                   style={{
                     background:'#1e272e',
@@ -1435,7 +1659,7 @@ export default function AdminVentaForm() {
                                   }
                               </Grid>
 
-                              <Grid item xs={isSmallScreen ? 12 : 1.2}>
+                              <Grid item xs={isSmallScreen ? 11 : 1}>
                               {//En caso de NP en Proceso, solo se emite comprobante
                                params.comprobante.includes('NP') ?
                                (
@@ -1495,6 +1719,36 @@ export default function AdminVentaForm() {
                                )
                               }
 
+                              </Grid>
+
+                              <Grid item xs={isSmallScreen ? 1 : 0.2} 
+                                sx={{ ml: -1.5}}
+                              >
+                              {
+                                params.comprobante.includes('NP') ? (
+                                  <Tooltip title="Liberar Proceso">
+                                    <span>
+                                      <IconButton
+                                        color="primary"
+                                        onClick={() => {
+
+                                          handleLiberarProceso(params.comprobante, 1);
+                                        }}
+                                        disabled={!venta.r_fecemi}
+                                        size="large"
+                                      >
+                                        {cargando ? (
+                                          <CircularProgress size={20} />
+                                        ) : (
+                                          <DeleteIcon sx={{ fontSize: 45 }} />
+                                        )}
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                ) : (
+                                  <></>
+                                )
+                              }
                               </Grid>
 
                               {!params.comprobante.includes('NP') && (
@@ -2295,6 +2549,30 @@ export default function AdminVentaForm() {
               >
               </Datatable>
             </Card>
+
+            <Card sx={{mt:1}}
+                  style={{
+                    background:'#1e272e',
+                    //maxWidth: '700px', // Ajusta este valor según tu preferencia
+                    padding:'1rem',
+                  }}
+            >
+              <Datatable
+                //title={actions}
+                theme="solarized"
+                columns={columnasref}
+                data={registrosref}
+                //contextActions={contextActions}
+                //actions={actions}
+                onSelectedRowsChange={handleRowSelected}
+                selectableRowsComponent={Checkbox} // Pass the function only
+                sortIcon={<ArrowDownward />}
+                dense={true}
+                highlightOnHover //resalta la fila
+              >
+              </Datatable>
+            </Card>
+
 
   </div>    
   );
