@@ -272,6 +272,9 @@ export default function AdminVentaForm() {
     forma_pago2:'YAPE', //default
     efectivo2:'0',      //default
     r_direccion:'-',
+    r_moneda:'PEN',         //new default
+    r_forma_pago_id:'Contado', //new default
+    dias_credito:0,         //new default
     r_idmotivo_ref:'' //new
   });
 
@@ -554,6 +557,20 @@ export default function AdminVentaForm() {
   }
 
   //Rico evento change
+  const handleFormaPago = (formaPago) => {
+    setDatosEmitir(prev => ({
+      ...prev,
+      r_forma_pago_id: formaPago,
+      dias_credito: formaPago === 'Credito' ? 15 : 0
+    }));
+  };
+  const handleDiasCredito = (value) => {
+    setDatosEmitir(prev => ({
+      ...prev,
+      dias_credito: value
+    }));
+  };
+
   const handleChangeEmite = (name, value) => {
     //calcular monto efectivo2 si efectivo < venta.r_monto_total
     if (name === 'efectivo' && (parseFloat(value) < parseFloat(venta.r_monto_total) || parseFloat(value) === parseFloat(venta.r_monto_total) )) {
@@ -961,6 +978,9 @@ export default function AdminVentaForm() {
         efectivo2: datosEmitir.efectivo2,
         forma_pago2: datosEmitir.forma_pago2,
         vuelto: datosEmitir.vuelto,
+        r_moneda:datosEmitir.r_moneda,                //new
+        r_forma_pago_id:datosEmitir.r_forma_pago_id,  //new
+        dias_credito:datosEmitir.dias_credito,        //new
 
         r_cod_ref: venta.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         r_serie_ref: venta.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
@@ -1562,7 +1582,7 @@ export default function AdminVentaForm() {
                                 />
                               </Grid>
 
-                              <Grid item xs={isSmallScreen ? 12 : 4}>
+                              <Grid item xs={isSmallScreen ? 12 : 2.5}>
                                 <Typography variant='h5' color='white' textAlign='center'>
                                   {
                                     (`Total: S/ ${parseFloat(venta.r_monto_total).toLocaleString('en-US', {
@@ -1571,6 +1591,33 @@ export default function AdminVentaForm() {
                                     })}`) 
                                   }
                                 </Typography>
+                              </Grid>
+
+                              <Grid item xs={isSmallScreen ? 8 : 1}>
+                                    <Select
+                                          size='small'
+                                          value={datosEmitir.forma_pago}
+                                          name="forma_pago"
+                                          sx={{display:'block',
+                                          margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
+                                          onChange={(e) => handleChangeEmite("forma_pago", e.target.value)}
+                                          >
+                                            <MenuItem value="Contado">CONTADO</MenuItem>
+                                            <MenuItem value="Credito">CREDITO</MenuItem>
+                                    </Select>
+                              </Grid>
+                              <Grid item xs={isSmallScreen ? 4 : 0.5}>
+                                    <Select
+                                          size='small'
+                                          value={datosEmitir.r_moneda}
+                                          name="r_moneda"
+                                          sx={{display:'block',
+                                          margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
+                                          onChange={(e) => handleChangeEmite("r_moneda", e.target.value)}
+                                          >
+                                            <MenuItem value="PEN">PEN</MenuItem>
+                                            <MenuItem value="USD">USD</MenuItem>
+                                    </Select>
                               </Grid>
 
                               
@@ -2388,6 +2435,73 @@ export default function AdminVentaForm() {
                                                     }
                                             </Select>)}
 
+                                            <Select
+                                                    labelId="moneda_select"
+                                                    value={datosEmitir.r_moneda}  // 
+                                                    size='small'
+                                                    name="r_moneda"
+                                                    //fullWidth
+                                                    sx={{display:'block',
+                                                         //margin:'.4rem 0', 
+                                                         mt:0,
+                                                         width: '270px',  // Establece el ancho fijo aquí
+                                                         textAlign: 'center',  // Centrar el texto seleccionado
+                                                         '.MuiSelect-select': { 
+                                                           textAlign: 'center',  // Centrar el valor dentro del Select
+                                                         },                                                         
+                                                         color:"white"}}
+                                                    label="doc"
+                                                    onChange={(e) => handleChangeEmite('r_moneda', e.target.value)}
+                                                >
+                                                        <MenuItem key='PEN' value='PEN' sx={{ justifyContent: 'center' }}>
+                                                        SOLES
+                                                        </MenuItem>
+                                                        <MenuItem key='USD' value='USD' sx={{ justifyContent: 'center' }}>
+                                                        DOLARES
+                                                        </MenuItem>
+                                            </Select>
+                                          
+                                            {/* Campo Forma Pago Credito/Contado y Dias Credito */}
+                                            <Box sx={{ display: 'flex', width: 270 }}>
+                                              {/* Forma de pago */}
+                                              <Select
+                                                value={datosEmitir.r_forma_pago_id || 'Contado'}
+                                                onChange={(e) => handleFormaPago(e.target.value)}
+                                                size="small"
+                                                sx={{
+                                                  width: 130,
+                                                  mr: 0,
+                                                  color: 'white'
+                                                }}
+                                              >
+                                                <MenuItem value="Contado">Contado</MenuItem>
+                                                <MenuItem value="Credito">Credito</MenuItem>
+                                              </Select>
+
+                                              {/* Días crédito */}
+                                              <TextField
+                                                size="small"
+                                                type="number"
+                                                value={datosEmitir.dias_credito || 0}
+                                                onChange={(e) => handleDiasCredito(e.target.value)}
+                                                disabled={datosEmitir.r_forma_pago_id !== 'Credito'}
+                                                sx={{
+                                                  width: 140,
+                                                  '& input': {
+                                                    textAlign: 'center',
+                                                    color: 'white'
+                                                  }
+                                                }}
+                                                InputProps={{
+                                                  endAdornment: (
+                                                    <InputAdornment position="end">
+                                                      días
+                                                    </InputAdornment>
+                                                  )
+                                                }}
+                                              />
+
+                                          </Box>
 
                                           {/* Campo EFECTIVO */}
                                           <Box sx={{ display: "inline-block" }}>
