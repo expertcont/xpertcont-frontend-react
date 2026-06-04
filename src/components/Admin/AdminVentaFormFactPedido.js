@@ -120,13 +120,13 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
 
       return (
 
-        item.razon_social
+        item.r_razon_social
           ?.toLowerCase()
           .includes(value.toLowerCase())
 
         ||
 
-        item.documento_id
+        item.r_documento_id
           ?.toLowerCase()
           .includes(value.toLowerCase())
 
@@ -332,13 +332,13 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
     },
     {
       name: 'Documento',
-      selector: row => row.documento_id,
+      selector: row => row.r_documento_id,
       sortable: true,
       width: '140px'
     },
     {
       name: 'Cliente',
-      selector: row => row.razon_social,
+      selector: row => row.r_razon_social,
       sortable: true,
       width: '300px'
     },
