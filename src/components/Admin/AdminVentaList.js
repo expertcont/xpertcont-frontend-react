@@ -286,7 +286,7 @@ export default function AdminVentaList() {
           });
         } else {
           confirmDialog({
-            title: "No se puede Eliminar Venta, solo la ultima",
+            title: "Eliminacion Denegada, solo ultimo del Periodo",
             icon: "error",
             confirmText: "ACEPTAR"
           });

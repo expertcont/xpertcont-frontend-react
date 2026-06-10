@@ -426,7 +426,7 @@ export default function NavSideBar(props) {
                   label="Resumen"
                   isActive={selectedButton === 'icono02-3'}
                   onClick={() => {
-                    navigate(`/ad_ventarepres/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    navigate(`/ad_ventarepref/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono02-3');
                   }}
                 />

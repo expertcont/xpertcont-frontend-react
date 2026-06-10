@@ -43,6 +43,7 @@ import AdminVentaRepDet from "./components/Admin/AdminVentaRepDet";
 import AdminStockRepDet from "./components/Admin/AdminStockRepDet";
 import AdminStockRepInventario from "./components/Admin/AdminStockRepInventario";
 import AdminStockRepKardex from "./components/Admin/AdminStockRepKardex";
+import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -80,6 +81,8 @@ function App(props) {
           <Container maxWidth="xl" sx={{ paddingTop: isMobile ? 10 : 9, paddingLeft: 0, marginLeft:1 }}>
             <Routes>
               {/* tus rutas originales, sin cambios */}
+              <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
+
               <Route path="/ad_stockrepkardex/:id_anfitrion/:periodo/:documento_id/:dia/:id_producto/:id_almacen" element={<AdminStockRepKardex />} />
               <Route path="/ad_stockrepinventario/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminStockRepInventario />} />
               <Route path="/ad_stockrepdet/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminStockRepDet />} />

@@ -390,5 +390,61 @@ export const getColumnasDet = (tipo = 'ventas') => {
     },
   ];
   
-
+  export const AdminVentasRefColumnas = [
+    {
+      name: 'FACTURA',
+      selector: row => row.factura,
+      sortable: true,
+      width: '180px'
+    },
+    {
+      name: 'RUC/DNI',
+      selector: row => row.ruc,
+      sortable: true,
+      width: '130px'
+    },
+    {
+      name: 'RAZÓN SOCIAL',
+      selector: row => row.razon_social,
+      sortable: true,
+      grow: 2
+    },
+    {
+      name: 'FECHA CPE',
+      selector: row => row.fecha_comp,
+      sortable: true,
+      width: '120px'
+    },
+    {
+      name: 'FECHA NV',
+      selector: row => row.fecha_nv,
+      sortable: true,
+      width: '120px'
+    },
+    {
+      name: 'REFERENCIAS',
+      selector: row => row.referencias,
+      sortable: true,
+      width: '140px'
+    },
+    {
+      name: 'MONTO',
+      selector: row => Number(row.monto || 0).toFixed(2),
+      sortable: true,
+      right: true,
+      width: '120px'
+    },
+    {
+      name: 'NOMBRE',
+      selector: row => row.nombre,
+      sortable: true,
+      grow: 2
+    },
+    {
+      name: 'ID REF',
+      selector: row => row.dni,
+      sortable: true,
+      width: '130px'
+    }
+  ];
   

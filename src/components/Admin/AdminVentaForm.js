@@ -1388,37 +1388,41 @@ export default function AdminVentaForm() {
     
     { pVenta010202 && !visualizando ?
     (
-    <IconButton color="primary" 
-      sx={{ width: 40, height: 40 }}
-      onClick = {()=> {
-                  //Agregar Producto
-                  //setShowModalProducto(true);   
-                  setProducto(prevState => ({ ...prevState, cantidad: '', auxiliar: '' }));
-                  setProducto({ ...producto, cantidad: '', auxiliar: '' }); //limpia cantidad para nuevo ingreso
+    <Tooltip title="Agregar Productos" arrow>
+      <IconButton color="primary" 
+        sx={{ width: 40, height: 40 }}
+        onClick = {()=> {
+                    //Agregar Producto
+                    //setShowModalProducto(true);   
+                    setProducto(prevState => ({ ...prevState, cantidad: '', auxiliar: '' }));
+                    setProducto({ ...producto, cantidad: '', auxiliar: '' }); //limpia cantidad para nuevo ingreso
 
-                  console.log('producto estado actual: ', producto);
-                  setShowModalProductoLista(true);
+                    console.log('producto estado actual: ', producto);
+                    setShowModalProductoLista(true);
+                  }
                 }
-              }
-    >
-      <AddIcon sx={{ fontSize: 50 }} />
-    </IconButton>
+      >
+        <AddIcon sx={{ fontSize: 50 }} />
+      </IconButton>
+    </Tooltip>
     ):
     (<div></div>)
     }
 
     { pVenta010202 && !visualizando ?
     (
-    <IconButton color="primary" 
-      sx={{ width: 40, height: 40 }}
-      onClick = {()=> {
-                  //Agregar Pedidos en forma de popup form AdminventaFormFactPedido
-                  abrirModalPedidos();
+    <Tooltip title="Agregar Notas Venta" arrow>
+      <IconButton color="primary" 
+        sx={{ width: 40, height: 40 }}
+        onClick = {()=> {
+                    //Agregar Pedidos en forma de popup form AdminventaFormFactPedido
+                    abrirModalPedidos();
+                  }
                 }
-              }
-    >
-      <AssignmentTurnedInIcon sx={{ fontSize: 40 }}/>
-    </IconButton>
+      >
+        <AssignmentTurnedInIcon sx={{ fontSize: 40 }}/>
+      </IconButton>
+    </Tooltip>
     ):
     (<div></div>)
     }

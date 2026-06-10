@@ -12,6 +12,9 @@ import { createTheme } from '@mui/material/styles';
 
 import axios from 'axios';
 import swal from 'sweetalert';
+import RestoreIcon from '@mui/icons-material/Restore';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton'
 
 /*
 |--------------------------------------------------------------------------
@@ -199,7 +202,7 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
       const filasValidas =
         selectedRows.filter(
           row =>
-            row.documento_id === clienteSeleccionado
+            row.r_documento_id === clienteSeleccionado
         );
 
       setSelectedRows(filasValidas);
@@ -300,11 +303,10 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
 
       <Button
         variant="contained"
-        color="warning"
+        color="primary"
         onClick={procesarFacturacion}
-        startIcon={<FactCheckIcon />}
       >
-        FACTURAR
+        AGRUPAR
       </Button>
 
     );
@@ -421,6 +423,74 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
     }
   };
 
+  const generarPendientesPeriodoAnterior = async () => {
+    try {
+      //setCargando(true);
+      const response = await axios.post(
+        `${back_host}/ad_ventainsrefgrupo/generapendientes`,
+        {
+          id_usuario: id_anfitrion,
+          documento_id: documento_id,
+          periodo: periodo_trabajo
+        }
+      );
+  
+      if (response.data.success) {
+  
+        alert(
+          response.data.message,
+          { variant: 'success' }
+        );
+  
+        // refrescar grid
+        cargarPedidosPendientes();
+      }
+  
+    } catch (error) {
+      alert(
+        error?.response?.data?.message ||
+        'Error al generar pendientes',
+        { variant: 'error' }
+      );
+    } finally {
+      //setCargando(false);
+    }
+  };
+
+  const retrocederPendientesPeriodoAnterior = async () => {
+    try {
+      //setCargando(true);
+      const response = await axios.post(
+        `${back_host}/ad_ventainsrefgrupo/retrocedependientes`,
+        {
+          id_usuario: id_anfitrion,
+          documento_id: documento_id,
+          periodo: periodo_trabajo
+        }
+      );
+  
+      if (response.data.success) {
+  
+        alert(
+          response.data.message,
+          { variant: 'success' }
+        );
+  
+        // refrescar grid
+        cargarPedidosPendientes();
+      }
+  
+    } catch (error) {
+      alert(
+        error?.response?.data?.message ||
+        'Error al retroceder pendientes',
+        { variant: 'error' }
+      );
+    } finally {
+      //setCargando(false);
+    }
+  };
+
   /*
   |--------------------------------------------------------------------------
   | RENDER
@@ -440,13 +510,34 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
         spacing={1}
         alignItems="center"
       >
+        <Grid item xs={12} md={0.5}>
+          <Tooltip title="Recuperar pendientes - Período Anterior" arrow>
+            <IconButton
+              color="warning"
+              sx={{ width: 40, height: 40 }}
+              onClick={generarPendientesPeriodoAnterior}
+            >
+              <RestoreIcon sx={{ fontSize: 40 }} />
+            </IconButton>
+          </Tooltip>
+        </Grid>
+
+        <Grid item xs={12} md={0.5}>
+          <Tooltip title="Retroceder pendientes - Período Anterior" arrow>
+            <IconButton
+              color="error"
+              sx={{ width: 40, height: 40 }}
+              onClick={retrocederPendientesPeriodoAnterior}
+            >
+              <RestoreIcon sx={{ fontSize: 40 }} />
+            </IconButton>
+          </Tooltip>
+        </Grid>
 
         {/* ====================================================== */}
         {/* BUSCADOR */}
         {/* ====================================================== */}
-
-        <Grid item xs={12} md={8}>
-
+        <Grid item xs={12} md={10}>
           <TextField
             fullWidth
             size="small"
@@ -466,24 +557,20 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
               }
             }}
           />
-
         </Grid>
 
         {/* ====================================================== */}
         {/* BOTON CERRAR */}
         {/* ====================================================== */}
-
-        <Grid item xs={12} md={2}>
-
+        <Grid item xs={12} md={1}>
           <Button
             fullWidth
             variant="contained"
-            color="error"
+            color="inherit"
             onClick={() => onClose(null)}
           >
             CERRAR
           </Button>
-
         </Grid>
 
       </Grid>
