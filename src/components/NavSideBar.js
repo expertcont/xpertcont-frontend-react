@@ -408,10 +408,22 @@ export default function NavSideBar(props) {
                   label="Registros"
                   isActive={selectedButton === 'icono02-1'}
                   onClick={() => {
-                  navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  //navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/-`);
                   handleClick('icono02-1');
                   }}
                 />
+                
+                <SubMenuItem
+                  icon={<CropFreeIcon />}
+                  label="Presupuestos"
+                  isActive={selectedButton === 'icono02-4'}
+                  onClick={() => {
+                  navigate(`/ad_ventapresupuesto/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  handleClick('icono02-4');
+                  }}
+                />
+
                 <SubMenuItem
                   icon={<TableRowsIcon />}
                   label="Detalle"

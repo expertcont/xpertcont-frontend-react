@@ -153,6 +153,7 @@ const AdminSunatGreIcon = ({
         
         transp_ruc: formData.transp_ruc,
         transp_razon_social: formData.transp_razon_social,
+        transp_mtc: formData.transp_mtc, //New
         conductor_dni: formData.conductor_dni,
         conductor_nombres: formData.conductor_nombres,
         conductor_apellidos: formData.conductor_apellidos,
@@ -726,6 +727,18 @@ const AdminSunatGreIcon = ({
               inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
               InputLabelProps={{ style:{color:'white'} }}
             />
+            <TextField
+              size="small"
+              autoComplete="off"
+              label="Certificado MTC"
+              name="transp_mtc"
+              value={formData.transp_mtc || ''}
+              onChange={handleChange}
+              sx={{ mt:0, }}
+              inputProps={{ style:{color:'white',width: 290, textAlign: 'center'} }}
+              InputLabelProps={{ style:{color:'white'} }}
+            />
+
           </Box>
         )}
 
@@ -813,7 +826,7 @@ const AdminSunatGreIcon = ({
                       || !formData.peso_total
                       || !formData.guia_motivo_id
                       || !formData.guia_modalidad_id
-                      || (formData.guia_modalidad_id === "01" && ( !formData.transp_ruc || !formData.transp_razon_social ))
+                      || (formData.guia_modalidad_id === "01" && ( !formData.transp_ruc || !formData.transp_razon_social || !formData.transp_mtc ))
                       || (formData.guia_modalidad_id === "02" && ( !formData.conductor_dni || !formData.conductor_nombres || !formData.conductor_apellidos || !formData.conductor_licencia || !formData.vehiculo_placa ))
                       }
           >

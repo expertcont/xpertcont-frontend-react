@@ -105,7 +105,7 @@ export default function AdminVentaList() {
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
   const {user, isAuthenticated } = useAuth0();
   
-  const [columnas, setColumnas] = useState([]);
+  //const [columnas, setColumnas] = useState([]); //eliminado por new version
 
   const [periodo_trabajo, setPeriodoTrabajo] = useState("");
   const [periodo_select,setPeriodosSelect] = useState([]);
@@ -176,45 +176,6 @@ export default function AdminVentaList() {
 		setSelectedRows(state.selectedRows);
 	}, []);
 
-  
-  /*const procesaPDF = async (comprobante, nElem, tamaño) => {
-    try {
-        const [COD, SERIE, NUM] = comprobante.split('-');
-
-        // Realizar ambas llamadas de API en paralelo
-        const [resVenta, resVentaDet] = await Promise.all([
-            fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json()),
-            fetch(`${back_host}/ad_ventadet/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
-        ]);
-
-        // Configuración del ticket
-        const options = {
-            comprobante,
-            documento_id: params.documento_id,
-            id_invitado: params.id_invitado,
-            venta: resVenta,
-            ventadet: resVentaDet,
-            logo,
-            size: tamaño
-        };
-
-        // Generar el PDF
-        let pdfUrl = "#";
-        try {
-            pdfUrl = await createPdfTicket(options); // Asegúrate de manejar correctamente esta función
-            // Abre la URL en una nueva pestaña del navegador
-            window.open(pdfUrl, '_blank');
-        } catch (error) {
-            console.error("Error al generar el PDF:", error);
-        }
-
-    } catch (error) {
-        console.error("Error al procesar PDF", error);
-        throw new Error("No se pudo generar el PDF.");
-    }
-  };*/
-
-  
   const handleUpdate = (sComprobante,bModoVista) => {
     console.log('sComprobante: ',sComprobante);
     //var num_asiento;
@@ -400,30 +361,6 @@ export default function AdminVentaList() {
     setValorBusqueda(e.target.value);
     filtrar(e.target.value);
   }
-  const actualizaValorVista = (e) => {
-    setValorVista(e.target.value);
-    let idLibro;    
-    idLibro = 
-            e.target.value === 'ventas' ? '014'
-          : e.target.value === 'caja' ? '001'
-          : '005';
-    setValorLibro(idLibro);
-    //grabar datos sesionStorage id_libro y valorVista
-    sessionStorage.setItem('id_libro', idLibro);
-    sessionStorage.setItem('valorVista', e.target.value);
-    //console.log("sessionStorage.setItem('id_libro', id_libro): ", idLibro);
-    //console.log("sessionStorage.setItem('valorVista', valorVista): ", e.target.value);
-
-    //cargamos valores para envio
-    setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: idLibro }));
-    setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-
-    //Lo dejaremos terminar el evento de cambio o change
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
-  }
   const filtrar = (strBusca) => {
     var resultadosBusqueda = tabladet.filter((elemento) => {
       //verifica nulls para evitar error de busqueda
@@ -492,138 +429,85 @@ export default function AdminVentaList() {
     }
   }
 
-  //////////////////////////////////////////////////////////
-  useEffect( ()=> {
-      
-      // Realiza acciones cuando isAuthenticated cambia
-      //Verificar historial periodo 
-      const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo');
-      
-      //New Cargar Lista, con sugerencia de foco inicial
-      if (st_periodo_trabajo===null || st_periodo_trabajo===''){
-          //en caso no haya periodos ni ruc registrados, no tiene porque cargar
-        cargaPeriodosAnfitrion(params.periodo);
-        setPeriodoTrabajo(params.periodo);
-      }else{
-        //en caso haya periodos y rucs, debe respetar el ambiente de trabajo anterior
-        //cuidado con eliminar un ruc, el ambiente de trabajo podria desaparecer y generar bug ... ****
-        cargaPeriodosAnfitrion(st_periodo_trabajo);
-        setPeriodoTrabajo(st_periodo_trabajo);
-      }
+  const inicializarPantalla = async ()=>{
+    /////////////////////////////////
+    //PERIODO
+    const historialPeriodo = sessionStorage.getItem("periodo_trabajo") || params.periodo;
+    const periodo = await cargaPeriodosAnfitrion(historialPeriodo);
 
-      //Verifica historial contabilidad
-      const st_contabilidad_trabajo = sessionStorage.getItem('contabilidad_trabajo');
-      const st_contabilidad_nombre = sessionStorage.getItem('contabilidad_nombre');
-      //New Cargar Lista, con sugerencia de foco inicial
-      if (st_contabilidad_trabajo===null || st_contabilidad_nombre===''){
-        //en caso no haya periodos ni ruc registrados, no tiene porque cargar
-        cargaContabilidadesAnfitrion(params.documento_id,st_contabilidad_nombre);
-        setContabilidadTrabajo(params.documento_id);
-      }else{
-        //en caso haya periodos y rucs, debe respetar el ambiente de trabajo anterior
-        //cuidado con eliminar un ruc, el ambiente de trabajo podria desaparecer y generar bug ... ****
-        cargaContabilidadesAnfitrion(st_contabilidad_trabajo,st_contabilidad_nombre);
-        setContabilidadTrabajo(st_contabilidad_trabajo);
-        setContabilidadNombre(st_contabilidad_nombre);
-      }
-      
-      /////////////////////////////
-      //NEW codigo para autenticacion y permisos de BD
-      if (isAuthenticated && user && user.email) {
-        cargaPermisosMenu(); //carga permisos menus
-      }
+    /////////////////////////////////
+    //CONTABILIDAD
+    const historialContabilidad = sessionStorage.getItem("contabilidad_trabajo") || params.documento_id;
+    const historialNombre = sessionStorage.getItem("contabilidad_nombre");
+    const contabilidad = await cargaContabilidadesAnfitrion(historialContabilidad,historialNombre);
 
-  },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
+    /////////////////////////////////
+    //PERMISOS
+    if( isAuthenticated && user && user.email){
+        await cargaPermisosMenu();
+        cargaPermisosMenuComando('20'); //Por default, la 1era vez
+    }
 
-  /*useEffect(() => {
-    console.log('useEffect location.pathname: ',location.pathname);
+    /////////////////////////////////
+    //NAVEGATE
+    if(params.documento_id === "-"){
+        navigate(
+            `/ad_venta/${
+                params.id_anfitrion
+            }/${
+                params.id_invitado
+            }/${
+                periodo
+            }/${
+                contabilidad.documento
+            }`,
+            {
+                replace:true
+            }
+        );
+        return;
+    }
+  };
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //Inicializa estados y pantalla
+  useEffect(()=>{
+    
+    if(!isAuthenticated) return;
+    inicializarPantalla();
+    
+  },[isAuthenticated]);
+  
+  //Solo carga registros
+  useEffect(()=>{
+    if(!periodo_trabajo || !contabilidad_trabajo){
+        return;
+    }
+
+    cargaRegistro("ventas",periodo_trabajo,contabilidad_trabajo,diaSel);
+
     fetchTotalVentas();
-  }, [location.pathname]);*/
 
-  useEffect( ()=> {
-    
-      //Carga por cada cambio de seleccion en toggleButton
-      console.log('2do useeffect periodo_trabajo: ',periodo_trabajo);
+  },[periodo_trabajo,contabilidad_trabajo,valorVista,diaSel,updateTrigger]);
 
-      //Verifica historial id_libro
-      const st_id_libro = sessionStorage.getItem('id_libro');
-      const st_valorVista = (sessionStorage.getItem('valorVista') || 'ventas'); //new para el toggleButton
+  //Solo sincroniza datos
+  useEffect(()=>{
 
-      if (st_id_libro) {
-        //Establecer valor historial al toggleButton
-        setValorLibro(st_id_libro);
-        setValorVista(st_valorVista);
-      }
+    setDatosCarga({
+        id_anfitrion:params.id_anfitrion,
+        id_invitado:params.id_invitado,
+        periodo:periodo_trabajo,
+        documento_id:contabilidad_trabajo,
+        id_libro:id_libro
+    });
 
-      if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      cargaPermisosMenuComando('20'); //Por default, la 1era vez
-      setValorVista('ventas'); //Por default, la 1era vez
-      //st_valorVista = 'ventas'; //new 
-      }else{
-      setValorVista(st_valorVista);
-      }
-      if (st_valorVista === 'ventas') {cargaPermisosMenuComando('20');}
+  },[periodo_trabajo,contabilidad_trabajo,id_libro]);
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
-      //fcuando carga x primera vez, sale vacio ... arreglar esto
-      cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel);
-    
-      fetchTotalVentas();
-  },[updateTrigger, diaSel]) //Aumentamos
-
-  useEffect( ()=> {
-    //Carga de Registros con permisos
-    console.log('3ero useeffect periodo_trabajo: ',periodo_trabajo);
-
-    const st_id_libro = sessionStorage.getItem('id_libro');
-    const st_valorVista = sessionStorage.getItem('valorVista'); //para el toggleButton
-    console.log('3ero useeffect st_id_libro: ',st_id_libro);
-    if (st_id_libro) {
-      //Establecer valor historial al toggleButton
-      setValorLibro(st_id_libro);
-      setValorVista(st_valorVista);
-    }
-
-    const st_periodo_trabajo = sessionStorage.getItem('periodo_trabajo'); //parametro necesario
-    const st_contabilidad_trabajo = sessionStorage.getItem('contabilidad_trabajo'); //parametro necesario
-
-    //Secundario despues de seleccion en toggleButton
-    let columnasEspecificas;
-    if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-      columnasEspecificas = AdminVentasColumnas;
-    }else{
-      columnasEspecificas = 
-          st_valorVista === 'ventas' ? AdminVentasColumnas
-        : AdminCajaColumnas;
-    }
-
-    cargaColumnasComunes();        
-    const combinado = [...columnasComunes, ...columnasEspecificas];
-
-    //setColumnas([...columnasComunes, ...columnasEspecificas]);
-    // Reordenamos (columna 4 → posición 7) Estetica para GRE
-    //const ordenado = moveColumn(combinado, 3, 5); 
-
-    // Finalmente seteamos
-    setColumnas(combinado);    
-
-    //cuando carga x primera vez, sale vacio ... arreglar esto
-    cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio
-
-    //Datos listos en caso de volver por aqui, para envio
-    setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: st_periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
-    setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-
-  },[permisosComando, pVenta0101, diaSel]) //Solo cuando este completo estado
-
-  //////////////////////////////////////////////////////////
-  const cargaColumnasComunes = () =>{
+  const obtenerColumnasComunes = () =>{
     //Verificar que el resto de permisos de otros libros siempre esten FALSE
     //Solo el libro en cuestion, validara TRUE OR FALSE
 
-    columnasComunes = [
+    return [
       {
         name: '',
         width: isSmallScreen ?  '40px' : '30px',
@@ -765,53 +649,91 @@ export default function AdminVentaList() {
 
     ];
   }
-  const cargaPeriodosAnfitrion = (strHistorialPeriodo) =>{
-    axios
-    .get(`${back_host}/usuario/periodos/${params.id_anfitrion}`)
-    .then((response) => {
-      setPeriodosSelect(response.data);
-      //console.log(response.data);
 
-      if (strHistorialPeriodo === '' || strHistorialPeriodo === null){
-        //Establecer 1er elemento en select
-        if (response.data.length > 0) {
-          setPeriodoTrabajo(response.data[0].periodo); 
-          sessionStorage.setItem('periodo_trabajo',response.data[0].periodo);
+  const columnas = useMemo(() => {
+    const comunes = obtenerColumnasComunes();
+    return [...comunes,...AdminVentasColumnas];
+  }, [
+    isSmallScreen,
+    pVenta0101,
+    pVenta0102,
+    pVenta0103,
+    permisosComando,
+    diaSel,
+    periodo_trabajo,
+    contabilidad_trabajo,
+    params.id_anfitrion,
+    params.id_invitado
+  ]);  
+
+  const cargaPeriodosAnfitrion = async (strHistorialPeriodo) => {
+      try {
+        const { data } = await axios.get(
+          `${back_host}/usuario/periodos/${params.id_anfitrion}`
+        );
+    
+        setPeriodosSelect(data);
+    
+        let periodo;
+    
+        if (!strHistorialPeriodo) {
+          if (data.length > 0) {
+            periodo = data[0].periodo;
+          }
+        } else {
+          periodo = strHistorialPeriodo;
         }
-      }
-      else{//Establecer elemento historial
-        setPeriodoTrabajo(strHistorialPeriodo); 
-        console.log('periodo_trabajo: ', periodo_trabajo);
-        console.log('strHistorialPeriodo: ', strHistorialPeriodo);
-      }
-    })
-    .catch((error) => {
-        console.log(error);
-    });
-  }
-  const cargaContabilidadesAnfitrion = (strHistorialContabilidad,strHistorialContabilidadNombre) =>{
-    axios
-    //Aqui debemos agregar restriccion de contabilidad por(usuario auxiliar)
-    .get(`${back_host}/usuario/contabilidades/${params.id_anfitrion}/${params.id_invitado}`)
-    .then((response) => {
-      setContabilidadesSelect(response.data);
-      if (strHistorialContabilidad === '' || strHistorialContabilidad === null){
-        //Establecer 1er elemento en select
-        if (response.data.length > 0) {
-          setContabilidadTrabajo(response.data[0].documento_id); 
-          setContabilidadNombre(response.data[0].razon_social); 
-          sessionStorage.setItem('contabilidad_trabajo',response.data[0].documento_id);
+    
+        if (periodo) {
+          setPeriodoTrabajo(periodo);
+          sessionStorage.setItem("periodo_trabajo", periodo);
         }
+    
+        return periodo; // <-- devuelve el valor
+      } catch (error) {
+        console.error(error);
+        return null;
       }
-      else{//Establecer elemento historial
-        setContabilidadTrabajo(strHistorialContabilidad); 
-        setContabilidadNombre(strHistorialContabilidadNombre); 
+    };
+
+  const cargaContabilidadesAnfitrion = async (historialContabilidad,historialNombre)=>{
+      try{
+  
+          const {data} = await axios.get(
+              `${back_host}/usuario/contabilidades/${params.id_anfitrion}/${params.id_invitado}`
+          );
+  
+          setContabilidadesSelect(data);
+  
+          let documento;
+          let nombre;
+  
+          if(!historialContabilidad){
+                if(data.length){
+                    documento = data[0].documento_id;
+                    nombre = data[0].razon_social;
+                }
+          }else{
+              documento = historialContabilidad;
+              nombre = historialNombre;
+          }
+  
+          if(documento){
+              setContabilidadTrabajo(documento);
+              setContabilidadNombre(nombre);
+              sessionStorage.setItem("contabilidad_trabajo",documento);
+          }
+  
+          return {
+              documento,
+              nombre
+          };
       }
-    })
-    .catch((error) => {
-        console.log(error);
-    });
-  }
+      catch(error){
+          console.log(error);
+          return null;
+      }
+  };
 
   const cargaPermisosMenu = async()=>{
     //console.log(`${back_host}/seguridadmenu/${params.id_anfitrion}/${params.id_invitado}`);
@@ -1003,15 +925,6 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
           })
           .catch(err => console.error(err));
 };
-const handleOpenLink = (url) => {
-    if (url) {
-      window.open(url, "_blank"); 
-      // "_blank" abre en nueva pestaña
-      // "_self" reemplaza la pestaña actual
-    } else {
-      alert("⚠️ No hay documento disponible");
-    }
-  };
 
  return (
   <>

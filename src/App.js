@@ -44,6 +44,8 @@ import AdminStockRepDet from "./components/Admin/AdminStockRepDet";
 import AdminStockRepInventario from "./components/Admin/AdminStockRepInventario";
 import AdminStockRepKardex from "./components/Admin/AdminStockRepKardex";
 import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
+import AdminVentaPresupuestoList from "./components/Admin/AdminVentaPresupuestoList";
+import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -81,6 +83,11 @@ function App(props) {
           <Container maxWidth="xl" sx={{ paddingTop: isMobile ? 10 : 9, paddingLeft: 0, marginLeft:1 }}>
             <Routes>
               {/* tus rutas originales, sin cambios */}
+
+              <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaPresupuestoList />} />
+              <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaPresupuestoForm />} />
+              <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
+
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
 
               <Route path="/ad_stockrepkardex/:id_anfitrion/:periodo/:documento_id/:dia/:id_producto/:id_almacen" element={<AdminStockRepKardex />} />

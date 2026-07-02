@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
+import palette from "../../theme/palette";
 
 const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
 
@@ -63,18 +64,24 @@ const AdminDias = ({ period, onDaySelect }) => {
         onChange={handleDayChange}
         sx={{
           flexWrap: isMobile ? "nowrap" : "wrap",
-          backgroundColor: "gray",
+          //backgroundColor: "gray",
+          backgroundColor:palette.chip,
           color: "black",
+          //color: palette.surface,
           "& .MuiToggleButton-root": {
             border: "1px solid",
             borderColor: theme.palette.divider,
-            color: "inherit",
+            //color: "inherit",
+            color: palette.accent,
             "&.Mui-selected": {
               backgroundColor: "orange",
-              color: "white",
+              //color: "white",
+              color: palette.surface,
             },
             "&:hover": {
-              backgroundColor: "lightgray",
+              //backgroundColor: "lightgray",
+              backgroundColor: palette.accent,
+              color: palette.surface
             },
           },
         }}
