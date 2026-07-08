@@ -527,6 +527,7 @@ export default function AdminVentaList() {
               backHost={back_host}
               onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
               size={26}
+              cdr_nivel={row.cdr_nivel} //new
             />
           ) : null
         ),

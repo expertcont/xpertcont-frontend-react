@@ -4,7 +4,8 @@ import axios from "axios";
 import { useDialog } from "./AdminConfirmDialogProvider";
 import { Dialog, DialogTitle, Button, useMediaQuery, InputAdornment, IconButton, TextField, Box, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import Sunat01Icon from '../../assets/images/sunat0.png';
+import Sunat01Icon from '../../assets/images/sunat0.png'; //Azul
+import Sunat03Icon from '../../assets/images/sunat9.png'; //Granate
 import TaskAltIcon from "@mui/icons-material/TaskAlt";   
 import CodeIcon from '@mui/icons-material/Code';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -22,6 +23,7 @@ const AdminSunatIcon = ({
   contabilidadTrabajo,    // contabilidad_trabajo
   backHost,               // ej. "https://tu-backend.com"
   size = 24,              // tamaño del ícono
+  cdr_nivel,                //ACEPTADO,RECHAZADO,PENDIENTE
   onRefresh,              // ✅ función opcional para refrescar al cerrar el modal
   descargasHost = "http://74.208.184.113:8080", // opcional, por si cambia el host
 }) => {
@@ -218,12 +220,29 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
     if (onRefresh) onRefresh();
     setShowModal(false);
   };
+  
+  const getSunatIcon = () => {
 
+    switch (cdr_nivel) {
+        case "ACEPTADO":
+            return Sunat01Icon;
+
+        case "RECHAZADO":
+            return Sunat03Icon;
+        
+        //Muy pronto :)
+        //case "OBSERVADO":
+        //    return SunatNaranja;
+
+        default:
+            return Sunat01Icon;
+    }
+};
   return (
     <>
       {/* Ícono */}
       <img
-        src={Sunat01Icon}
+        src={getSunatIcon()}
         onClick={handleSunat}
         alt="Icono Sunat01"
         style={{
