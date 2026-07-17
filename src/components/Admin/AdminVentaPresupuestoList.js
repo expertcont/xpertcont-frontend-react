@@ -530,31 +530,8 @@ export default function AdminVentaPresupuestoList() {
       setValorBusqueda(e.target.value);
       filtrar(e.target.value);
     }
-    const actualizaValorVista = (e) => {
-      setValorVista(e.target.value);
-      let idLibro;    
-      idLibro = 
-              e.target.value === 'ventas' ? '014'
-            : e.target.value === 'caja' ? '001'
-            : '005';
-      setValorLibro(idLibro);
-      //grabar datos sesionStorage id_libro y valorVista
-      sessionStorage.setItem('id_libro', idLibro);
-      sessionStorage.setItem('valorVista', e.target.value);
-      //console.log("sessionStorage.setItem('id_libro', id_libro): ", idLibro);
-      //console.log("sessionStorage.setItem('valorVista', valorVista): ", e.target.value);
-  
-      //cargamos valores para envio
-      setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-      setDatosCarga(prevState => ({ ...prevState, periodo: periodo_trabajo }));
-      setDatosCarga(prevState => ({ ...prevState, documento_id: contabilidad_trabajo }));
-      setDatosCarga(prevState => ({ ...prevState, id_libro: idLibro }));
-      setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
-  
-      //Lo dejaremos terminar el evento de cambio o change
-      setUpdateTrigger(Math.random());//experimento para actualizar el dom
-    }
     const filtrar = (strBusca) => {
+      //console.log(tabladet);
       var resultadosBusqueda = tabladet.filter((elemento) => {
         //verifica nulls para evitar error de busqueda
         const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
@@ -1228,8 +1205,9 @@ export default function AdminVentaPresupuestoList() {
 
           <AppSearch
             placeholder="Buscar presupuesto..."
-            value={buscar}
-            onChange={(e) => setBuscar(e.target.value)}
+            value={valorBusqueda}
+            //onChange={(e) => setBuscar(e.target.value)}
+            onChange={actualizaValorFiltro}
           />          
         </Box>
 

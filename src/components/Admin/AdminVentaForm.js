@@ -106,6 +106,8 @@ export default function AdminVentaForm() {
   //const fecha_actual = new Date();
   const formasPago = ['YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'];
   const [motivo_select, setMotivoSelect] = useState([]);
+  const [serie_select, setSerieSelect] = useState([]); //Serie autorizada por (usuario@gmail)
+  const [serieEmite, setSerieEmite] = useState('0001');//por default para NV
 
   const abrirModalPedidos = () => {
     setShowModalFactPedidos(true);
@@ -163,6 +165,9 @@ export default function AdminVentaForm() {
   const actualizaValorEmite = (e) => {
     setValorEmite(e.target.value);
     setDatosEmitir(prevState => ({ ...prevState, r_cod_emitir: e.target.value }));
+    //Aqui cargamos las series acordes cal comprobante
+    //New
+    cargaSeriesUsuario(e.target.value);
   }
 
   const cargaMotivosSelect = () =>{
@@ -204,6 +209,28 @@ export default function AdminVentaForm() {
         console.log(error);
     });
   };
+  const cargaSeriesUsuario = (r_cod) =>{
+    //Series habilitadas para ventas (usuario@gmail.com)
+    console.log(`${back_host}/ad_ventaseries/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}/${r_cod}`);
+    axios
+    .get(`${back_host}/ad_ventaseries/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}/${r_cod}`)
+    .then((response) => {
+        setSerieSelect(response.data.data);
+        //Si es un solo registro, setear valorEmite
+        console.log(`Verificando 1era serie: `, response.data.data.length, response.data.data[0].r_serie);
+        if (response.data.data.length > 0) {
+          setSerieEmite(response.data.data[0].r_serie);
+        }
+        /*if (response.data.data.length === 1) {
+          setSerieEmite(response.data.data.r_serie);
+        }*/
+    })
+    .catch((error) => {
+        console.log(error);
+    });
+  };
+
+
   // Función para verificar si un código está permitido
   const isAllowed = (codigo) => {
     //console.log(`Verificando si el código ${codigo} está permitido`,cod_select);
@@ -387,6 +414,7 @@ export default function AdminVentaForm() {
     cargaDocSelect();
     cargaCodSeg(); //new array con lista de comprobantes habilitados segun usuario, utiles para control de emitir
     cargaMotivosSelect(); //new
+    cargaSeriesUsuario("03"); //new default
 
     //NEW codigo para autenticacion y permisos de BD
     if (isAuthenticated && user.email) {
@@ -590,7 +618,11 @@ export default function AdminVentaForm() {
       //dice que no debe usarse de modo directo el valor del useState en un mismo evento
       datosEmitir.efectivo = parseFloat(venta.r_monto_total - parseFloat(value)).toFixed(2)
     }
-    
+    //new control de series
+    if (name === 'r_serie'){
+      setSerieEmite(value);
+    }
+
     console.log('handleChangeEmite: ', datosEmitir);
     setDatosEmitir({...datosEmitir, [name]: value});
   }
@@ -940,7 +972,6 @@ export default function AdminVentaForm() {
   const handleSaveComprobante = () =>{
     //Consumir API grabar
     confirmaGrabarComprobante();
-    //alert('origen ref: '+ venta.r_cod_ref+venta.r_serie_ref+venta.r_numero_ref);
 
     //Quitar modal emitir
     setShowModalEmite(false);
@@ -968,6 +999,7 @@ export default function AdminVentaForm() {
         r_serie: SERIE,
         r_numero: NUMERO,
         r_cod_emitir: valorEmite,
+        r_serie_emitir: serieEmite, //new caso solo(03,01,NV)
         
         r_id_doc: datosEmitir.r_id_doc,
         r_documento_id: datosEmitir.r_documento_id,
@@ -2300,6 +2332,84 @@ export default function AdminVentaForm() {
                                               )}  
 
                                             </ToggleButtonGroup>
+                                            
+                                            <Box sx={{ position: "relative", width: 270, mt:-1 }}>
+                                              <TextField
+                                                variant="outlined"
+                                                size="small"
+                                                value=""
+                                                InputProps={{
+                                                  readOnly: true,
+
+                                                  startAdornment: (
+                                                    <InputAdornment position="start">
+                                                      <Typography
+                                                        sx={{
+                                                          color: "#9ca3af",
+                                                          fontSize: "0.82rem",
+                                                          fontWeight: 600,
+                                                          letterSpacing: 0.5,
+                                                          width: 55,
+                                                        }}
+                                                      >
+                                                        SERIE
+                                                      </Typography>
+                                                    </InputAdornment>
+                                                  ),
+
+                                                  endAdornment: (
+                                                    <InputAdornment position="end">
+                                                      <Select
+                                                        value={serieEmite}
+                                                        onChange={(e) =>
+                                                          handleChangeEmite("r_serie", e.target.value)
+                                                        }
+                                                        variant="standard"
+                                                        disableUnderline
+                                                        sx={{
+                                                          color: "white",
+                                                          fontSize: "0.90rem",
+                                                          fontWeight: 600,
+                                                          width: 90,
+                                                          textAlign: "center",
+                                                          "& .MuiSelect-select": {
+                                                            textAlign: "center",
+                                                          },
+                                                          "& .MuiSelect-icon": {
+                                                            color: "gray",
+                                                          },
+                                                        }}
+                                                      >
+                                                        {serie_select.map((item) => (
+                                                          <MenuItem
+                                                            key={item.r_serie}
+                                                            value={item.r_serie}
+                                                            sx={{ justifyContent: "center" }}
+                                                          >
+                                                            {item.r_serie}
+                                                          </MenuItem>
+                                                        ))}
+                                                      </Select>
+                                                    </InputAdornment>
+                                                  ),
+                                                }}
+                                                sx={{
+                                                  width: 270,
+                                                  "& input": {
+                                                    color: "transparent", // ocultamos el input
+                                                    caretColor: "transparent",
+                                                    cursor: "default",
+                                                  },
+                                                  "& fieldset": {
+                                                    borderColor: "#555",
+                                                  },
+                                                  "& .MuiOutlinedInput-root": {
+                                                    paddingRight: "6px",
+                                                  },
+                                                }}
+                                              />
+                                            </Box>
+
 
                                             <TextField
                                                     variant="outlined"
@@ -2342,13 +2452,14 @@ export default function AdminVentaForm() {
                                                       },
                                                     }}
                                                     sx={{
-                                                      mt:-1,
+                                                      mt:0,
                                                       '& .MuiInputBase-input': {
                                                         textAlign: 'center', // Alinea el texto del campo
                                                       },
                                                     }}
                                              />
                                             
+
                                              <Select
                                                     labelId="documento_select"
                                                     value={ id_docBusca || datosEmitir.r_id_doc}  // 
