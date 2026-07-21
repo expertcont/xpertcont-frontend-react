@@ -25,6 +25,7 @@ import BotonExcelGeneral from '../BotonExcelGeneral';
 import { AdminInventarioColumnas } from './AdminColumnas';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 export default function AdminStockRepInventario() {
   //Control de useffect en retroceso de formularios
@@ -157,46 +158,7 @@ export default function AdminStockRepInventario() {
     }, []);
 
   
-  /*const procesaPDF = async (comprobante, nElem, tamaño) => {
-    try {
-        const [COD, SERIE, NUM] = comprobante.split('-');
-
-        // Realizar ambas llamadas de API en paralelo
-        const [resVenta, resVentaDet] = await Promise.all([
-            fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json()),
-            fetch(`${back_host}/ad_ventadet/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
-        ]);
-
-        // Configuración del ticket
-        const options = {
-            comprobante,
-            documento_id: params.documento_id,
-            id_invitado: params.id_invitado,
-            venta: resVenta,
-            ventadet: resVentaDet,
-            logo,
-            size: tamaño
-        };
-
-        // Generar el PDF
-        let pdfUrl = "#";
-        try {
-            pdfUrl = await createPdfTicket(options); // Asegúrate de manejar correctamente esta función
-            // Abre la URL en una nueva pestaña del navegador
-            window.open(pdfUrl, '_blank');
-        } catch (error) {
-            console.error("Error al generar el PDF:", error);
-        }
-
-    } catch (error) {
-        console.error("Error al procesar PDF", error);
-        throw new Error("No se pudo generar el PDF.");
-    }
-  };*/
-
-  
-  
- ///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   const cargaRegistro = async (strHistorialValorVista,strHistorialPeriodo,strHistorialContabilidad, sDia) => {
     let response;
@@ -284,35 +246,6 @@ export default function AdminStockRepInventario() {
 
   },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
 
-  /*useEffect( ()=> {
-    
-      //Carga por cada cambio de seleccion en toggleButton
-      console.log('2do useeffect periodo_trabajo: ',periodo_trabajo);
-
-      //Verifica historial id_libro
-      const st_id_libro = sessionStorage.getItem('id_libro');
-      const st_valorVista = (sessionStorage.getItem('valorVista') || 'ventas'); //new para el toggleButton
-
-      if (st_id_libro) {
-        //Establecer valor historial al toggleButton
-        setValorVista(st_valorVista);
-      }
-
-      if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-
-      setValorVista('ventas'); //Por default, la 1era vez
-      //st_valorVista = 'ventas'; //new 
-      }else{
-      setValorVista(st_valorVista);
-      }
-
-      //fcuando carga x primera vez, sale vacio ... arreglar esto
-      cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel);
-    
-      fetchTotalVentas();
-  },[updateTrigger, diaSel]) //Aumentamos*/
-
-
   useEffect( ()=> {
     //Carga de Registros con permisos
     console.log('3ero useeffect periodo_trabajo: ',periodo_trabajo);
@@ -348,7 +281,7 @@ export default function AdminStockRepInventario() {
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
     
     //fetchTotalVentas();
-  },[valorVista, diaSel]) //Solo cuando este completo estado
+  },[valorVista, diaSel, updateTrigger]) //Solo cuando este completo estado
 
 
   //////////////////////////////////////////////////////////
@@ -407,7 +340,6 @@ const handleDayFilter = (selectedDay) => {
   setDiaSel(dia);
 };
   
-const [totalVentas, setTotalVentas] = useState(0);
 const [isSuper, setIsSuper] = useState(false);
 const [recaudaciones, setRecaudaciones] = useState([]);
 const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
@@ -662,7 +594,18 @@ const generarSaldos = async () => {
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
+          <Tooltip title='GLOBAL' >
+            <IconButton color="primary" 
+                            style={{ padding: '5px', color: 'white' }}
+                            onClick={() => {
+                              cargaRegistro('global',periodo_trabajo,"*", diaSel); //new cambio
+                              //setValorVista('global');  //activa useefect
+                              //setUpdateTrigger(Math.random());//experimento para actualizar el dom
+                            }}
+            >
+                  <AccountTreeIcon style={{ fontSize: '30px' }}/>
+            </IconButton>
+          </Tooltip>
         </Grid>
 
         <Grid item xs={isSmallScreen ? 1.2 : 0.5} >

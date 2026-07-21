@@ -97,7 +97,7 @@ export default function AdminStockList() {
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
   const {user, isAuthenticated } = useAuth0();
   
-  const [columnas, setColumnas] = useState([]);
+  //const [columnas, setColumnas] = useState([]);
 
   const [periodo_trabajo, setPeriodoTrabajo] = useState("");
   const [periodo_select,setPeriodosSelect] = useState([]);
@@ -128,6 +128,9 @@ export default function AdminStockList() {
       //filtramos su nombre para historial
       const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
+
+      //Ojo olvidamos el periodo_trabajo, no olvidar
+      navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${e.target.value}`);
     }
     if (e.target.name==="fecha_clon"){
       setFechaClon(e.target.value);
@@ -137,7 +140,7 @@ export default function AdminStockList() {
   }
   
   // Agrega íconos al inicio de cada columna
-  let columnasComunes;
+  //let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
   const [permisos, setPermisos] = useState([]); //Menu
   const [permisoVentas, setPermisoVentas] = useState(false);
@@ -160,44 +163,6 @@ export default function AdminStockList() {
   const handleRowSelected = useCallback(state => {
         setSelectedRows(state.selectedRows);
     }, []);
-
-  
-  /*const procesaPDF = async (comprobante, nElem, tamaño) => {
-    try {
-        const [COD, SERIE, NUM] = comprobante.split('-');
-
-        // Realizar ambas llamadas de API en paralelo
-        const [resVenta, resVentaDet] = await Promise.all([
-            fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json()),
-            fetch(`${back_host}/ad_ventadet/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
-        ]);
-
-        // Configuración del ticket
-        const options = {
-            comprobante,
-            documento_id: params.documento_id,
-            id_invitado: params.id_invitado,
-            venta: resVenta,
-            ventadet: resVentaDet,
-            logo,
-            size: tamaño
-        };
-
-        // Generar el PDF
-        let pdfUrl = "#";
-        try {
-            pdfUrl = await createPdfTicket(options); // Asegúrate de manejar correctamente esta función
-            // Abre la URL en una nueva pestaña del navegador
-            window.open(pdfUrl, '_blank');
-        } catch (error) {
-            console.error("Error al generar el PDF:", error);
-        }
-
-    } catch (error) {
-        console.error("Error al procesar PDF", error);
-        throw new Error("No se pudo generar el PDF.");
-    }
-  };*/
 
   
   const handleUpdate = (sComprobante,bModoVista) => {
@@ -524,8 +489,134 @@ export default function AdminStockList() {
     }
   }
 
+  let columnasComunes = [
+    {
+      name: '',
+      width: isSmallScreen ?  '40px' : '30px',
+      cell: (row) => (
+          <DriveFileRenameOutlineIcon
+            onClick={() => handleUpdate(row.comprobante,false)}
+            style={{
+              cursor: 'pointer',
+              color: 'skyblue',
+              transition: 'color 0.3s ease',
+            }}
+          />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: isSmallScreen ?  '40px' : '30px',
+      cell: (row) => (
+          <DeleteIcon
+            onClick={() => handleDelete(row.comprobante)}
+            style={{
+              cursor: 'pointer',
+              color: 'orange',
+              transition: 'color 0.3s ease',
+            }}
+          />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: isSmallScreen ?  '40px' : '30px',
+      cell: (row) => (
+          <AutoDeleteIcon
+            onClick={() => {
+                handleAnula(row.comprobante); 
+              }
+            }
+            style={{
+              cursor: 'pointer',
+              color: 'gray',
+              transition: 'color 0.3s ease',
+            }}
+          />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: isSmallScreen ?  '40px' : '30px',
+      cell: (row) => (
+          <ContentCopyIcon
+            onClick={() => {
+                setShowModalMostrarClonar(true);
+                setValorComprobante(row.comprobante);
+                //clonarVenta(row.comprobante_ref);
+                }
+              }
+            style={{
+              cursor: 'pointer',
+              //color: 'primary',
+              transition: 'color 0.3s ease',
+            }}
+          />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+  ];
+
+  const columnas = useMemo(()=>{
+    //cargaColumnasComunes();
+    return [...columnasComunes, ...AdminStocksColumnas];
+  },[permisosComando, pVenta0101, diaSel, periodo_trabajo, contabilidad_trabajo, isSmallScreen]);
+
+  const inicializarPantalla = async () => {
+    const historialPeriodo = sessionStorage.getItem("periodo_trabajo") || params.periodo;
+    const periodo = await cargaPeriodosAnfitrion(historialPeriodo);
+
+    const historialContabilidad = sessionStorage.getItem("contabilidad_trabajo") || params.documento_id;
+
+    const historialNombre = sessionStorage.getItem("contabilidad_nombre");
+
+    const contabilidad = await cargaContabilidadesAnfitrion(historialContabilidad, historialNombre);
+
+    if (isAuthenticated && user && user.email) {
+        await cargaPermisosMenu();
+        await cargaPermisosMenuComando("20");
+    }
+
+    console.log('params inicializarPantalla analisis: ',params)
+    if(params.documento_id === "-"){
+        //Ojo, aumentar periodo en la navagecion, olvidamos eso ;)
+        console.log(`navegando por: /ad_stock/${params.id_anfitrion}/${params.id_invitado}/${contabilidad.documento}`);
+        navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${contabilidad.documento}`,{replace:true});
+    }
+  };
+
+  useEffect(()=>{
+    if(!isAuthenticated) return;
+
+    inicializarPantalla();
+  },[isAuthenticated]);
+
+  useEffect(()=>{
+    if( !periodo_trabajo || !contabilidad_trabajo){
+        return;
+    }
+
+    cargaRegistro("ventas", periodo_trabajo, contabilidad_trabajo, diaSel);
+  },[periodo_trabajo, contabilidad_trabajo, diaSel, updateTrigger]);
+
+  useEffect(()=>{
+    setDatosCarga({
+        id_anfitrion:params.id_anfitrion,
+        id_invitado:params.id_invitado,
+        periodo:periodo_trabajo,
+        documento_id:contabilidad_trabajo,
+        id_libro
+    });
+  },[periodo_trabajo, contabilidad_trabajo, id_libro]);  
   //////////////////////////////////////////////////////////
-  useEffect( ()=> {
+  /*useEffect( ()=> {
       
       // Realiza acciones cuando isAuthenticated cambia
       //Verificar historial periodo 
@@ -636,6 +727,7 @@ export default function AdminStockList() {
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
 
   },[permisosComando, pVenta0101, valorVista, diaSel]) //Solo cuando este completo estado
+  */
 
   function moveColumn(array, fromIndex, toIndex) {
     const updated = [...array];
@@ -645,87 +737,11 @@ export default function AdminStockList() {
   }
 
   //////////////////////////////////////////////////////////
-  const cargaColumnasComunes = () =>{
     //Verificar que el resto de permisos de otros libros siempre esten FALSE
     //Solo el libro en cuestion, validara TRUE OR FALSE
 
-    columnasComunes = [
-      {
-        name: '',
-        width: isSmallScreen ?  '40px' : '30px',
-        cell: (row) => (
-            <DriveFileRenameOutlineIcon
-              onClick={() => handleUpdate(row.comprobante,false)}
-              style={{
-                cursor: 'pointer',
-                color: 'skyblue',
-                transition: 'color 0.3s ease',
-              }}
-            />
-        ),
-        allowOverflow: true,
-        button: true,
-      },
-      {
-        name: '',
-        width: isSmallScreen ?  '40px' : '30px',
-        cell: (row) => (
-            <DeleteIcon
-              onClick={() => handleDelete(row.comprobante)}
-              style={{
-                cursor: 'pointer',
-                color: 'orange',
-                transition: 'color 0.3s ease',
-              }}
-            />
-        ),
-        allowOverflow: true,
-        button: true,
-      },
-      {
-        name: '',
-        width: isSmallScreen ?  '40px' : '30px',
-        cell: (row) => (
-            <AutoDeleteIcon
-              onClick={() => {
-                  handleAnula(row.comprobante); 
-                }
-              }
-              style={{
-                cursor: 'pointer',
-                color: 'gray',
-                transition: 'color 0.3s ease',
-              }}
-            />
-        ),
-        allowOverflow: true,
-        button: true,
-      },
-      {
-        name: '',
-        width: isSmallScreen ?  '40px' : '30px',
-        cell: (row) => (
-            <ContentCopyIcon
-              onClick={() => {
-                  setShowModalMostrarClonar(true);
-                  setValorComprobante(row.comprobante);
-                  //clonarVenta(row.comprobante_ref);
-                  }
-                }
-              style={{
-                cursor: 'pointer',
-                //color: 'primary',
-                transition: 'color 0.3s ease',
-              }}
-            />
-        ),
-        allowOverflow: true,
-        button: true,
-      },
-
-    ];
-  }
-  const cargaPeriodosAnfitrion = (strHistorialPeriodo) =>{
+  
+  /*const cargaPeriodosAnfitrion = (strHistorialPeriodo) =>{
     axios
     .get(`${back_host}/usuario/periodos/${params.id_anfitrion}`)
     .then((response) => {
@@ -771,7 +787,75 @@ export default function AdminStockList() {
     .catch((error) => {
         console.log(error);
     });
-  }
+  }*/
+    const cargaPeriodosAnfitrion = async (strHistorialPeriodo) => {
+      try {
+        const { data } = await axios.get(
+          `${back_host}/usuario/periodos/${params.id_anfitrion}`
+        );
+    
+        setPeriodosSelect(data);
+    
+        let periodo;
+    
+        if (!strHistorialPeriodo) {
+          if (data.length > 0) {
+            periodo = data[0].periodo;
+          }
+        } else {
+          periodo = strHistorialPeriodo;
+        }
+    
+        if (periodo) {
+          setPeriodoTrabajo(periodo);
+          sessionStorage.setItem("periodo_trabajo", periodo);
+        }
+    
+        return periodo; // <-- devuelve el valor
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    };
+
+    const cargaContabilidadesAnfitrion = async (historialContabilidad,historialNombre)=>{
+      try{
+  
+          const {data} = await axios.get(
+              `${back_host}/usuario/contabilidades/${params.id_anfitrion}/${params.id_invitado}`
+          );
+  
+          setContabilidadesSelect(data);
+  
+          let documento;
+          let nombre;
+  
+          if(!historialContabilidad){
+                if(data.length){
+                    documento = data[0].documento_id;
+                    nombre = data[0].razon_social;
+                }
+          }else{
+              documento = historialContabilidad;
+              nombre = historialNombre;
+          }
+  
+          if(documento){
+              setContabilidadTrabajo(documento);
+              setContabilidadNombre(nombre);
+              sessionStorage.setItem("contabilidad_trabajo",documento);
+          }
+  
+          return {
+              documento,
+              nombre
+          };
+      }
+      catch(error){
+          console.log(error);
+          return null;
+      }
+    };
 
   const cargaPermisosMenu = async()=>{
     //console.log(`${back_host}/seguridadmenu/${params.id_anfitrion}/${params.id_invitado}`);

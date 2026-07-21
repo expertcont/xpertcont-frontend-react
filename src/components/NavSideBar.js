@@ -476,7 +476,8 @@ export default function NavSideBar(props) {
                   label="Movimientos"
                   isActive={selectedButton === 'icono10-1'}
                   onClick={() => {
-                    navigate(`/ad_stock/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
+                    //navigate(`/ad_stock/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
+                    navigate(`/ad_stock/${props.idAnfitrion}/${props.idInvitado}/-`);
                     handleClick('icono10-1');
                   }}
                 />
@@ -561,6 +562,18 @@ export default function NavSideBar(props) {
             onClick={() => {
               navigate(`/ad_equipo/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
               handleClick('icono08');
+            }}
+          />
+        )}
+
+        {permisoSeguridad && (
+          <MenuItem
+            icon={<SystemSecurityUpdateGoodIcon />}
+            label="Usuarios Grupo"
+            isActive={selectedButton === 'icono11'}
+            onClick={() => {
+              navigate(`/ad_usuariogrupo/${props.idAnfitrion}/${props.idInvitado}`);
+              handleClick('icono11');
             }}
           />
         )}

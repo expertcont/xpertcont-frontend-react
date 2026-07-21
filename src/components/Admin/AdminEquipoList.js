@@ -3,19 +3,9 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import FindIcon from '@mui/icons-material/FindInPage';
-import UpdateIcon from '@mui/icons-material/UpdateSharp';
-import Add from '@mui/icons-material/Add';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
-import BoltIcon from '@mui/icons-material/Bolt';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import DownloadIcon from '@mui/icons-material/Download';
 import { blueGrey } from '@mui/material/colors';
-import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
-import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 
 import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
@@ -36,8 +26,6 @@ import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from '../BotonExcelVentas';
-import AdminFileProducto from './AdminFileProducto';
-import { saveAs } from 'file-saver';
 
 export default function AdminEquipoList() {
   //Control de useffect en retroceso de formularios
@@ -70,13 +58,6 @@ export default function AdminEquipoList() {
   }, 'dark');
 
   ///////////////////////////////////////////////////
-  /*function exportToExcel(data) {
-    const worksheet = utils.json_to_sheet(data);
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, 'Datos');
-    writeFile(workbook, 'datos.xlsx');
-  }*/
-
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //experimento
@@ -330,14 +311,6 @@ export default function AdminEquipoList() {
     }
   }
 
-  // Función que se pasa como prop al componente.js
-  const handleActualizaImportaOK = () => {
-    //console.log('valorVista,periodo_trabajo,contabilidad_trabajo:', valorVista,periodo_trabajo,contabilidad_trabajo);
-    //cargaRegistro(valorVista,periodo_trabajo,contabilidad_trabajo);
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
-    // Puedes realizar otras operaciones con la cantidad de filas si es necesario
-  };
-  
   //////////////////////////////////////////////////////////
   useEffect( ()=> {
         //cargar registro
@@ -352,70 +325,7 @@ export default function AdminEquipoList() {
   
   },[isAuthenticated, user, updateTrigger]) //Aumentamos IsAuthenticated y user
 
-  const handleDescargarExcelVacio = async () => {
-    // Question view id_libro
-    let filePath;
-    let fileName;
-
-    filePath = '/equipos_prueba.xlsx';
-    // Nombre del archivo para la descarga
-    fileName = 'equipos_prueba.xlsx';
-
-    // URL completa del archivo
-    const fileUrl = process.env.PUBLIC_URL + filePath;
-
-    try {
-      // Realizar la solicitud para obtener el archivo usando axios
-      const response = await axios.get(fileUrl, { responseType: 'blob' });
-
-      // Utilizar file-saver para descargar el archivo
-      saveAs(response.data, fileName);
-    } catch (error) {
-      console.error('Error al descargar el archivo:', error);
-    }
-  };
-
-  const handleDeleteOrigen = async (sAnfitrion,sDocumentoId) => {
-    const { value: selectedOrigen } = await swal2.fire({
-      title: 'Eliminar registros',
-      //text: 'Selecciona el origen para la eliminación masiva:',
-      input: 'select',
-      icon: 'warning',
-      //color: 'orange',
-      inputOptions: {
-        EXCEL: 'EXCEL',
-        MANUAL: 'MANUAL',
-        // Agrega las opciones según los valores de "origen" de tu tabla
-      },
-      inputPlaceholder: 'Selecciona el origen',
-      showCancelButton: true,
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar',
-      inputValidator: (value) => {
-        return new Promise((resolve) => {
-          if (value === '') {
-            resolve('Debes seleccionar un origen');
-          } else {
-            resolve();
-          }
-        });
-      },
-    });
-
-    // Si el usuario hace clic en "Eliminar" y selecciona un origen
-    if (selectedOrigen) {
-      // Aquí puedes realizar la lógica para eliminar registros masivamente con el origen seleccionado
-      //console.log('Eliminar registros con origen:', selectedOrigen);
-      await fetch(`${back_host}/ad_equipomasivo/${sAnfitrion}/${sDocumentoId}/${selectedOrigen}`, {
-        method:"DELETE"
-      });
-
-      setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
-        setUpdateTrigger(Math.random());//experimento
-      }, 200);
-    }
-  };
-  
+    
  return (
   <>
 
@@ -454,35 +364,14 @@ export default function AdminEquipoList() {
       </Grid>
       
       <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-        <Tooltip title='DESCARGA XLS VACIO' >
-            <IconButton color="primary" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
-                            onClick={() => {
-                                  handleDescargarExcelVacio();
-                            }}
-            >
-                  <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-        </Tooltip>
       </Grid>
       
       <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-        <Tooltip title='ELIMINAR MASIVO' >
-            <IconButton color="warning" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
-                            onClick={() => {
-                              handleDeleteOrigen(params.id_anfitrion,params.documento_id)
-                            }}
-            >
-                  <FolderDeleteIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-        </Tooltip>
+
       </Grid>
 
       <Grid item xs={isSmallScreen ? 12 : 10}>
-        <AdminFileProducto datosCarga={datosCarga} onActualizaImportaOK={handleActualizaImportaOK} urlApiDestino='/ad_equipoexcel'></AdminFileProducto>          
+
       </Grid>
 
       <Grid item xs={isSmallScreen ? 12 : 12} >

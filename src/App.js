@@ -29,6 +29,8 @@ import AdminProductoForm from "./components/Admin/AdminProductoForm";
 import AdminVentaForm from "./components/Admin/AdminVentaForm";
 import AdminEquipoList from "./components/Admin/AdminEquipoList";
 import AdminEquipoForm from "./components/Admin/AdminEquipoForm";
+import AdminUsuariosGrupoList from "./components/Admin/AdminUsuariosGrupoList";
+import AdminUsuariosGrupoForm from "./components/Admin/AdminUsuariosGrupoForm";
 import AdminProductoFormPrecio from "./components/Admin/AdminProductoFormPrecio";
 
 // 👇 Importa el ConfirmProvider
@@ -101,6 +103,10 @@ function App(props) {
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id" element={<AdminEquipoList />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminEquipoForm />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/:id_equipo/edit" element={<AdminEquipoForm />} />
+
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado" element={<AdminUsuariosGrupoList />} />
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/new" element={<AdminUsuariosGrupoForm />} />
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/:id_invitado_grupo/edit" element={<AdminUsuariosGrupoForm />} />
 
               <Route path="/ad_ventarepdet/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepDet />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />
