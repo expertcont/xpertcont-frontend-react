@@ -1,4 +1,4 @@
-import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Select, MenuItem, InputLabel, Box, FormControl} from '@mui/material'
+import {Grid,Card,CardContent,Typography,TextField,Button,CircularProgress,Select, MenuItem, InputLabel, Box, FormControl, Switch, FormControlLabel, FormGroup} from '@mui/material'
 //import { padding } from '@mui/system'
 import {useState,useEffect} from 'react';
 import React from 'react';
@@ -20,6 +20,8 @@ export default function ProductoForm() {
       porc_igv:18,
       origen:'MANUAL',
       cont_und:'',
+      comercial:false,   //new
+      almacenable:false, //new
       cantidad_und2:0,  //new campo numerico en bd
       id_producto2:'',    //new
       cont_und2:''     //new
@@ -81,25 +83,14 @@ export default function ProductoForm() {
   },[]);
 
   //Rico evento change
-  const handleChange = e => {
-    setProducto({...producto, [e.target.name]: devuelveValor(e)});
-    //console.log(e.target.name, e.target.value);
-    //console.log(producto);
-  }
-  
-  const devuelveValor = e =>{
-      let strNombre;
-      strNombre = e.target.name;
-      strNombre = strNombre.substring(0,3);
-      console.log(e.target.name);  
-      if (strNombre === "chk"){
-        console.log(e.target.checked);  
-        return(e.target.checked);
-      }else{
-        console.log(e.target.value);
-        return(e.target.value);
-      }
-  }
+  const handleChange = (e) => {
+    const { name, value, checked, type } = e.target;
+
+    setProducto(prev => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value
+    }));
+  };
 
   //funcion para mostrar data de formulario, modo edicion
   const mostrarProducto = async (sAnfitrion,sDocumentoId,sIdProducto) => {
@@ -114,9 +105,11 @@ export default function ProductoForm() {
                     precio_venta:data.precio_venta, 
                     cont_und:data.cont_und,
                     porc_igv:data.porc_igv,
-                    cantidad_und2:data.cantidad_und2,  //new
-                    id_producto2:data.id_producto2,      //new
-                    cont_und2:data.cont_und2         //new
+                    comercial:data.comercial,         //new
+                    almacenable:data.almacenable,     //new
+                    cantidad_und2:data.cantidad_und2,  
+                    id_producto2:data.id_producto2,    
+                    cont_und2:data.cont_und2         
                   });
     //console.log(data.relacionado);
     setEditando(true);
@@ -291,6 +284,54 @@ export default function ProductoForm() {
                                    InputLabelProps={{ style:{color:'white'},  shrink: true }}
                         />
 
+                        <FormGroup
+                            sx={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                justifyContent: 'center',
+                                gap: 4,
+                                mt: 2,
+                                mb: 2
+                            }}
+                        >
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        color="success"
+                                        checked={producto.comercial}
+                                        onChange={handleChange}
+                                        name="comercial"
+                                    />
+                                }
+                                label="Comercial"
+                                sx={{
+                                    color: 'white',
+                                    '& .MuiFormControlLabel-label': {
+                                        color: 'white'
+                                    }
+                                }}
+                            />
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        color="info"
+                                        checked={producto.almacenable}
+                                        onChange={handleChange}
+                                        name="almacenable"
+                                    />
+                                }
+                                label="Almacenable"
+                                sx={{
+                                    color: 'white',
+                                    '& .MuiFormControlLabel-label': {
+                                        color: 'white'
+                                    }
+                                }}
+                            />
+
+                        </FormGroup>
 
                         <Button variant='contained' 
                                 color='primary' 
