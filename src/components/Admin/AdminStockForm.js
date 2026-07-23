@@ -291,8 +291,10 @@ const cargaSeguridadSeriesSelectIA = () =>{
   }
 
   const cargaPopUpProducto = () =>{
+    //version para productos almacen, conf almacenable
+    //console.log(`cargando popup almacen: ${back_host}/ad_productopopupalmacen/${params.id_anfitrion}/${params.documento_id}`);
     axios
-    .get(`${back_host}/ad_productopopup/${params.id_anfitrion}/${params.documento_id}`)
+    .get(`${back_host}/ad_productopopupalmacen/${params.id_anfitrion}/${params.documento_id}`)
     .then((response) => {
         setProductoSelect(response.data);
     })
