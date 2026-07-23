@@ -926,6 +926,18 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
           })
           .catch(err => console.error(err));
 };
+const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
+  setShowModalMostrarRecaudacion(true);
+  console.log(`${back_host}/ad_ventausuario/${periodo}/${id_anfitrion}/${documento_id}/${dia}`);
+  axios.get(`${back_host}/ad_ventausuario/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
+          .then(res => {
+            if (res.data.success) {
+              setRecaudaciones(res.data.data);
+              console.log('Recaudaciones: ', res.data.data);
+            }
+          })
+          .catch(err => console.error(err));
+};
 
  return (
   <>
@@ -1190,6 +1202,18 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           })}`}
+        </Button>
+      )}
+      </Grid>
+
+      <Grid item xs={1} sm={1}>
+      {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
+        <Button variant="contained" 
+                color="inherit" 
+                onClick={() => handleClickRecords(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
+                fullWidth
+        >
+          RECORDS
         </Button>
       )}
 

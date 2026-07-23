@@ -138,6 +138,12 @@ export const AdminVentasColumnas = [
       sortable: true,
       width: '150px',
     },
+    {//35
+      name: 'USER',
+      selector: 'ctrl_crea_us',
+      sortable: true,
+      width: '150px',
+    },
     
     // Otras columnas específicas para la vista de Ventas
   ];
