@@ -48,6 +48,7 @@ import AdminStockRepKardex from "./components/Admin/AdminStockRepKardex";
 import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
 import AdminVentaPresupuestoList from "./components/Admin/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
+import AdminVentaPresupuestoNuevoForm from "./components/Admin/AdminVentaPresupuestoNuevoForm";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -87,7 +88,8 @@ function App(props) {
               {/* tus rutas originales, sin cambios */}
 
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaPresupuestoList />} />
-              <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaPresupuestoForm />} />
+              <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaPresupuestoNuevoForm />} />
+              <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
 
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />

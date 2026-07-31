@@ -7,7 +7,7 @@ import DataTable, { createTheme } from "react-data-table-component";
 import DaySelector from "./AdminDias";
 
 import { Box, Typography, InputBase, MenuItem,Select, useMediaQuery } from "@mui/material";
-import { Search, FileText, Calendar, Building2, ClipboardList } from "lucide-react";
+import { Search, FileText, Calendar, Building2, ClipboardList, Pencil } from "lucide-react";
 import { Plus } from 'lucide-react';
 
 import Tooltip from '@mui/material/Tooltip';
@@ -16,6 +16,7 @@ import AppButton from "../ui/AppButton";
 import AppIconBox from "../ui/AppIconBox";
 import AppChip from "../ui/AppChip";
 import palette from "../../theme/palette";
+import { presupuestosDemo, totalPresupuesto } from "./AdminVentaPresupuestoDemoData";
 
 /* =======================================================
    PALETA (manteniendo tu dark + teal)
@@ -71,64 +72,16 @@ createTheme(
    DATOS DEMO
 ======================================================= */
 
-const data = [
-  {
-    id: 1,
-    numero: "PP-0001-321321",
-    fecha: "04/01/2026",
-    cliente: "MALL PLAZA PERÚ S.A.",
-    trabajos: [
-      { id: 1, numero: "TR-001" },
-      { id: 2, numero: "TR-002" },
-      { id: 3, numero: "TR-003" },
-      { id: 4, numero: "TR-004" },
-    ],
-  },
-  {
-    id: 2,
-    numero: "PP-0002-654321",
-    fecha: "05/01/2026",
-    cliente: "AMERICA MOVIL PERU S.A.C.",
-    trabajos: [
-      { id: 5, numero: "TR-005" },
-      { id: 6, numero: "TR-006" },
-    ],
-  },
-  {
-    id: 3,
-    numero: "PP-0003-777777",
-    fecha: "06/01/2026",
-    cliente: "FABRICA DE EMBUTIDOS LA ALEMANA S.A.C.",
-    trabajos: [
-      { id: 7, numero: "TR-007" },
-      { id: 8, numero: "TR-008" },
-      { id: 9, numero: "TR-009" },
-      { id: 10, numero: "TR-010" },
-      { id: 11, numero: "TR-011" },
-      { id: 12, numero: "TR-012" },
-    ],
-  },
-  {
-    id: 4,
-    numero: "PP-0003-5798798",
-    fecha: "06/01/2026",
-    cliente: "CLARO",
-    trabajos: [
-      { id: 7, numero: "TR-107" },
-      { id: 8, numero: "TR-998" },
-      { id: 9, numero: "TR-978" },
-      { id: 10, numero: "TR-101" },
-      { id: 11, numero: "TR-111" },
-    ],
-  },
-
-];
+const formatMoney = (moneda, value) => `${moneda || "PEN"} ${Number(value || 0).toLocaleString("es-PE", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})}`;
 
 /* =======================================================
    COLUMNAS
 ======================================================= */
 
-const columns = [
+const createColumns = (onEdit) => [
   {
     name: "",
     grow: 1,
@@ -165,14 +118,46 @@ const columns = [
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: 0.5,
+              gap: 1,
+            }}
+          >
+            <Box
+              onClick={() => onEdit(row)}
+              sx={{
+                width: 30,
+                height: 30,
+                borderRadius: 1.5,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: palette.chip,
+                border: `1px solid ${palette.border}`,
+                color: palette.muted,
+                cursor: "pointer",
+                transition: "all .18s ease",
+                "&:hover": {
+                  backgroundColor: palette.accent,
+                  borderColor: palette.accent,
+                  color: palette.surface,
+                },
+              }}
+            >
+              <Pencil size={14} />
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
               color: palette.accent,
               fontWeight: 600,
               fontSize: "12.5px",
-            }}
-          >
-            <Calendar size={13} />
-            {row.fecha}
+              }}
+            >
+              <Calendar size={13} />
+              {row.fecha}
+            </Box>
           </Box>
         </Box>
 
@@ -182,14 +167,20 @@ const columns = [
             mt: 1,
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             gap: 0.75,
             color: palette.muted,
             fontSize: "13px",
           }}
         >
-          <Building2 size={13} style={{ flexShrink: 0 }} />
-          <Typography sx={{ fontSize: "13px", color: palette.muted }} noWrap>
-            {row.cliente}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
+            <Building2 size={13} style={{ flexShrink: 0 }} />
+            <Typography sx={{ fontSize: "13px", color: palette.muted }} noWrap>
+              {row.cliente}
+            </Typography>
+          </Box>
+          <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap", ml: 1 }}>
+            {formatMoney(row.moneda, row.total)}
           </Typography>
         </Box>
 
@@ -279,6 +270,16 @@ const customStyles = {
 ======================================================= */
 
 export default function AdminVentaPresupuestoList() {
+  const data = useMemo(() => presupuestosDemo.map((presupuesto) => ({
+    ...presupuesto,
+    fecha: presupuesto.fecha.split("-").reverse().join("/"),
+    cliente: presupuesto.cliente_nombre,
+    total: totalPresupuesto(presupuesto),
+    trabajos: presupuesto.trabajos.map((trabajo) => ({
+      ...trabajo,
+      numero: trabajo.numero || trabajo.codigo,
+    })),
+  })), []);
   const totalTrabajos = data.reduce((acc, p) => acc + p.trabajos.length, 0);
   const [buscar, setBuscar] = React.useState("");
 
@@ -1120,6 +1121,10 @@ export default function AdminVentaPresupuestoList() {
         alert("⚠️ No hay documento disponible");
       }
     };
+
+    const handleEditPresupuesto = (presupuesto) => {
+      navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/${presupuesto.numero}/edit`);
+    };
   
     const handleChange = e => {
       //Para todos los demas casos ;)
@@ -1196,7 +1201,7 @@ export default function AdminVentaPresupuestoList() {
             icon={<Plus size={18} />}
             
             onClick={() => {
-              // generaVenta();
+              navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/new`);
             }}
           >
             Nuevo presupuesto
@@ -1337,7 +1342,7 @@ export default function AdminVentaPresupuestoList() {
         {/* TABLA */}
         <DataTable
           theme="solarized"
-          columns={columns}
+          columns={createColumns(handleEditPresupuesto)}
           data={data}
           pagination
           paginationPerPage={10}
