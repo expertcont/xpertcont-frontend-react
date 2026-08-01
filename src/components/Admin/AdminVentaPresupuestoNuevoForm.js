@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
-import { Box, Dialog, Grid, IconButton, InputBase, MenuItem, Select, Typography } from "@mui/material";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Dialog, Grid, IconButton, InputBase, MenuItem, Select, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { Building2, Calendar, FileText, FileSearch, PackageSearch, Pencil, Plus, Save, Search, Trash2, UserRound, X } from "lucide-react";
+import DataTable from "react-data-table-component";
+import { ArrowLeft, Building2, Calendar, FileText, FileSearch, MapPin, PackageSearch, Pencil, Phone, Plus, Save, Search, Trash2, UserRound, X } from "lucide-react";
 import AppButton from "../ui/AppButton";
 import AppIconBox from "../ui/AppIconBox";
 import palette from "../../theme/palette";
@@ -9,7 +10,6 @@ import {
   costoRecurso as calcularCostoRecurso,
   detalleRecurso as obtenerDetalleRecurso,
   getPresupuestoDemo,
-  productosPresupuestoDemo,
   totalCosteadoTrabajo as calcularTotalCosteadoTrabajo,
   presupuestoNuevoDemo,
   totalRecursosTrabajo as calcularTotalRecursosTrabajo,
@@ -39,14 +39,127 @@ const multilineFieldSx = {
   py: 1,
 };
 
-function DemoField({ label, children }) {
+const headerFieldSx = {
+  ...fieldSx,
+  height: { xs: 38, md: 42 },
+};
+
+const headerInputSx = {
+  color: palette.text,
+  fontSize: "13px",
+  width: "100%",
+  "& input::placeholder": {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
+const compactNumberFieldSx = {
+  ...fieldSx,
+  gap: 0.75,
+  px: 1,
+};
+
+const productosTableStyles = {
+  table: { style: { backgroundColor: "transparent" } },
+  headRow: {
+    style: {
+      minHeight: 34,
+      backgroundColor: palette.bg,
+      borderBottom: `1px solid ${palette.borderSoft}`,
+    },
+  },
+  headCells: {
+    style: {
+      color: palette.muted,
+      fontSize: "11px",
+      fontWeight: 800,
+      textTransform: "uppercase",
+      paddingLeft: "10px",
+      paddingRight: "10px",
+    },
+  },
+  rows: {
+    style: {
+      minHeight: 46,
+      backgroundColor: palette.surface,
+      color: palette.text,
+      borderBottom: `1px solid ${palette.borderSoft}`,
+      cursor: "pointer",
+      "&:hover": {
+        backgroundColor: palette.surfaceAlt,
+        boxShadow: `inset 3px 0 0 ${palette.accent}`,
+      },
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: palette.surfaceAlt,
+      color: palette.text,
+      boxShadow: `inset 3px 0 0 ${palette.accent}`,
+      outline: "none",
+    },
+  },
+  cells: {
+    style: {
+      paddingLeft: "10px",
+      paddingRight: "10px",
+      fontSize: "13px",
+    },
+  },
+  pagination: {
+    style: {
+      backgroundColor: "transparent",
+      color: palette.muted,
+      borderTop: `1px solid ${palette.borderSoft}`,
+    },
+    pageButtonsStyle: {
+      color: palette.muted,
+      fill: palette.muted,
+      "&:hover:not(:disabled)": { backgroundColor: palette.accentSoft },
+      "&:disabled": { color: palette.border, fill: palette.border },
+    },
+  },
+  progress: {
+    style: {
+      backgroundColor: "transparent",
+      color: palette.muted,
+    },
+  },
+};
+
+function DemoField({ label, children, compactMobile = false }) {
   return (
     <Box>
-      <Typography sx={{ color: palette.muted, fontSize: "11px", mb: 0.75, textTransform: "uppercase" }}>
+      <Typography
+        sx={{
+          color: palette.muted,
+          display: compactMobile ? { xs: "none", md: "block" } : "block",
+          fontSize: "11px",
+          mb: 0.75,
+          textTransform: "uppercase",
+        }}
+      >
         {label}
       </Typography>
       {children}
     </Box>
+  );
+}
+
+function HeaderInlineLabel({ children }) {
+  return (
+    <Typography
+      component="span"
+      sx={{
+        color: palette.muted,
+        fontSize: "10px",
+        fontWeight: 800,
+        textTransform: "uppercase",
+        whiteSpace: "nowrap",
+        mr: 1,
+      }}
+    >
+      {children}
+    </Typography>
   );
 }
 
@@ -79,9 +192,92 @@ const totalCosteadoTrabajo = (trabajo) => calcularTotalCosteadoTrabajo(trabajo);
 
 const totalTrabajo = (trabajo) => calcularTotalTrabajo(trabajo);
 
+const normalizarTextoBusqueda = (value = "") => String(value)
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .trim()
+  .toUpperCase();
+
+const textoProductoTipo = (producto) => producto.descripcion_busqueda || normalizarTextoBusqueda(producto.descripcion);
+
+const inferirTipoProducto = (producto) => {
+  const texto = textoProductoTipo(producto);
+  if (texto.includes("OPERARIO")) {
+    return "OPERARIO";
+  }
+  if (texto.includes("SERVICIO")) {
+    return "SERVICIO";
+  }
+  return "MATERIAL";
+};
+
+const parseAuxiliarProducto = (auxiliar = "") => {
+  const [precioCompra = 0, contUnd = "", porcIgv = "", idAnfitrion = "", documentoId = ""] = String(auxiliar).split("-");
+  return {
+    precio_compra: Number(precioCompra || 0),
+    cont_und: contUnd,
+    porc_igv: porcIgv,
+    id_anfitrion: idAnfitrion,
+    documento_id: documentoId,
+  };
+};
+
+const normalizarProductoApi = (producto) => ({
+  ...parseAuxiliarProducto(producto.auxiliar),
+  codigo: producto.codigo || producto.id_producto || "",
+  descripcion: producto.descripcion || producto.nombre || "",
+  descripcion_busqueda: normalizarTextoBusqueda(producto.descripcion || producto.nombre || ""),
+  auxiliar: producto.auxiliar || "",
+  tipo: String(producto.tipo || inferirTipoProducto(producto)).trim().toUpperCase(),
+});
+
+const extraerRegistrosProductoApi = (data) => {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+  if (Array.isArray(data?.rows)) {
+    return data.rows;
+  }
+  if (Array.isArray(data?.recordset)) {
+    return data.recordset;
+  }
+  if (Array.isArray(data?.productos)) {
+    return data.productos;
+  }
+  if (Array.isArray(data?.data?.rows)) {
+    return data.data.rows;
+  }
+  return [];
+};
+
+const filtrarProductosCatalogo = (catalogo, tipoRecurso, busqueda) => {
+  const tipoFiltro = normalizarTextoBusqueda(tipoRecurso);
+  const busquedaNormalizada = normalizarTextoBusqueda(busqueda);
+
+  return catalogo.filter(producto => {
+    const descripcion = textoProductoTipo(producto);
+    const textoFila = normalizarTextoBusqueda(`${producto.codigo} ${producto.descripcion} ${producto.tipo} ${producto.cont_und}`);
+    let coincideTipo = true;
+
+    if (tipoFiltro === "MATERIAL") {
+      coincideTipo = !descripcion.includes("OPERARIO") && !descripcion.includes("SERVICIO");
+    } else if (tipoFiltro === "OPERARIO" || tipoFiltro === "SERVICIO") {
+      coincideTipo = descripcion.includes(tipoFiltro);
+    }
+
+    const coincideBusqueda = !busquedaNormalizada || textoFila.includes(busquedaNormalizada);
+    return coincideTipo && coincideBusqueda;
+  });
+};
+
 export default function AdminVentaPresupuestoNuevoForm() {
   const navigate = useNavigate();
   const params = useParams();
+  const productoModalSmall = useMediaQuery("(max-width:600px)");
+  const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const editando = Boolean(params.comprobante);
   const presupuestoInicial = getPresupuestoDemo(params.comprobante) || presupuestoNuevoDemo;
   const [presupuesto, setPresupuesto] = useState({
@@ -111,9 +307,55 @@ export default function AdminVentaPresupuestoNuevoForm() {
     costo_m2: 0,
   });
   const [productoModalOpen, setProductoModalOpen] = useState(false);
-  const [productoPagina, setProductoPagina] = useState(0);
   const [productoBusqueda, setProductoBusqueda] = useState("");
-  const productosPorPagina = 6;
+  const [productosCatalogo, setProductosCatalogo] = useState([]);
+  const [productosListado, setProductosListado] = useState([]);
+  const [productosCargando, setProductosCargando] = useState(false);
+  const [productosError, setProductosError] = useState("");
+  const [productoResetPagina, setProductoResetPagina] = useState(false);
+  const productoBusquedaRef = useRef(null);
+
+  useEffect(() => {
+    const cargarProductos = async () => {
+      setProductosCargando(true);
+      setProductosError("");
+
+      try {
+        const response = await fetch(`${back_host}/ad_productopopupalmacen/${params.id_anfitrion}/${params.documento_id}`);
+        const data = await response.json();
+        const registros = extraerRegistrosProductoApi(data);
+        const productosNormalizados = registros.map(normalizarProductoApi);
+        setProductosCatalogo(productosNormalizados);
+      } catch (error) {
+        console.log("Error cargando productos para presupuesto:", error);
+        setProductosCatalogo([]);
+        setProductosError("No se pudieron cargar los productos.");
+      } finally {
+        setProductosCargando(false);
+      }
+    };
+
+    if (params.id_anfitrion && params.documento_id) {
+      cargarProductos();
+    }
+  }, [back_host, params.documento_id, params.id_anfitrion]);
+
+  useEffect(() => {
+    if (!productoModalOpen) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      productoBusquedaRef.current?.focus();
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [productoModalOpen]);
+
+  useEffect(() => {
+    setProductosListado(filtrarProductosCatalogo(productosCatalogo, recursoNuevo.tipo, productoBusqueda));
+    setProductoResetPagina(prev => !prev);
+  }, [productoBusqueda, productosCatalogo, recursoNuevo.tipo]);
 
   const subtotal = useMemo(
     () => presupuesto.trabajos.reduce((acc, item) => acc + totalTrabajo(item), 0),
@@ -275,37 +517,16 @@ export default function AdminVentaPresupuestoNuevoForm() {
     }));
   };
 
-  const productosFiltrados = useMemo(() => {
-    const textoBusqueda = productoBusqueda.trim().toLowerCase();
-    if (recursoNuevo.tipo === "MATERIAL") {
-      return productosPresupuestoDemo.filter(producto => {
-        const coincideTipo = producto.tipo !== "OPERARIO" && producto.tipo !== "SERVICIO";
-        const coincideBusqueda = !textoBusqueda
-          || producto.id_producto.toLowerCase().includes(textoBusqueda)
-          || producto.nombre.toLowerCase().includes(textoBusqueda)
-          || producto.tipo.toLowerCase().includes(textoBusqueda);
-        return coincideTipo && coincideBusqueda;
-      });
-    }
-    return productosPresupuestoDemo.filter(producto => {
-      const coincideTipo = producto.tipo === recursoNuevo.tipo;
-      const coincideBusqueda = !textoBusqueda
-        || producto.id_producto.toLowerCase().includes(textoBusqueda)
-        || producto.nombre.toLowerCase().includes(textoBusqueda)
-        || producto.tipo.toLowerCase().includes(textoBusqueda);
-      return coincideTipo && coincideBusqueda;
-    });
-  }, [productoBusqueda, recursoNuevo.tipo]);
-
-  const totalPaginasProducto = Math.max(1, Math.ceil(productosFiltrados.length / productosPorPagina));
-  const productosPaginaActual = productosFiltrados.slice(
-    productoPagina * productosPorPagina,
-    (productoPagina + 1) * productosPorPagina,
-  );
+  const productosResumen = useMemo(() => ({
+    total: productosCatalogo.length,
+    operario: productosCatalogo.filter(producto => producto.descripcion_busqueda.includes("OPERARIO")).length,
+    servicio: productosCatalogo.filter(producto => producto.descripcion_busqueda.includes("SERVICIO")).length,
+    mostrados: productosListado.length,
+  }), [productosCatalogo, productosListado.length]);
 
   const handleOpenProductoModal = () => {
-    setProductoPagina(0);
     setProductoBusqueda("");
+    setProductoResetPagina(prev => !prev);
     setProductoModalOpen(true);
   };
 
@@ -313,9 +534,9 @@ export default function AdminVentaPresupuestoNuevoForm() {
     setRecursoNuevo(prev => {
       const next = {
         ...prev,
-        codigo: producto.id_producto,
-        descripcion: producto.nombre,
-        unidad: producto.tipo === "SERVICIO" ? "M2" : prev.unidad,
+        codigo: producto.codigo,
+        descripcion: producto.descripcion,
+        unidad: producto.tipo === "SERVICIO" ? "M2" : producto.cont_und || prev.unidad,
       };
 
       if (prev.tipo === "OPERARIO" || prev.tipo === "MANO_OBRA") {
@@ -330,6 +551,71 @@ export default function AdminVentaPresupuestoNuevoForm() {
     });
     setProductoModalOpen(false);
   };
+
+  const productosColumnas = useMemo(() => [
+    /*{
+      name: "Codigo",
+      selector: row => row.codigo,
+      sortable: true,
+      width: "80px",
+      cell: row => (
+        <Typography sx={{ color: palette.accent, fontSize: "13px", fontWeight: 500 }}>
+          {row.codigo}
+        </Typography>
+      ),
+    },*/
+    {
+      name: "Descripcion",
+      selector: row => row.descripcion,
+      sortable: true,
+      //grow: 2,
+      width: productoModalSmall ? "280px" : "380px",
+      compact: true,
+      /*cell: row => (
+        <Typography sx={{ color: palette.text, fontSize: "13px" }}>
+          {row.descripcion}
+        </Typography>
+      ),*/
+    },
+    {
+      name: "UND",
+      selector: row => row.tipo === "SERVICIO" ? "M2" : row.cont_und || "-",
+      sortable: true,
+      width: "40px",
+      compact: true,
+      cell: row => (
+        <Typography sx={{ color: palette.muted, fontSize: "13px", fontWeight: 400 }}>
+          {row.tipo === "SERVICIO" ? "M2" : row.cont_und || "-"}
+        </Typography>
+      ),
+    },
+    {
+      name: "Costo",
+      selector: row => row.precio_compra,
+      sortable: true,
+      right: true,
+      width: "60px",
+      compact: true,
+      cell: row => (
+        <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 400 }}>
+          {Money({ value: row.precio_compra })}
+        </Typography>
+      ),
+    },
+    {
+      name: "Tipo",
+      selector: row => row.tipo,
+      sortable: true,
+      right: true,
+      width: "80px",
+      compact: true,
+      cell: row => (
+        <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 400 }}>
+          {row.tipo}
+        </Typography>
+      ),
+    },
+  ], [productoModalSmall]);
 
   const handleDeleteRecurso = (idRecurso) => {
     if (!trabajoSeleccionado) {
@@ -400,7 +686,20 @@ export default function AdminVentaPresupuestoNuevoForm() {
             mb: 3,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton
+              onClick={() => navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}`)}
+              title="Anterior"
+              sx={{
+                color: palette.muted,
+                border: `1px solid ${palette.border}`,
+                backgroundColor: palette.surface,
+                width: 36,
+                height: 36,
+              }}
+            >
+              <ArrowLeft size={18} />
+            </IconButton>
             <AppIconBox>
               <FileText size={16} />
             </AppIconBox>
@@ -414,19 +713,38 @@ export default function AdminVentaPresupuestoNuevoForm() {
             </Box>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
-            <AppButton onClick={() => navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${params.periodo}/${params.documento_id}`)}>
-              Anterior
-            </AppButton>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center", justifyContent: { xs: "flex-end", md: "flex-start" } }}>
             <AppButton icon={<Save size={17} />} onClick={handleSaveDemo}>
               Grabar presupuesto
             </AppButton>
-            <AppButton icon={<FileSearch size={17} />} onClick={handlePrevioPdf}>
-              Previo PDF
-            </AppButton>
-            <AppButton icon={<FileText size={17} />} onClick={handlePdfCliente}>
-              PDF cliente
-            </AppButton>
+            <IconButton
+              onClick={handlePrevioPdf}
+              title="Previo PDF"
+              sx={{
+                color: palette.muted,
+                border: `1px solid ${palette.border}`,
+                backgroundColor: palette.surface,
+                width: 38,
+                height: 38,
+                "&:hover": { color: palette.accent, backgroundColor: palette.accentSoft },
+              }}
+            >
+              <FileSearch size={18} />
+            </IconButton>
+            <IconButton
+              onClick={handlePdfCliente}
+              title="PDF cliente"
+              sx={{
+                color: palette.muted,
+                border: `1px solid ${palette.border}`,
+                backgroundColor: palette.surface,
+                width: 38,
+                height: 38,
+                "&:hover": { color: palette.accent, backgroundColor: palette.accentSoft },
+              }}
+            >
+              <FileText size={18} />
+            </IconButton>
           </Box>
         </Box>
 
@@ -439,130 +757,140 @@ export default function AdminVentaPresupuestoNuevoForm() {
             border: `1px solid ${palette.border}`,
           }}
         >
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 1, md: 2 }}>
             <Grid item xs={12} md={3}>
-              <DemoField label="Numero">
-                <Box sx={fieldSx}>
-                  <FileText size={15} color={palette.muted} />
-                  <InputBase
-                    value={presupuesto.numero}
-                    onChange={(e) => handleCabeceraChange("numero", e.target.value)}
-                    sx={{ ml: 1, color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+              <Box sx={headerFieldSx}>
+                <FileText size={15} color={palette.muted} />
+                <HeaderInlineLabel>Numero</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Numero"
+                  value={presupuesto.numero}
+                  onChange={(e) => handleCabeceraChange("numero", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
             <Grid item xs={12} md={3}>
-              <DemoField label="Fecha">
-                <Box sx={fieldSx}>
-                  <Calendar size={15} color={palette.muted} />
-                  <InputBase
-                    type="date"
-                    value={presupuesto.fecha}
-                    onChange={(e) => handleCabeceraChange("fecha", e.target.value)}
-                    sx={{ ml: 1, color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+              <Box sx={headerFieldSx}>
+                <Calendar size={15} color={palette.muted} />
+                <HeaderInlineLabel>Fecha</HeaderInlineLabel>
+                <InputBase
+                  type="date"
+                  value={presupuesto.fecha}
+                  onChange={(e) => handleCabeceraChange("fecha", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
             <Grid item xs={12} md={3}>
-              <DemoField label="Moneda">
-                <Select
-                  fullWidth
-                  size="small"
-                  value={presupuesto.moneda}
-                  onChange={(e) => handleCabeceraChange("moneda", e.target.value)}
-                  sx={{ ...fieldSx, ".MuiSelect-select": { p: 0 }, ".MuiSelect-icon": { color: palette.muted } }}
-                  MenuProps={{ PaperProps: { sx: { bgcolor: palette.surface, color: palette.text } } }}
-                >
-                  <MenuItem value="PEN">Soles</MenuItem>
-                  <MenuItem value="USD">Dolares</MenuItem>
-                </Select>
-              </DemoField>
+              <Select
+                fullWidth
+                size="small"
+                value={presupuesto.moneda}
+                onChange={(e) => handleCabeceraChange("moneda", e.target.value)}
+                renderValue={(value) => (
+                  <Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+                    <HeaderInlineLabel>Moneda</HeaderInlineLabel>
+                    {value}
+                  </Box>
+                )}
+                sx={{ ...headerFieldSx, ".MuiSelect-select": { p: 0, display: "flex", alignItems: "center" }, ".MuiSelect-icon": { color: palette.muted } }}
+                MenuProps={{ PaperProps: { sx: { bgcolor: palette.surface, color: palette.text } } }}
+              >
+                <MenuItem value="PEN">Soles</MenuItem>
+                <MenuItem value="USD">Dolares</MenuItem>
+              </Select>
             </Grid>
             <Grid item xs={12} md={3}>
-              <DemoField label="Forma pago">
-                <Select
-                  fullWidth
-                  size="small"
-                  value={presupuesto.forma_pago}
-                  onChange={(e) => handleCabeceraChange("forma_pago", e.target.value)}
-                  sx={{ ...fieldSx, ".MuiSelect-select": { p: 0 }, ".MuiSelect-icon": { color: palette.muted } }}
-                  MenuProps={{ PaperProps: { sx: { bgcolor: palette.surface, color: palette.text } } }}
-                >
-                  <MenuItem value="Contado">Contado</MenuItem>
-                  <MenuItem value="Credito">Credito</MenuItem>
-                </Select>
-              </DemoField>
+              <Select
+                fullWidth
+                size="small"
+                value={presupuesto.forma_pago}
+                onChange={(e) => handleCabeceraChange("forma_pago", e.target.value)}
+                renderValue={(value) => (
+                  <Box component="span" sx={{ display: "flex", alignItems: "center" }}>
+                    <HeaderInlineLabel>Pago</HeaderInlineLabel>
+                    {value}
+                  </Box>
+                )}
+                sx={{ ...headerFieldSx, ".MuiSelect-select": { p: 0, display: "flex", alignItems: "center" }, ".MuiSelect-icon": { color: palette.muted } }}
+                MenuProps={{ PaperProps: { sx: { bgcolor: palette.surface, color: palette.text } } }}
+              >
+                <MenuItem value="Contado">Contado</MenuItem>
+                <MenuItem value="Credito">Credito</MenuItem>
+              </Select>
             </Grid>
 
             <Grid item xs={12} md={3}>
-              <DemoField label="Documento cliente">
-                <Box sx={fieldSx}>
-                  <Building2 size={15} color={palette.muted} />
-                  <InputBase
-                    value={presupuesto.cliente_documento}
-                    onChange={(e) => handleCabeceraChange("cliente_documento", e.target.value)}
-                    sx={{ ml: 1, color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+              <Box sx={headerFieldSx}>
+                <Building2 size={15} color={palette.muted} />
+                <HeaderInlineLabel>Doc.</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Documento cliente"
+                  value={presupuesto.cliente_documento}
+                  onChange={(e) => handleCabeceraChange("cliente_documento", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
             <Grid item xs={12} md={6}>
-              <DemoField label="Cliente">
-                <Box sx={fieldSx}>
-                  <InputBase
-                    value={presupuesto.cliente_nombre}
-                    onChange={(e) => handleCabeceraChange("cliente_nombre", e.target.value)}
-                    sx={{ color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+              <Box sx={headerFieldSx}>
+                <Building2 size={15} color={palette.muted} />
+                <HeaderInlineLabel>Cliente</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Cliente"
+                  value={presupuesto.cliente_nombre}
+                  onChange={(e) => handleCabeceraChange("cliente_nombre", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
-            <Grid item xs={12} md={2}>
-              <DemoField label="Contacto">
-                <Box sx={fieldSx}>
-                  <UserRound size={15} color={palette.muted} />
-                  <InputBase
-                    value={presupuesto.contacto}
-                    onChange={(e) => handleCabeceraChange("contacto", e.target.value)}
-                    sx={{ ml: 1, color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+            <Grid item xs={12} md={3}>
+              <Box sx={headerFieldSx}>
+                <UserRound size={15} color={palette.muted} />
+                <HeaderInlineLabel>Contacto</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Contacto"
+                  value={presupuesto.contacto}
+                  onChange={(e) => handleCabeceraChange("contacto", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
-            <Grid item xs={12} md={2}>
-              <DemoField label="Celular">
-                <Box sx={fieldSx}>
-                  <InputBase
-                    value={presupuesto.celular}
-                    onChange={(e) => handleCabeceraChange("celular", e.target.value)}
-                    sx={{ color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+            <Grid item xs={12} md={3}>
+              <Box sx={headerFieldSx}>
+                <Phone size={15} color={palette.muted} />
+                <HeaderInlineLabel>Celular</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Celular"
+                  value={presupuesto.celular}
+                  onChange={(e) => handleCabeceraChange("celular", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
             <Grid item xs={12} md={8}>
-              <DemoField label="Direccion">
-                <Box sx={fieldSx}>
-                  <InputBase
-                    value={presupuesto.direccion}
-                    onChange={(e) => handleCabeceraChange("direccion", e.target.value)}
-                    sx={{ color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+              <Box sx={headerFieldSx}>
+                <MapPin size={15} color={palette.muted} />
+                <HeaderInlineLabel>Direccion</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Direccion"
+                  value={presupuesto.direccion}
+                  onChange={(e) => handleCabeceraChange("direccion", e.target.value)}
+                  sx={{ ...headerInputSx, ml: 1 }}
+                />
+              </Box>
             </Grid>
             <Grid item xs={12} md={4}>
-              <DemoField label="Campaña">
-                <Box sx={fieldSx}>
-                  <InputBase
-                    value={presupuesto.campana}
-                    onChange={(e) => handleCabeceraChange("campana", e.target.value)}
-                    sx={{ color: palette.text, fontSize: "13px", width: "100%" }}
-                  />
-                </Box>
-              </DemoField>
+              <Box sx={headerFieldSx}>
+                <HeaderInlineLabel>Campaña</HeaderInlineLabel>
+                <InputBase
+                  placeholder="Campaña"
+                  value={presupuesto.campana}
+                  onChange={(e) => handleCabeceraChange("campana", e.target.value)}
+                  sx={headerInputSx}
+                />
+              </Box>
             </Grid>
           </Grid>
         </Box>
@@ -913,7 +1241,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
               >
                 <Typography sx={{ color: totalMateriales > 0 ? "#81c784" : "#ffab91", fontSize: "12px", fontWeight: 700 }}>
                   {totalMateriales > 0
-                    ? "Costeo detallado en proceso: revisa que materiales, operarios y servicios esten completos antes de cerrar."
+                    ? ""
                     : "Falta costear detalles: agrega materiales, operarios o servicios para completar el proceso interno."}
                 </Typography>
               </Box>
@@ -939,14 +1267,15 @@ export default function AdminVentaPresupuestoNuevoForm() {
             </Box>
             <Grid container spacing={1} sx={{ alignItems: "center" }}>
               <Grid item xs={12} md={2}>
-                <DemoField label="Tipo">
+                <DemoField label="Tipo" compactMobile>
                 <Select
                   fullWidth
                   size="small"
                   value={recursoNuevo.tipo}
                   onChange={(e) => {
                     handleRecursoNuevoChange("tipo", e.target.value);
-                    setProductoPagina(0);
+                    setProductoBusqueda("");
+                    setProductoResetPagina(prev => !prev);
                   }}
                   sx={{ ...fieldSx, ".MuiSelect-select": { p: 0 }, ".MuiSelect-icon": { color: palette.muted } }}
                   MenuProps={{ PaperProps: { sx: { bgcolor: palette.surface, color: palette.text } } }}
@@ -958,7 +1287,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 </DemoField>
               </Grid>
               <Grid item xs={12} md={1.6}>
-                <DemoField label="Codigo">
+                <DemoField label="Codigo" compactMobile>
                 <Box onClick={handleOpenProductoModal} sx={{ ...fieldSx, cursor: "pointer" }}>
                   <Search size={15} color={palette.muted} />
                   <InputBase
@@ -971,7 +1300,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 </DemoField>
               </Grid>
               <Grid item xs={12} md={3.4}>
-                <DemoField label="Descripcion">
+                <DemoField label="Descripcion" compactMobile>
                 <InputBase
                   placeholder={
                     recursoNuevo.tipo === "OPERARIO"
@@ -990,35 +1319,44 @@ export default function AdminVentaPresupuestoNuevoForm() {
               {recursoNuevo.tipo === "MATERIAL" && (
                 <>
                   <Grid item xs={4} md={1}>
-                    <DemoField label="Cantidad">
-                    <InputBase
-                      type="number"
-                      placeholder="Cant."
-                      value={recursoNuevo.cantidad}
-                      onChange={(e) => handleRecursoNuevoChange("cantidad", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Cantidad" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Cant.</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0"
+                        value={recursoNuevo.cantidad}
+                        onChange={(e) => handleRecursoNuevoChange("cantidad", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                   <Grid item xs={4} md={1}>
-                    <DemoField label="Unidad">
-                    <InputBase
-                      placeholder="Und."
-                      value={recursoNuevo.unidad}
-                      onChange={(e) => handleRecursoNuevoChange("unidad", e.target.value)}
-                      sx={fieldSx}
-                    />
+                    <DemoField label="Unidad" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Und.</HeaderInlineLabel>
+                      <InputBase
+                        placeholder="-"
+                        value={recursoNuevo.unidad}
+                        onChange={(e) => handleRecursoNuevoChange("unidad", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%" }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                   <Grid item xs={4} md={1.4}>
-                    <DemoField label="Costo unit.">
-                    <InputBase
-                      type="number"
-                      placeholder="Costo"
-                      value={recursoNuevo.costo_unitario}
-                      onChange={(e) => handleRecursoNuevoChange("costo_unitario", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Costo unit." compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Costo</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0.00"
+                        value={recursoNuevo.costo_unitario}
+                        onChange={(e) => handleRecursoNuevoChange("costo_unitario", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                 </>
@@ -1027,25 +1365,31 @@ export default function AdminVentaPresupuestoNuevoForm() {
               {recursoNuevo.tipo === "OPERARIO" && (
                 <>
                   <Grid item xs={6} md={1.2}>
-                    <DemoField label="Horas">
-                    <InputBase
-                      type="number"
-                      placeholder="Horas"
-                      value={recursoNuevo.horas}
-                      onChange={(e) => handleRecursoNuevoChange("horas", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Horas" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Horas</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0"
+                        value={recursoNuevo.horas}
+                        onChange={(e) => handleRecursoNuevoChange("horas", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                   <Grid item xs={6} md={1.4}>
-                    <DemoField label="Costo hora">
-                    <InputBase
-                      type="number"
-                      placeholder="Costo/h"
-                      value={recursoNuevo.costo_hora}
-                      onChange={(e) => handleRecursoNuevoChange("costo_hora", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Costo hora" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Costo</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0.00"
+                        value={recursoNuevo.costo_hora}
+                        onChange={(e) => handleRecursoNuevoChange("costo_hora", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                 </>
@@ -1054,36 +1398,45 @@ export default function AdminVentaPresupuestoNuevoForm() {
               {recursoNuevo.tipo === "SERVICIO" && (
                 <>
                   <Grid item xs={4} md={0.9}>
-                    <DemoField label="Largo">
-                    <InputBase
-                      type="number"
-                      placeholder="Largo"
-                      value={recursoNuevo.largo}
-                      onChange={(e) => handleRecursoNuevoChange("largo", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Largo" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Largo</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0"
+                        value={recursoNuevo.largo}
+                        onChange={(e) => handleRecursoNuevoChange("largo", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                   <Grid item xs={4} md={0.9}>
-                    <DemoField label="Ancho">
-                    <InputBase
-                      type="number"
-                      placeholder="Ancho"
-                      value={recursoNuevo.ancho}
-                      onChange={(e) => handleRecursoNuevoChange("ancho", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Ancho" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Ancho</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0"
+                        value={recursoNuevo.ancho}
+                        onChange={(e) => handleRecursoNuevoChange("ancho", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                   <Grid item xs={4} md={1.2}>
-                    <DemoField label="Costo m2">
-                    <InputBase
-                      type="number"
-                      placeholder="Costo m2"
-                      value={recursoNuevo.costo_m2}
-                      onChange={(e) => handleRecursoNuevoChange("costo_m2", e.target.value)}
-                      sx={{ ...fieldSx, "& input": { textAlign: "right" } }}
-                    />
+                    <DemoField label="Costo m2" compactMobile>
+                    <Box sx={compactNumberFieldSx}>
+                      <HeaderInlineLabel>Costo</HeaderInlineLabel>
+                      <InputBase
+                        type="number"
+                        placeholder="0.00"
+                        value={recursoNuevo.costo_m2}
+                        onChange={(e) => handleRecursoNuevoChange("costo_m2", e.target.value)}
+                        sx={{ color: palette.text, fontSize: "13px", width: "100%", "& input": { textAlign: "right" } }}
+                      />
+                    </Box>
                     </DemoField>
                   </Grid>
                 </>
@@ -1091,7 +1444,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
 
               <Grid item xs={12} md={1.2}>
                 <Box sx={{ pt: { xs: 0, md: 2.4 }, display: "flex", justifyContent: "center", ml: { xs: 0, md: 1.25 } }}>
-                <AppButton icon={<Plus size={16} />} onClick={handleAddRecurso}>
+                <AppButton fullWidth icon={<Plus size={16} />} onClick={handleAddRecurso}>
                   Agregar
                 </AppButton>
                 </Box>
@@ -1112,12 +1465,10 @@ export default function AdminVentaPresupuestoNuevoForm() {
               borderBottom: `1px solid ${palette.borderSoft}`,
             }}
           >
-            <Grid item md={1.4}>Codigo</Grid>
-            <Grid item md={1.5}>Tipo</Grid>
-            <Grid item md={4.1}>Descripcion</Grid>
-            <Grid item md={2.5}>Detalle calculo</Grid>
-            <Grid item md={1.4} sx={{ textAlign: "right" }}>Costo</Grid>
-            <Grid item md={0.4}></Grid>
+            <Grid item md={7.2}>Descripcion</Grid>
+            <Grid item md={2.6}>Detalle calculo</Grid>
+            <Grid item md={1.6} sx={{ textAlign: "right" }}>Costo</Grid>
+            <Grid item md={0.6}></Grid>
           </Grid>
 
           <Box>
@@ -1127,51 +1478,79 @@ export default function AdminVentaPresupuestoNuevoForm() {
               return (
                 <Grid
                   container
-                  spacing={1}
+                  spacing={{ xs: 0.2, md: 0.75 }}
                   key={material.id}
                   sx={{
-                    py: 1,
+                    p: { xs: 0.15, md: 0 },
+                    py: { xs: 0.22, md: 0.7 },
+                    mb: 0,
+                    border: "none",
                     borderBottom: `1px solid ${palette.borderSoft}`,
+                    borderRadius: 0,
+                    backgroundColor: "transparent",
                     alignItems: "center",
                   }}
                 >
-                  <Grid item xs={12} md={1.4}>
-                    <Typography sx={{ color: palette.accent, fontSize: "13px", fontWeight: 700 }}>
-                      {material.codigo}
-                    </Typography>
+                  <Grid item xs={10} sx={{ display: { xs: "block", md: "none" } }}>
+                    <Tooltip title={`Tipo: ${material.tipo} · Codigo: ${material.codigo}`} arrow placement="top-start">
+                      <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 700, lineHeight: 1.12 }}>
+                        {material.descripcion}
+                      </Typography>
+                    </Tooltip>
                   </Grid>
-                  <Grid item xs={12} md={1.5}>
-                    <Typography sx={{ color: palette.muted, fontSize: "12px", fontWeight: 700 }}>
-                      {material.tipo}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={4.1}>
-                    <Typography sx={{ color: palette.text, fontSize: "13px" }}>
-                      {material.descripcion}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={2.5}>
-                    <Typography sx={{ color: palette.muted, fontSize: "13px" }}>
-                      {detalleRecurso(material)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={10} md={1.4}>
-                    <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 800, textAlign: "right" }}>
-                      {Money({ value: importe })}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={2} md={0.4}>
+                  <Grid item xs={2} sx={{ display: { xs: "block", md: "none" } }}>
                     <Box
                       onClick={() => handleDeleteRecurso(material.id)}
                       sx={{
                         display: "flex",
-                        justifyContent: "center",
+                        justifyContent: "flex-end",
                         color: palette.muted,
                         cursor: "pointer",
                         "&:hover": { color: "#ff8a65" },
                       }}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={19} />
+                    </Box>
+                  </Grid>
+                  <Grid item xs={7} sx={{ display: { xs: "block", md: "none" } }}>
+                    <Typography sx={{ color: palette.muted, fontSize: "11px", lineHeight: 1.12 }}>
+                      {detalleRecurso(material)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={5} sx={{ display: { xs: "block", md: "none" } }}>
+                    <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800, textAlign: "right" }}>
+                      {Money({ value: importe })}
+                    </Typography>
+                  </Grid>
+                  <Grid item md={7.2} sx={{ display: { xs: "none", md: "block" } }}>
+                    <Tooltip title={`Tipo: ${material.tipo} · Codigo: ${material.codigo}`} arrow placement="top-start">
+                      <Typography sx={{ color: palette.text, fontSize: "13px", lineHeight: 1.35 }}>
+                        {material.descripcion}
+                      </Typography>
+                    </Tooltip>
+                  </Grid>
+                  <Grid item md={2.6} sx={{ display: { xs: "none", md: "block" } }}>
+                    <Typography sx={{ color: palette.muted, fontSize: "12px", lineHeight: 1.35 }}>
+                      {detalleRecurso(material)}
+                    </Typography>
+                  </Grid>
+                  <Grid item md={1.6} sx={{ display: { xs: "none", md: "block" } }}>
+                    <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 800, textAlign: "right" }}>
+                      {Money({ value: importe })}
+                    </Typography>
+                  </Grid>
+                  <Grid item md={0.6} sx={{ display: { xs: "none", md: "block" } }}>
+                    <Box
+                      onClick={() => handleDeleteRecurso(material.id)}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        color: palette.muted,
+                        cursor: "pointer",
+                        "&:hover": { color: "#ff8a65" },
+                      }}
+                    >
+                      <Trash2 size={18} />
                     </Box>
                   </Grid>
                 </Grid>
@@ -1259,7 +1638,9 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 Seleccionar {recursoNuevo.tipo === "OPERARIO" ? "operario" : recursoNuevo.tipo.toLowerCase()}
               </Typography>
               <Typography sx={{ color: palette.muted, fontSize: "12px", mt: 0.25 }}>
-                {productosFiltrados.length} opciones disponibles
+                {productosCargando
+                  ? "Cargando productos..."
+                  : `${productosResumen.mostrados} mostrados · total ${productosResumen.total} · operario ${productosResumen.operario} · servicio ${productosResumen.servicio}`}
               </Typography>
             </Box>
             <IconButton onClick={() => setProductoModalOpen(false)} sx={{ color: palette.muted }}>
@@ -1271,83 +1652,39 @@ export default function AdminVentaPresupuestoNuevoForm() {
             <Box sx={{ ...fieldSx, mb: 1.5 }}>
               <InputBase
                 autoFocus
-                placeholder="Filtrar por codigo, nombre o tipo"
+                inputRef={productoBusquedaRef}
+                placeholder="Filtrar por codigo, descripcion o tipo"
                 value={productoBusqueda}
                 onChange={(e) => {
                   setProductoBusqueda(e.target.value);
-                  setProductoPagina(0);
+                  setProductoResetPagina(prev => !prev);
                 }}
                 sx={{ color: palette.text, fontSize: "13px", width: "100%" }}
               />
             </Box>
           </DemoField>
 
-          <Grid
-            container
-            spacing={1}
-            sx={{
-              display: { xs: "none", sm: "flex" },
-              color: palette.muted,
-              fontSize: "11px",
-              textTransform: "uppercase",
-              pb: 0.75,
-              borderBottom: `1px solid ${palette.borderSoft}`,
-            }}
-          >
-            <Grid item sm={3}>Id producto</Grid>
-            <Grid item sm={6}>Nombre</Grid>
-            <Grid item sm={3} sx={{ textAlign: "right" }}>Precio compra</Grid>
-          </Grid>
-
-          {productosPaginaActual.map((producto) => (
-            <Grid
-              container
-              spacing={1}
-              key={producto.id_producto}
-              onClick={() => handleSelectProducto(producto)}
-              sx={{
-                py: 1,
-                borderBottom: `1px solid ${palette.borderSoft}`,
-                alignItems: "center",
-                cursor: "pointer",
-                "&:hover": { backgroundColor: palette.accentSoft },
-              }}
-            >
-              <Grid item xs={12} sm={3}>
-                <Typography sx={{ color: palette.accent, fontSize: "13px", fontWeight: 800 }}>
-                  {producto.id_producto}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography sx={{ color: palette.text, fontSize: "13px" }}>
-                  {producto.nombre}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 800, textAlign: { xs: "left", sm: "right" } }}>
-                  {Money({ value: producto.precio_compra })}
-                </Typography>
-              </Grid>
-            </Grid>
-          ))}
-
-          {productosPaginaActual.length === 0 && (
-            <Typography sx={{ color: palette.muted, fontSize: "13px", py: 3, textAlign: "center" }}>
-              Sin resultados para la busqueda.
+          {productosError && (
+            <Typography sx={{ color: "#ffab91", fontSize: "13px", py: 1.5, textAlign: "center" }}>
+              {productosError}
             </Typography>
           )}
 
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mt: 2 }}>
-            <AppButton onClick={() => setProductoPagina(prev => Math.max(0, prev - 1))}>
-              Anterior
-            </AppButton>
-            <Typography sx={{ color: palette.muted, fontSize: "12px", fontWeight: 700 }}>
-              Pagina {productoPagina + 1} de {totalPaginasProducto}
-            </Typography>
-            <AppButton onClick={() => setProductoPagina(prev => Math.min(totalPaginasProducto - 1, prev + 1))}>
-              Siguiente
-            </AppButton>
-          </Box>
+          <DataTable
+            columns={productosColumnas}
+            data={productosListado}
+            customStyles={productosTableStyles}
+            progressPending={productosCargando}
+            noDataComponent="Sin resultados para la busqueda."
+            pagination
+            paginationPerPage={8}
+            paginationResetDefaultPage={productoResetPagina}
+            paginationRowsPerPageOptions={[8, 15, 30, 50]}
+            dense
+            highlightOnHover
+            pointerOnHover
+            onRowClicked={handleSelectProducto}
+          />
         </Box>
       </Dialog>
     </Box>

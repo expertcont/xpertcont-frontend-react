@@ -106,18 +106,25 @@ presupuesto = {
   - Si el trabajo tiene recursos, usa costo base + utilidad.
 - Si el trabajo no tiene recursos, usa cantidad x precio_unitario.
 
-## Catalogo demo de recursos
+## Catalogo de recursos
 
-- `productosPresupuestoDemo` contiene filas con `id_producto`, `nombre`, `precio_compra` y `tipo`.
-- En el modal de recursos, el campo `Codigo` abre un modal paginado de productos con buscador por `id_producto`, `nombre` o `tipo`.
+- El origen real se carga desde `${back_host}/ad_productopopupalmacen/${params.id_anfitrion}/${params.documento_id}`.
+- El API devuelve `codigo`, `descripcion` y `auxiliar`.
+- `auxiliar` viene concatenado como `precio_compra-cont_und-porc_igv-id_anfitrion-documento_id`; el formulario usa el primer segmento como `precio_compra`.
+- En el modal de recursos, el campo `Codigo` abre un modal con `react-data-table-component`, paginacion incorporada y buscador por `codigo`, `descripcion` o `tipo`.
+- Como el endpoint base no trae `tipo`, el formulario infiere tipo desde `codigo`/`descripcion`:
+  - Contiene `OPERARIO`: `OPERARIO`.
+  - Contiene `SERVICIO`, `IMPRESION`, `CORTE`, `ANDAMIO` o `GRUA`: `SERVICIO`.
+  - Resto: `MATERIAL`.
 - Filtro por tipo:
   - `MATERIAL`: muestra todo menos `OPERARIO` y `SERVICIO`.
   - `OPERARIO`: muestra solo `OPERARIO`.
   - `SERVICIO`: muestra solo `SERVICIO`.
 - Al elegir un producto:
-  - `codigo` recibe `id_producto`.
-  - `descripcion` recibe `nombre`.
-  - `precio_compra` alimenta `costo_unitario`, `costo_hora` o `costo_m2` segun el tipo.
+  - `codigo` recibe `codigo`.
+  - `descripcion` recibe `descripcion`.
+  - `unidad` recibe `cont_und`; para `SERVICIO` se fuerza `M2`.
+  - El `precio_compra` parseado desde `auxiliar` alimenta `costo_unitario`, `costo_hora` o `costo_m2` segun el tipo; si no llega, queda en 0.
 - `totalPresupuesto(presupuesto)`
   - Suma cada trabajo con IGV 18%.
 
