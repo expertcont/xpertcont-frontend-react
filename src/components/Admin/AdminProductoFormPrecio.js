@@ -17,7 +17,7 @@ export default function ProductoFormPrecio() {
       id_producto:'',
       unidades:'',
       precio_venta:0,
-      unidades:'',
+      unidades_nueva:'',
       cant_min:'',
       cant_max:'',
       origen:'MANUAL'
@@ -116,16 +116,15 @@ export default function ProductoFormPrecio() {
 
   //funcion para mostrar data de formulario, modo edicion
   const mostrarProductoPrecio = async (sAnfitrion,sDocumentoId,sIdProducto,sUnidades) => {
-    console.log('mostrarProductoPrecio: ',`${back_host}/ad_productoprecio/${sAnfitrion}/${sDocumentoId}/${sIdProducto}/${sUnidades}`);
     const res = await fetch(`${back_host}/ad_productoprecio/${sAnfitrion}/${sDocumentoId}/${sIdProducto}/${sUnidades}`);
     const data = await res.json();
     //Actualiza datos para enlace con controles, al momento de modo editar
-    console.log('Precio encontrado: ',data);
     setProductoPrecio({
                     id_producto:data.id_producto, 
                     nombre:data.nombre, 
                     precio_venta:data.precio_venta, 
                     unidades:data.unidades,
+                    unidades_original:params.unidades, //new guardamos valor inicial
                     cant_min:data.cant_min,
                     cant_max:data.cant_max
                   });
