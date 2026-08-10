@@ -6,7 +6,7 @@ Modulo para gestionar presupuestos de venta orientado a fabricacion/instalacion 
 
 Un presupuesto contiene:
 
-- Cabecera: numero, fecha, cliente, documento, direccion, contacto, celular, moneda, forma de pago, campana.
+- Cabecera `mve_venta`: `r_cod`, `r_serie`, `r_numero`, `elemento`, `r_fecemi`, `r_moneda`, `r_forma_pago_id`, `r_id_doc`, `r_documento_id`, `r_razon_social`, `r_direccion`, `glosa`, `contacto_nombre`, `contacto_celular`.
 - Trabajos: cada trabajo representa un item presupuestado, por ejemplo una ubicacion, panel, instalacion o servicio grafico.
 - Recursos por trabajo: materiales, operarios y servicios usados para costear internamente cada trabajo.
 - Utilidad por trabajo: porcentaje que incrementa el costo base detallado para formar el total del trabajo sin IGV.
@@ -45,27 +45,37 @@ Un presupuesto contiene:
 ```js
 presupuesto = {
   id,
-  numero,
-  fecha,
-  cliente_documento,
-  cliente_nombre,
-  direccion,
-  moneda,
-  forma_pago,
+  r_cod,
+  r_serie,
+  r_numero,
+  elemento,
+  r_fecemi,
+  r_moneda,
+  r_forma_pago_id,
+  r_id_doc, // constante "6" para RUC
+  r_documento_id,
+  r_razon_social,
+  r_direccion,
+  glosa,
+  contacto_nombre,
+  contacto_celular,
   vigencia_dias,
-  contacto,
-  celular,
-  campana,
   trabajos: [
     {
       id,
-      producto,
-      codigo,
-      numero,
-      descripcion,
+      servicio,
+      descripcion, // producto o servicio en una linea, mve_ventaserv.descripcion
+      especificacion, // detalle multilinea, mve_ventaserv.especificacion
+      cont_und,
       cantidad,
-      unidad,
       precio_unitario,
+      monto_base,
+      igv,
+      precio_neto,
+      r_base002,
+      r_igv002,
+      r_monto_total,
+      r_moneda,
       utilidad_pct,
       materiales: [
         {
@@ -127,6 +137,18 @@ presupuesto = {
   - El `precio_compra` parseado desde `auxiliar` alimenta `costo_unitario`, `costo_hora` o `costo_m2` segun el tipo; si no llega, queda en 0.
 - `totalPresupuesto(presupuesto)`
   - Suma cada trabajo con IGV 18%.
+- `resumenTributarioServicio(trabajo, r_moneda)`
+  - Calcula `monto_base`, `igv`, `precio_neto`, `r_base002`, `r_igv002`, `r_monto_total` y `r_moneda` para preparar `mve_ventaserv`.
+
+## Alineacion backend
+
+- Backend de presupuestos separado en `xpertcont-backend-js/src/controllers/presupuesto.controllers.js`.
+- Documento base usa `mve_venta`.
+- Trabajos del formulario se alinean con `mve_ventaserv`.
+- En `mve_ventaserv`, `descripcion` es la linea corta visible como producto/servicio y `especificacion` es el detalle largo.
+- Recursos/materiales asignados al trabajo se alinearan con `mve_ventaservdet`.
+- PostgreSQL es la fuente oficial de impuestos y totales tributarios; React conserva calculos preliminares solo para UX.
+- Numero de presupuesto en frontend ahora se maneja como `r_cod`, `r_serie`, `r_numero`; `elemento` queda por defecto en `1`.
 
 ## Riesgos pendientes
 

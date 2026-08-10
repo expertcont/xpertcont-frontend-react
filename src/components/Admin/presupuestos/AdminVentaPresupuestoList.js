@@ -4,19 +4,20 @@ import React from "react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
-import DaySelector from "./AdminDias";
+import DaySelector from "../AdminDias";
 
 import { Box, Typography, InputBase, MenuItem,Select, useMediaQuery } from "@mui/material";
-import { Search, FileText, Calendar, Building2, ClipboardList, Pencil } from "lucide-react";
+import { Search, FileText, FileSearch, Calendar, Building2, ClipboardList, Pencil, Trash2 } from "lucide-react";
 import { Plus } from 'lucide-react';
 
 import Tooltip from '@mui/material/Tooltip';
-import AppSearch from "../ui/AppSearch";
-import AppButton from "../ui/AppButton";
-import AppIconBox from "../ui/AppIconBox";
-import AppChip from "../ui/AppChip";
-import palette from "../../theme/palette";
-import { presupuestosDemo, totalPresupuesto } from "./AdminVentaPresupuestoDemoData";
+import AppSearch from "../../ui/AppSearch";
+import AppButton from "../../ui/AppButton";
+import AppIconBox from "../../ui/AppIconBox";
+import AppChip from "../../ui/AppChip";
+import palette from "../../../theme/palette";
+import createPresupuestoPdf from "./AdminVentaPresupuestoPdf";
+import TrabajoInfoModal from "./modals/TrabajoInfoModal";
 
 /* =======================================================
    PALETA (manteniendo tu dark + teal)
@@ -24,14 +25,14 @@ import { presupuestosDemo, totalPresupuesto } from "./AdminVentaPresupuestoDemoD
 import axios from 'axios';
 import swal from 'sweetalert';
 import swal2 from 'sweetalert2'
-import AdminSunatIcon from './AdminSunatIcon';
-import AdminSunatGreIcon from './AdminSunatGreIcon';
+import AdminSunatIcon from '../AdminSunatIcon';
+import AdminSunatGreIcon from '../AdminSunatGreIcon';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FindIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import { blueGrey } from '@mui/material/colors';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import { useDialog } from "./AdminConfirmDialogProvider";
+import { useDialog } from "../AdminConfirmDialogProvider";
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -77,11 +78,51 @@ const formatMoney = (moneda, value) => `${moneda || "PEN"} ${Number(value || 0).
   maximumFractionDigits: 2,
 })}`;
 
+const numeroPresupuesto = (presupuesto) => [
+  presupuesto.r_cod,
+  presupuesto.r_serie,
+  presupuesto.r_numero,
+].filter(Boolean).join("-");
+
+const formatFecha = (fecha) => {
+  const fechaTexto = String(fecha || "").slice(0, 10);
+  if (!fechaTexto) {
+    return "";
+  }
+  return fechaTexto.split("-").reverse().join("/");
+};
+
+const normalizarPresupuestoListado = (presupuesto) => ({
+  ...presupuesto,
+  numero: numeroPresupuesto(presupuesto),
+  fecha: formatFecha(presupuesto.r_fecemi),
+  cliente: presupuesto.r_razon_social || "Sin cliente",
+  moneda: presupuesto.r_moneda || "PEN",
+  total: Number(presupuesto.r_monto_total || 0),
+  servicios_count: Number(presupuesto.servicios_count || presupuesto.servicios?.length || presupuesto.trabajos?.length || 0),
+  trabajos: (presupuesto.servicios || presupuesto.trabajos || []).map((trabajo) => ({
+    ...trabajo,
+    id: trabajo.servicio || trabajo.id,
+    numero: trabajo.descripcion || `Servicio ${trabajo.servicio || ""}`,
+    materiales: trabajo.materiales || trabajo.detalles || [],
+  })),
+});
+
+const normalizarPresupuestoFull = (presupuesto) => ({
+  ...normalizarPresupuestoListado(presupuesto),
+  trabajos: (presupuesto.servicios || []).map((servicio) => ({
+    ...servicio,
+    id: servicio.servicio,
+    numero: servicio.descripcion || `Servicio ${servicio.servicio || ""}`,
+    materiales: servicio.detalles || [],
+  })),
+});
+
 /* =======================================================
    COLUMNAS
 ======================================================= */
 
-const createColumns = (onEdit) => [
+const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
   {
     name: "",
     grow: 1,
@@ -121,29 +162,45 @@ const createColumns = (onEdit) => [
               gap: 1,
             }}
           >
-            <Box
-              onClick={() => onEdit(row)}
-              sx={{
-                width: 30,
-                height: 30,
-                borderRadius: 1.5,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: palette.chip,
-                border: `1px solid ${palette.border}`,
-                color: palette.muted,
-                cursor: "pointer",
-                transition: "all .18s ease",
-                "&:hover": {
-                  backgroundColor: palette.accent,
-                  borderColor: palette.accent,
-                  color: palette.surface,
-                },
-              }}
-            >
-              <Pencil size={14} />
-            </Box>
+            {[
+              { title: "Ver presupuesto", icon: <FileSearch size={14} />, onClick: () => onView(row) },
+              { title: "Editar presupuesto", icon: <Pencil size={14} />, onClick: () => onEdit(row) },
+              { title: "PDF cliente", icon: <FileText size={14} />, onClick: () => onPdf(row) },
+              {
+                title: (row.estado || "P") === "P" ? "Eliminar presupuesto" : "Solo pendientes",
+                icon: <Trash2 size={14} />,
+                onClick: () => onDelete(row),
+                danger: true,
+                disabled: (row.estado || "P") !== "P",
+              },
+            ].map((action) => (
+              <Tooltip key={action.title} title={action.title} arrow>
+                <Box
+                  onClick={action.disabled ? undefined : action.onClick}
+                  sx={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: palette.chip,
+                    border: `1px solid ${palette.border}`,
+                    color: action.disabled ? palette.border : palette.muted,
+                    cursor: action.disabled ? "not-allowed" : "pointer",
+                    opacity: action.disabled ? 0.55 : 1,
+                    transition: "all .18s ease",
+                    "&:hover": action.disabled ? {} : {
+                      backgroundColor: action.danger ? "#c2410c" : palette.accent,
+                      borderColor: action.danger ? "#c2410c" : palette.accent,
+                      color: "#ffffff",
+                    },
+                  }}
+                >
+                  {action.icon}
+                </Box>
+              </Tooltip>
+            ))}
 
             <Box
               sx={{
@@ -207,17 +264,21 @@ const createColumns = (onEdit) => [
             }}
           >
             <ClipboardList size={13} />
-            {row.trabajos.length} trabajos
+            {row.servicios_count} trabajos
           </Box>
 
-          {row.trabajos.map((trabajo) => (
+          {row.trabajos.length > 0 ? row.trabajos.map((trabajo) => (
             <AppChip
               key={trabajo.id}
-              onClick={() => alert(`Trabajo: ${trabajo.numero}`)}
+              onClick={() => onTrabajoInfo(row, trabajo)}
             >
               {trabajo.numero}
             </AppChip>            
-          ))}
+          )) : row.servicios_count > 0 && (
+            <AppChip onClick={() => onTrabajoInfo(row)}>
+              Ver trabajos
+            </AppChip>
+          )}
         </Box>
       </Box>
     ),
@@ -270,19 +331,6 @@ const customStyles = {
 ======================================================= */
 
 export default function AdminVentaPresupuestoList() {
-  const data = useMemo(() => presupuestosDemo.map((presupuesto) => ({
-    ...presupuesto,
-    fecha: presupuesto.fecha.split("-").reverse().join("/"),
-    cliente: presupuesto.cliente_nombre,
-    total: totalPresupuesto(presupuesto),
-    trabajos: presupuesto.trabajos.map((trabajo) => ({
-      ...trabajo,
-      numero: trabajo.numero || trabajo.codigo,
-    })),
-  })), []);
-  const totalTrabajos = data.reduce((acc, p) => acc + p.trabajos.length, 0);
-  const [buscar, setBuscar] = React.useState("");
-
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
@@ -292,6 +340,7 @@ export default function AdminVentaPresupuestoList() {
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
+  const data = useMemo(() => registrosdet.map(normalizarPresupuestoListado), [registrosdet]);
   const [navegadorMovil, setNavegadorMovil] = useState(false);
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
   const [valorVista, setValorVista] = useState("ventas");
@@ -308,6 +357,7 @@ export default function AdminVentaPresupuestoList() {
   const [contabilidad_nombre, setContabilidadNombre] = useState("");
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
   const [valorComprobante, setValorComprobante] = useState("");
+  const [trabajoInfo, setTrabajoInfo] = useState(null);
 
   const [datosPopUp,setDatosPopUp] = useState([]);
   let [diaSel, setDiaSel] = useState("*");
@@ -505,20 +555,27 @@ export default function AdminVentaPresupuestoList() {
     ///////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
     const cargaRegistro = async (strHistorialValorVista,strHistorialPeriodo,strHistorialContabilidad, sDia) => {
-      let response;
-      console.log("cargaRegistro sDia: ", sDia);
-      //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
-      if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-          response = await fetch(`${back_host}/ad_venta/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
+      const periodoConsulta = strHistorialPeriodo || periodo_trabajo || params.periodo;
+      const documentoConsulta = strHistorialContabilidad || contabilidad_trabajo || params.documento_id;
+      const diaConsulta = sDia || "*";
+
+      if (!periodoConsulta || !documentoConsulta) {
+        setRegistrosdet([]);
+        setTabladet([]);
+        return;
       }
-      else{
-          //usamos los historiales
-          response = await fetch(`${back_host}/ad_venta/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
+
+      try {
+        const response = await fetch(`${back_host}/ad_presupuesto/${periodoConsulta}/${params.id_anfitrion}/${documentoConsulta}/${diaConsulta}`);
+        const result = await response.json();
+        const registros = Array.isArray(result?.data) ? result.data : [];
+        setRegistrosdet(registros);
+        setTabladet(registros);
+      } catch (error) {
+        console.log("Error cargando presupuestos:", error);
+        setRegistrosdet([]);
+        setTabladet([]);
       }
-      
-      const data = await response.json();
-      setRegistrosdet(data);
-      setTabladet(data); //Copia para tratamiento de filtrado
     }
     //////////////////////////////////////
     
@@ -532,12 +589,10 @@ export default function AdminVentaPresupuestoList() {
       filtrar(e.target.value);
     }
     const filtrar = (strBusca) => {
-      //console.log(tabladet);
       var resultadosBusqueda = tabladet.filter((elemento) => {
-        //verifica nulls para evitar error de busqueda
         const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
         const documentoId = elemento.r_documento_id?.toString().toLowerCase() || '';
-        const comprobante = elemento.comprobante?.toString().toLowerCase() || '';
+        const comprobante = (elemento.comprobante_key || numeroPresupuesto(elemento))?.toString().toLowerCase() || '';
     
         if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase())) {
           return elemento;
@@ -1112,7 +1167,7 @@ export default function AdminVentaPresupuestoList() {
             })
             .catch(err => console.error(err));
   };
-  const handleOpenLink = (url) => {
+    const handleOpenLink = (url) => {
       if (url) {
         window.open(url, "_blank"); 
         // "_blank" abre en nueva pestaña
@@ -1122,8 +1177,155 @@ export default function AdminVentaPresupuestoList() {
       }
     };
 
+    const obtenerFechaPeriodo = (periodo, sDia) => {
+      const [year, month] = String(periodo || "").split("-").map(Number);
+      if (!year || !month) {
+        return obtenerFecha(periodo, true, sDia);
+      }
+
+      const fechaActual = new Date();
+      const periodoActual = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, "0")}`;
+      const dia = sDia && sDia !== "*"
+        ? String(sDia).padStart(2, "0")
+        : periodo === periodoActual
+          ? String(fechaActual.getDate()).padStart(2, "0")
+          : "01";
+
+      return `${year}-${String(month).padStart(2, "0")}-${dia}`;
+    };
+
+    const extraerNumeroPresupuestoCreado = (payload) => {
+      const data = Array.isArray(payload?.data) ? payload.data[0] : payload?.data;
+      return payload?.r_numero || data?.r_numero || data?.numero || payload?.numero || "";
+    };
+
+    const handleNuevoPresupuesto = async () => {
+      const periodoActual = periodo_trabajo || params.periodo;
+      const documentoActual = contabilidad_trabajo || params.documento_id;
+      const fecha = obtenerFechaPeriodo(periodoActual, diaSel);
+
+      try {
+        const response = await axios.post(`${back_host}/ad_presupuesto`, {
+          id_anfitrion: params.id_anfitrion,
+          documento_id: documentoActual,
+          periodo: periodoActual,
+          id_invitado: params.id_invitado,
+          fecha,
+        });
+
+        if (!response.data.success) {
+          throw new Error(response.data.message || "No se pudo crear el presupuesto.");
+        }
+
+        const rNumero = extraerNumeroPresupuestoCreado(response.data);
+
+        if (!rNumero) {
+          throw new Error("El presupuesto fue creado, pero el API no devolvio el numero.");
+        }
+
+        navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodoActual}/${documentoActual}/${rNumero}/edit`);
+      } catch (error) {
+        console.log("Error creando presupuesto:", error);
+        alert(error.response?.data?.message || error.message || "No se pudo crear el presupuesto.");
+      }
+    };
+
     const handleEditPresupuesto = (presupuesto) => {
-      navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/${presupuesto.numero}/edit`);
+      navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/${presupuesto.r_numero}/edit`);
+    };
+
+    const handleViewPresupuesto = (presupuesto) => {
+      navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/${presupuesto.r_numero}/view`);
+    };
+
+    const handlePdfPresupuesto = async (presupuesto) => {
+      try {
+        const response = await fetch(`${back_host}/ad_presupuesto/full/${periodo_trabajo || params.periodo}/${params.id_anfitrion}/${contabilidad_trabajo || params.documento_id}/${presupuesto.r_cod || "NV"}/${presupuesto.r_serie || "0001"}/${presupuesto.r_numero}/${presupuesto.elemento || 1}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudo cargar el presupuesto para PDF.");
+        }
+
+        const url = await createPresupuestoPdf(normalizarPresupuestoFull(data.data), { modo: "cliente" });
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch (error) {
+        console.log("Error generando PDF de presupuesto:", error);
+        alert(error.message || "No se pudo generar el PDF.");
+      }
+    };
+
+    const handleDeletePresupuesto = async (presupuesto) => {
+      if ((presupuesto.estado || "P") !== "P") {
+        alert("Solo se pueden eliminar presupuestos pendientes.");
+        return;
+      }
+
+      const result = await confirmDialog({
+        title: "Eliminar presupuesto?",
+        message: `${presupuesto.numero || numeroPresupuesto(presupuesto)} - ${presupuesto.cliente || presupuesto.r_razon_social || "Sin cliente"}`,
+        icon: "warning",
+        confirmText: "ELIMINAR",
+        cancelText: "Cancelar",
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      try {
+        const periodoActual = periodo_trabajo || params.periodo;
+        const documentoActual = contabilidad_trabajo || params.documento_id;
+        const response = await fetch(`${back_host}/ad_presupuesto/${periodoActual}/${params.id_anfitrion}/${documentoActual}/${presupuesto.r_cod || "NV"}/${presupuesto.r_serie || "0001"}/${presupuesto.r_numero}/${presupuesto.elemento || 1}`, {
+          method: "DELETE",
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudo eliminar el presupuesto.");
+        }
+
+        const mismoPresupuesto = (item) => (
+          item.r_cod === (presupuesto.r_cod || "NV") &&
+          item.r_serie === (presupuesto.r_serie || "0001") &&
+          item.r_numero === presupuesto.r_numero &&
+          Number(item.elemento || 1) === Number(presupuesto.elemento || 1)
+        );
+
+        setRegistrosdet(prev => prev.filter(item => !mismoPresupuesto(item)));
+        setTabladet(prev => prev.filter(item => !mismoPresupuesto(item)));
+      } catch (error) {
+        console.log("Error eliminando presupuesto:", error);
+        alert(error.message || "No se pudo eliminar el presupuesto.");
+      }
+    };
+
+    const handleTrabajoInfo = async (presupuesto, trabajo = null) => {
+      if (trabajo) {
+        setTrabajoInfo({ presupuesto, trabajo });
+        return;
+      }
+
+      try {
+        const response = await fetch(`${back_host}/ad_presupuestoserv/${periodo_trabajo || params.periodo}/${params.id_anfitrion}/${contabilidad_trabajo || params.documento_id}/${presupuesto.r_cod || "NV"}/${presupuesto.r_serie || "0001"}/${presupuesto.r_numero}/${presupuesto.elemento || 1}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudieron cargar los trabajos.");
+        }
+
+        setTrabajoInfo({
+          presupuesto,
+          trabajos: (data.data || []).map((item) => ({
+            ...item,
+            id: item.servicio,
+            numero: item.descripcion || `Servicio ${item.servicio || ""}`,
+          })),
+        });
+      } catch (error) {
+        console.log("Error cargando trabajos de presupuesto:", error);
+        alert(error.message || "No se pudieron cargar los trabajos.");
+      }
     };
   
     const handleChange = e => {
@@ -1158,6 +1360,14 @@ export default function AdminVentaPresupuestoList() {
       
       setUpdateTrigger(Math.random());//experimento para actualizar el dom
     }
+
+    useEffect(() => {
+      if (!periodo_trabajo || !contabilidad_trabajo) {
+        return;
+      }
+
+      cargaRegistro("presupuestos", periodo_trabajo, contabilidad_trabajo, diaSel);
+    }, [periodo_trabajo, contabilidad_trabajo, diaSel, updateTrigger]);
         
   return (
     <Box
@@ -1193,16 +1403,13 @@ export default function AdminVentaPresupuestoList() {
               Control de Presupuestos
             </Typography>
             <Typography sx={{ color: palette.muted, fontSize: "13px", mt: 0.5 }}>
-              {data.length} presupuestos · {totalTrabajos} trabajos asociados
+              {data.length} presupuestos registrados
             </Typography>
           </Box>
 
           <AppButton
             icon={<Plus size={18} />}
-            
-            onClick={() => {
-              navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/new`);
-            }}
+            onClick={handleNuevoPresupuesto}
           >
             Nuevo presupuesto
           </AppButton>
@@ -1337,18 +1544,24 @@ export default function AdminVentaPresupuestoList() {
         </Box>
 
 
-        <DaySelector period={'2026-06'} onDaySelect={handleDayFilter} />
+        <DaySelector period={periodo_trabajo || params.periodo} onDaySelect={handleDayFilter} />
         
         {/* TABLA */}
         <DataTable
           theme="solarized"
-          columns={createColumns(handleEditPresupuesto)}
+          columns={createColumns(handleEditPresupuesto, handleViewPresupuesto, handlePdfPresupuesto, handleTrabajoInfo, handleDeletePresupuesto)}
           data={data}
           pagination
           paginationPerPage={10}
           highlightOnHover
           responsive
           customStyles={customStyles}
+        />
+
+        <TrabajoInfoModal
+          trabajoInfo={trabajoInfo}
+          onClose={() => setTrabajoInfo(null)}
+          onSelectTrabajo={(trabajo) => setTrabajoInfo(prev => ({ ...prev, trabajo }))}
         />
 
       </Box>

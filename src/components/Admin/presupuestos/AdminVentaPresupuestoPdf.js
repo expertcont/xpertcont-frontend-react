@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   detalleRecurso,
+  resumenTributarioServicio,
   subtotalPresupuesto,
   totalPresupuesto,
   utilidadTrabajo,
@@ -61,6 +62,12 @@ const drawWrappedText = (page, text, x, y, maxWidth, options) => {
   return y - (lines.length * lineHeight);
 };
 
+const numeroPresupuesto = (presupuesto) => [
+  presupuesto.r_cod,
+  presupuesto.r_serie,
+  presupuesto.r_numero,
+].filter(Boolean).join("-");
+
 async function createPresupuestoPdf(presupuesto, options = {}) {
   const { modo = "interno" } = options;
   const esCliente = modo === "cliente";
@@ -112,13 +119,14 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
   drawText(page, "XP", { x: margin + 11, y: 789, size: 15, font: bold, color: colors.white });
 
   drawText(page, esCliente ? "COTIZACION" : "PRESUPUESTO", { x: margin + 60, y: 803, size: 22, font: bold, color: colors.white });
-  drawText(page, esCliente ? `${presupuesto.numero} - vista cliente` : presupuesto.numero, { x: margin + 60, y: 784, size: 11, font: regular, color: colors.tealSoft });
+  const numero = numeroPresupuesto(presupuesto);
+  drawText(page, esCliente ? `${numero} - vista cliente` : numero, { x: margin + 60, y: 784, size: 11, font: regular, color: colors.tealSoft });
 
   const total = totalPresupuesto(presupuesto);
   const subtotal = subtotalPresupuesto(presupuesto);
   const igv = total - subtotal;
 
-  drawText(page, `${presupuesto.moneda} ${formatMoney(total)}`, {
+  drawText(page, `${presupuesto.r_moneda} ${formatMoney(total)}`, {
     x: pageSize[0] - margin - 150,
     y: 797,
     size: 18,
@@ -145,14 +153,14 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
   });
 
   drawText(page, "Cliente", { x: margin + 16, y: y - 22, size: 8, font: bold, color: colors.muted });
-  drawText(page, presupuesto.cliente_nombre, { x: margin + 16, y: y - 39, size: 12, font: bold, color: colors.ink });
-  drawText(page, `RUC/DNI: ${presupuesto.cliente_documento}`, { x: margin + 16, y: y - 56, size: 9, font: regular, color: colors.muted });
-  drawText(page, `Campana: ${presupuesto.campana || "-"}`, { x: margin + 16, y: y - 70, size: 8.5, font: regular, color: colors.muted });
+  drawText(page, presupuesto.r_razon_social, { x: margin + 16, y: y - 39, size: 12, font: bold, color: colors.ink });
+  drawText(page, `RUC/DNI: ${presupuesto.r_documento_id}`, { x: margin + 16, y: y - 56, size: 9, font: regular, color: colors.muted });
+  drawText(page, `Campana: ${presupuesto.glosa || "-"}`, { x: margin + 16, y: y - 70, size: 8.5, font: regular, color: colors.muted });
 
   drawText(page, "Fecha", { x: margin + 360, y: y - 22, size: 8, font: bold, color: colors.muted });
-  drawText(page, presupuesto.fecha, { x: margin + 360, y: y - 39, size: 11, font: bold, color: colors.ink });
-  drawText(page, `Pago: ${presupuesto.forma_pago}`, { x: margin + 360, y: y - 56, size: 9, font: regular, color: colors.muted });
-  drawText(page, `Celular: ${presupuesto.celular || "-"}`, { x: margin + 360, y: y - 70, size: 8.5, font: regular, color: colors.muted });
+  drawText(page, presupuesto.r_fecemi, { x: margin + 360, y: y - 39, size: 11, font: bold, color: colors.ink });
+  drawText(page, `Pago: ${presupuesto.r_forma_pago_id}`, { x: margin + 360, y: y - 56, size: 9, font: regular, color: colors.muted });
+  drawText(page, `Celular: ${presupuesto.contacto_celular || "-"}`, { x: margin + 360, y: y - 70, size: 8.5, font: regular, color: colors.muted });
 
   y -= 105;
   drawText(page, "Trabajos presupuestados", { x: margin, y, size: 14, font: bold, color: colors.ink });
@@ -161,7 +169,8 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
   presupuesto.trabajos.forEach((trabajo, index) => {
     ensureSpace(135);
 
-    const baseTrabajo = Number(trabajo.cantidad || 0) * Number(trabajo.precio_unitario || 0);
+    const resumenTrabajo = resumenTributarioServicio(trabajo, presupuesto.r_moneda);
+    const baseTrabajo = resumenTrabajo.monto_base;
     const recursos = totalRecursosTrabajo(trabajo);
     const utilidad = utilidadTrabajo(trabajo);
     const importe = totalTrabajo(trabajo);
@@ -176,8 +185,8 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
       borderWidth: 1,
     });
 
-    drawText(page, `${index + 1}. ${trabajo.producto || trabajo.codigo}`, { x: margin + 12, y: y - 20, size: 11, font: bold, color: colors.ink });
-    drawText(page, `${presupuesto.moneda} ${formatMoney(importe)}`, {
+    drawText(page, `${index + 1}. ${trabajo.descripcion || `Servicio ${trabajo.servicio || ""}`}`, { x: margin + 12, y: y - 20, size: 11, font: bold, color: colors.ink });
+    drawText(page, `${presupuesto.r_moneda} ${formatMoney(importe)}`, {
       x: pageSize[0] - margin - 105,
       y: y - 20,
       size: 11,
@@ -186,7 +195,7 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
     });
 
     y -= 46;
-    y = drawWrappedText(page, trabajo.descripcion, margin + 12, y, contentWidth - 24, {
+    y = drawWrappedText(page, trabajo.especificacion || "Sin especificacion", margin + 12, y, contentWidth - 24, {
       font: regular,
       size: 9,
       lineHeight: 12,
@@ -195,7 +204,7 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
 
     y -= 8;
     if (esCliente) {
-      drawText(page, `Importe: ${presupuesto.moneda} ${formatMoney(importe * 1.18)}`, {
+      drawText(page, `Importe: ${presupuesto.r_moneda} ${formatMoney(importe)}`, {
         x: margin + 12,
         y,
         size: 9,
@@ -206,7 +215,7 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
     } else {
       drawText(page, `Base: ${formatMoney(baseTrabajo)}`, { x: margin + 12, y, size: 8.5, font: regular, color: colors.muted });
       drawText(page, `Recursos: ${formatMoney(recursos)}`, { x: margin + 130, y, size: 8.5, font: regular, color: colors.muted });
-      drawText(page, `Utilidad ${Number(trabajo.utilidad_pct || 0)}%: ${formatMoney(utilidad)}`, { x: margin + 260, y, size: 8.5, font: regular, color: colors.muted });
+      drawText(page, `Utilidad ${Number(trabajo.utilidad ?? trabajo.utilidad_pct ?? 0)}%: ${formatMoney(utilidad)}`, { x: margin + 260, y, size: 8.5, font: regular, color: colors.muted });
       drawText(page, `Subtotal sin IGV: ${formatMoney(importe)}`, { x: margin + 395, y, size: 8.5, font: bold, color: colors.ink });
 
       y -= 18;
@@ -247,11 +256,11 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
   });
 
   drawText(page, esCliente ? "Valor venta" : "Subtotal", { x: pageSize[0] - margin - 190, y: y - 22, size: 10, font: regular, color: colors.muted });
-  drawText(page, `${presupuesto.moneda} ${formatMoney(subtotal)}`, { x: pageSize[0] - margin - 85, y: y - 22, size: 10, font: bold, color: colors.ink });
+  drawText(page, `${presupuesto.r_moneda} ${formatMoney(subtotal)}`, { x: pageSize[0] - margin - 85, y: y - 22, size: 10, font: bold, color: colors.ink });
   drawText(page, "IGV", { x: pageSize[0] - margin - 190, y: y - 43, size: 10, font: regular, color: colors.muted });
-  drawText(page, `${presupuesto.moneda} ${formatMoney(igv)}`, { x: pageSize[0] - margin - 85, y: y - 43, size: 10, font: bold, color: colors.ink });
+  drawText(page, `${presupuesto.r_moneda} ${formatMoney(igv)}`, { x: pageSize[0] - margin - 85, y: y - 43, size: 10, font: bold, color: colors.ink });
   drawText(page, "Total", { x: pageSize[0] - margin - 190, y: y - 66, size: 12, font: bold, color: colors.ink });
-  drawText(page, `${presupuesto.moneda} ${formatMoney(total)}`, { x: pageSize[0] - margin - 95, y: y - 66, size: 12, font: bold, color: colors.teal });
+  drawText(page, `${presupuesto.r_moneda} ${formatMoney(total)}`, { x: pageSize[0] - margin - 95, y: y - 66, size: 12, font: bold, color: colors.teal });
 
   const pages = pdfDoc.getPages();
   pages.forEach((pdfPage, index) => {

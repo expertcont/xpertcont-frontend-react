@@ -46,9 +46,9 @@ import AdminStockRepDet from "./components/Admin/AdminStockRepDet";
 import AdminStockRepInventario from "./components/Admin/AdminStockRepInventario";
 import AdminStockRepKardex from "./components/Admin/AdminStockRepKardex";
 import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
-import AdminVentaPresupuestoList from "./components/Admin/AdminVentaPresupuestoList";
+import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
-import AdminVentaPresupuestoNuevoForm from "./components/Admin/AdminVentaPresupuestoNuevoForm";
+import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
