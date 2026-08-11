@@ -13,7 +13,6 @@ import { Plus } from 'lucide-react';
 import Tooltip from '@mui/material/Tooltip';
 import AppSearch from "../../ui/AppSearch";
 import AppButton from "../../ui/AppButton";
-import AppIconBox from "../../ui/AppIconBox";
 import AppChip from "../../ui/AppChip";
 import palette from "../../../theme/palette";
 import createPresupuestoPdf from "./AdminVentaPresupuestoPdf";
@@ -134,14 +133,31 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: { xs: "wrap", sm: "nowrap" },
             gap: 1,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 
-            <AppIconBox>
+            <Box
+              sx={{
+                width: { xs: 40, sm: 30 },
+                height: { xs: 40, sm: 30 },
+                borderRadius: { xs: 2, sm: 1.5 },
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: palette.accentSoft,
+                color: palette.accent,
+                flexShrink: 0,
+                "& svg": {
+                  width: { xs: 20, sm: 16 },
+                  height: { xs: 20, sm: 16 },
+                },
+              }}
+            >
               <FileText size={16} />
-            </AppIconBox>
+            </Box>
 
             <Typography
               sx={{
@@ -159,7 +175,11 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: 1,
+              justifyContent: { xs: "flex-start", sm: "flex-start" },
+              flexWrap: "wrap",
+              gap: { xs: 0.85, sm: 1 },
+              width: { xs: "100%", sm: "auto" },
+              mt: { xs: 0.75, sm: 0 },
             }}
           >
             {[
@@ -178,9 +198,9 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
                 <Box
                   onClick={action.disabled ? undefined : action.onClick}
                   sx={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 1.5,
+                    width: { xs: 42, sm: 30 },
+                    height: { xs: 42, sm: 30 },
+                    borderRadius: { xs: 2, sm: 1.5 },
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -190,6 +210,11 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
                     cursor: action.disabled ? "not-allowed" : "pointer",
                     opacity: action.disabled ? 0.55 : 1,
                     transition: "all .18s ease",
+                    boxShadow: { xs: "0 8px 18px rgba(0,0,0,.16)", sm: "none" },
+                    "& svg": {
+                      width: { xs: 20, sm: 14 },
+                      height: { xs: 20, sm: 14 },
+                    },
                     "&:hover": action.disabled ? {} : {
                       backgroundColor: action.danger ? "#c2410c" : palette.accent,
                       borderColor: action.danger ? "#c2410c" : palette.accent,
@@ -207,9 +232,11 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
                 display: "flex",
                 alignItems: "center",
                 gap: 0.5,
-              color: palette.accent,
-              fontWeight: 600,
-              fontSize: "12.5px",
+                color: palette.accent,
+                fontWeight: 600,
+                fontSize: "12.5px",
+                ml: { xs: 0.25, sm: 0 },
+                height: { xs: 42, sm: "auto" },
               }}
             >
               <Calendar size={13} />

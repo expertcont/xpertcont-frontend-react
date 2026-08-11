@@ -1242,48 +1242,83 @@ export default function AdminVentaPresupuestoNuevoForm() {
             </Box>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", justifyContent: { xs: "flex-end", md: "flex-start" } }}>
-            <AppButton icon={<Save size={17} />} onClick={handleSavePresupuesto}>
-              Grabar Presupuesto
-            </AppButton>
-            {presupuestoPendiente && (
-              <AppButton icon={<CheckCircle size={17} />} onClick={handleCerrarPresupuesto}>
-                Cerrar presupuesto
-              </AppButton>
-            )}
-            {esNotaVentaInterna && (
-              <AppButton icon={<FileText size={17} />} onClick={handleGenerarCpe}>
-                Generar CPE
-              </AppButton>
-            )}
-            <IconButton
-              onClick={handlePrevioPdf}
-              title="Previo PDF"
+          <Box
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              maxWidth: { xs: "100%", md: "none" },
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 1,
+              alignItems: { xs: "stretch", md: "center" },
+              justifyContent: { xs: "flex-start", md: "flex-start" },
+            }}
+          >
+            <Box
               sx={{
-                color: palette.muted,
-                border: `1px solid ${palette.border}`,
-                backgroundColor: palette.surface,
-                width: 38,
-                height: 38,
-                "&:hover": { color: palette.accent, backgroundColor: palette.accentSoft },
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "minmax(0, 1fr)",
+                  sm: `repeat(${presupuestoPendiente && esNotaVentaInterna ? 3 : presupuestoPendiente || esNotaVentaInterna ? 2 : 1}, minmax(0, 1fr))`,
+                  md: "none",
+                },
+                gridAutoFlow: { md: "column" },
+                gap: 1,
+                width: { xs: "100%", md: "auto" },
+                maxWidth: { xs: "100%", sm: "none" },
+                justifyContent: "stretch",
               }}
             >
-              <FileSearch size={18} />
-            </IconButton>
-            <IconButton
-              onClick={handlePdfCliente}
-              title="PDF cliente"
+              <AppButton fullWidth icon={<Save size={17} />} onClick={handleSavePresupuesto} sx={{ minHeight: { xs: 42, md: 42 }, px: { xs: 1, md: 2 }, fontSize: { xs: "12.5px", md: "13px" } }}>
+                Grabar Presupuesto
+              </AppButton>
+              {presupuestoPendiente && (
+                <AppButton fullWidth icon={<CheckCircle size={17} />} onClick={handleCerrarPresupuesto} sx={{ minHeight: { xs: 42, md: 42 }, px: { xs: 1, md: 2 }, fontSize: { xs: "12.5px", md: "13px" } }}>
+                  Cerrar presupuesto
+                </AppButton>
+              )}
+              {esNotaVentaInterna && (
+                <AppButton fullWidth icon={<FileText size={17} />} onClick={handleGenerarCpe} sx={{ minHeight: { xs: 42, md: 42 }, px: { xs: 1, md: 2 }, fontSize: { xs: "12.5px", md: "13px" } }}>
+                  Generar CPE
+                </AppButton>
+              )}
+            </Box>
+            <Box
               sx={{
-                color: palette.muted,
-                border: `1px solid ${palette.border}`,
-                backgroundColor: palette.surface,
-                width: 38,
-                height: 38,
-                "&:hover": { color: palette.accent, backgroundColor: palette.accentSoft },
+                display: "flex",
+                justifyContent: { xs: "flex-start", md: "flex-start" },
+                gap: 1,
+                width: { xs: "100%", md: "auto" },
               }}
             >
-              <FileText size={18} />
-            </IconButton>
+              <IconButton
+                onClick={handlePrevioPdf}
+                title="Previo PDF"
+                sx={{
+                  color: palette.muted,
+                  border: `1px solid ${palette.border}`,
+                  backgroundColor: palette.surface,
+                  width: { xs: 44, md: 38 },
+                  height: { xs: 44, md: 38 },
+                  "&:hover": { color: palette.accent, backgroundColor: palette.accentSoft },
+                }}
+              >
+                <FileSearch size={18} />
+              </IconButton>
+              <IconButton
+                onClick={handlePdfCliente}
+                title="PDF cliente"
+                sx={{
+                  color: palette.muted,
+                  border: `1px solid ${palette.border}`,
+                  backgroundColor: palette.surface,
+                  width: { xs: 44, md: 38 },
+                  height: { xs: 44, md: 38 },
+                  "&:hover": { color: palette.accent, backgroundColor: palette.accentSoft },
+                }}
+              >
+                <FileText size={18} />
+              </IconButton>
+            </Box>
           </Box>
         </Box>
 
@@ -1654,8 +1689,22 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 </Typography>
               </Box>
             </Box>
-            <IconButton onClick={() => setTrabajoMateriales(null)} sx={{ color: palette.muted }}>
-              <X size={18} />
+            <IconButton
+              onClick={() => setTrabajoMateriales(null)}
+              sx={{
+                color: palette.muted,
+                width: { xs: 42, md: 34 },
+                height: { xs: 42, md: 34 },
+                border: `1px solid ${palette.border}`,
+                backgroundColor: palette.bg,
+                flexShrink: 0,
+                "&:hover": {
+                  color: palette.text,
+                  backgroundColor: palette.accentSoft,
+                },
+              }}
+            >
+              <X size={20} />
             </IconButton>
           </Box>
 
@@ -2060,6 +2109,35 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 Base {Money({ value: totalMateriales })} + utilidad {porcentajeUtilidadTrabajo}% ({Money({ value: montoUtilidadTrabajo })})
               </Typography>
             </Box>
+          </Box>
+
+          <Box
+            sx={{
+              position: { xs: "sticky", md: "static" },
+              bottom: 0,
+              zIndex: 3,
+              mt: 2,
+              pt: 1.5,
+              pb: { xs: 0.5, md: 0 },
+              display: "flex",
+              justifyContent: "flex-end",
+              background: {
+                xs: `linear-gradient(180deg, rgba(30,39,46,0) 0%, ${palette.surface} 28%, ${palette.surface} 100%)`,
+                md: "transparent",
+              },
+            }}
+          >
+            <AppButton
+              fullWidth
+              icon={<X size={16} />}
+              onClick={() => setTrabajoMateriales(null)}
+              sx={{
+                width: { xs: "100%", md: "auto" },
+                minHeight: { xs: 44, md: 38 },
+              }}
+            >
+              Cerrar
+            </AppButton>
           </Box>
         </Box>
       </Dialog>

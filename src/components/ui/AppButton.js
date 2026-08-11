@@ -8,6 +8,7 @@ export default function AppButton({
   icon,
   onClick,
   fullWidth = false,
+  sx = {},
 }) {
   return (
     <Box
@@ -15,6 +16,7 @@ export default function AppButton({
       sx={{
         height: 42,
         width: fullWidth ? "100%" : "auto",
+        boxSizing: "border-box",
         px: 2,
 
         display: "flex",
@@ -42,6 +44,7 @@ export default function AppButton({
           color: palette.surface,
           transform: "translateY(-1px)",
         },
+        ...sx,
       }}
     >
       {icon}

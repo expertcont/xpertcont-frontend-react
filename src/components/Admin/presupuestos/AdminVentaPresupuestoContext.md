@@ -1,8 +1,19 @@
 # Contexto: Presupuestos de venta
 
+> Spec vigente: `D:\Developer\ovivasar\XpertcontProyecto\xpertcont-backend-js\docs\presupuestos-spec.md`.
+>
+> Ese documento es la fuente principal para reglas de negocio fullstack. Este archivo queda como contexto rapido del frontend.
+
 ## Objetivo funcional
 
 Modulo para gestionar presupuestos de venta orientado a fabricacion/instalacion de paneles publicitarios.
+
+Regla documental vigente:
+
+- El presupuesto usa `NV-0001-r_numero`.
+- `estado = 'P'` significa pendiente.
+- `estado = 'C'` significa cerrado.
+- La futura emision CPE no cambia la PK del presupuesto; debe crear un nuevo documento tributario referenciado al `NV`.
 
 Un presupuesto contiene:
 

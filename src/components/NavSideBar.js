@@ -1,4 +1,4 @@
-import { Box, Drawer, List, ListItem, ListItemIcon, ListItemText, Typography, useMediaQuery, Divider, IconButton, useTheme, Fab, Collapse } from "@mui/material";
+import { Box, Drawer, List, ListItem, ListItemIcon, ListItemText, Typography, useMediaQuery, Divider, IconButton, useTheme, Fab, Collapse, Tooltip } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import HomeIcon from '@mui/icons-material/Home';
 import GradingIcon from '@mui/icons-material/Grading';
@@ -6,7 +6,6 @@ import InsertChartIcon from '@mui/icons-material/InsertChart';
 import PaidIcon from '@mui/icons-material/Paid';
 import axios from 'axios';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
-import { blueGrey } from '@mui/material/colors';
 import NextWeekIcon from '@mui/icons-material/NextWeek';
 import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpdateGood';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -29,6 +28,17 @@ import { useAuth0 } from '@auth0/auth0-react';
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
+const sidebarColors = {
+  bg: '#172027',
+  surface: '#1e2931',
+  surfaceSoft: '#25323b',
+  border: 'rgba(125, 150, 164, 0.18)',
+  text: '#f5f7f8',
+  muted: '#90a4ae',
+  accent: '#2aa198',
+  accentSoft: 'rgba(42, 161, 152, 0.16)',
+  danger: '#ff8a65',
+};
 
 // Fuente personalizada para todo el Sidebar
 //const sidebarFont = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -207,106 +217,150 @@ export default function NavSideBar(props) {
     }
   }
 
-  const MenuItem = ({ icon, label, isActive, onClick, badge, hasSubmenu, isSubmenuOpen }) => (
-    <ListItem
-      button
-      onClick={onClick}
-      sx={{
-        paddingY: 1.5,
-        paddingX: 2,
-        backgroundColor: isActive ? '#6e6b6aff' : 'transparent',
-        '&:hover': {
-          backgroundColor: isActive ? '#6e6b6aff' : 'rgba(0,0,0,.08)',
-        },
-        borderRadius: 1,
-        marginY: 0.5,
-        marginX: 1,
-      }}
-    >
-      <ListItemIcon
+  const itemLabelVisible = isMobile || isExpanded;
+
+  const MenuItem = ({ icon, label, isActive, onClick, badge, hasSubmenu, isSubmenuOpen }) => {
+    const item = (
+      <ListItem
+        button
+        onClick={onClick}
         sx={{
-          minWidth: (isMobile || isExpanded) ? 40 : 'auto',
-          color: isActive ? '#FFFFFF' : blueGrey[300],
-          justifyContent: 'center',
+          position: 'relative',
+          minHeight: 46,
+          paddingY: 1,
+          paddingX: itemLabelVisible ? 1.5 : 0,
+          justifyContent: itemLabelVisible ? 'flex-start' : 'center',
+          backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
+          color: sidebarColors.text,
+          '&:before': {
+            content: '""',
+            position: 'absolute',
+            left: 6,
+            top: 10,
+            bottom: 10,
+            width: 3,
+            borderRadius: 4,
+            backgroundColor: isActive ? sidebarColors.accent : 'transparent',
+          },
+          '&:hover': {
+            backgroundColor: isActive ? sidebarColors.accentSoft : 'rgba(255,255,255,.055)',
+          },
+          borderRadius: 2,
+          marginY: 0.35,
+          marginX: 1,
+          transition: 'background-color .18s ease, color .18s ease',
         }}
       >
-        {badge && (
-          <Box sx={{ position: 'relative' }}>
-            {icon}
-            <Typography
-              variant="caption"
-              sx={{
-                position: 'absolute',
-                top: -8,
-                right: -8,
-                fontSize: '0.65rem',
-                fontWeight: 'bold',
+        <ListItemIcon
+          sx={{
+            minWidth: itemLabelVisible ? 38 : 0,
+            color: isActive ? sidebarColors.accent : sidebarColors.muted,
+            justifyContent: 'center',
+            '& svg': { fontSize: 21 },
+          }}
+        >
+          {badge && (
+            <Box sx={{ position: 'relative', display: 'flex' }}>
+              {icon}
+              <Typography
+                variant="caption"
+                sx={{
+                  position: 'absolute',
+                  top: -9,
+                  right: -9,
+                  px: 0.45,
+                  minWidth: 15,
+                  height: 15,
+                  borderRadius: 8,
+                  backgroundColor: sidebarColors.accent,
+                  color: '#08221f',
+                  fontSize: '0.58rem',
+                  fontWeight: 800,
+                  fontFamily: sidebarFont,
+                  lineHeight: '15px',
+                  textAlign: 'center',
+                }}
+              >
+                {badge}
+              </Typography>
+            </Box>
+          )}
+          {!badge && icon}
+        </ListItemIcon>
+        {itemLabelVisible && (
+          <>
+            <ListItemText
+              primary={label}
+              primaryTypographyProps={{
                 fontFamily: sidebarFont,
-                color: isActive ? '#FFFFFF' : '#2aa198',
+                fontSize: '0.86rem',
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? sidebarColors.text : '#dfe7ea',
               }}
-            >
-              {badge}
-            </Typography>
-          </Box>
+            />
+            {hasSubmenu && (isSubmenuOpen ? <ExpandLess sx={{ color: sidebarColors.muted }} /> : <ExpandMore sx={{ color: sidebarColors.muted }} />)}
+          </>
         )}
-        {!badge && icon}
-      </ListItemIcon>
-      {(isMobile || isExpanded) && (
-        <>
+      </ListItem>
+    );
+
+    return itemLabelVisible ? item : (
+      <Tooltip title={label} placement="right" arrow>
+        {item}
+      </Tooltip>
+    );
+  };
+
+  const SubMenuItem = ({ icon, label, isActive, onClick }) => {
+    const item = (
+      <ListItem
+        button
+        onClick={onClick}
+        sx={{
+          minHeight: 38,
+          paddingY: 0.65,
+          paddingLeft: itemLabelVisible ? 5.75 : 0,
+          paddingRight: itemLabelVisible ? 1.5 : 0,
+          justifyContent: itemLabelVisible ? 'flex-start' : 'center',
+          backgroundColor: isActive ? 'rgba(42,161,152,.12)' : 'transparent',
+          '&:hover': {
+            backgroundColor: isActive ? 'rgba(42,161,152,.16)' : 'rgba(255,255,255,.045)',
+          },
+          borderRadius: 1.5,
+          marginY: 0.15,
+          marginX: 1,
+        }}
+      >
+        <ListItemIcon
+          sx={{
+            minWidth: itemLabelVisible ? 30 : 0,
+            color: isActive ? sidebarColors.accent : '#78909c',
+            justifyContent: 'center',
+            '& svg': { fontSize: 17 },
+          }}
+        >
+          {icon}
+        </ListItemIcon>
+        {itemLabelVisible && (
           <ListItemText
             primary={label}
             primaryTypographyProps={{
               fontFamily: sidebarFont,
-              fontSize: '0.9rem',
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? '#FFFFFF' : '#ffffff',
+              fontSize: '0.8rem',
+              fontWeight: isActive ? 700 : 500,
+              color: isActive ? sidebarColors.text : '#c5d0d6',
             }}
           />
-          {hasSubmenu && (isSubmenuOpen ? <ExpandLess sx={{ color: blueGrey[300] }} /> : <ExpandMore sx={{ color: blueGrey[300] }} />)}
-        </>
-      )}
-    </ListItem>
-  );
+        )}
+      </ListItem>
+    );
 
-  const SubMenuItem = ({ icon, label, isActive, onClick }) => (
-    <ListItem
-      button
-      onClick={onClick}
-      sx={{
-        paddingY: 1,
-        paddingLeft: (isMobile || isExpanded) ? 6 : 2,
-        paddingRight: 2,
-        backgroundColor: isActive ? '#6e6b6aff' : 'transparent',
-        '&:hover': {
-          backgroundColor: isActive ? '#6e6b6aff' : 'rgba(0,0,0,.08)',
-        },
-        borderRadius: 1,
-        marginY: 0.25,
-        marginX: 1,
-      }}
-    >
-      <ListItemIcon
-        sx={{
-          minWidth: (isMobile || isExpanded) ? 40 : 'auto',
-          color: isActive ? '#FFFFFF' : blueGrey[300],
-          justifyContent: 'center',
-        }}
-      >
-        {icon}
-      </ListItemIcon>
-      {(isMobile || isExpanded) && (
-        <ListItemText
-          primary={label}
-          primaryTypographyProps={{
-            fontFamily: sidebarFont,
-            fontSize: '0.85rem',
-            fontWeight: isActive ? 600 : 400,
-            color: isActive ? '#FFFFFF' : '#ffffff',
-          }}
-        />
-      )}
-    </ListItem>
-  );
+    return itemLabelVisible ? item : (
+      <Tooltip title={label} placement="right" arrow>
+        {item}
+      </Tooltip>
+    );
+  };
 
   const drawerContent = (
     <Box
@@ -314,8 +368,9 @@ export default function NavSideBar(props) {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#1e272e',
-        borderRight: 'none',
+        background: `linear-gradient(180deg, ${sidebarColors.bg} 0%, #11181e 100%)`,
+        borderRight: `1px solid ${sidebarColors.border}`,
+        boxShadow: '10px 0 28px rgba(0,0,0,.16)',
       }}
     >
       {/* Header */}
@@ -324,50 +379,104 @@ export default function NavSideBar(props) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: (isMobile || isExpanded) ? 'space-between' : 'center',
-          padding: 2,
-          minHeight: 64,
-          backgroundColor: '#1e272e',
-          borderBottom: '1px solid #073642',
+          px: itemLabelVisible ? 2 : 1,
+          py: 1.5,
+          minHeight: 70,
+          backgroundColor: 'rgba(255,255,255,.018)',
+          borderBottom: `1px solid ${sidebarColors.border}`,
         }}
       >
+        {itemLabelVisible ? (
+          <Box>
+            <Typography sx={{ color: sidebarColors.text, fontWeight: 800, fontSize: '1rem', lineHeight: 1, letterSpacing: 0, fontFamily: sidebarFont }}>
+              XpertCont
+            </Typography>
+            <Typography sx={{ color: sidebarColors.muted, fontWeight: 600, fontSize: '.68rem', mt: 0.45, fontFamily: sidebarFont }}>
+              Gestion comercial
+            </Typography>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              display: 'grid',
+              placeItems: 'center',
+              backgroundColor: sidebarColors.accentSoft,
+              color: sidebarColors.accent,
+              fontWeight: 900,
+              fontFamily: sidebarFont,
+            }}
+          >
+            X
+          </Box>
+        )}
+        {itemLabelVisible && (
+          <IconButton onClick={toggleDrawer} size="small" sx={{ color: sidebarColors.muted, '&:hover': { color: sidebarColors.text, backgroundColor: sidebarColors.surfaceSoft } }}>
+            {isMobile ? <CloseIcon /> : <ArrowBackIosIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        )}
       </Box>
 
-      <Divider sx={{ borderColor: '#073642' }} />
+      <Divider sx={{ borderColor: sidebarColors.border }} />
 
       {/* Usuario y Logout */}
-      <Box sx={{ paddingY: 2, textAlign: 'center' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: 1 }}>
+      <Box sx={{ px: itemLabelVisible ? 2 : 1, py: 1.75, textAlign: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: itemLabelVisible ? 1.25 : 1,
+          }}
+        >
           <IconButton
             onClick={() => {
               navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
               handleClick('icono00');
             }}
+            sx={{
+              p: 0.55,
+              border: `1px solid ${sidebarColors.border}`,
+              backgroundColor: 'rgba(255,255,255,.035)',
+              boxShadow: '0 10px 22px rgba(0,0,0,.18)',
+              '& .MuiAvatar-root': {
+                width: itemLabelVisible ? 52 : 42,
+                height: itemLabelVisible ? 52 : 42,
+              },
+              '&:hover': {
+                backgroundColor: sidebarColors.accentSoft,
+                borderColor: 'rgba(42,161,152,.45)',
+              },
+            }}
           >
             <LoginPerfil />
           </IconButton>
-
-          <IconButton onClick={toggleDrawer} size="small" sx={{ color: '#ffffff' }}>
-            {isMobile ? <CloseIcon /> : (isExpanded ? <ArrowBackIosIcon /> : <MenuIcon />)}
-          </IconButton>
+          {itemLabelVisible && (
+            <Box sx={{ width: '100%', maxWidth: 150, mx: 'auto', display: 'flex', justifyContent: 'center' }}>
+              <LoginLogoutBoton sidebar />
+            </Box>
+          )}
+          {!itemLabelVisible && (
+            <>
+              <LoginLogoutBoton sidebar compact />
+              <IconButton onClick={toggleDrawer} size="small" sx={{ color: sidebarColors.muted, '&:hover': { color: sidebarColors.text, backgroundColor: sidebarColors.surfaceSoft } }}>
+                <MenuIcon />
+              </IconButton>
+            </>
+          )}
         </Box>
-        {!isExpanded && !isMobile && (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <IconButton onClick={() => navigate(`/${props.idAnfitrion}/${props.idInvitado}`)}>
-              <LoginLogoutBoton />
-            </IconButton>
-          </Box>
-        )}
-        {(isExpanded || isMobile) && (
-          <LoginLogoutBoton />
-        )}
       </Box>
 
-      <Divider sx={{ borderColor: '#073642' }} />
+      <Divider sx={{ borderColor: sidebarColors.border }} />
 
       {/* Lista de menú */}
       <List sx={{ 
         flexGrow: 1, 
-        paddingTop: 2, 
+        paddingTop: 1.25, 
+        paddingBottom: 2,
         overflowY: 'auto',
         '&::-webkit-scrollbar': {
           width: '0px',
@@ -528,7 +637,7 @@ export default function NavSideBar(props) {
           />
         )}
 
-        <Divider sx={{ marginY: 2, borderColor: '#073642' }} />
+        <Divider sx={{ marginY: 1.5, borderColor: sidebarColors.border }} />
 
         {permisoContabilidades && (
           <MenuItem
