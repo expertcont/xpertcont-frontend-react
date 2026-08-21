@@ -7,7 +7,7 @@ import DataTable, { createTheme } from "react-data-table-component";
 import DaySelector from "../AdminDias";
 
 import { Box, Typography, InputBase, MenuItem,Select, useMediaQuery } from "@mui/material";
-import { Search, FileText, FileSearch, Calendar, Building2, ClipboardList, Pencil, Trash2 } from "lucide-react";
+import { Search, FileText, Calendar, Building2, ClipboardList, Pencil, Trash2, UserPen } from "lucide-react";
 import { Plus } from 'lucide-react';
 
 import Tooltip from '@mui/material/Tooltip';
@@ -17,6 +17,8 @@ import AppChip from "../../ui/AppChip";
 import palette from "../../../theme/palette";
 import createPresupuestoPdf from "./AdminVentaPresupuestoPdf";
 import TrabajoInfoModal from "./modals/TrabajoInfoModal";
+import ClonarTrabajoModal from "./modals/ClonarTrabajoModal";
+import SunatIcon from "../../../assets/images/sunat0.png";
 
 /* =======================================================
    PALETA (manteniendo tu dark + teal)
@@ -96,6 +98,7 @@ const normalizarPresupuestoListado = (presupuesto) => ({
   numero: numeroPresupuesto(presupuesto),
   fecha: formatFecha(presupuesto.r_fecemi),
   cliente: presupuesto.r_razon_social || "Sin cliente",
+  autor: presupuesto.ctrl_crea_us || presupuesto.id_invitado || "Sin autor",
   moneda: presupuesto.r_moneda || "PEN",
   total: Number(presupuesto.r_monto_total || 0),
   servicios_count: Number(presupuesto.servicios_count || presupuesto.servicios?.length || presupuesto.trabajos?.length || 0),
@@ -117,15 +120,60 @@ const normalizarPresupuestoFull = (presupuesto) => ({
   })),
 });
 
+const tieneComprobanteGenerado = (presupuesto) => Boolean(
+  presupuesto.fact_cod && presupuesto.fact_serie && presupuesto.fact_num
+);
+
+const comprobanteGeneradoPresupuesto = (presupuesto) => {
+  if (!tieneComprobanteGenerado(presupuesto)) {
+    return "";
+  }
+
+  return presupuesto.fact_comprobante || [
+    presupuesto.fact_cod,
+    presupuesto.fact_serie,
+    presupuesto.fact_num,
+  ].filter(Boolean).join("-");
+};
+
+const comprobanteGeneradoKeyPresupuesto = (presupuesto) => {
+  const comprobante = comprobanteGeneradoPresupuesto(presupuesto);
+  const elemento = presupuesto.fact_elemento || 1;
+  return presupuesto.fact_comprobante_key || `${comprobante}-${elemento}`;
+};
+
+const renderGenerarComprobanteIcon = () => (
+  <Box
+    component="img"
+    src={SunatIcon}
+    alt="SUNAT"
+    sx={{
+      width: { xs: 26, sm: 26 },
+      height: { xs: 26, sm: 26 },
+      objectFit: "contain",
+      filter: "grayscale(0.65)",
+    }}
+  />
+);
+
+const sunatPendienteEnvioFilter = "brightness(0) saturate(100%) invert(48%) sepia(42%) saturate(700%) hue-rotate(129deg) brightness(95%) contrast(92%)";
+
+const tieneComprobanteEnSunat = (presupuesto) => Boolean(
+  presupuesto.fact_r_vfirmado || presupuesto.fact_cdr_nivel === "ACEPTADO"
+);
+
 /* =======================================================
    COLUMNAS
 ======================================================= */
 
-const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
+const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerarComprobante, renderSunatComprobante, onOpenComprobanteGenerado) => [
   {
     name: "",
     grow: 1,
-    cell: (row) => (
+    cell: (row) => {
+      const comprobanteGenerado = comprobanteGeneradoPresupuesto(row);
+
+      return (
       <Box sx={{ width: "100%", py: 2 }}>
         {/* FILA SUPERIOR */}
         <Box
@@ -137,7 +185,7 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
             gap: 1,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexWrap: "wrap" }}>
 
             <Box
               sx={{
@@ -169,6 +217,42 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
             >
               {row.numero}
             </Typography>
+
+            {comprobanteGenerado && (
+              <Tooltip title="Abrir comprobante generado" arrow>
+                <Box
+                  onClick={() => onOpenComprobanteGenerado(row)}
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    minHeight: { xs: 28, sm: 24 },
+                    px: 0.9,
+                    borderRadius: 1.25,
+                    backgroundColor: "rgba(42,161,152,0.14)",
+                    border: `1px solid ${palette.accent}`,
+                    color: palette.accent,
+                    cursor: "pointer",
+                    fontSize: "11.5px",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    whiteSpace: "nowrap",
+                    transition: "all .18s ease",
+                    "&:hover": {
+                      backgroundColor: palette.accent,
+                      color: "#ffffff",
+                    },
+                    "& svg": {
+                      width: 13,
+                      height: 13,
+                    },
+                  }}
+                >
+                  <FileText size={13} />
+                  CPE {comprobanteGenerado}
+                </Box>
+              </Tooltip>
+            )}
           </Box>
 
           <Box
@@ -182,8 +266,68 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
               mt: { xs: 0.75, sm: 0 },
             }}
           >
+            {tieneComprobanteGenerado(row) ? (
+              <Tooltip title={tieneComprobanteEnSunat(row) ? "Ver CPE en SUNAT" : "Enviar CPE a SUNAT"} arrow>
+                <Box
+                  sx={{
+                    width: { xs: 42, sm: 30 },
+                    height: { xs: 42, sm: 30 },
+                    borderRadius: { xs: 2, sm: 1.5 },
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: palette.chip,
+                    border: `1px solid ${palette.border}`,
+                    boxShadow: { xs: "0 8px 18px rgba(0,0,0,.16)", sm: "none" },
+                    "& img": {
+                      filter: tieneComprobanteEnSunat(row)
+                        ? "grayscale(0) !important"
+                        : `${sunatPendienteEnvioFilter} !important`,
+                    },
+                    "&:hover": {
+                      borderColor: tieneComprobanteEnSunat(row) ? "#2563eb" : palette.accent,
+                      backgroundColor: tieneComprobanteEnSunat(row)
+                        ? "rgba(37,99,235,0.14)"
+                        : "rgba(42,161,152,0.16)",
+                    },
+                  }}
+                >
+                  {renderSunatComprobante(row)}
+                </Box>
+              </Tooltip>
+            ) : (
+              <Tooltip title="Generar comprobante" arrow>
+                <Box
+                  onClick={() => onGenerarComprobante(row)}
+                  sx={{
+                    width: { xs: 42, sm: 30 },
+                    height: { xs: 42, sm: 30 },
+                    borderRadius: { xs: 2, sm: 1.5 },
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: palette.chip,
+                    border: `1px solid ${palette.border}`,
+                    color: palette.muted,
+                    cursor: "pointer",
+                    transition: "all .18s ease",
+                    boxShadow: { xs: "0 8px 18px rgba(0,0,0,.16)", sm: "none" },
+                    "&:hover": {
+                      backgroundColor: palette.accent,
+                      borderColor: palette.accent,
+                      color: "#ffffff",
+                    },
+                    "&:hover img": {
+                      filter: "grayscale(0)",
+                    },
+                  }}
+                >
+                  {renderGenerarComprobanteIcon()}
+                </Box>
+              </Tooltip>
+            )}
+
             {[
-              { title: "Ver presupuesto", icon: <FileSearch size={14} />, onClick: () => onView(row) },
               { title: "Editar presupuesto", icon: <Pencil size={14} />, onClick: () => onEdit(row) },
               { title: "PDF cliente", icon: <FileText size={14} />, onClick: () => onPdf(row) },
               {
@@ -250,25 +394,26 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
           sx={{
             mt: 1,
             display: "flex",
-            alignItems: "center",
+            alignItems: { xs: "flex-start", sm: "center" },
             justifyContent: "space-between",
+            flexDirection: { xs: "column", sm: "row" },
             gap: 0.75,
             color: palette.muted,
             fontSize: "13px",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0, width: { xs: "100%", sm: "auto" } }}>
             <Building2 size={13} style={{ flexShrink: 0 }} />
             <Typography sx={{ fontSize: "13px", color: palette.muted }} noWrap>
               {row.cliente}
             </Typography>
           </Box>
-          <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap", ml: 1 }}>
+          <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap", ml: { xs: 2.5, sm: 1 } }}>
             {formatMoney(row.moneda, row.total)}
           </Typography>
         </Box>
 
-        {/* TRABAJOS */}
+        {/* TRABAJOS / USUARIO QUE GRABO */}
         <Box
           sx={{
             mt: 1.75,
@@ -278,37 +423,60 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete) => [
             gap: 0.75,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              color: palette.muted,
-              fontSize: "11px",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              mr: 0.5,
-            }}
-          >
-            <ClipboardList size={13} />
-            {row.servicios_count} trabajos
+          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, minWidth: 0, flex: "1 1 260px" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                color: palette.muted,
+                fontSize: "11px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                mr: 0.5,
+              }}
+            >
+              <ClipboardList size={13} />
+              {row.servicios_count} trabajos
+            </Box>
+
+            {row.trabajos.length > 0 ? row.trabajos.map((trabajo) => (
+              <AppChip
+                key={trabajo.id}
+                onClick={() => onTrabajoInfo(row, trabajo)}
+              >
+                {trabajo.numero}
+              </AppChip>            
+            )) : row.servicios_count > 0 && (
+              <AppChip onClick={() => onTrabajoInfo(row)}>
+                Ver trabajos
+              </AppChip>
+            )}
           </Box>
 
-          {row.trabajos.length > 0 ? row.trabajos.map((trabajo) => (
-            <AppChip
-              key={trabajo.id}
-              onClick={() => onTrabajoInfo(row, trabajo)}
-            >
-              {trabajo.numero}
-            </AppChip>            
-          )) : row.servicios_count > 0 && (
-            <AppChip onClick={() => onTrabajoInfo(row)}>
-              Ver trabajos
-            </AppChip>
-          )}
+          <Box
+            sx={{
+              ml: { xs: 0, sm: "auto" },
+              display: "flex",
+              alignItems: "center",
+              gap: 0.75,
+              minWidth: 0,
+              width: { xs: "100%", sm: "auto" },
+              maxWidth: { xs: "100%", sm: "36%" },
+              px: 0,
+              py: 0.25,
+              color: palette.muted,
+            }}
+          >
+            <UserPen size={14} style={{ flexShrink: 0 }} />
+            <Typography sx={{ color: palette.muted, fontSize: "12.5px", minWidth: 0 }} noWrap>
+              {row.autor}
+            </Typography>
+          </Box>
         </Box>
       </Box>
-    ),
+      );
+    },
   },
 ];
 
@@ -385,6 +553,8 @@ export default function AdminVentaPresupuestoList() {
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
   const [valorComprobante, setValorComprobante] = useState("");
   const [trabajoInfo, setTrabajoInfo] = useState(null);
+  const [clonarTrabajoInfo, setClonarTrabajoInfo] = useState(null);
+  const [clonandoTrabajo, setClonandoTrabajo] = useState(false);
 
   const [datosPopUp,setDatosPopUp] = useState([]);
   let [diaSel, setDiaSel] = useState("*");
@@ -596,14 +766,121 @@ export default function AdminVentaPresupuestoList() {
         const response = await fetch(`${back_host}/ad_presupuesto/${periodoConsulta}/${params.id_anfitrion}/${documentoConsulta}/${diaConsulta}`);
         const result = await response.json();
         const registros = Array.isArray(result?.data) ? result.data : [];
-        setRegistrosdet(registros);
-        setTabladet(registros);
+        const registrosConReferencias = await completarReferenciasComprobante(registros, periodoConsulta, documentoConsulta);
+        setRegistrosdet(registrosConReferencias);
+        setTabladet(registrosConReferencias);
       } catch (error) {
         console.log("Error cargando presupuestos:", error);
         setRegistrosdet([]);
         setTabladet([]);
       }
     }
+
+    const completarReferenciasComprobante = async (presupuestos, periodoConsulta, documentoConsulta) => {
+      const requiereReferencia = presupuestos.some((presupuesto) => (
+        !tieneComprobanteGenerado(presupuesto) && (presupuesto.estado || "P") === "C"
+      ));
+
+      if (!requiereReferencia) {
+        return presupuestos;
+      }
+
+      try {
+        const response = await fetch(`${back_host}/ad_venta/${periodoConsulta}/${params.id_anfitrion}/${documentoConsulta}/*`);
+        const result = await response.json();
+        const ventas = Array.isArray(result?.value)
+          ? result.value
+          : Array.isArray(result?.data)
+            ? result.data
+            : [];
+
+        const comprobantes = ventas.filter((venta) => venta.r_cod !== "NV");
+
+        return presupuestos.map((presupuesto) => {
+          if (tieneComprobanteGenerado(presupuesto) || (presupuesto.estado || "P") !== "C") {
+            return presupuesto;
+          }
+
+          const fechaGeneracionPresupuesto = presupuesto.ctrl_mod ? new Date(presupuesto.ctrl_mod).getTime() : null;
+          const candidatosExactos = comprobantes.filter((venta) => {
+            const fechaCreacionVenta = venta.ctrl_crea ? new Date(venta.ctrl_crea).getTime() : null;
+            return (
+              fechaGeneracionPresupuesto &&
+              fechaCreacionVenta &&
+              fechaGeneracionPresupuesto === fechaCreacionVenta &&
+              String(venta.r_documento_id || "") === String(presupuesto.r_documento_id || "") &&
+              Number(venta.r_monto_total || 0).toFixed(2) === Number(presupuesto.r_monto_total || 0).toFixed(2)
+            );
+          });
+
+          const candidatosPorDatos = comprobantes.filter((venta) => (
+            String(venta.r_documento_id || "") === String(presupuesto.r_documento_id || "") &&
+            Number(venta.r_monto_total || 0).toFixed(2) === Number(presupuesto.r_monto_total || 0).toFixed(2)
+          ));
+
+          const candidato = candidatosExactos.length === 1
+            ? candidatosExactos[0]
+            : candidatosPorDatos.length === 1
+              ? candidatosPorDatos[0]
+              : null;
+
+          if (!candidato) {
+            return presupuesto;
+          }
+
+          const factElemento = candidato.elemento || 1;
+
+          return {
+            ...presupuesto,
+            fact_cod: candidato.r_cod,
+            fact_serie: candidato.r_serie,
+            fact_num: candidato.r_numero,
+            fact_elemento: factElemento,
+            fact_comprobante: candidato.comprobante || `${candidato.r_cod}-${candidato.r_serie}-${candidato.r_numero}`,
+            fact_comprobante_key: candidato.comprobante_key || `${candidato.r_cod}-${candidato.r_serie}-${candidato.r_numero}-${factElemento}`,
+            fact_r_vfirmado: candidato.r_vfirmado,
+            fact_cdr_pendiente: candidato.cdr_pendiente,
+            fact_cdr_nivel: candidato.cdr_nivel,
+          };
+        });
+      } catch (error) {
+        console.log("No se pudieron completar referencias de comprobantes desde ventas:", error);
+        return presupuestos;
+      }
+    };
+
+    const marcarComprobanteGeneradoEnLista = (presupuesto, generado) => {
+      const factCod = generado.r_cod;
+      const factSerie = generado.r_serie;
+      const factNum = generado.r_numero;
+      const factElemento = generado.elemento || 1;
+
+      if (!factCod || !factSerie || !factNum) {
+        return;
+      }
+
+      const coincidePresupuesto = (item) => (
+        (item.r_cod || "NV") === (presupuesto.r_cod || "NV") &&
+        (item.r_serie || "0001") === (presupuesto.r_serie || "0001") &&
+        item.r_numero === presupuesto.r_numero &&
+        String(item.elemento || 1) === String(presupuesto.elemento || 1)
+      );
+
+      const aplicarReferencia = (item) => coincidePresupuesto(item)
+        ? {
+            ...item,
+            fact_cod: factCod,
+            fact_serie: factSerie,
+            fact_num: factNum,
+            fact_elemento: factElemento,
+            fact_comprobante: `${factCod}-${factSerie}-${factNum}`,
+            fact_comprobante_key: `${factCod}-${factSerie}-${factNum}-${factElemento}`,
+          }
+        : item;
+
+      setRegistrosdet((prev) => prev.map(aplicarReferencia));
+      setTabladet((prev) => prev.map(aplicarReferencia));
+    };
     //////////////////////////////////////
     
    
@@ -1282,6 +1559,177 @@ export default function AdminVentaPresupuestoList() {
       }
     };
 
+    const cargarSeriesEmision = async (documentoId, rCod) => {
+      const response = await axios.get(`${back_host}/ad_ventaseries/${params.id_anfitrion}/${documentoId}/${params.id_invitado}/${rCod}`);
+      return Array.isArray(response.data?.data) ? response.data.data : [];
+    };
+
+    const handleGenerarComprobantePresupuesto = async (presupuesto) => {
+      if (tieneComprobanteGenerado(presupuesto)) {
+        return;
+      }
+
+      const periodoActual = periodo_trabajo || params.periodo;
+      const documentoActual = contabilidad_trabajo || params.documento_id;
+
+      try {
+        const tipoResult = await swal2.fire({
+          title: "Generar comprobante",
+          text: `${presupuesto.numero || numeroPresupuesto(presupuesto)} - ${presupuesto.cliente || presupuesto.r_razon_social || "Sin cliente"}`,
+          input: "select",
+          inputOptions: {
+            "01": "Factura",
+            "03": "Boleta",
+          },
+          inputValue: presupuesto.r_id_doc === "1" ? "03" : "01",
+          showCancelButton: true,
+          confirmButtonText: "CONTINUAR",
+          cancelButtonText: "CANCELAR",
+          inputValidator: (value) => (!value ? "Selecciona el tipo de comprobante." : undefined),
+        });
+
+        if (!tipoResult.isConfirmed) {
+          return;
+        }
+
+        const rCodEmitir = tipoResult.value;
+        const series = await cargarSeriesEmision(documentoActual, rCodEmitir);
+
+        if (series.length === 0) {
+          throw new Error(`No hay series autorizadas para ${rCodEmitir}.`);
+        }
+
+        const serieOptions = series.reduce((acc, item) => {
+          if (item.r_serie) {
+            acc[item.r_serie] = item.r_serie;
+          }
+          return acc;
+        }, {});
+
+        const serieResult = await swal2.fire({
+          title: "Serie autorizada",
+          input: "select",
+          inputOptions: serieOptions,
+          inputValue: series[0]?.r_serie || "",
+          showCancelButton: true,
+          confirmButtonText: "GENERAR",
+          cancelButtonText: "CANCELAR",
+          inputValidator: (value) => (!value ? "Selecciona la serie." : undefined),
+        });
+
+        if (!serieResult.isConfirmed) {
+          return;
+        }
+
+        const response = await axios.post(`${back_host}/ad_presupuesto/comprobante`, {
+          id_anfitrion: params.id_anfitrion,
+          documento_id: documentoActual,
+          periodo: periodoActual,
+          id_invitado: params.id_invitado,
+          fecha: obtenerFechaPeriodo(periodoActual, diaSel),
+          origen: {
+            r_cod: presupuesto.r_cod || "NV",
+            r_serie: presupuesto.r_serie || "0001",
+            r_numero: presupuesto.r_numero,
+            elemento: presupuesto.elemento || 1,
+          },
+          destino: {
+            r_cod_emitir: rCodEmitir,
+            r_serie_emitir: serieResult.value,
+          },
+          cliente: {
+            r_id_doc: presupuesto.r_id_doc || "6",
+            r_documento_id: presupuesto.r_documento_id,
+            r_razon_social: presupuesto.r_razon_social,
+            r_direccion: presupuesto.r_direccion,
+          },
+          pago: {
+            r_moneda: presupuesto.r_moneda || "PEN",
+            r_forma_pago_id: presupuesto.r_forma_pago_id || "Contado",
+            dias_credito: presupuesto.dias_credito || 0,
+            efectivo: null,
+            vuelto: 0,
+            forma_pago2: null,
+            efectivo2: 0,
+          },
+          id_producto: "0000",
+          cont_und_default: "ZZ",
+        });
+
+        if (!response.data?.success) {
+          throw new Error(response.data?.message || "No se pudo generar el comprobante.");
+        }
+
+        const generado = response.data?.data || response.data;
+        const comprobanteGenerado = `${generado.r_cod}-${generado.r_serie}-${generado.r_numero}-${generado.elemento || 1}`;
+
+        marcarComprobanteGeneradoEnLista(presupuesto, generado);
+        await cargaRegistro("presupuestos", periodoActual, documentoActual, diaSel);
+        marcarComprobanteGeneradoEnLista(presupuesto, generado);
+
+        const abrirResult = await swal2.fire({
+          title: "Comprobante generado",
+          text: comprobanteGenerado,
+          icon: "success",
+          showCancelButton: true,
+          confirmButtonText: "ABRIR",
+          cancelButtonText: "QUEDARSE",
+        });
+
+        if (abrirResult.isConfirmed) {
+          navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodoActual}/${documentoActual}/${comprobanteGenerado}/view`);
+        }
+      } catch (error) {
+        console.log("Error generando comprobante desde presupuesto:", error);
+        swal2.fire({
+          title: "No se pudo generar",
+          text: error.response?.data?.message || error.message || "Error interno.",
+          icon: "error",
+          confirmButtonText: "ACEPTAR",
+        });
+      }
+    };
+
+    const renderSunatComprobantePresupuesto = (presupuesto) => {
+      if (!tieneComprobanteGenerado(presupuesto)) {
+        return null;
+      }
+
+      const factElemento = presupuesto.fact_elemento || 1;
+      const factComprobante = comprobanteGeneradoPresupuesto(presupuesto);
+      const factComprobanteKey = comprobanteGeneradoKeyPresupuesto(presupuesto);
+      const periodoActual = periodo_trabajo || params.periodo;
+      const documentoActual = contabilidad_trabajo || params.documento_id;
+
+      return (
+        <AdminSunatIcon
+          comprobante_key={factComprobanteKey}
+          comprobante={factComprobante}
+          cdr_pendiente={presupuesto.fact_cdr_pendiente}
+          elemento={factElemento}
+          firma={presupuesto.fact_r_vfirmado}
+          documentoId={documentoActual}
+          periodoTrabajo={periodoActual}
+          idAnfitrion={params.id_anfitrion}
+          contabilidadTrabajo={documentoActual}
+          backHost={back_host}
+          onRefresh={() => setUpdateTrigger(Math.random())}
+          size={26}
+          cdr_nivel={presupuesto.fact_cdr_nivel}
+        />
+      );
+    };
+
+    const handleOpenComprobanteGenerado = (presupuesto) => {
+      const comprobanteKey = comprobanteGeneradoKeyPresupuesto(presupuesto);
+
+      if (!comprobanteKey) {
+        return;
+      }
+
+      navigate(`/ad_venta/${params.id_anfitrion}/${params.id_invitado}/${periodo_trabajo || params.periodo}/${contabilidad_trabajo || params.documento_id}/${comprobanteKey}/view`);
+    };
+
     const handleDeletePresupuesto = async (presupuesto) => {
       if ((presupuesto.estado || "P") !== "P") {
         alert("Solo se pueden eliminar presupuestos pendientes.");
@@ -1352,6 +1800,97 @@ export default function AdminVentaPresupuestoList() {
       } catch (error) {
         console.log("Error cargando trabajos de presupuesto:", error);
         alert(error.message || "No se pudieron cargar los trabajos.");
+      }
+    };
+
+    const handleOpenClonarTrabajo = (info) => {
+      if (!info?.trabajo || !info?.presupuesto) {
+        return;
+      }
+
+      setClonarTrabajoInfo(info);
+    };
+
+    const handleCloseClonarTrabajo = () => {
+      if (clonandoTrabajo) {
+        return;
+      }
+
+      setClonarTrabajoInfo(null);
+    };
+
+    const handleConfirmClonarTrabajo = async (destino) => {
+      const presupuestoOrigen = clonarTrabajoInfo?.presupuesto;
+      const trabajoOrigen = clonarTrabajoInfo?.trabajo;
+
+      if (!presupuestoOrigen || !trabajoOrigen) {
+        return;
+      }
+
+      if (!destino?.documento_id || !destino?.periodo || !destino?.r_numero) {
+        alert("Indica empresa, periodo y numero de presupuesto destino.");
+        return;
+      }
+
+      setClonandoTrabajo(true);
+
+      try {
+        const payload = {
+          id_anfitrion: params.id_anfitrion,
+          id_invitado: params.id_invitado,
+          origen: {
+            documento_id: presupuestoOrigen.documento_id || contabilidad_trabajo || params.documento_id,
+            periodo: presupuestoOrigen.periodo || periodo_trabajo || params.periodo,
+            r_cod: presupuestoOrigen.r_cod || "NV",
+            r_serie: presupuestoOrigen.r_serie || "0001",
+            r_numero: presupuestoOrigen.r_numero,
+            elemento: presupuestoOrigen.elemento || 1,
+            servicio: trabajoOrigen.servicio,
+          },
+          destino: {
+            documento_id: destino.documento_id,
+            periodo: destino.periodo,
+            r_cod: destino.r_cod || "NV",
+            r_serie: destino.r_serie || "0001",
+            r_numero: destino.r_numero,
+            elemento: destino.elemento || 1,
+          },
+        };
+
+        const clonarUrl = `${back_host}/ad_presupuestoserv/clonar`;
+        const response = await fetch(clonarUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const responseText = await response.text();
+        let data = {};
+
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          console.log("Respuesta no JSON al clonar trabajo:", {
+            url: clonarUrl,
+            status: response.status,
+            body: responseText,
+            parseError,
+          });
+          throw new Error(`El backend no devolvio JSON para ${clonarUrl}. Revisa que la ruta de clonado este activa.`);
+        }
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudo clonar el trabajo.");
+        }
+
+        alert(data.data?.mensaje || "Trabajo clonado correctamente.");
+        setClonarTrabajoInfo(null);
+        setTrabajoInfo(null);
+        setUpdateTrigger({});
+      } catch (error) {
+        console.log("Error clonando trabajo:", error);
+        alert(error.message || "No se pudo clonar el trabajo.");
+      } finally {
+        setClonandoTrabajo(false);
       }
     };
   
@@ -1576,7 +2115,16 @@ export default function AdminVentaPresupuestoList() {
         {/* TABLA */}
         <DataTable
           theme="solarized"
-          columns={createColumns(handleEditPresupuesto, handleViewPresupuesto, handlePdfPresupuesto, handleTrabajoInfo, handleDeletePresupuesto)}
+          columns={createColumns(
+            handleEditPresupuesto,
+            handleViewPresupuesto,
+            handlePdfPresupuesto,
+            handleTrabajoInfo,
+            handleDeletePresupuesto,
+            handleGenerarComprobantePresupuesto,
+            renderSunatComprobantePresupuesto,
+            handleOpenComprobanteGenerado
+          )}
           data={data}
           pagination
           paginationPerPage={10}
@@ -1589,6 +2137,19 @@ export default function AdminVentaPresupuestoList() {
           trabajoInfo={trabajoInfo}
           onClose={() => setTrabajoInfo(null)}
           onSelectTrabajo={(trabajo) => setTrabajoInfo(prev => ({ ...prev, trabajo }))}
+          onCloneTrabajo={handleOpenClonarTrabajo}
+        />
+
+        <ClonarTrabajoModal
+          open={Boolean(clonarTrabajoInfo)}
+          trabajoInfo={clonarTrabajoInfo}
+          periodoOptions={periodo_select}
+          contabilidadOptions={contabilidad_select}
+          defaultPeriodo={periodo_trabajo || params.periodo}
+          defaultDocumentoId={contabilidad_trabajo || params.documento_id}
+          onClose={handleCloseClonarTrabajo}
+          onConfirm={handleConfirmClonarTrabajo}
+          loading={clonandoTrabajo}
         />
 
       </Box>

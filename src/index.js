@@ -25,11 +25,14 @@ function Main() {
   const [showApp, setShowApp] = React.useState(false);
   const [idAnfitrion, setIdAnfitrion] = React.useState(null);
   const [idInvitado, setIdInvitado] = React.useState(null);
+  const [rubro, setRubro] = React.useState(sessionStorage.getItem('rubro_trabajo') || 'COMERCIAL');
 
   // Función para cambiar al contenido de la aplicación principal
-  const startApp = (usuario, invitado) => {
+  const startApp = (usuario, invitado, rubroUsuario = 'COMERCIAL') => {
     setIdAnfitrion(usuario);
-    setIdInvitado(invitado);    
+    setIdInvitado(invitado);
+    setRubro(rubroUsuario || 'COMERCIAL');
+    sessionStorage.setItem('rubro_trabajo', rubroUsuario || 'COMERCIAL');
     setShowApp(true);
   };
 
@@ -46,7 +49,7 @@ function Main() {
       >
         {/* Renderiza la pantalla de bienvenida o la aplicación principal según el estado */}
         {showApp ? (
-          <App idAnfitrion={idAnfitrion} idInvitado={idInvitado} />
+          <App idAnfitrion={idAnfitrion} idInvitado={idInvitado} rubro={rubro} />
         ) : (
           <BienvenidaXpert onStartClick={startApp} />
         )}

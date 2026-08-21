@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Dialog, IconButton, Typography } from "@mui/material";
-import { X } from "lucide-react";
+import { ChevronRight, ClipboardList, CopyPlus, X } from "lucide-react";
+import AppButton from "../../../ui/AppButton";
 import palette from "../../../../theme/palette";
 
 const formatMoney = (moneda, value) => `${moneda || "PEN"} ${Number(value || 0).toLocaleString("es-PE", {
@@ -8,7 +9,7 @@ const formatMoney = (moneda, value) => `${moneda || "PEN"} ${Number(value || 0).
   maximumFractionDigits: 2,
 })}`;
 
-export default function TrabajoInfoModal({ trabajoInfo, onClose, onSelectTrabajo }) {
+export default function TrabajoInfoModal({ trabajoInfo, onClose, onSelectTrabajo, onCloneTrabajo }) {
   const trabajo = trabajoInfo?.trabajo;
   const presupuesto = trabajoInfo?.presupuesto;
   const trabajos = trabajoInfo?.trabajos || [];
@@ -107,28 +108,71 @@ export default function TrabajoInfoModal({ trabajoInfo, onClose, onSelectTrabajo
                     key={item.servicio}
                     onClick={() => onSelectTrabajo(item)}
                     sx={{
-                      display: "flex",
+                      display: "grid",
+                      gridTemplateColumns: "24px minmax(0, 1fr) auto 18px",
                       alignItems: "center",
-                      justifyContent: "space-between",
                       gap: 1,
-                      p: 1,
+                      p: 1.05,
                       borderRadius: 1.5,
+                      border: `1px solid ${palette.borderSoft}`,
+                      backgroundColor: palette.surface,
                       color: palette.text,
                       cursor: "pointer",
-                      "&:hover": { backgroundColor: palette.surfaceAlt },
+                      transition: "border-color .18s ease, background-color .18s ease, transform .18s ease",
+                      "&:hover": {
+                        backgroundColor: palette.surfaceAlt,
+                        borderColor: palette.accent,
+                        transform: "translateY(-1px)",
+                      },
                     }}
                   >
-                    <Typography sx={{ fontSize: "13px", fontWeight: 700 }} noWrap>
-                      {item.descripcion || `Servicio ${item.servicio || ""}`}
-                    </Typography>
+                    <Box
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 1.25,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: palette.accentSoft,
+                        color: palette.accent,
+                      }}
+                    >
+                      <ClipboardList size={14} />
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: "13px", fontWeight: 800 }} noWrap>
+                        {item.descripcion || `Servicio ${item.servicio || ""}`}
+                      </Typography>
+                      <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }} noWrap>
+                        Ver detalle del trabajo
+                      </Typography>
+                    </Box>
                     <Typography sx={{ color: palette.accent, fontSize: "12px", fontWeight: 800, whiteSpace: "nowrap" }}>
                       {formatMoney(presupuesto.moneda, item.r_monto_total || 0)}
                     </Typography>
+                    <ChevronRight size={16} color={palette.muted} />
                   </Box>
                 ))}
               </Box>
             )}
           </Box>
+
+          {trabajo && (
+            <Box sx={{ mt: 2 }}>
+              <AppButton fullWidth icon={<CopyPlus size={16} />} onClick={() => onCloneTrabajo?.(trabajoInfo)} sx={{ minHeight: 42 }}>
+                Clonar
+              </AppButton>
+            </Box>
+          )}
+
+          {!trabajo && (
+            <Box sx={{ mt: 2 }}>
+              <AppButton fullWidth icon={<X size={16} />} onClick={onClose} sx={{ minHeight: 42 }}>
+                Cerrar
+              </AppButton>
+            </Box>
+          )}
         </Box>
       )}
     </Dialog>

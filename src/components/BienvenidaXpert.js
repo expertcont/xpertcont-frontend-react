@@ -26,6 +26,10 @@ const BienvenidaXpert = ({ onStartClick }) => {
 
     const handleChange = e => {
       setAnfitrionSeleccionado(e.target.value);
+      const estudio = estudios_select.find((item) => item.id_usuario === e.target.value);
+      if (estudio?.rubro) {
+        sessionStorage.setItem('rubro_trabajo', estudio.rubro);
+      }
     }
   
     const cargaEstudiosAnfitrion = () =>{
@@ -38,6 +42,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
         // Establece el primer valor del arreglo como valor inicial
         if (response.data.length > 0) {
           setAnfitrionSeleccionado(response.data[0].id_usuario); 
+          sessionStorage.setItem('rubro_trabajo', response.data[0].rubro || 'COMERCIAL');
         }
       })
       .catch((error) => {
@@ -128,7 +133,10 @@ const BienvenidaXpert = ({ onStartClick }) => {
                                               color='primary' 
                                               onClick={() => {
                                                 // Devolvemos los props actualizados
-                                                onStartClick(idAnfitrionSeleccionado, user.email);
+                                                const estudio = estudios_select.find((item) => item.id_usuario === idAnfitrionSeleccionado);
+                                                const rubro = estudio?.rubro || sessionStorage.getItem('rubro_trabajo') || 'COMERCIAL';
+                                                sessionStorage.setItem('rubro_trabajo', rubro);
+                                                onStartClick(idAnfitrionSeleccionado, user.email, rubro);
                                               }}                                              
                                               fullWidth
                                               sx={{display:'block',margin:'.5rem 0'}}

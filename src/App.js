@@ -49,6 +49,10 @@ import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
 import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";
+import TransportesEncomienda from "./components/Admin/transporte/TransportesEncomienda";
+import TransportesBoletos from "./components/Admin/transporte/TransportesBoletos";
+import TransportesPuntosVentaList from "./components/Admin/transporte/puntosVenta/TransportesPuntosVentaList";
+import TransportesRutasList from "./components/Admin/transporte/rutas/TransportesRutasList";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -79,6 +83,7 @@ function App(props) {
           <NavSideBar 
             idAnfitrion={props.idAnfitrion}
             idInvitado={props.idInvitado}
+            rubro={props.rubro}
           />
 
 
@@ -91,6 +96,11 @@ function App(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
+              <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesEncomienda />} />
+              <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesEncomienda />} />
+              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesBoletos />} />
+              <Route path="/ad_transportepuntos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesPuntosVentaList />} />
+              <Route path="/ad_transporterutas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesRutasList />} />
 
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
 
