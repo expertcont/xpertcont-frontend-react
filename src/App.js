@@ -29,8 +29,8 @@ import AdminProductoForm from "./components/Admin/AdminProductoForm";
 import AdminVentaForm from "./components/Admin/AdminVentaForm";
 import AdminEquipoList from "./components/Admin/AdminEquipoList";
 import AdminEquipoForm from "./components/Admin/AdminEquipoForm";
-import AdminUsuariosGrupoList from "./components/Admin/AdminUsuariosGrupoList";
-import AdminUsuariosGrupoForm from "./components/Admin/AdminUsuariosGrupoForm";
+import AdminPuntoVentaUsuarioList from "./components/Admin/AdminPuntoVentaUsuarioList";
+import AdminPuntoVentaUsuarioForm from "./components/Admin/AdminPuntoVentaUsuarioForm";
 import AdminProductoFormPrecio from "./components/Admin/AdminProductoFormPrecio";
 
 // 👇 Importa el ConfirmProvider
@@ -49,10 +49,13 @@ import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
 import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";
-import TransportesEncomienda from "./components/Admin/transporte/TransportesEncomienda";
-import TransportesBoletos from "./components/Admin/transporte/TransportesBoletos";
-import TransportesPuntosVentaList from "./components/Admin/transporte/puntosVenta/TransportesPuntosVentaList";
-import TransportesRutasList from "./components/Admin/transporte/rutas/TransportesRutasList";
+import TrEncomiendaList from "./components/Admin/transporte/TrEncomiendaList";
+import TrBoletosList from "./components/Admin/transporte/TrBoletosList";
+import TrPlacaList from "./components/Admin/transporte/TrPlacaList";
+import TrLicenciaList from "./components/Admin/transporte/TrLicenciaList";
+import TrZonaList from "./components/Admin/transporte/TrZonaList";
+import AdminPuntoVentaList from "./components/Admin/AdminPuntoVentaList";
+import TrRutaList from "./components/Admin/transporte/TrRutaList";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -84,6 +87,7 @@ function App(props) {
             idAnfitrion={props.idAnfitrion}
             idInvitado={props.idInvitado}
             rubro={props.rubro}
+            super={props.super}
           />
 
 
@@ -96,11 +100,15 @@ function App(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
-              <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesEncomienda />} />
-              <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesEncomienda />} />
-              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesBoletos />} />
-              <Route path="/ad_transportepuntos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesPuntosVentaList />} />
-              <Route path="/ad_transporterutas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TransportesRutasList />} />
+              <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
+              <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
+              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
+              <Route path="/ad_puntoventa/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
+              <Route path="/ad_transportepuntos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
+              <Route path="/ad_transporterutas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrRutaList />} />
+              <Route path="/ad_transporteplacas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrPlacaList />} />
+              <Route path="/ad_transportelicencias/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrLicenciaList />} />
+              <Route path="/ad_transportezonas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrZonaList />} />
 
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
 
@@ -116,9 +124,14 @@ function App(props) {
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminEquipoForm />} />          
               <Route path="/ad_equipo/:id_anfitrion/:id_invitado/:documento_id/:id_equipo/edit" element={<AdminEquipoForm />} />
 
-              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado" element={<AdminUsuariosGrupoList />} />
-              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/new" element={<AdminUsuariosGrupoForm />} />
-              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/:id_invitado_grupo/edit" element={<AdminUsuariosGrupoForm />} />
+              <Route path="/ad_puntoventausuario/:id_anfitrion/:id_invitado" element={<AdminPuntoVentaUsuarioList />} />
+              <Route path="/ad_puntoventausuario/:id_anfitrion/:id_invitado/new" element={<AdminPuntoVentaUsuarioForm />} />
+              <Route path="/ad_puntoventausuario/:id_anfitrion/:id_invitado/:documento_id/:id_punto_venta/:id_invitado_grupo/edit" element={<AdminPuntoVentaUsuarioForm />} />
+              <Route path="/ad_puntoventausuario/:id_anfitrion/:id_invitado/:id_invitado_grupo/edit" element={<AdminPuntoVentaUsuarioForm />} />
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado" element={<AdminPuntoVentaUsuarioList />} />
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/new" element={<AdminPuntoVentaUsuarioForm />} />
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/:documento_id/:id_punto_venta/:id_invitado_grupo/edit" element={<AdminPuntoVentaUsuarioForm />} />
+              <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/:id_invitado_grupo/edit" element={<AdminPuntoVentaUsuarioForm />} />
 
               <Route path="/ad_ventarepdet/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepDet />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />

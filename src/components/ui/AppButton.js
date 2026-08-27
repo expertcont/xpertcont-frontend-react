@@ -9,10 +9,20 @@ export default function AppButton({
   onClick,
   fullWidth = false,
   sx = {},
+  buttonRef,
 }) {
   return (
     <Box
+      ref={buttonRef}
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick?.(event);
+        }
+      }}
       sx={{
         height: 42,
         width: fullWidth ? "100%" : "auto",

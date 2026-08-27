@@ -92,17 +92,15 @@ CREATE TABLE public.mve_transventa (
     id_usuario              VARCHAR(20) NOT NULL,
     documento_id            VARCHAR(20) NOT NULL,
     periodo                 VARCHAR(7)  NOT NULL,
-
     r_cod                   CHAR(2)     NOT NULL,
     r_serie                 CHAR(4)     NOT NULL,
     r_numero                VARCHAR(10) NOT NULL,
     elemento                INTEGER     NOT NULL,
-    r_fecemi                DATE        NOT NULL,
 
+    r_fecemi                DATE        NOT NULL,
     tipo_operacion          CHAR(1)     NOT NULL,
     -- B = Boleto
     -- E = Encomienda
-
 
     -- ============================================================
     -- REFERENCIA - NOTA DE CRÉDITO
@@ -113,21 +111,21 @@ CREATE TABLE public.mve_transventa (
     r_numero_ref            VARCHAR(10),
     r_fecemi_ref            DATE,
 
-
     -- ============================================================
-    -- CLIENTE
+    -- CLIENTE (ENCOMIENDA/PASAJERO)
     -- ============================================================
 
-    id_documento            VARCHAR(2),
+    cliente_id_doc            VARCHAR(2),
+    cliente_documento_id       VARCHAR(20),
     cliente                 VARCHAR(100),
-    cliente_documento       VARCHAR(20),
     cliente_telefono        VARCHAR(20),
-
-
+    cliente_direccion_fact  VARCHAR(200),
+    cliente_zona        VARCHAR(20), --solo remitente OPCIONAL
+    cliente_direccion   VARCHAR(100), --solo remitente OPCIONAL
+     
     -- ============================================================
     -- TRANSPORTE
     -- ============================================================
-
 
     id_ruta             VARCHAR(15),
     descripcion             VARCHAR(100),
@@ -138,7 +136,6 @@ CREATE TABLE public.mve_transventa (
     placa                   VARCHAR(10),
     licencia                VARCHAR(20),
 
-
     -- ============================================================
     -- BOLETO DE VIAJE
     -- ============================================================
@@ -146,38 +143,34 @@ CREATE TABLE public.mve_transventa (
     asiento                 VARCHAR(10),
     pasajero_edad           INTEGER,
 
-
     -- ============================================================
     -- ENCOMIENDA
     -- ============================================================
-
+    destinatario_id_doc            VARCHAR(2),
+    destinatario_documento_id       VARCHAR(20),
     destinatario            VARCHAR(100),
-    destinatario_documento  VARCHAR(20),
     destinatario_telefono   VARCHAR(20),
     destinatario_direccion  VARCHAR(100),
 
     -- Datos de control de entrega
     entrega_fecha           DATE,
-    entrega_documento       VARCHAR(20),
+    entrega_documento_id    VARCHAR(20),
     entrega_nombres         VARCHAR(100),
-    entrega_ctrl_us         VARCHAR(50),
-
+    entrega_ctrl_us         VARCHAR(50), --email usuario en agencia o puntoventa
 
     -- ============================================================
-    -- IMPORTES
+    -- IMPORTE, se entiende cantidad = 1 y precio_unitario el mismo para fact electronica
     -- ============================================================
-
-    cantidad                NUMERIC(14,3),
-    precio_unitario         NUMERIC(14,2),
     precio_neto             NUMERIC(14,2),
 
     r_gravado               NUMERIC(14,2) DEFAULT 0,
     r_exonerado             NUMERIC(14,2) DEFAULT 0,
     r_igv                   NUMERIC(14,2) DEFAULT 0,
     r_monto_total           NUMERIC(14,2) DEFAULT 0,
+    porc_igv                NUMERIC(5,2), --18 default
 
-    porc_igv                NUMERIC(5,2),
-
+    condicion_pago VARCHAR(20), --PAGADO POR-COBRAR
+    llegada_aprox TIME WITHOUT TIME ZONE, 
 
     -- ============================================================
     -- SUNAT
@@ -185,7 +178,6 @@ CREATE TABLE public.mve_transventa (
 
     numero_rdi              VARCHAR(50),
     estado_sunat            CHAR(1),
-
 
     -- ============================================================
     -- CONTROL Y AUDITORÍA
@@ -630,5 +622,3 @@ Antes de implementar funciones PostgreSQL o backend, se deberá considerar este 
 - aplicación Android Kotlin.
 
 Los detalles de lógica de negocio y comportamiento de cada componente se definirán en especificaciones posteriores.
-
-

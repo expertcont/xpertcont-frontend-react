@@ -16,6 +16,8 @@ import CropFreeIcon from '@mui/icons-material/CropFree';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
+import BadgeIcon from '@mui/icons-material/Badge';
 
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
@@ -236,6 +238,7 @@ export default function NavSideBar(props) {
   const esRubroProyectos = rubroTrabajo === 'PROYECTO' || rubroTrabajo === 'PROYECTOS';
   const esRubroContable = rubroTrabajo === 'CONTABLE' || rubroTrabajo === 'CONTABILIDAD';
   const esRubroComercial = !esRubroTransporte && !esRubroProyectos && !esRubroContable;
+  const etiquetaPuntosVenta = esRubroTransporte ? 'Agencias' : 'Puntos venta';
   const subtituloRubro = esRubroTransporte
     ? 'Gestion transportes'
     : esRubroProyectos
@@ -610,21 +613,39 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  icon={<HolidayVillageIcon />}
-                  label="Puntos venta"
-                  isActive={selectedButton === 'icono11-3'}
-                  onClick={() => {
-                    navigate(`/ad_transportepuntos/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-3');
-                  }}
-                />
-                <SubMenuItem
                   icon={<CompareArrowsIcon />}
                   label="Rutas"
                   isActive={selectedButton === 'icono11-4'}
                   onClick={() => {
                     navigate(`/ad_transporterutas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-4');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<DirectionsBusIcon />}
+                  label="Placas"
+                  isActive={selectedButton === 'icono11-5'}
+                  onClick={() => {
+                    navigate(`/ad_transporteplacas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-5');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<BadgeIcon />}
+                  label="Licencias"
+                  isActive={selectedButton === 'icono11-6'}
+                  onClick={() => {
+                    navigate(`/ad_transportelicencias/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-6');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<HolidayVillageIcon />}
+                  label="Zonas"
+                  isActive={selectedButton === 'icono11-7'}
+                  onClick={() => {
+                    navigate(`/ad_transportezonas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-7');
                   }}
                 />
               </List>
@@ -640,6 +661,30 @@ export default function NavSideBar(props) {
             onClick={() => {
               navigate(`/ad_ventapresupuesto/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
               handleClick('icono02-4');
+            }}
+          />
+        )}
+
+        {accesoAdmin && (
+          <MenuItem
+            icon={<HolidayVillageIcon />}
+            label={etiquetaPuntosVenta}
+            isActive={selectedButton === 'icono11-3'}
+            onClick={() => {
+              navigate(`/ad_puntoventa/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+              handleClick('icono11-3');
+            }}
+          />
+        )}
+
+        {accesoAdmin && (
+          <MenuItem
+            icon={<SystemSecurityUpdateGoodIcon />}
+            label="Usuarios turnos"
+            isActive={selectedButton === 'icono11'}
+            onClick={() => {
+              navigate(`/ad_puntoventausuario/${props.idAnfitrion}/${props.idInvitado}`);
+              handleClick('icono11');
             }}
           />
         )}
@@ -781,15 +826,6 @@ export default function NavSideBar(props) {
         {permisoSeguridad && (
           <>
             <Divider sx={{ marginY: 1.5, borderColor: sidebarColors.border }} />
-            <MenuItem
-              icon={<SystemSecurityUpdateGoodIcon />}
-              label="Usuarios Grupo"
-              isActive={selectedButton === 'icono11'}
-              onClick={() => {
-                navigate(`/ad_usuariogrupo/${props.idAnfitrion}/${props.idInvitado}`);
-                handleClick('icono11');
-              }}
-            />
             <MenuItem
               icon={<SystemSecurityUpdateGoodIcon />}
               label="Seguridad"

@@ -67,6 +67,24 @@ const numeroOperacion = (item) => [
 
 const tipoOperacion = (item) => item.tipo_operacion === "E" ? "Encomienda" : "Boleto";
 
+const normalizarTextoBusqueda = (value) => String(value || "")
+  .toLowerCase()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "");
+
+const crearIndiceBusqueda = (item) => [
+  numeroOperacion(item),
+  item.cliente,
+  item.cliente_documento,
+  item.cliente_documento_id,
+  item.destinatario,
+  item.destinatario_documento,
+  item.destinatario_documento_id,
+  item.descripcion,
+  item.placa,
+  item.licencia,
+].map(normalizarTextoBusqueda).join(" ");
+
 const normalizarOperacion = (item) => ({
   ...item,
   numero: numeroOperacion(item),
@@ -141,15 +159,15 @@ const actionButtonSx = (danger = false) => ({
 });
 
 const headerFieldSx = {
-  height: { xs: 38, md: 42 },
-  px: 1.5,
+  height: { xs: 32, md: 42 },
+  px: { xs: 0.5, md: 1.5 },
   display: "flex",
   alignItems: "center",
   backgroundColor: palette.bg,
   border: `1px solid ${palette.border}`,
   borderRadius: 2,
   color: palette.text,
-  fontSize: "13px",
+  fontSize: { xs: "12px", md: "13px" },
 };
 
 function HeaderInlineLabel({ children }) {
@@ -158,11 +176,12 @@ function HeaderInlineLabel({ children }) {
       component="span"
       sx={{
         color: palette.muted,
-        fontSize: "10px",
-        fontWeight: 800,
-        textTransform: "uppercase",
-        whiteSpace: "nowrap",
-        mr: 1,
+            fontSize: { xs: "9px", md: "10px" },
+            fontWeight: 800,
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+            mr: { xs: 0.5, md: 1 },
+            flexShrink: 0,
       }}
     >
       {children}
@@ -173,6 +192,8 @@ function HeaderInlineLabel({ children }) {
 function HeaderMenuPicker({ label, value, displayValue, options, onSelect, minWidth = 140 }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const menuMinWidth = anchorEl?.offsetWidth || (typeof minWidth === "number" ? minWidth : 180);
+  const isFullWidth = minWidth === "100%" || minWidth?.xs === "100%";
 
   return (
     <>
@@ -180,11 +201,13 @@ function HeaderMenuPicker({ label, value, displayValue, options, onSelect, minWi
         onClick={(event) => setAnchorEl(event.currentTarget)}
         sx={{
           ...headerFieldSx,
-          minWidth,
-          width: minWidth === "100%" ? "100%" : "auto",
+          minWidth: { xs: 0, md: minWidth === "100%" ? 0 : minWidth },
+          width: { xs: "100%", md: isFullWidth ? "100%" : "auto" },
+          maxWidth: "100%",
+          boxSizing: "border-box",
           cursor: "pointer",
           transition: "all .18s ease",
-          gap: 1,
+          gap: { xs: 0.5, md: 1 },
           "&:hover": {
             borderColor: palette.accent,
             backgroundColor: palette.surfaceAlt,
@@ -196,6 +219,7 @@ function HeaderMenuPicker({ label, value, displayValue, options, onSelect, minWi
           component="span"
           sx={{
             minWidth: 0,
+            flex: 1,
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
@@ -205,7 +229,7 @@ function HeaderMenuPicker({ label, value, displayValue, options, onSelect, minWi
         >
           {displayValue || value || "SELECCIONA"}
         </Box>
-        <ChevronDown size={16} color={palette.muted} />
+        <ChevronDown size={14} color={palette.muted} style={{ flexShrink: 0 }} />
       </Box>
       <Menu
         anchorEl={anchorEl}
@@ -217,9 +241,12 @@ function HeaderMenuPicker({ label, value, displayValue, options, onSelect, minWi
             bgcolor: palette.surface,
             color: palette.text,
             border: `1px solid ${palette.border}`,
-            minWidth,
+            minWidth: menuMinWidth,
+            maxWidth: { xs: "calc(100vw - 32px)", md: 520 },
             "& .MuiMenuItem-root": {
               fontSize: "13px",
+              maxWidth: { xs: "calc(100vw - 48px)", md: 500 },
+              whiteSpace: "normal",
               "&:hover": {
                 backgroundColor: palette.accent,
                 color: palette.surface,
@@ -431,6 +458,14 @@ export function TransportesModuloBase({
   const [modalOperacionOpen, setModalOperacionOpen] = useState(false);
   const [operacionEditando, setOperacionEditando] = useState(null);
   const [rutasDisponibles, setRutasDisponibles] = useState([]);
+  // Catalogo de placas para el selector del formulario de encomiendas.
+  const [placasDisponibles, setPlacasDisponibles] = useState([]);
+  // Catalogo de licencias para el selector del campo Chofer/licencia.
+  const [licenciasDisponibles, setLicenciasDisponibles] = useState([]);
+  // Catalogo de zonas para filtrar por origen y destino dentro del formulario.
+  const [zonasDisponibles, setZonasDisponibles] = useState([]);
+  const [puntosVentaAsignados, setPuntosVentaAsignados] = useState([]);
+  const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
 
   const data = useMemo(() => registros.map(normalizarOperacion), [registros]);
   const fechaOperacion = useMemo(() => {
@@ -445,6 +480,27 @@ export function TransportesModuloBase({
     const hoy = new Date().toISOString().slice(0, 10);
     return hoy.startsWith(periodoTrabajo) ? hoy : `${periodoTrabajo}-01`;
   }, [diaSel, periodoTrabajo]);
+
+  const filtrarPorPuntoVenta = useCallback((rows, puntoVenta) => {
+    if (!puntoVenta) {
+      return rows;
+    }
+
+    return rows.filter((item) => (
+      item.id_punto_venta === puntoVenta ||
+      item.id_punto_venta_dest === puntoVenta
+    ));
+  }, []);
+
+  const filtrarPorTexto = useCallback((rows, texto) => {
+    const busqueda = normalizarTextoBusqueda(texto).trim();
+
+    if (!busqueda) {
+      return rows;
+    }
+
+    return rows.filter((item) => item._textoBusqueda?.includes(busqueda));
+  }, []);
 
   const cargarPeriodos = useCallback(async (periodoPreferido) => {
     try {
@@ -486,6 +542,35 @@ export function TransportesModuloBase({
     }
   }, [back_host, params.id_anfitrion, params.id_invitado, params.documento_id]);
 
+  const cargarPuntosVentaAsignados = useCallback(async () => {
+    if (!contabilidadTrabajo) {
+      setPuntosVentaAsignados([]);
+      setPuntoVentaTrabajo("");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${back_host}/mad_punto_venta_usuario/${params.id_anfitrion}/${contabilidadTrabajo}/${params.id_invitado}`);
+      const result = await response.json();
+      const rows = Array.isArray(result?.data) ? result.data : [];
+      const sessionKey = `punto_venta_trabajo_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
+      const puntoGuardado = sessionStorage.getItem(sessionKey);
+      const puntoFinal = rows.some((item) => item.id_punto_venta === puntoGuardado)
+        ? puntoGuardado
+        : rows[0]?.id_punto_venta || "";
+
+      setPuntosVentaAsignados(rows);
+      setPuntoVentaTrabajo(puntoFinal);
+      if (puntoFinal) {
+        sessionStorage.setItem(sessionKey, puntoFinal);
+      }
+    } catch (error) {
+      console.log("Error cargando puntos de venta asignados:", error);
+      setPuntosVentaAsignados([]);
+      setPuntoVentaTrabajo("");
+    }
+  }, [back_host, contabilidadTrabajo, params.id_anfitrion, params.id_invitado]);
+
   const cargarRutas = useCallback(async () => {
     if (!contabilidadTrabajo) {
       setRutasDisponibles([]);
@@ -498,13 +583,69 @@ export function TransportesModuloBase({
         : `${back_host}/mve_transruta/encomiendas/${params.id_anfitrion}/${contabilidadTrabajo}`;
       const response = await fetch(rutasUrl);
       const result = await response.json();
-      const rows = Array.isArray(result?.data) ? result.data.filter((item) => item.activo !== false) : [];
+      const rows = Array.isArray(result?.data)
+        ? result.data.filter((item) => (
+          item.activo !== false &&
+          (!puntoVentaTrabajo || item.id_punto_venta === puntoVentaTrabajo)
+        ))
+        : [];
       setRutasDisponibles(rows);
     } catch (error) {
       console.log("Error cargando rutas disponibles:", error);
       setRutasDisponibles([]);
     }
-  }, [back_host, contabilidadTrabajo, params.id_anfitrion, tipoOperacionFijo]);
+  }, [back_host, contabilidadTrabajo, params.id_anfitrion, puntoVentaTrabajo, tipoOperacionFijo]);
+
+  // Carga todas las placas de la empresa actual; no depende del punto de venta operativo.
+  const cargarPlacas = useCallback(async () => {
+    if (!contabilidadTrabajo) {
+      setPlacasDisponibles([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${back_host}/mve_transplaca/${params.id_anfitrion}/${contabilidadTrabajo}`);
+      const result = await response.json();
+      setPlacasDisponibles(Array.isArray(result?.data) ? result.data : []);
+    } catch (error) {
+      console.log("Error cargando placas disponibles:", error);
+      setPlacasDisponibles([]);
+    }
+  }, [back_host, contabilidadTrabajo, params.id_anfitrion]);
+
+  // Carga todas las licencias de la empresa actual desde listarLicenciasTransporte.
+  const cargarLicencias = useCallback(async () => {
+    if (!contabilidadTrabajo) {
+      setLicenciasDisponibles([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${back_host}/mve_translicencia/${params.id_anfitrion}/${contabilidadTrabajo}`);
+      const result = await response.json();
+      setLicenciasDisponibles(Array.isArray(result?.data) ? result.data : []);
+    } catch (error) {
+      console.log("Error cargando licencias disponibles:", error);
+      setLicenciasDisponibles([]);
+    }
+  }, [back_host, contabilidadTrabajo, params.id_anfitrion]);
+
+  // Carga todas las zonas de la empresa; el modal filtra por id_punto_venta.
+  const cargarZonas = useCallback(async () => {
+    if (!contabilidadTrabajo) {
+      setZonasDisponibles([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${back_host}/mve_transzona/${params.id_anfitrion}/${contabilidadTrabajo}`);
+      const result = await response.json();
+      setZonasDisponibles(Array.isArray(result?.data) ? result.data : []);
+    } catch (error) {
+      console.log("Error cargando zonas disponibles:", error);
+      setZonasDisponibles([]);
+    }
+  }, [back_host, contabilidadTrabajo, params.id_anfitrion]);
 
   const cargarRegistros = useCallback(async () => {
     if (!periodoTrabajo || !contabilidadTrabajo) {
@@ -519,8 +660,13 @@ export function TransportesModuloBase({
       const result = await response.json();
       const rows = (Array.isArray(result?.data) ? result.data : [])
         .filter((item) => item.tipo_operacion === tipoOperacionFijo);
-      setRegistros(rows);
-      setTablaBase(rows);
+      const rowsPorPunto = filtrarPorPuntoVenta(rows, puntoVentaTrabajo)
+        .map((item) => ({
+          ...item,
+          _textoBusqueda: crearIndiceBusqueda(item),
+        }));
+      setTablaBase(rowsPorPunto);
+      setRegistros(rowsPorPunto);
     } catch (error) {
       console.log("Error cargando operaciones de transporte:", error);
       setRegistros([]);
@@ -528,7 +674,7 @@ export function TransportesModuloBase({
     } finally {
       setLoading(false);
     }
-  }, [back_host, contabilidadTrabajo, diaSel, params.id_anfitrion, periodoTrabajo, tipoOperacionFijo]);
+  }, [back_host, contabilidadTrabajo, diaSel, filtrarPorPuntoVenta, params.id_anfitrion, periodoTrabajo, puntoVentaTrabajo, tipoOperacionFijo]);
 
   useEffect(() => {
     const periodoHistorial = sessionStorage.getItem("periodo_trabajo") || params.periodo;
@@ -543,34 +689,31 @@ export function TransportesModuloBase({
   }, [cargarRegistros, updateTrigger]);
 
   useEffect(() => {
+    setRegistros(filtrarPorTexto(tablaBase, valorBusqueda));
+  }, [filtrarPorTexto, tablaBase, valorBusqueda]);
+
+  useEffect(() => {
+    cargarPuntosVentaAsignados();
+  }, [cargarPuntosVentaAsignados]);
+
+  useEffect(() => {
     cargarRutas();
   }, [cargarRutas]);
 
-  const filtrar = (texto) => {
-    const busqueda = texto.toLowerCase();
-    const filtrados = tablaBase.filter((item) => {
-      const campos = [
-        numeroOperacion(item),
-        item.cliente,
-        item.cliente_documento,
-        item.destinatario,
-        item.destinatario_documento,
-        item.descripcion,
-        item.placa,
-        item.licencia,
-        item.id_ruta,
-        item.nombre_ruta,
-      ];
+  useEffect(() => {
+    cargarPlacas();
+  }, [cargarPlacas]);
 
-      return campos.some((campo) => String(campo || "").toLowerCase().includes(busqueda));
-    });
+  useEffect(() => {
+    cargarLicencias();
+  }, [cargarLicencias]);
 
-    setRegistros(filtrados);
-  };
+  useEffect(() => {
+    cargarZonas();
+  }, [cargarZonas]);
 
   const actualizaValorFiltro = (event) => {
     setValorBusqueda(event.target.value);
-    filtrar(event.target.value);
   };
 
   const handleDayFilter = (selectedDay) => {
@@ -585,7 +728,13 @@ export function TransportesModuloBase({
   };
 
   const handleContabilidadSelect = (documentoId) => {
+    if (documentoId === contabilidadTrabajo) {
+      return;
+    }
+
     setContabilidadTrabajo(documentoId);
+    setPuntosVentaAsignados([]);
+    setPuntoVentaTrabajo("");
     sessionStorage.setItem("contabilidad_trabajo", documentoId);
     const seleccionada = contabilidadSelect.find(item => item.documento_id === documentoId);
     if (seleccionada?.razon_social) {
@@ -594,7 +743,25 @@ export function TransportesModuloBase({
     navigate(`${basePath}/${params.id_anfitrion}/${params.id_invitado}/${periodoTrabajo}/${documentoId}`);
   };
 
+  const handlePuntoVentaSelect = (puntoVenta) => {
+    setPuntoVentaTrabajo(puntoVenta);
+    const sessionKey = `punto_venta_trabajo_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
+    if (puntoVenta) {
+      sessionStorage.setItem(sessionKey, puntoVenta);
+    }
+  };
+
   const solicitarOperacion = (operacion = null) => {
+    if (!operacion && tipoOperacionFijo === "E" && !puntoVentaTrabajo) {
+      swal2.fire({
+        title: "Selecciona punto de venta",
+        text: "Para emitir una encomienda primero selecciona un punto de venta.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+      });
+      return;
+    }
+
     setOperacionEditando(operacion);
     setModalOperacionOpen(true);
   };
@@ -606,11 +773,27 @@ export function TransportesModuloBase({
 
   const guardarOperacion = async (datosOperacion) => {
     const esEdicion = Boolean(operacionEditando);
+
+    if (tipoOperacionFijo === "E" && !puntoVentaTrabajo) {
+      swal2.fire({
+        title: "Selecciona punto de venta",
+        text: "Para guardar una encomienda primero selecciona un punto de venta.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+      });
+      return;
+    }
+
     const payload = {
       ...datosOperacion,
+      id_usuario: params.id_anfitrion,
       id_anfitrion: params.id_anfitrion,
+      id_invitado: params.id_invitado,
       documento_id: contabilidadTrabajo,
       periodo: periodoTrabajo,
+      r_cod: esEdicion ? operacionEditando.r_cod : datosOperacion.r_cod,
+      r_serie: esEdicion ? operacionEditando.r_serie : datosOperacion.r_serie,
+      r_numero: esEdicion ? operacionEditando.r_numero : datosOperacion.r_numero,
       elemento: operacionEditando?.elemento || 1,
       cantidad: 1,
       ctrl_crea_us: params.id_invitado,
@@ -724,7 +907,9 @@ export function TransportesModuloBase({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           periodo: periodoTrabajo,
+          id_usuario: params.id_anfitrion,
           id_anfitrion: params.id_anfitrion,
+          id_invitado: params.id_invitado,
           documento_id: contabilidadTrabajo,
           r_cod: operacion.r_cod,
           r_serie: operacion.r_serie,
@@ -752,7 +937,7 @@ export function TransportesModuloBase({
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: palette.bg, p: { xs: 2, md: 4 } }}>
+    <Box sx={{ minHeight: "100vh", backgroundColor: palette.bg, p: { xs: 1, md: 4 } }}>
       <Box sx={{ maxWidth: 980, mx: "auto" }}>
         <Box
           sx={{
@@ -760,8 +945,8 @@ export function TransportesModuloBase({
             flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
             alignItems: { xs: "flex-start", sm: "center" },
-            gap: 2,
-            mb: 3,
+            gap: { xs: 1, sm: 2 },
+            mb: { xs: 1.25, md: 3 },
           }}
         >
           <Box>
@@ -776,15 +961,16 @@ export function TransportesModuloBase({
           <AppButton
             icon={<Plus size={18} />}
             onClick={() => solicitarOperacion()}
+            disabled={tipoOperacionFijo === "E" && !puntoVentaTrabajo}
             sx={{
-              backgroundColor: palette.accent,
-              borderColor: palette.accent,
-              color: palette.surface,
+              backgroundColor: tipoOperacionFijo === "E" && !puntoVentaTrabajo ? palette.chip : palette.accent,
+              borderColor: tipoOperacionFijo === "E" && !puntoVentaTrabajo ? palette.border : palette.accent,
+              color: tipoOperacionFijo === "E" && !puntoVentaTrabajo ? palette.muted : palette.surface,
               fontWeight: 800,
               "&:hover": {
-                backgroundColor: palette.accent,
-                borderColor: palette.accent,
-                color: palette.surface,
+                backgroundColor: tipoOperacionFijo === "E" && !puntoVentaTrabajo ? palette.chip : palette.accent,
+                borderColor: tipoOperacionFijo === "E" && !puntoVentaTrabajo ? palette.border : palette.accent,
+                color: tipoOperacionFijo === "E" && !puntoVentaTrabajo ? palette.muted : palette.surface,
               },
             }}
           >
@@ -799,24 +985,30 @@ export function TransportesModuloBase({
         </Box>
 
         <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            gap: 2,
-            alignItems: { xs: "stretch", md: "end" },
-            mb: 2,
-            p: 2,
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              md: puntosVentaAsignados.length > 0
+                ? "180px minmax(280px, 420px) 260px"
+                : "180px minmax(280px, 460px)",
+            },
+            gap: { xs: 0.5, md: 2 },
+            alignItems: "end",
+            justifyContent: "flex-start",
+            mb: { xs: 1, md: 2 },
+            p: { xs: 0.75, md: 2 },
             borderRadius: 3,
             backgroundColor: palette.surface,
             border: `1px solid ${palette.border}`,
           }}
         >
-          <Box sx={{ minWidth: { xs: "100%", md: 140 } }}>
+          <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
             <HeaderMenuPicker
               label="Periodo"
               value={periodoTrabajo}
               displayValue={periodoTrabajo}
-              minWidth={140}
+              minWidth="100%"
               options={[
                 { value: "default", label: "SELECCIONA" },
                 ...periodoSelect.map((item) => ({
@@ -828,7 +1020,7 @@ export function TransportesModuloBase({
             />
           </Box>
 
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
             <HeaderMenuPicker
               label="Empresa"
               value={contabilidadTrabajo}
@@ -844,6 +1036,22 @@ export function TransportesModuloBase({
               onSelect={handleContabilidadSelect}
             />
           </Box>
+
+          {puntosVentaAsignados.length > 0 && (
+            <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
+              <HeaderMenuPicker
+                label="Punto venta"
+                value={puntoVentaTrabajo}
+                displayValue={puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo)?.nombre || puntoVentaTrabajo}
+                minWidth="100%"
+                options={puntosVentaAsignados.map((item) => ({
+                  value: item.id_punto_venta,
+                  label: `${item.id_punto_venta} - ${item.nombre}`,
+                }))}
+                onSelect={handlePuntoVentaSelect}
+              />
+            </Box>
+          )}
         </Box>
 
         <DaySelector period={periodoTrabajo || params.periodo} onDaySelect={handleDayFilter} />
@@ -873,10 +1081,18 @@ export function TransportesModuloBase({
         {tipoOperacionFijo === "E" && (
           <TransportesEncomiendaModal
             open={modalOperacionOpen}
+            back_host={back_host}
             operacion={operacionEditando}
             periodoTrabajo={periodoTrabajo}
             fechaOperacion={fechaOperacion}
             rutasDisponibles={rutasDisponibles}
+            puntoVentaOrigen={puntoVentaTrabajo}
+            puntoVentaOrigenNombre={puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo)?.nombre || puntoVentaTrabajo}
+            zonasDisponibles={zonasDisponibles}
+            // Se usa en el campo Placa: tecla + o click en el icono del camion.
+            placasDisponibles={placasDisponibles}
+            // Se usa en Chofer/licencia: tecla + o click en el icono del usuario.
+            licenciasDisponibles={licenciasDisponibles}
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
             onClose={cerrarModalOperacion}
@@ -907,7 +1123,7 @@ export function TransportesModuloBase({
   );
 }
 
-export default function TransportesEncomienda() {
+export default function TrEncomiendaList() {
   return (
     <TransportesModuloBase
       tipoOperacionFijo="E"

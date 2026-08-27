@@ -30,6 +30,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
       if (estudio?.rubro) {
         sessionStorage.setItem('rubro_trabajo', estudio.rubro);
       }
+      sessionStorage.setItem('super', estudio?.super || '0');
     }
   
     const cargaEstudiosAnfitrion = () =>{
@@ -43,6 +44,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
         if (response.data.length > 0) {
           setAnfitrionSeleccionado(response.data[0].id_usuario); 
           sessionStorage.setItem('rubro_trabajo', response.data[0].rubro || 'COMERCIAL');
+          sessionStorage.setItem('super', response.data[0].super || '0');
         }
       })
       .catch((error) => {
@@ -135,8 +137,10 @@ const BienvenidaXpert = ({ onStartClick }) => {
                                                 // Devolvemos los props actualizados
                                                 const estudio = estudios_select.find((item) => item.id_usuario === idAnfitrionSeleccionado);
                                                 const rubro = estudio?.rubro || sessionStorage.getItem('rubro_trabajo') || 'COMERCIAL';
+                                                const superAcceso = estudio?.super || sessionStorage.getItem('super') || '0';
                                                 sessionStorage.setItem('rubro_trabajo', rubro);
-                                                onStartClick(idAnfitrionSeleccionado, user.email, rubro);
+                                                sessionStorage.setItem('super', superAcceso);
+                                                onStartClick(idAnfitrionSeleccionado, user.email, rubro, superAcceso);
                                               }}                                              
                                               fullWidth
                                               sx={{display:'block',margin:'.5rem 0'}}

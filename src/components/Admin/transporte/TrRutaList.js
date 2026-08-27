@@ -7,11 +7,11 @@ import { Box, Dialog, Grid, IconButton, InputBase, MenuItem, Select, Tooltip, Ty
 import { MapPinned, Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
-import { useDialog } from "../../AdminConfirmDialogProvider";
-import AppButton from "../../../ui/AppButton";
-import AppChip from "../../../ui/AppChip";
-import AppSearch from "../../../ui/AppSearch";
-import palette from "../../../../theme/palette";
+import { useDialog } from "../AdminConfirmDialogProvider";
+import AppButton from "../../ui/AppButton";
+import AppChip from "../../ui/AppChip";
+import AppSearch from "../../ui/AppSearch";
+import palette from "../../../theme/palette";
 
 createTheme(
   "transportesDark",
@@ -25,29 +25,59 @@ createTheme(
 );
 
 const fieldSx = {
-  height: 33,
-  px: 1,
+  minHeight: 40,
+  px: 1.15,
   display: "flex",
   alignItems: "center",
   backgroundColor: palette.bg,
   border: `1px solid ${palette.border}`,
   borderRadius: 2,
+  "&:focus-within": {
+    borderColor: palette.accent,
+    backgroundColor: palette.surfaceAlt,
+  },
 };
 
 const inputSx = {
   color: palette.text,
-  fontSize: "12.5px",
+  fontSize: "13px",
   width: "100%",
   "& input::placeholder": { color: palette.muted, opacity: 1 },
 };
 
+const customStyles = {
+  table: { style: { backgroundColor: "transparent" } },
+  headRow: { style: { backgroundColor: palette.surfaceAlt, color: palette.muted, borderBottom: `1px solid ${palette.borderSoft}` } },
+  headCells: { style: { color: palette.muted, fontSize: "11px", fontWeight: 800, textTransform: "uppercase" } },
+  rows: { style: { backgroundColor: palette.surface, color: palette.text, borderBottom: `1px solid ${palette.borderSoft}` } },
+  pagination: { style: { backgroundColor: "transparent", color: palette.muted, borderTop: `1px solid ${palette.borderSoft}` } },
+};
+
+const actionButtonSx = (danger = false) => ({
+  width: 30,
+  height: 30,
+  borderRadius: 1.5,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: palette.chip,
+  border: `1px solid ${palette.border}`,
+  color: palette.muted,
+  cursor: "pointer",
+  "&:hover": {
+    backgroundColor: danger ? "#c2410c" : palette.accent,
+    borderColor: danger ? "#c2410c" : palette.accent,
+    color: "#fff",
+  },
+});
+
 function Field({ label, children }) {
   return (
-    <Box sx={fieldSx}>
-      <Typography component="span" sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 800, textTransform: "uppercase", mr: 0.75, whiteSpace: "nowrap" }}>
+    <Box>
+      <Typography sx={{ color: palette.muted, fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", mb: 0.4 }}>
         {label}
       </Typography>
-      <Box sx={{ flex: 1, minWidth: 0 }}>{children}</Box>
+      <Box sx={fieldSx}>{children}</Box>
     </Box>
   );
 }
@@ -72,19 +102,14 @@ function PuntoSelect({ value, onChange, puntos }) {
       disableUnderline
       value={value || ""}
       onChange={(event) => onChange(event.target.value)}
-      sx={{
-        color: palette.text,
-        fontSize: "12.5px",
-        width: "100%",
-        "& .MuiSelect-icon": { color: palette.muted },
-      }}
+      sx={{ color: palette.text, fontSize: "13px", width: "100%", "& .MuiSelect-icon": { color: palette.muted } }}
       MenuProps={{
         PaperProps: {
           sx: {
             bgcolor: palette.surface,
             color: palette.text,
             border: `1px solid ${palette.border}`,
-            "& .MuiMenuItem-root": { fontSize: "12.5px" },
+            "& .MuiMenuItem-root": { fontSize: "13px" },
           },
         },
       }}
@@ -136,19 +161,24 @@ function RutaModal({ open, ruta, puntos, onClose, onSubmit }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: 3 } }}>
-      <Box sx={{ p: 1.2 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-          <Box>
-            <Typography sx={{ fontWeight: 800, fontSize: "15px" }}>{ruta ? "Editar ruta" : "Nueva ruta"}</Typography>
-            <Typography sx={{ color: palette.muted, fontSize: "11px" }}>Trayecto entre puntos de venta</Typography>
+      <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.1 }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: palette.accentSoft, color: palette.accent }}>
+              <MapPinned size={18} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 800, fontSize: "17px" }}>{ruta ? "Editar ruta" : "Nueva ruta"}</Typography>
+              <Typography sx={{ color: palette.muted, fontSize: "11.5px" }}>Trayecto entre agencias de transporte.</Typography>
+            </Box>
           </Box>
           <IconButton onClick={onClose} sx={{ color: palette.muted }}><X size={18} /></IconButton>
         </Box>
 
-        <Grid container spacing={0.85}>
+        <Grid container spacing={1.15}>
           <Grid item xs={12} md={3}>
             <Field label="Ruta">
-              <CaptureInput value={draft.id_ruta} onChange={(value) => updateDraft("id_ruta", value)} placeholder="AQP.PEDR" readOnly={Boolean(ruta)} />
+              <CaptureInput value={draft.id_ruta} onChange={(value) => updateDraft("id_ruta", value.toUpperCase())} placeholder="AQP-PED" readOnly={Boolean(ruta)} />
             </Field>
           </Grid>
           <Grid item xs={12} md={4.5}>
@@ -163,7 +193,7 @@ function RutaModal({ open, ruta, puntos, onClose, onSubmit }) {
           </Grid>
           <Grid item xs={12} md={7}>
             <Field label="Nombre">
-              <CaptureInput value={draft.nombre} onChange={(value) => updateDraft("nombre", value)} placeholder="AREQUIPA - PEDREGAL" />
+              <CaptureInput value={draft.nombre} onChange={(value) => updateDraft("nombre", value.toUpperCase())} placeholder="AREQUIPA - PEDREGAL" />
             </Field>
           </Grid>
           <Grid item xs={12} md={3}>
@@ -172,7 +202,7 @@ function RutaModal({ open, ruta, puntos, onClose, onSubmit }) {
             </Field>
           </Grid>
           <Grid item xs={12} md={2}>
-            <Box onClick={() => updateDraft("activo", !draft.activo)} sx={{ ...fieldSx, cursor: "pointer", justifyContent: "center", color: draft.activo ? palette.accent : palette.muted, fontWeight: 800, fontSize: "12px" }}>
+            <Box onClick={() => updateDraft("activo", !draft.activo)} sx={{ ...fieldSx, cursor: "pointer", justifyContent: "center", color: draft.activo ? palette.accent : palette.muted, fontWeight: 800, fontSize: "12.5px" }}>
               {draft.activo ? "ACTIVO" : "INACTIVO"}
             </Box>
           </Grid>
@@ -180,7 +210,7 @@ function RutaModal({ open, ruta, puntos, onClose, onSubmit }) {
 
         {error && <Typography sx={{ color: "#ff8a65", fontSize: "12px", mt: 1 }}>{error}</Typography>}
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.75, mt: 1.2 }}>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.8, mt: 1.8, flexWrap: "wrap" }}>
           <AppButton onClick={onClose}>Cancelar</AppButton>
           <AppButton icon={<Save size={16} />} onClick={handleSubmit} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
             Guardar
@@ -191,35 +221,12 @@ function RutaModal({ open, ruta, puntos, onClose, onSubmit }) {
   );
 }
 
-const customStyles = {
-  table: { style: { backgroundColor: "transparent" } },
-  headRow: { style: { backgroundColor: palette.surfaceAlt, color: palette.muted, borderBottom: `1px solid ${palette.borderSoft}` } },
-  headCells: { style: { color: palette.muted, fontSize: "11px", fontWeight: 800, textTransform: "uppercase" } },
-  rows: { style: { backgroundColor: palette.surface, color: palette.text, borderBottom: `1px solid ${palette.borderSoft}` } },
-  pagination: { style: { backgroundColor: "transparent", color: palette.muted, borderTop: `1px solid ${palette.borderSoft}` } },
-};
-
-const actionButtonSx = (danger = false) => ({
-  width: 30,
-  height: 30,
-  borderRadius: 1.5,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: palette.chip,
-  border: `1px solid ${palette.border}`,
-  color: palette.muted,
-  cursor: "pointer",
-  "&:hover": { backgroundColor: danger ? "#c2410c" : palette.accent, borderColor: danger ? "#c2410c" : palette.accent, color: "#fff" },
-});
-
 const formatMoney = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function TransportesRutasList() {
+export default function TrRutaList() {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const params = useParams();
   const { confirmDialog } = useDialog();
-
   const [rows, setRows] = useState([]);
   const [baseRows, setBaseRows] = useState([]);
   const [puntos, setPuntos] = useState([]);
@@ -234,7 +241,7 @@ export default function TransportesRutasList() {
       const result = await response.json();
       setPuntos(Array.isArray(result?.data) ? result.data.filter((item) => item.activo !== false) : []);
     } catch (error) {
-      console.log("Error cargando puntos para rutas:", error);
+      console.log("Error cargando agencias para rutas:", error);
       setPuntos([]);
     }
   }, [back_host, params.id_anfitrion, params.documento_id]);
@@ -332,8 +339,9 @@ export default function TransportesRutasList() {
     {
       name: "",
       width: "90px",
+      right: true,
       cell: row => (
-        <Box sx={{ display: "flex", gap: 0.7 }}>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.7, width: "100%" }}>
           <Tooltip title="Editar" arrow><Box sx={actionButtonSx()} onClick={() => { setEditando(row); setModalOpen(true); }}><Pencil size={14} /></Box></Tooltip>
           <Tooltip title="Eliminar" arrow><Box sx={actionButtonSx(true)} onClick={() => eliminar(row)}><Trash2 size={14} /></Box></Tooltip>
         </Box>

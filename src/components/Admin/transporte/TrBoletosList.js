@@ -1,7 +1,7 @@
 import React from "react";
-import { TransportesModuloBase } from "./TransportesEncomienda";
+import { TransportesModuloBase } from "./TrEncomiendaList";
 
-export default function TransportesBoletos() {
+export default function TrBoletosList() {
   return (
     <TransportesModuloBase
       tipoOperacionFijo="B"
