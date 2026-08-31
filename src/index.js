@@ -10,13 +10,13 @@ import BienvenidaXpert from './components/BienvenidaXpert'; // Importa el compon
 const domain = "dev-i4ndxhhmhmbyd4tt.us.auth0.com"; //auth0 propio expertcontperu@gmail.com
 
 //Version Local
-const clientId = "sRVhE9SzcBOGmeDSncrECCLuGA88O8FQ"; //auth0 propio expertcontperu@gmail.com
+//const clientId = "sRVhE9SzcBOGmeDSncrECCLuGA88O8FQ"; //auth0 propio expertcontperu@gmail.com
 
 //Version Web Ralwaiy
 //const clientId = "cVGIEcCJEINGNoLG9khMuXeErdZ3C8jm"; //auth0 propio expertcontperu@gmail.com
 
 //Version Web expertcont.pe
-//const clientId = "vFKcLZ6SHdwEWUWrMzkty0PDVjLbTZrW"; //auth0 propio expertcontperu@gmail.com
+const clientId = "vFKcLZ6SHdwEWUWrMzkty0PDVjLbTZrW"; //auth0 propio expertcontperu@gmail.com
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
