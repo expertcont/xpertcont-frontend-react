@@ -1,9 +1,9 @@
 import React from "react";
-import { TransportesModuloBase } from "./TrEncomiendaList";
+import { TrModuloBase } from "./encomienda/TrEncomiendaList";
 
 export default function TrBoletosList() {
   return (
-    <TransportesModuloBase
+    <TrModuloBase
       tipoOperacionFijo="B"
       titulo="Control de Boletos"
       contadorTexto="boletos registrados"

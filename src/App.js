@@ -23,10 +23,10 @@ import AsientoDetalleForm from "./components/AsientoDetalleForm";
 import ReportesList from "./components/ReportesList";
 import AsientoGenericoForm from "./components/AsientoGenericoForm";
 
-import AdminVentaList from "./components/Admin/AdminVentaList";
+import AdminVentaList from "./components/Admin/venta/list/AdminVentaList";
 import AdminProductoList from "./components/Admin/AdminProductoList";
 import AdminProductoForm from "./components/Admin/AdminProductoForm";
-import AdminVentaForm from "./components/Admin/AdminVentaForm";
+import AdminVentaForm from "./components/Admin/venta/form/AdminVentaForm";
 import AdminEquipoList from "./components/Admin/AdminEquipoList";
 import AdminEquipoForm from "./components/Admin/AdminEquipoForm";
 import AdminPuntoVentaUsuarioList from "./components/Admin/AdminPuntoVentaUsuarioList";
@@ -49,7 +49,8 @@ import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
 import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";
-import TrEncomiendaList from "./components/Admin/transporte/TrEncomiendaList";
+import TrEncomiendaList from "./components/Admin/transporte/encomienda/TrEncomiendaList";
+import TrEncomiendaEntregaList from "./components/Admin/transporte/encomienda/entrega/TrEncomiendaEntregaList";
 import TrBoletosList from "./components/Admin/transporte/TrBoletosList";
 import TrPlacaList from "./components/Admin/transporte/TrPlacaList";
 import TrLicenciaList from "./components/Admin/transporte/TrLicenciaList";
@@ -102,6 +103,7 @@ function App(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
+              <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList />} />
               <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
               <Route path="/ad_puntoventa/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
               <Route path="/ad_transportepuntos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />

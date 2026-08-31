@@ -492,10 +492,18 @@ DELETE /mve_transzona/:id_anfitrion/:documento_id/:id_punto_venta/:id_zona
 Archivos principales:
 
 ```text
-src/components/Admin/transporte/TrEncomiendaList.js
-src/components/Admin/transporte/TransportesEncomiendaModal.js
+src/components/Admin/transporte/encomienda/TrEncomiendaList.js
+src/components/Admin/transporte/encomienda/modal/TrEncomiendaModal.js
+src/components/Admin/transporte/encomienda/modal/TrEncomiendaTicketPdf.js
+src/components/Admin/transporte/common/TrModuloBase.jsx
+src/components/Admin/transporte/common/components/TrHeader.jsx
+src/components/Admin/transporte/common/components/TrFiltros.jsx
+src/components/Admin/transporte/common/components/TrOperacionRow.jsx
+src/components/Admin/transporte/common/hooks/useTrCatalogos.js
+src/components/Admin/transporte/common/hooks/useTrOperaciones.js
+src/components/Admin/transporte/common/utils/trUtils.js
 src/components/Admin/transporte/TrBoletosList.js
-src/components/Admin/transporte/TransportesBoletoModal.js
+src/components/Admin/transporte/TrBoletoModal.js
 src/components/Admin/AdminPuntoVentaList.js
 src/components/Admin/transporte/TrRutaList.js
 src/components/Admin/transporte/TrPlacaList.js

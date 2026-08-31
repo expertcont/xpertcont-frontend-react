@@ -1,15 +1,14 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Card,CardContent,Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography} from "@mui/material";
+import { Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import FindIcon from '@mui/icons-material/FindInPage';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import { blueGrey } from '@mui/material/colors';
 //import createPdfTicket from './AdminVentaPdf';
-import DaySelector from "./AdminDias";
-import { useDialog } from "./AdminConfirmDialogProvider";
-import TaskAltIcon from "@mui/icons-material/TaskAlt";   
+import DaySelector from "../../AdminDias";
+import { useDialog } from "../../AdminConfirmDialogProvider";
 
 //import PrintIcon from '@mui/icons-material/Print';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
@@ -22,12 +21,12 @@ import FolderDeleteIcon from '@mui/icons-material/FolderDelete';
 import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
 import swal2 from 'sweetalert2'
-import Datatable, {createTheme} from 'react-data-table-component';
+import Datatable from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
-import '../../App.css';
+import '../../../../App.css';
 import 'styled-components';
 //import axios from 'axios';
 
@@ -39,14 +38,17 @@ import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutli
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelGeneral from '../BotonExcelGeneral';
+import BotonExcelGeneral from '../../../BotonExcelGeneral';
 
-import { AdminVentasColumnas } from './AdminColumnas';
-import { AdminCajaColumnas } from './AdminColumnas';
+import { AdminVentasColumnas } from '../../AdminColumnas';
+import { AdminCajaColumnas } from '../../AdminColumnas';
 
-import AsientoCobranzaCredito from '../AsientoCobranzaCredito';
-import AdminSunatIcon from './AdminSunatIcon';
-import AdminSunatGreIcon from './AdminSunatGreIcon';
+import AsientoCobranzaCredito from '../../../AsientoCobranzaCredito';
+import AdminSunatIcon from '../../AdminSunatIcon';
+import AdminSunatGreIcon from '../../AdminSunatGreIcon';
+import { ensureAdminVentaTableTheme } from '../common/adminVentaTableTheme';
+import AdminVentaCloneDialog from './AdminVentaCloneDialog';
+import AdminVentaRecaudacionDialog from './AdminVentaRecaudacionDialog';
 
 export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
@@ -60,30 +62,7 @@ export default function AdminVentaList() {
 
   const location = useLocation();
 
-  createTheme('solarized', {
-    text: {
-      //primary: '#268bd2',
-      primary: '#ffffff',
-      secondary: '#2aa198',
-    },
-    background: {
-      //default: '#002b36',
-      default: '#1e272e'
-    },
-    context: {
-      background: '#cb4b16',
-      //background: '#1e272e',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: '#073642',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
+  ensureAdminVentaTableTheme();
 
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
@@ -949,190 +928,24 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                  margin: 0,
                  width: "100%" }}
     > 
-               { (showModalMostrarClonar) ?
-                (   <>
-                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                            <Dialog
-                              open={showModalMostrarClonar}
-                              onClose={() => setShowModalMostrarClonar(false)}
-                              maxWidth="md" // Valor predeterminado de 960px
-                              //fullWidth
-                              disableScrollLock // Evita que se modifique el overflow del body
-                              PaperProps={{
-                                style: {
-                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                  color:'white',
-                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                },
-                              }}
-                            >
-                            <DialogTitle>Emision</DialogTitle>
+      <AdminVentaCloneDialog
+        open={showModalMostrarClonar}
+        isSmallScreen={isSmallScreen}
+        fechaClon={fecha_clon}
+        onFechaChange={handleChange}
+        onClone={() => {
+          clonarVenta(valorComprobante);
+          setShowModalMostrarClonar(false);
+        }}
+        onClose={() => setShowModalMostrarClonar(false)}
+      />
 
-                                <TextField variant="outlined" 
-                                        //label="fecha"
-                                        fullWidth
-                                        size="small"
-                                        sx={{display:'flex',
-                                             width: 270, 
-                                            "& .MuiInputBase-input": {
-                                                  color: "white",
-                                                  textAlign: "center"   // ✅ centra el texto del input, incluso en type="date"
-                                                },
-                                             margin:'.5rem 0'}}
-                                        name="fecha_clon"
-                                        type="date"
-                                        //format="yyyy/MM/dd"
-                                        value={fecha_clon}
-                                        onChange={handleChange}
-                                        inputProps={{ style:{color:'white'} }}
-                                        InputLabelProps={{ style:{color:'white'} }}
-                                />
-
-                                <Button
-                                  variant="contained"
-                                  //color="inherit"
-                                  color="primary"
-                                            onClick={()=>{
-                                                clonarVenta(valorComprobante);
-                                                setShowModalMostrarClonar(false);
-                                              }
-                                            }
-                                  sx={{ //display: "block", 
-                                        display: "flex",          // 🔹 asegura layout en fila
-                                        alignItems: "center",     // centra verticalmente
-                                        margin: ".5rem 0", 
-                                        width: 270, 
-                                        mt: -0.5, 
-                                        //color: "black", 
-                                        fontWeight: "bold",
-                                    }}
-                                  startIcon={<TaskAltIcon />} 
-                                >
-                                  CLONAR
-                                </Button>
-
-                                <Button variant='contained' 
-                                            //color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  setShowModalMostrarClonar(false);
-                                              }
-                                            }
-                                            sx={{display:'block',
-                                                  margin:'.5rem 0',
-                                                  width: 270, 
-                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                '&:hover': {
-                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                    },                                                             
-                                                  mt:-0.5}}
-                                            >
-                                            ESC - CERRAR
-                                </Button>
-
-                            </Dialog>
-                    </>
-                )
-                :
-                (   
-                  <>
-                  </>
-                )
-              }  
-
-             { (showModalMostrarRecaudacion) ?
-                (   <>
-                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                            <Dialog
-                              open={showModalMostrarRecaudacion}
-                              onClose={() => setShowModalMostrarRecaudacion(false)}
-                              maxWidth="md" // Valor predeterminado de 960px
-                              //fullWidth
-                              disableScrollLock // Evita que se modifique el overflow del body
-                              PaperProps={{
-                                style: {
-                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                  color:'white',
-                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                },
-                              }}
-                            >
-                            <DialogTitle>Datos - Recaudación</DialogTitle>
-
-                                {/* Listado de recaudaciones */}
-                                <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>
-                                  <CardContent>
-                                    {recaudaciones.length > 0 ? (
-                                      recaudaciones.map((item, index) => (
-                                        <Box
-                                          key={index}
-                                          sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            mb: 1,
-                                            borderBottom: '1px solid rgba(255,255,255,0.2)',
-                                            pb: 0.5
-                                          }}
-                                        >
-                                          <Typography variant="body1">{item.recaudacion}</Typography>
-                                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                            S/ {Number(item.monto).toFixed(2)}
-                                          </Typography>
-                                        </Box>
-                                      ))
-                                    ) : (
-                                      <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay recaudaciones</Typography>
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-
-                                <Button variant='contained' 
-                                            //color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  setShowModalMostrarRecaudacion(false);
-                                              }
-                                            }
-                                            sx={{display:'block',
-                                                  margin:'.5rem 0',
-                                                  width: 270, 
-                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                '&:hover': {
-                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                    },                                                             
-                                                  mt:-0.5}}
-                                            >
-                                            ESC - CERRAR
-                                </Button>
-
-                            </Dialog>
-                    </>
-                )
-                :
-                (   
-                  <>
-                  </>
-                )
-              }  
+      <AdminVentaRecaudacionDialog
+        open={showModalMostrarRecaudacion}
+        isSmallScreen={isSmallScreen}
+        recaudaciones={recaudaciones}
+        onClose={() => setShowModalMostrarRecaudacion(false)}
+      />
   <div>
     <Modal
       open={abierto}

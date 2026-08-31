@@ -108,7 +108,7 @@ function RutaSelect({ value, onChange, rutas }) {
   );
 }
 
-export default function TransportesBoletoModal({
+export default function TrBoletoModal({
   open,
   operacion,
   periodoTrabajo,

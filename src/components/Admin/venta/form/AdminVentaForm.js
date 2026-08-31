@@ -7,16 +7,7 @@ import FindIcon from '@mui/icons-material/FindInPage';
 import InputAdornment from '@mui/material/InputAdornment';
 import Tooltip from '@mui/material/Tooltip';
 import ReplyIcon from '@mui/icons-material/Reply';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import KeyboardIcon from '@mui/icons-material/Keyboard';
 
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import IndeterminateCheckBox from '@mui/icons-material/IndeterminateCheckBox';
-import Timer10SelectIcon from '@mui/icons-material/Timer10Select';
-import AddCircleIcon from '@mui/icons-material/AddBox'; // Ícono para aumentar de 10 en 10
-import Checkbox from '@mui/material/Checkbox';
-import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import UpdateIcon from '@mui/icons-material/Update';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 
@@ -24,21 +15,22 @@ import DeleteIcon from '@mui/icons-material/DeleteForeverRounded';
 import IconButton from '@mui/material/IconButton';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 //import logo from '../../Logo02.png';
-import logo from '../../Logo04small.png';
+import logo from '../../../../Logo04small.png';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import numeral from 'numeral';
-import ListaPopUp from '../ListaPopUp';
 
-import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import { useDialog } from "./AdminConfirmDialogProvider";
-import AdminSunatIcon from './AdminSunatIcon';
-import AdminSunatIconPdf from './AdminSunatIconPdf';
+import { useDialog } from "../../AdminConfirmDialogProvider";
+import AdminSunatIcon from '../../AdminSunatIcon';
+import AdminSunatIconPdf from '../../AdminSunatIconPdf';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 
-import AdminVentaFormFactPedido from './AdminVentaFormFactPedido';
+import AdminVentaFormFactPedido from '../../AdminVentaFormFactPedido';
+import { ensureAdminVentaTableTheme } from '../common/adminVentaTableTheme';
+import AdminVentaProductoModal from './AdminVentaProductoModal';
+import AdminVentaEmisionModal from './AdminVentaEmisionModal';
+import AdminVentaFormTables from './AdminVentaFormTables';
 
 export default function AdminVentaForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -76,6 +68,7 @@ export default function AdminVentaForm() {
   const [referenciasSeleccionadas, setReferenciasSeleccionadas] = useState([]); //New recibir resultados si op. grabar es exitosa
 
   const [showModalEmite, setShowModalEmite] = useState(false);
+  const [detalleValores, setDetalleValores] = useState(null);
 
   const [searchText, setSearchText] = useState('');
   const textFieldRef = useRef(null); //foco del buscador
@@ -438,6 +431,9 @@ export default function AdminVentaForm() {
   useEffect( ()=> {
     //Control de producto elegido
       //console.log("click aceptar Lista Producto");
+      if (producto.modoEdicionValores) {
+        return;
+      }
 
       const [PRECIO_UNITARIO, CONT_UND, PORC_IGV, PRECIO_FACTOR, PRODUCTO_SKU] = producto.auxiliar.split('-');
 
@@ -466,7 +462,7 @@ export default function AdminVentaForm() {
       }
       
 
-  },[producto.auxiliar]);
+  },[producto.auxiliar, producto.modoEdicionValores]);
 
   useEffect( ()=> {
       //mostrar detalle actualizado y encabezado mas por el rico total
@@ -663,6 +659,13 @@ export default function AdminVentaForm() {
       console.log('modificando precio_unitario, importe nuevo: ', precio_neto);
       producto.precio_neto = precio_neto;
     }
+
+    if (e.target.name === "precio_neto"){
+      const cantidad = parseFloat(producto.cantidad);
+      if (cantidad > 0) {
+        producto.precio_unitario = (parseFloat(e.target.value || 0) / cantidad).toFixed(6);
+      }
+    }
     
     setProducto({...producto, [e.target.name]: e.target.value});
     console.log('oyeeee: ',producto);
@@ -800,6 +803,11 @@ export default function AdminVentaForm() {
     handleChangeProductoDatos({ target: { name: 'cantidad', value: parseCantidad(producto.cantidad) + 10 } }); //new
   };
   const handleSaveDetail = () =>{
+      if (detalleValores) {
+        confirmaModificarDetalleValores();
+        return;
+      }
+
       //Consumir API grabar
       confirmaGrabarDetalle();
 
@@ -977,13 +985,99 @@ export default function AdminVentaForm() {
     setShowModalEmite(false);
   }
 
-  const handleEditarDetalleClick = ()=>{
-    //especificar modo edicion y cargar datos detalle en useState del Producto
-    
-
-    //mostrar modal del producto
-    //setShowModalProducto(true);
+  const handleEditarDetalleClick = (row)=>{
+    handleEditarDetalleValoresClick(row);
   }
+
+  const toDetalleNumber = (value) => {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const handleEditarDetalleValoresClick = (row) => {
+    const detalleSeleccionado = {
+      ...row,
+      cantidad: row.cantidad ?? '',
+      precio_unitario: row.precio_unitario ?? '',
+      precio_neto: row.precio_neto ?? '',
+      precio_neto_original: row.precio_neto ?? 0,
+    };
+
+    setDetalleValores(detalleSeleccionado);
+    setProducto((prevState) => ({
+      ...prevState,
+      ...detalleSeleccionado,
+      modoEdicionValores: true,
+      auxiliar: detalleSeleccionado.auxiliar || `${detalleSeleccionado.precio_unitario}-${detalleSeleccionado.cont_und}-${detalleSeleccionado.porc_igv}`,
+    }));
+  };
+
+  const handleCloseDetalleValores = () => {
+    setDetalleValores(null);
+    setProducto((prevState) => ({ ...prevState, cantidad: '', auxiliar: '', modoEdicionValores: false }));
+  };
+
+  const totalPrevioDetalle = detalleValores
+    ? toDetalleNumber(venta.r_monto_total) - toDetalleNumber(detalleValores.precio_neto_original) + toDetalleNumber(producto.precio_neto)
+    : null;
+
+  const confirmaModificarDetalleValores = async () => {
+    if (!detalleValores) {
+      return;
+    }
+
+    const cantidad = toDetalleNumber(producto.cantidad);
+    const precioUnitario = toDetalleNumber(producto.precio_unitario);
+    const precioNeto = toDetalleNumber(producto.precio_neto);
+
+    if (cantidad <= 0 || precioNeto < 0) {
+      confirmDialog({
+        title: 'Revise cantidad e importe',
+        icon: 'warning',
+        confirmText: 'ACEPTAR',
+      });
+      return;
+    }
+
+    const [COD, SERIE, NUMERO, ELEM] = params.comprobante.split('-');
+    const sRuta = `${back_host}/ad_ventadet/${params.periodo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUMERO}/${ELEM}/${detalleValores.item}`;
+    const payload = {
+      descripcion: detalleValores.descripcion,
+      r_fecemi: venta.r_fecemi,
+      cantidad,
+      precio_unitario: precioUnitario,
+      precio_neto: precioNeto,
+      porc_igv: detalleValores.porc_igv,
+    };
+
+    try {
+      const response = await fetch(sRuta, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        handleCloseDetalleValores();
+        setUpdateTrigger(Math.random());
+        return;
+      }
+
+      confirmDialog({
+        title: 'La Operacion fallo, intentelo nuevamente',
+        icon: 'error',
+        confirmText: 'ACEPTAR',
+      });
+    } catch (error) {
+      console.error('Hubo un problema con la solicitud fetch:', error);
+      confirmDialog({
+        title: 'Error conectando con servidor',
+        icon: 'error',
+        confirmText: 'ACEPTAR',
+      });
+    }
+  };
 
   const confirmaGrabarComprobante = async()=>{
     const [COD, SERIE, NUMERO] = params.comprobante.split('-');    
@@ -1245,25 +1339,6 @@ export default function AdminVentaForm() {
       width: '40px',
       cell: (row) => (
         (!visualizando) ? 
-        (
-          <DriveFileRenameOutlineIcon
-            onClick={() => handleEditarDetalleClick(row.item)}
-            style={{
-              cursor: 'pointer',
-              color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
-              transition: 'color 0.3s ease',
-            }}
-          />
-        ):null
-      ),
-      allowOverflow: true,
-      button: true,
-    },
-    {
-      name: '',
-      width: '40px',
-      cell: (row) => (
-        (!visualizando) ? 
         (  //modificar urgente con permiso para eliminar detalle
           <DeleteIcon
             onClick={() => handleDelete(row.item)}
@@ -1283,6 +1358,25 @@ export default function AdminVentaForm() {
       sortable: true,
       width: '410px'
       //key:true
+    },
+    {
+      name: '',
+      width: '40px',
+      cell: (row) => (
+        (!visualizando) ? 
+        (
+          <DriveFileRenameOutlineIcon
+            onClick={() => handleEditarDetalleClick(row)}
+            style={{
+              cursor: 'pointer',
+              color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
+              transition: 'color 0.3s ease',
+            }}
+          />
+        ):null
+      ),
+      allowOverflow: true,
+      button: true,
     },
     { name:'CANTIDAD', 
       selector:row => row.cantidad,
@@ -1462,30 +1556,7 @@ export default function AdminVentaForm() {
     </>
 );
 
-  createTheme('solarized', {
-    text: {
-      //primary: '#268bd2',
-      primary: '#ffffff',
-      secondary: '#2aa198',
-    },
-    background: {
-      //default: '#002b36',
-      default: '#1e272e'
-    },
-    context: {
-      background: '#cb4b16',
-      //background: '#1e272e',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: '#073642',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
+  ensureAdminVentaTableTheme();
 
   const [id_docBusca, setIdDocBusca] = useState("");
   const mostrarRazonSocialGenera = (sDocumentoId) => {
@@ -1906,901 +1977,65 @@ export default function AdminVentaForm() {
                               )}                            
                           </Grid>
                           
-                          { (showModalProductoLista) ?
-                            (
-                              <ListaPopUp
-                                  registroPopUp={producto_select}
-                                  gruposPopUp={grupo_select}
-                                  showModal={showModalProductoLista}
-                                  setShowModal={setShowModalProductoLista}
-                                  registro={producto}                    
-                                  setRegistro={setProducto}                    
-                                  idCodigoKey="id_producto"
-                                  descripcionKey="descripcion"
-                                  auxiliarKey="auxiliar"
-                              />
-                            )
-                            :
-                            (
-                              <></>
-                            )
-                          }
+                          <AdminVentaProductoModal
+                            isSmallScreen={isSmallScreen}
+                            producto={producto}
+                            setProducto={setProducto}
+                            productoSelect={producto_select}
+                            grupoSelect={grupo_select}
+                            showModalProductoLista={showModalProductoLista}
+                            setShowModalProductoLista={setShowModalProductoLista}
+                            inputProductoRef={inputProductoRef}
+                            onFocus={handleFocus}
+                            onMostrarTecladoCelular={handleMostrarTecladoCelular}
+                            onChangeProductoDatos={handleChangeProductoDatos}
+                            onResetCantidad={handleResetCantidad}
+                            onDecreaseByOne={handleDecreaseByOne}
+                            onIncreaseByOne={handleIncreaseByOne}
+                            onIncreaseByTen={handleIncreaseByTen}
+                            onSaveDetail={handleSaveDetail}
+                            modoEdicionValores={Boolean(detalleValores)}
+                            totalActual={venta.r_monto_total}
+                            totalPrevio={totalPrevioDetalle}
+                            onCloseProducto={handleCloseDetalleValores}
+                          />
 
-                          { (producto.auxiliar) ?
-                            (   <>
-                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                                        <Dialog
-                                          //open={showModalProducto}
-                                          //onClose={() => setShowModalProducto(false)}
-                                          open={true}
-                                          onClose={() => {
-                                            setProducto({ ...producto, auxiliar: '' });
-
-                                            }
-                                          } // o setProducto({})                                          
-                                          //onClose={() => setProducto(prev => ({ ...prev, cantidad: '' }))} // o setProducto({})                                          
-                                          maxWidth="md" // Valor predeterminado de 960px
-                                          disableScrollLock // Evita que se modifique el overflow del body
-                                          PaperProps={{
-                                            style: {
-                                              top: isSmallScreen ? "-10vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "0%" : "0%", // Centrado horizontal
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              alignItems: 'center',
-                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                              //background:'#1e272e',
-                                              //background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
-                                              background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
-                                              color:'white',
-                                              width: isSmallScreen ? ('70%') : ('30%'), // Ajusta este valor según tus necesidades
-                                              //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                            },
-                                          }}
-                                        >
-                                        <DialogTitle>Producto - Item</DialogTitle>
-                                            <Tooltip title={producto.descripcion}>
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="PRODUCTO"
-                                              inputRef={inputProductoRef} // Asocia la referencia al campo de texto
-                                              onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
-                                              autoFocus
-                                              size="small"
-                                              name="id_producto"
-                                              value={producto.descripcion}
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              InputProps={{
-                                                style: { color: 'white', width: 270 },
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    
-                                                    <IconButton
-                                                      color="primary"
-                                                      //color = 'rgba(33, 150, 243, 0.8)'
-                                                      aria-label="upload picture"
-                                                      component="label"
-                                                      size="small"
-                                                      sx={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: 0,
-                                                        transform: 'translateY(-50%)',
-                                                      }}
-                                                      onClick={() => {
-                                                        setShowModalProductoLista(true);
-                                                      }}
-                                                    >
-                                                      <FindIcon />
-                                                    </IconButton>
-                                                    
-                                                    { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
-                                                    isSmallScreen ? (
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="Muestra teclado"
-                                                      size="small"
-                                                      onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
-                                                      sx={{
-                                                        padding: '0px',
-                                                        //height:'30',
-                                                        marginLeft:'20px',
-                                                        marginRight: '-30px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <KeyboardIcon />
-                                                    </IconButton>
-                                                    )
-                                                    :
-                                                    null
-                                                  }
-
-                                                  </InputAdornment>
-                                                ),
-
-                                                // Aquí se ajusta el padding del texto sin afectar el icono
-                                                inputProps: {
-                                                  style: {
-                                                    paddingLeft: '32px', // Mueve solo el texto a la derecha
-                                                      fontSize: '12px', // Ajusta el tamaño de letra aquí
-                                                  },
-                                                },
-                                              }}
-                                            />
-                                            </Tooltip>
-                                                  {/*
-                                                  <ListaPopUp
-                                                      registroPopUp={producto_select}
-                                                      gruposPopUp={grupo_select}
-                                                      showModal={showModalProductoLista}
-                                                      setShowModal={0}
-                                                      registro={producto}                    
-                                                      setRegistro={setProducto}                    
-                                                      idCodigoKey="id_producto"
-                                                      descripcionKey="descripcion"
-                                                      auxiliarKey="auxiliar"
-                                                  /> */}
-
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="CANTIDAD"
-                                              label="CANTIDAD"
-                                              autoFocus
-                                              size="small"
-                                              sx={{ mt: 2 }}
-                                              name="cantidad"
-                                              value={producto.cantidad}
-                                              onChange={handleChangeProductoDatos}
-                                              inputProps={{
-                                                style: {
-                                                  color: 'white',
-                                                  width: 110,
-                                                  textAlign: 'right',
-                                                  readOnly: true,
-                                                },
-                                              }}
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="reiniciar a 1"
-                                                      size="small"
-                                                      onClick={handleResetCantidad} // Función para retroceder cambios
-                                                      sx={{
-                                                        padding: '0px',
-                                                        height:'30',
-                                                        marginLeft:'-10px',
-                                                        marginRight: '0px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <RestartAltIcon />
-                                                    </IconButton>
-                                                    
-
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment: (
-                                                  <InputAdornment position="end">
-
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="disminuir en 1"
-                                                      size="small"
-                                                      onClick={handleDecreaseByOne} // Función para retroceder cambios
-                                                      sx={{
-                                                        padding: '0px',
-                                                        height: '48px',      // alto mayor
-                                                        marginRight: '0px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <IndeterminateCheckBox  color="inherit" style={{ width: 35, height: 35 }} />
-                                                    </IconButton>
-
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="aumentar de 1 en 1"
-                                                      size="small"
-                                                      onClick={handleIncreaseByOne} // Función para aumentar de 1 en 1
-                                                      sx={{
-                                                        padding: '0px',
-                                                        marginRight: '5px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <AddCircleIcon color="success" style={{ width: 35, height: 35 }}/>
-                                                    </IconButton>
-
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="aumentar de 10 en 10"
-                                                      size="large"
-                                                      onClick={handleIncreaseByTen} // Función para aumentar de 10 en 10
-                                                      sx={{
-                                                        padding: '0px',
-                                                        marginRight: '-10px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                        <Box
-                                                          sx={{
-                                                            width: 25, 
-                                                            height: 35, 
-                                                            overflow: 'hidden' // recorta lo que sobre
-                                                          }}
-                                                        >
-                                                          <Timer10SelectIcon 
-                                                            color="success" 
-                                                            sx={{ fontSize: 35 }} 
-                                                          />
-                                                        </Box>
-                                                    </IconButton>
-                                                  </InputAdornment>
-                                                ),
-                                              }}
-                                            />
-
-                                            <TextField variant="outlined" 
-                                                      //maxWidth="md"
-                                                      placeholder='PRECIO U.'
-                                                      label='PRECIO U.'
-                                                      autoFocus
-                                                      size="small"
-                                                      //sx={{mt:-1}}
-                                                      name="precio_unitario"
-                                                      value={producto.precio_unitario}
-                                                      onChange={handleChangeProductoDatos}
-                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
-                                                      InputLabelProps={{ style:{color:'white'} }}
-                                            />
-                                            <TextField variant="outlined" 
-                                                      //maxWidth="md"
-                                                      placeholder='IMPORTE'
-                                                      label='IMPORTE'
-                                                      autoFocus
-                                                      size="small"
-                                                      //sx={{mt:-1}}
-                                                      name="precio_neto"
-                                                      value={producto.precio_neto}
-                                                      //onChange={handleSearchTextCuentaChange} //new para busqueda
-                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
-                                                      InputLabelProps={{ style:{color:'white'} }}
-                                            />
-                                            <Button variant='contained' 
-                                                        color='success' 
-                                                        //size='small'
-                                                        //startIcon={<AssessmentRoundedIcon />}
-                                                        onClick={ ()=> {
-                                                          handleSaveDetail();
-                                                          setProducto({ ...producto, cantidad: '', auxiliar: '' });
-                                                          }
-                                                        }
-                                                        sx={{display:'block',margin:'.5rem 0', width: 270}}
-                                                        //sx={{margin:'.5rem 0', height:55}}
-                                                        >
-                                                        AGREGAR
-                                            </Button>
-                                            <Button variant='contained' 
-                                                        //color='warning' 
-                                                        //size='small'
-                                                        onClick={()=>{
-                                                              //setShowModalProducto(false);
-                                                              //setProducto(prevState => ({ ...prevState, cantidad: '' }));
-                                                              //setProducto({ ...producto, cantidad: '' });
-                                                              setProducto(prevState => ({ ...prevState, cantidad: '', auxiliar: '' }));
-                                                              setProducto({ ...producto, cantidad: '', auxiliar: '' }); //limpia cantidad para nuevo ingreso
-                                                              //actualizar el estado previo tambien
-                                                          }
-                                                        }
-                                                        sx={{display:'block',
-                                                             margin:'.5rem 0',
-                                                             width: 270, 
-                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                            '&:hover': {
-                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                                },                                                             
-                                                             mt:-0.5}}
-                                                        >
-                                                        ESC - CERRAR
-                                            </Button>
-
-
-                                        </Dialog>
-                                        {/* FIN Seccion para mostrar Dialog tipo Modal */}
-                                </>
-                            )
-                            :
-                            (   
-                              <>
-                              </>
-                            )
-                          }
-
-
-
-                          { (showModalEmite) ?
-                            (   <>
-                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                                        <Dialog
-                                          open={showModalEmite}
-                                          onClose={() => setShowModalEmite(false)}
-                                          maxWidth="md" // Valor predeterminado de 960px
-                                          //fullWidth
-                                          disableScrollLock // Evita que se modifique el overflow del body
-                                          PaperProps={{
-                                            style: {
-                                              top: isSmallScreen ? "-10vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "0%" : "0%", // Centrado horizontal
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              alignItems: 'center',
-                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                              //background:'#1e272e',
-                                              background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                              //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                              color:'white',
-                                              width: isSmallScreen ? ('70%') : ('30%'), // Ajusta este valor según tus necesidades
-                                              //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                            },
-                                          }}
-                                        >
-                                        <DialogTitle>Datos - Emision</DialogTitle>
-
-                                            <ToggleButtonGroup
-                                                color="success"
-                                                value={valorEmite}
-                                                exclusive
-                                                size="small"
-                                                onChange={actualizaValorEmite}
-                                                aria-label="Platform"
-                                                sx={{
-                                                  width: 270, // Ajusta el ancho que quieres
-                                                  margin: '0.5rem 0', // Opcional: márgenes
-                                                }}                                                
-                                            >
-                                                {/*asignar permisos a cada ToggleButton, desde conf seguridad_serie (r_cod) cod_select*/}
-                                              {isAllowed('01') && (
-                                              <ToggleButton value="01"
-                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
-                                                            style={{
-                                                              backgroundColor: valorEmite === '01' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === '01' ? "orange" : "gray",
-                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                                                            }}
-                                              >FACT</ToggleButton>
-                                              )}  
-
-                                              {isAllowed('03') && (
-                                              <ToggleButton value="03"
-                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
-                                                            style={{
-                                                              backgroundColor: valorEmite === '03' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === '03' ? 'orange' : 'gray',
-                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                                                            }}
-                                              >BOL</ToggleButton>
-                                              )}  
-
-                                              {isAllowed('NV') && (
-                                              <ToggleButton value="NV"
-                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
-                                                            style={{
-                                                              backgroundColor: valorEmite === 'NV' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === 'NV' ? 'orange' : 'gray',
-                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                                                            }}
-                                              >NV</ToggleButton>
-                                              )}  
-
-                                              {isAllowed('07') && (
-                                              <ToggleButton value="07"
-                                                            sx={{ flex: 1 }} // Cada botón ocupa el mismo espacio
-                                                            style={{
-                                                              backgroundColor: valorEmite === '07' ? 'lightblue' : 'transparent',
-                                                              color: valorEmite === '07' ? 'orange' : 'gray',
-                                                              borderRadius: '4px', // Puedes ajustar este valor según la cantidad de redondeo que desees                    
-                                                            }}
-                                              >NCred</ToggleButton>
-                                              )}  
-
-                                            </ToggleButtonGroup>
-                                            
-                                            <Box sx={{ position: "relative", width: 270, mt:-1 }}>
-                                              <TextField
-                                                variant="outlined"
-                                                size="small"
-                                                value=""
-                                                InputProps={{
-                                                  readOnly: true,
-
-                                                  startAdornment: (
-                                                    <InputAdornment position="start">
-                                                      <Typography
-                                                        sx={{
-                                                          color: "#9ca3af",
-                                                          fontSize: "0.82rem",
-                                                          fontWeight: 600,
-                                                          letterSpacing: 0.5,
-                                                          width: 55,
-                                                        }}
-                                                      >
-                                                        SERIE
-                                                      </Typography>
-                                                    </InputAdornment>
-                                                  ),
-
-                                                  endAdornment: (
-                                                    <InputAdornment position="end">
-                                                      <Select
-                                                        value={serieEmite}
-                                                        onChange={(e) =>
-                                                          handleChangeEmite("r_serie", e.target.value)
-                                                        }
-                                                        variant="standard"
-                                                        disableUnderline
-                                                        sx={{
-                                                          color: "white",
-                                                          fontSize: "0.90rem",
-                                                          fontWeight: 600,
-                                                          width: 90,
-                                                          textAlign: "center",
-                                                          "& .MuiSelect-select": {
-                                                            textAlign: "center",
-                                                          },
-                                                          "& .MuiSelect-icon": {
-                                                            color: "gray",
-                                                          },
-                                                        }}
-                                                      >
-                                                        {serie_select.map((item) => (
-                                                          <MenuItem
-                                                            key={item.r_serie}
-                                                            value={item.r_serie}
-                                                            sx={{ justifyContent: "center" }}
-                                                          >
-                                                            {item.r_serie}
-                                                          </MenuItem>
-                                                        ))}
-                                                      </Select>
-                                                    </InputAdornment>
-                                                  ),
-                                                }}
-                                                sx={{
-                                                  width: 270,
-                                                  "& input": {
-                                                    color: "transparent", // ocultamos el input
-                                                    caretColor: "transparent",
-                                                    cursor: "default",
-                                                  },
-                                                  "& fieldset": {
-                                                    borderColor: "#555",
-                                                  },
-                                                  "& .MuiOutlinedInput-root": {
-                                                    paddingRight: "6px",
-                                                  },
-                                                }}
-                                              />
-                                            </Box>
-
-
-                                            <TextField
-                                                    variant="outlined"
-                                                    placeholder="RUC/DNI"
-                                                    autoFocus
-                                                    size="small"
-                                                    autoComplete="off"
-                                                    name="r_documento_id"
-                                                    value={datosEmitir.r_documento_id}
-                                                    onChange={(e) => handleChangeEmite('r_documento_id', e.target.value)}
-                                                    InputLabelProps={{ style: { color: 'white' } }}
-                                                    InputProps={{
-                                                      style: { color: 'white', width: 270 },
-                                                      endAdornment: (
-                                                        <IconButton
-                                                          color="default"
-                                                          aria-label="upload picture"
-                                                          component="label"
-                                                          size="small"
-                                                          sx={{
-                                                            position: 'absolute',
-                                                            top: '50%',
-                                                            right: 0,
-                                                            transform: 'translateY(-50%)',
-                                                            color: 'orange',
-                                                          }}
-                                                          onClick={() => {
-                                                            //
-                                                            mostrarRazonSocialGenera(datosEmitir.r_documento_id);
-                                                          }}
-                                                        >
-                                                          <FindIcon />
-                                                        </IconButton>
-                                                      ),
-                                                      inputProps: {
-                                                        style: {
-                                                          paddingLeft: '32px', // Mueve solo el texto a la derecha
-                                                          fontSize: '18px', // Ajusta el tamaño de letra aquí
-                                                        },
-                                                      },
-                                                    }}
-                                                    sx={{
-                                                      mt:0,
-                                                      '& .MuiInputBase-input': {
-                                                        textAlign: 'center', // Alinea el texto del campo
-                                                      },
-                                                    }}
-                                             />
-                                            
-
-                                             <Select
-                                                    labelId="documento_select"
-                                                    value={ id_docBusca || datosEmitir.r_id_doc}  // 
-                                                    size='small'
-                                                    name="r_id_doc"
-                                                    //fullWidth
-                                                    sx={{display:'block',
-                                                         //margin:'.4rem 0', 
-                                                         mt:0,
-                                                         width: '270px',  // Establece el ancho fijo aquí
-                                                         textAlign: 'center',  // Centrar el texto seleccionado
-                                                         '.MuiSelect-select': { 
-                                                           textAlign: 'center',  // Centrar el valor dentro del Select
-                                                         },                                                         
-                                                         color:"white"}}
-                                                    label="doc"
-                                                    onChange={(e) => handleChangeEmite('r_id_doc', e.target.value)}
-                                                >
-                                                    {   
-                                                        doc_select.map(elemento => (
-                                                        <MenuItem key={elemento.codigo} value={elemento.codigo}
-                                                                  sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
-                                                        >
-                                                        {elemento.descripcion}
-                                                        </MenuItem>)) 
-                                                    }
-                                            </Select>
-
-                                            <Tooltip title={datosEmitir.r_razon_social}>
-                                                <TextField variant="outlined" 
-                                                          //maxWidth="md"
-                                                          placeholder='RAZON SOCIAL'
-                                                          //label='RAZON SOCIAL'
-                                                          autoFocus
-                                                          size="small"
-                                                          autoComplete="off"
-                                                          sx={{mt:0}}
-                                                          name="r_razon_social"
-                                                          value={datosEmitir.r_razon_social}
-                                                          onChange={(e) => handleChangeEmite('r_razon_social', e.target.value)}
-                                                          //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                          inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
-                                                          InputLabelProps={{ style:{color:'white'} }}
-                                                />
-                                            </Tooltip>
-                                            <TextField variant="outlined" 
-                                                      //maxWidth="md"
-                                                      placeholder='DIRECCION'
-                                                      //label='DIRECCION'
-                                                      autoFocus
-                                                      size="small"
-                                                      autoComplete="off"
-                                                      //sx={{mt:-1}}
-                                                      name="r_direccion"
-                                                      value={datosEmitir.r_direccion}
-                                                      //onChange={handleSearchTextCuentaChange} //new para busqueda
-                                                      onChange={(e) => handleChangeEmite('r_direccion', e.target.value)}
-                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
-                                                      InputLabelProps={{ style:{color:'white'} }}
-                                            />
-                                            {(valorEmite==='07') && (
-                                            <Select
-                                                    labelId="motivo_select"
-                                                    label="motivo"
-                                                    value={datosEmitir.r_idmotivo_ref}  // 
-                                                    size='small'
-                                                    name="r_idmotivo_ref"
-                                                    //fullWidth
-                                                    sx={{display:'block',
-                                                         //margin:'.4rem 0', 
-                                                         mt:0,
-                                                         width: '270px',  // Establece el ancho fijo aquí
-                                                         textAlign: 'center',  // Centrar el texto seleccionado
-                                                         '.MuiSelect-select': { 
-                                                           textAlign: 'center',  // Centrar el valor dentro del Select
-                                                         },                                                         
-                                                         color:"white"}}
-                                                    onChange={(e) => handleChangeEmite('r_idmotivo_ref', e.target.value)}
-                                            >
-                                                    {   
-                                                        motivo_select.map(elemento => (
-                                                        <MenuItem key={elemento.codigo} value={elemento.codigo}
-                                                                  sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
-                                                        >
-                                                        {elemento.descripcion}
-                                                        </MenuItem>)) 
-                                                    }
-                                            </Select>)}
-
-                                            <Select
-                                                    labelId="moneda_select"
-                                                    value={datosEmitir.r_moneda}  // 
-                                                    size='small'
-                                                    name="r_moneda"
-                                                    //fullWidth
-                                                    sx={{display:'block',
-                                                         //margin:'.4rem 0', 
-                                                         mt:0,
-                                                         width: '270px',  // Establece el ancho fijo aquí
-                                                         textAlign: 'center',  // Centrar el texto seleccionado
-                                                         '.MuiSelect-select': { 
-                                                           textAlign: 'center',  // Centrar el valor dentro del Select
-                                                         },                                                         
-                                                         color:"white"}}
-                                                    label="doc"
-                                                    onChange={(e) => handleChangeEmite('r_moneda', e.target.value)}
-                                                >
-                                                        <MenuItem key='PEN' value='PEN' sx={{ justifyContent: 'center' }}>
-                                                        SOLES
-                                                        </MenuItem>
-                                                        <MenuItem key='USD' value='USD' sx={{ justifyContent: 'center' }}>
-                                                        DOLARES
-                                                        </MenuItem>
-                                            </Select>
-                                          
-                                            {/* Campo Forma Pago Credito/Contado y Dias Credito */}
-                                            <Box sx={{ display: 'flex', width: 270 }}>
-                                              {/* Forma de pago */}
-                                              <Select
-                                                value={datosEmitir.r_forma_pago_id || 'Contado'}
-                                                onChange={(e) => handleFormaPago(e.target.value)}
-                                                size="small"
-                                                sx={{
-                                                  width: 130,
-                                                  mr: 0,
-                                                  color: 'white'
-                                                }}
-                                              >
-                                                <MenuItem value="Contado">Contado</MenuItem>
-                                                <MenuItem value="Credito">Credito</MenuItem>
-                                              </Select>
-
-                                              {/* Días crédito */}
-                                              <TextField
-                                                size="small"
-                                                type="number"
-                                                value={datosEmitir.dias_credito || 0}
-                                                onChange={(e) => handleDiasCredito(e.target.value)}
-                                                disabled={datosEmitir.r_forma_pago_id !== 'Credito'}
-                                                sx={{
-                                                  width: 140,
-                                                  '& input': {
-                                                    textAlign: 'center',
-                                                    color: 'white'
-                                                  }
-                                                }}
-                                                InputProps={{
-                                                  endAdornment: (
-                                                    <InputAdornment position="end">
-                                                      días
-                                                    </InputAdornment>
-                                                  )
-                                                }}
-                                              />
-
-                                          </Box>
-
-                                          {/* Campo EFECTIVO */}
-                                          <Box sx={{ display: "inline-block" }}>
-                                            <TextField
-                                              variant="outlined"
-                                              autoFocus
-                                              size="small"
-                                              autoComplete="off"
-                                              name="efectivo"
-                                              value={datosEmitir.efectivo}
-                                              onChange={(e) => handleChangeEmite("efectivo", e.target.value)}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <Box sx={{ color: "gray", fontSize: "0.85rem" }}>EFECTIVO</Box>
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment:
-                                                  datosEmitir.efectivo > 0 && (
-                                                    <InputAdornment position="end">
-                                                      <IconButton size="small" onClick={() => handleSwitch("efectivo")}>
-                                                        <CompareArrowsIcon sx={{ color: "white" }} />
-                                                      </IconButton>
-                                                    </InputAdornment>
-                                                  ),
-                                              }}
-                                              sx={{
-                                                width: 270,
-                                                "& input": {
-                                                  textAlign: "center",
-                                                  color: "white",
-                                                },
-                                                "& .MuiOutlinedInput-root": {
-                                                  paddingRight: "4px", // para que el botón no corte el borde
-                                                },
-                                              }}
-
-                                              InputLabelProps={{ style: { color: "white" } }}
-                                            />
-                                          </Box>
-
-                                          {/* Campo EFECTIVO2 */}
-                                          <Box sx={{ position: "relative", width: 270 }}>
-                                            <TextField
-                                              variant="outlined"
-                                              size="small"
-                                              autoComplete="off"
-                                              name="efectivo2"
-                                              value={datosEmitir.efectivo2}
-                                              onChange={(e) => handleChangeEmite("efectivo2", e.target.value)}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <Select
-                                                      value={datosEmitir.forma_pago2 || "YAPE"}
-                                                      onChange={(e) => handleChangeEmite("forma_pago2", e.target.value)}
-                                                      variant="standard"
-                                                      disableUnderline
-                                                      sx={{
-                                                        color: "gray",
-                                                        fontSize: "0.85rem",
-                                                        width: 90,
-                                                        "& .MuiSelect-icon": { color: "gray" },
-                                                      }}
-                                                    >
-                                                      {formasPago.map((forma) => (
-                                                        <MenuItem key={forma} value={forma}>
-                                                          {forma}
-                                                        </MenuItem>
-                                                      ))}
-                                                    </Select>
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment: datosEmitir.efectivo2 > 0 && (
-                                                  <InputAdornment position="end">
-                                                    <IconButton size="small" onClick={() => handleSwitch("efectivo2")}>
-                                                      <CompareArrowsIcon sx={{ color: "white" }} />
-                                                    </IconButton>
-                                                  </InputAdornment>
-                                                ),
-                                              }}
-                                              sx={{
-                                                width: 270,
-                                                "& input": {
-                                                  textAlign: "center",
-                                                  color: "white",
-                                                },
-                                                "& .MuiOutlinedInput-root": {
-                                                  paddingRight: "4px", // para que el botón no corte el borde
-                                                },
-                                              }}
-                                              InputLabelProps={{ style: { color: "white" } }}
-                                            />
-                                          </Box>
-
-
-                                            <Button variant='contained' 
-                                                        color='primary' 
-                                                        //size='small'
-                                                        onClick={handleSaveComprobante}
-                                                        sx={{display:'block',margin:'.5rem 0', width: 270}}
-                                                        >
-                                                        GRABAR
-                                            </Button>
-                                            <Button variant='contained' 
-                                                        //color='warning' 
-                                                        //size='small'
-                                                        onClick={()=>{
-                                                              setShowModalEmite(false);
-                                                          }
-                                                        }
-                                                        sx={{display:'block',
-                                                             margin:'.5rem 0',
-                                                             width: 270, 
-                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                            '&:hover': {
-                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                                },                                                             
-                                                             mt:-0.5}}
-                                                        >
-                                                        ESC - CERRAR
-                                            </Button>
-
-                                        </Dialog>
-                                        {/* FIN Seccion para mostrar Dialog tipo Modal */}
-                                </>
-                            )
-                            :
-                            (   
-                              <>
-                              </>
-                            )
-                          }
+                          <AdminVentaEmisionModal
+                            open={showModalEmite}
+                            isSmallScreen={isSmallScreen}
+                            valorEmite={valorEmite}
+                            serieEmite={serieEmite}
+                            datosEmitir={datosEmitir}
+                            docSelect={doc_select}
+                            serieSelect={serie_select}
+                            motivoSelect={motivo_select}
+                            formasPago={formasPago}
+                            idDocBusca={id_docBusca}
+                            isAllowed={isAllowed}
+                            onValorEmiteChange={actualizaValorEmite}
+                            onChangeEmite={handleChangeEmite}
+                            onBuscarRazonSocial={mostrarRazonSocialGenera}
+                            onFormaPago={handleFormaPago}
+                            onDiasCredito={handleDiasCredito}
+                            onSwitchPago={handleSwitch}
+                            onSaveComprobante={handleSaveComprobante}
+                            onClose={() => setShowModalEmite(false)}
+                          />
 
                     </form>
                 </CardContent>
             </Card>
 
 
-    <Card sx={{mt:1}}
-                  style={{
-                    background:'#1e272e',
-                    //maxWidth: '700px', // Ajusta este valor según tu preferencia
-                    padding:'1rem',
-                  }}
-            >
-              <Datatable
-                //title={actions}
-                theme="solarized"
-                columns={columnas}
-                data={registrosdet}
-                contextActions={contextActions}
-                actions={actions}
-                onSelectedRowsChange={handleRowSelected}
-                selectableRowsComponent={Checkbox} // Pass the function only
-                sortIcon={<ArrowDownward />}
-                dense={true}
-                highlightOnHover //resalta la fila
-              >
-              </Datatable>
-            </Card>
-
-            <Card sx={{mt:1}}
-                  style={{
-                    background:'#1e272e',
-                    //maxWidth: '700px', // Ajusta este valor según tu preferencia
-                    padding:'1rem',
-                  }}
-            >
-              <Datatable
-                //title={actions}
-                theme="solarized"
-                columns={columnasref}
-                data={registrosref}
-                //contextActions={contextActions}
-                //actions={actions}
-                onSelectedRowsChange={handleRowSelected}
-                selectableRowsComponent={Checkbox} // Pass the function only
-                sortIcon={<ArrowDownward />}
-                dense={true}
-                highlightOnHover //resalta la fila
-              >
-              </Datatable>
-            </Card>
+            <AdminVentaFormTables
+              columnas={columnas}
+              columnasref={columnasref}
+              registrosdet={registrosdet}
+              registrosref={registrosref}
+              contextActions={contextActions}
+              actions={actions}
+              handleRowSelected={handleRowSelected}
+            />
 
 
   </div>    

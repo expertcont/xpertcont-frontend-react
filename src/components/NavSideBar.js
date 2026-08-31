@@ -16,6 +16,7 @@ import CropFreeIcon from '@mui/icons-material/CropFree';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import BadgeIcon from '@mui/icons-material/Badge';
 
@@ -601,6 +602,15 @@ export default function NavSideBar(props) {
                   onClick={() => {
                     navigate(`/ad_transportesencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-1');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<AssignmentTurnedInIcon />}
+                  label="Encomiendas por Entregar"
+                  isActive={selectedButton === 'icono11-8'}
+                  onClick={() => {
+                    navigate(`/ad_transporteentregas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-8');
                   }}
                 />
                 <SubMenuItem
