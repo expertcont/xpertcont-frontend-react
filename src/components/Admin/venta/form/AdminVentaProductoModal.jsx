@@ -271,7 +271,8 @@ export default function AdminVentaProductoModal({
             name="precio_unitario"
             value={producto.precio_unitario}
             onChange={onChangeProductoDatos}
-            inputProps={{ style: { color: "white", width: 240, textAlign: "center" }, readOnly: !modoEdicionValores }}
+            inputProps={{ style: { color: "white", width: 240, textAlign: "center" } }}
+            InputProps={{ readOnly: false }}
             InputLabelProps={{ style: { color: "white" } }}
           />
           <TextField
@@ -283,7 +284,8 @@ export default function AdminVentaProductoModal({
             name="precio_neto"
             value={producto.precio_neto}
             onChange={onChangeProductoDatos}
-            inputProps={{ style: { color: "white", width: 240, textAlign: "center" }, readOnly: !modoEdicionValores }}
+            inputProps={{ style: { color: "white", width: 240, textAlign: "center" } }}
+            InputProps={{ readOnly: false }}
             InputLabelProps={{ style: { color: "white" } }}
           />
           {modoEdicionValores && (
