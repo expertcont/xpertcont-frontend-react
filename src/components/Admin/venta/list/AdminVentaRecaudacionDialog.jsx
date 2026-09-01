@@ -1,9 +1,14 @@
 import React from "react";
-import { Box, Button, Card, CardContent, Dialog, DialogTitle, Typography } from "@mui/material";
+import { Box, Button, Dialog, DialogContent, DialogTitle, Typography } from "@mui/material";
+import palette from "../../../../theme/palette";
+
+const formatearMonto = (monto) => Number(monto || 0).toLocaleString("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export default function AdminVentaRecaudacionDialog({
   open,
-  isSmallScreen,
   recaudaciones,
   onClose,
 }) {
@@ -18,63 +23,113 @@ export default function AdminVentaRecaudacionDialog({
       maxWidth="md"
       disableScrollLock
       PaperProps={{
-        style: {
-          top: isSmallScreen ? "-30vh" : "0vh",
-          left: isSmallScreen ? "-25%" : "0%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginTop: "10vh",
-          background: "rgba(30, 39, 46, 0.95)",
-          color: "white",
-          width: isSmallScreen ? "50%" : "30%",
+        sx: {
+          m: { xs: 1.5, sm: 2 },
+          width: { xs: "calc(100vw - 24px)", sm: 420 },
+          maxWidth: "calc(100vw - 24px)",
+          maxHeight: { xs: "calc(100dvh - 24px)", sm: "80vh" },
+          backgroundColor: palette.surface,
+          color: palette.text,
+          border: `1px solid ${palette.border}`,
+          borderRadius: 2,
+          overflow: "hidden",
         },
       }}
     >
-      <DialogTitle>Datos - Recaudacion</DialogTitle>
+      <DialogTitle
+        sx={{
+          px: { xs: 1.5, sm: 2 },
+          py: 1.4,
+          borderBottom: `1px solid ${palette.borderSoft}`,
+        }}
+      >
+        <Typography sx={{ fontWeight: 800, fontSize: "16px", lineHeight: 1.2 }}>
+          Datos de recaudacion
+        </Typography>
+        <Typography sx={{ color: palette.muted, fontSize: "12px", mt: 0.25 }}>
+          Resumen segun el filtro actual
+        </Typography>
+      </DialogTitle>
 
-      <Card sx={{ width: "90%", background: "rgba(255,255,255,0.05)", color: "white", mb: 2 }}>
-        <CardContent>
+      <DialogContent
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          overflowY: "auto",
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gap: 0.75,
+            mb: 1.5,
+          }}
+        >
           {recaudaciones.length > 0 ? (
             recaudaciones.map((item, index) => (
               <Box
                 key={index}
                 sx={{
                   display: "flex",
+                  alignItems: "center",
                   justifyContent: "space-between",
-                  mb: 1,
-                  borderBottom: "1px solid rgba(255,255,255,0.2)",
-                  pb: 0.5,
+                  gap: 1.25,
+                  minHeight: 42,
+                  px: 1.2,
+                  py: 0.85,
+                  backgroundColor: index % 2 === 0 ? palette.bg : palette.surfaceAlt,
+                  borderRadius: 1.5,
                 }}
               >
-                <Typography variant="body1">{item.recaudacion}</Typography>
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                  S/ {Number(item.monto).toFixed(2)}
+                <Typography
+                  title={item.recaudacion}
+                  sx={{
+                    color: palette.text,
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.recaudacion}
+                </Typography>
+                <Typography sx={{ color: "#7ddbd3", fontSize: "13px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                  S/ {formatearMonto(item.monto)}
                 </Typography>
               </Box>
             ))
           ) : (
-            <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay recaudaciones</Typography>
+            <Typography sx={{ color: palette.muted, fontSize: "13px", textAlign: "center", py: 2 }}>
+              No hay recaudaciones
+            </Typography>
           )}
-        </CardContent>
-      </Card>
+        </Box>
 
-      <Button
-        variant="contained"
-        onClick={onClose}
-        sx={{
-          display: "block",
-          margin: ".5rem 0",
-          width: 270,
-          backgroundColor: "rgba(30, 39, 46)",
-          "&:hover": {
-            backgroundColor: "rgba(30, 39, 46, 0.1)",
-          },
-          mt: -0.5,
-        }}
-      >
-        ESC - CERRAR
-      </Button>
+        <Button
+          variant="contained"
+          onClick={onClose}
+          sx={{
+            width: "100%",
+            height: 42,
+            borderRadius: 2,
+            backgroundColor: palette.chip,
+            border: `1px solid ${palette.border}`,
+            color: palette.text,
+            boxShadow: "none",
+            fontSize: "12px",
+            fontWeight: 800,
+            "&:hover": {
+              backgroundColor: palette.accent,
+              borderColor: palette.accent,
+              color: palette.surface,
+              boxShadow: "none",
+            },
+          }}
+        >
+          ESC - CERRAR
+        </Button>
+      </DialogContent>
     </Dialog>
   );
 }

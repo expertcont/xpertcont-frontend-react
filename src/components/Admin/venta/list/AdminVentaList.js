@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
+import { Box,Modal, Button,useMediaQuery,Select, MenuItem, Typography} from "@mui/material";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import FindIcon from '@mui/icons-material/FindInPage';
@@ -19,13 +19,14 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
 
 import IconButton from '@mui/material/IconButton';
-import swal from 'sweetalert';
 import swal2 from 'sweetalert2'
 import Datatable from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
+import StackedLineChartIcon from '@mui/icons-material/StackedLineChart';
 import '../../../../App.css';
 import 'styled-components';
 //import axios from 'axios';
@@ -49,6 +50,189 @@ import AdminSunatGreIcon from '../../AdminSunatGreIcon';
 import { ensureAdminVentaTableTheme } from '../common/adminVentaTableTheme';
 import AdminVentaCloneDialog from './AdminVentaCloneDialog';
 import AdminVentaRecaudacionDialog from './AdminVentaRecaudacionDialog';
+import palette from '../../../../theme/palette';
+
+const contentRadius = 1;
+
+const panelSx = {
+  backgroundColor: 'transparent',
+  border: '0',
+  borderRadius: contentRadius,
+  p: 0,
+};
+
+const listContentSx = {
+  width: '100%',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  minWidth: 0,
+  ml: 0,
+  mr: 0,
+  p: 0,
+  display: 'grid',
+  gap: 1.15,
+};
+
+const toolbarSurfaceSx = {
+  backgroundColor: '#1c252c',
+  borderRadius: contentRadius,
+  px: { xs: 1, md: 1.5 },
+  py: { xs: 0.9, md: 1.25 },
+};
+
+const selectSx = {
+  width: '100%',
+  height: 42,
+  color: palette.text,
+  backgroundColor: palette.chip,
+  border: `1px solid ${palette.border}`,
+  borderRadius: contentRadius,
+  fontSize: '13px',
+  '.MuiSelect-select': {
+    py: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+  '& .MuiSelect-icon': { color: palette.muted },
+};
+
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      backgroundColor: palette.surface,
+      color: palette.text,
+      border: `1px solid ${palette.border}`,
+      '& .MuiMenuItem-root': { fontSize: '13px' },
+    },
+  },
+};
+
+const toolbarIconSx = {
+  width: 42,
+  height: 42,
+  borderRadius: contentRadius,
+  backgroundColor: palette.chip,
+  border: `1px solid ${palette.border}`,
+  color: palette.muted,
+  p: 0,
+  '&:hover': {
+    backgroundColor: 'rgba(139,154,165,0.14)',
+    borderColor: 'rgba(139,154,165,0.20)',
+    color: palette.text,
+  },
+};
+
+const toolbarButtonSx = {
+  height: 42,
+  borderRadius: contentRadius,
+  boxShadow: 'none',
+  fontSize: '12px',
+  fontWeight: 800,
+  whiteSpace: 'nowrap',
+  textTransform: 'none',
+};
+
+const totalButtonSx = {
+  ...toolbarButtonSx,
+  minWidth: 174,
+  justifyContent: 'center',
+  gap: 0.85,
+  px: 1.25,
+  backgroundColor: 'rgba(139,154,165,0.10)',
+  border: '1px solid rgba(139,154,165,0.16)',
+  color: 'rgba(125,219,211,0.86)',
+  '&:hover': {
+    backgroundColor: 'rgba(139,154,165,0.16)',
+    borderColor: 'rgba(139,154,165,0.24)',
+    color: 'rgba(255,255,255,0.92)',
+    boxShadow: 'none',
+  },
+};
+
+const recordsButtonSx = {
+  ...toolbarButtonSx,
+  backgroundColor: 'rgba(139,154,165,0.12)',
+  border: '1px solid rgba(139,154,165,0.25)',
+  color: palette.muted,
+  '&:hover': {
+    backgroundColor: palette.chip,
+    borderColor: palette.border,
+    color: palette.text,
+    boxShadow: 'none',
+  },
+};
+
+const sweetAlertDarkOptions = {
+  background: palette.surface,
+  color: palette.text,
+  confirmButtonColor: palette.accent,
+  cancelButtonColor: palette.chip,
+  buttonsStyling: true,
+};
+
+const listCardBg = '#1c252c';
+const listTableHeaderBg = '#202a32';
+const listTableHoverBg = 'rgba(139,154,165,0.07)';
+
+const dataTableStyles = {
+  table: {
+    style: {
+      backgroundColor: listCardBg,
+    },
+  },
+  tableWrapper: {
+    style: {
+      backgroundColor: listCardBg,
+    },
+  },
+  responsiveWrapper: {
+    style: {
+      backgroundColor: listCardBg,
+    },
+  },
+  header: {
+    style: {
+      backgroundColor: listCardBg,
+    },
+  },
+  headRow: {
+    style: {
+      backgroundColor: listTableHeaderBg,
+      borderBottomColor: 'transparent',
+    },
+  },
+  headCells: {
+    style: {
+      backgroundColor: listTableHeaderBg,
+      color: palette.muted,
+    },
+  },
+  rows: {
+    style: {
+      backgroundColor: listCardBg,
+      borderBottomColor: 'transparent',
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: listTableHoverBg,
+      borderBottomColor: 'transparent',
+      outline: 'none',
+    },
+  },
+  cells: {
+    style: {
+      backgroundColor: 'transparent',
+    },
+  },
+  pagination: {
+    style: {
+      backgroundColor: listCardBg,
+      borderTopColor: 'transparent',
+    },
+  },
+};
 
 export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
@@ -56,9 +240,6 @@ export default function AdminVentaList() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const { confirmDialog } = useDialog(); //unico dialogo
   const [fecha_clon, setFechaClon] = useState("");
-
-  //Seccion Dialog
-  const [isDialogOpen, setDialogOpen] = useState(false);
 
   const location = useLocation();
 
@@ -234,10 +415,10 @@ export default function AdminVentaList() {
         }
     } catch (error) {
         //console.error("Error eliminando venta:", error);
-          swal({
-            text:"No se puede Eliminar Venta",
-            icon:"error",
-            timer:"2000"
+          confirmDialog({
+            title: "No se puede Eliminar Venta",
+            icon: "error",
+            confirmText: "ACEPTAR"
           });
         
     }
@@ -245,6 +426,7 @@ export default function AdminVentaList() {
 
   const handleDeleteOrigen = async (sAnfitrion,sDocumentoId,sPeriodo,sLibro) => {
     const { value: selectedOrigen } = await swal2.fire({
+      ...sweetAlertDarkOptions,
       title: 'Eliminar registros',
       //text: 'Selecciona el origen para la eliminación masiva:',
       input: 'select',
@@ -255,6 +437,9 @@ export default function AdminVentaList() {
         SIRE: 'SIRE',
         MANUAL: 'MANUAL',
         // Agrega las opciones según los valores de "origen" de tu tabla
+      },
+      inputAttributes: {
+        style: `background:${palette.bg}; color:${palette.text}; border:1px solid ${palette.border}; border-radius:8px; height:40px; font-size:13px;`,
       },
       inputPlaceholder: 'Selecciona el origen',
       showCancelButton: true,
@@ -920,13 +1105,16 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
 
  return (
   <>
-   <div style={{ backgroundColor: '#1e272e', 
+   <div style={{ backgroundColor: 'transparent', 
                  //minHeight: '100vh', 
                  //padding: '20px', 
                  //marginTop: 30,  
                  //marginLeft: -65, 
                  margin: 0,
-                 width: "100%" }}
+                 width: "100%",
+                 maxWidth: "100%",
+                 boxSizing: "border-box",
+                 overflowX: "hidden" }}
     > 
       <AdminVentaCloneDialog
         open={showModalMostrarClonar}
@@ -956,22 +1144,46 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
     </Modal>
   </div>
 
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'column' : 'row'}
-      //alignItems={isSmallScreen ? 'center' : 'center'}
-      justifyContent={isSmallScreen ? 'center' : 'center'}
+  <Box sx={listContentSx}>
+  <Box
+      sx={{
+        ...panelSx,
+        ...toolbarSurfaceSx,
+        display: 'flex',
+        alignItems: { xs: 'stretch', md: 'center' },
+        justifyContent: 'space-between',
+        gap: 1,
+        flexDirection: { xs: 'column', md: 'row' },
+      }}
   >
-      <Grid item xs={1.5} sm={1.5}>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
+          Registro de Ventas
+        </Typography>
+        <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
+          {`${registrosdet.length} comprobantes visibles`}
+        </Typography>
+      </Box>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 180px) minmax(240px, 1fr)', md: '150px minmax(280px, 360px) auto auto' },
+          gap: 1,
+          alignItems: 'center',
+          width: { xs: '100%', md: 'auto' },
+        }}
+      >
+      <Box sx={{ width: '100%' }}>
           <Select
                 labelId="periodo"
                 //id={periodo_select.periodo}
                 size='small'
                 value={periodo_trabajo}
                 name="periodo"
-                sx={{display:'block',
-                margin:'.1rem 0', color:"skyblue", fontSize: '13px' }}
+                sx={{ ...selectSx, color: palette.accent }}
                 label="Periodo Cont"
                 onChange={handleChange}
+                MenuProps={selectMenuProps}
                 >
                   <MenuItem value="default">SELECCIONA </MenuItem>
                 {   
@@ -981,18 +1193,18 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                     </MenuItem>)) 
                 }
           </Select>
-      </Grid>
-      <Grid item xs={4} sm={4}>
+      </Box>
+      <Box>
           <Select
                 labelId="contabilidad_select"
                 //id={contabilidad_select.documento_id}
                 size='small'
                 value={contabilidad_trabajo}
                 name="contabilidad"
-                sx={{display:'block',
-                margin:'.1rem 0', color:"white", fontSize: '13px' }}
+                sx={selectSx}
                 label="Contabilidad"
                 onChange={handleChange}
+                MenuProps={selectMenuProps}
                 >
                   <MenuItem value="default">SELECCIONA </MenuItem>
                 {   
@@ -1002,76 +1214,92 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                     </MenuItem>)) 
                 }
           </Select>
-      </Grid>
+      </Box>
 
-      <Grid item xs={2} sm={2}>
       {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
         <Button variant="contained" 
                 color="primary" 
                 onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
-                fullWidth
+                sx={totalButtonSx}
         >
-          {`VENTAS: S/ ${parseFloat(totalVentas).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`}
+          <StackedLineChartIcon sx={{ fontSize: 18, flexShrink: 0 }} />
+          <Box sx={{ display: 'grid', justifyItems: 'center', lineHeight: 1.05 }}>
+            <Typography sx={{ color: 'inherit', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>
+              Ventas
+            </Typography>
+            <Typography sx={{ color: 'inherit', fontSize: '13px', fontWeight: 900 }}>
+              {`S/ ${parseFloat(totalVentas).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}`}
+            </Typography>
+          </Box>
         </Button>
       )}
-      </Grid>
 
-      <Grid item xs={1} sm={1}>
       {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
         <Button variant="contained" 
                 color="inherit" 
                 onClick={() => handleClickRecords(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
-                fullWidth
+                sx={recordsButtonSx}
         >
+          <QueryStatsIcon sx={{ fontSize: 17, mr: 0.6 }} />
           RECORDS
         </Button>
       )}
 
-      </Grid>
+      </Box>
+  </Box>
 
-  </Grid>
+  <Box sx={{ ...panelSx, overflowX: 'auto' }}>
+    <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
+  </Box>
 
-  
-  <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
-  
-  <div>
-  </div>
-    
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'row' : 'row'}
-      alignItems={isSmallScreen ? 'center' : 'left'}
-      justifyContent={isSmallScreen ? 'left' : 'left'}
+  <Box
+      sx={{
+        ...panelSx,
+        ...toolbarSurfaceSx,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        flexWrap: 'wrap',
+      }}
   >
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
+        <Box>
           <Tooltip title='AGREGAR NUEVO' >
             <IconButton color="primary" 
                             //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: 'gray' }}
+                            sx={toolbarIconSx}
                             onClick={() => {
                               generaVenta();
                             }}
             >
-                  <AddBoxIcon style={{ fontSize: '40px' }}/>
+                  <AddBoxIcon sx={{ fontSize: 28 }}/>
             </IconButton>
           </Tooltip>
-        </Grid>
+        </Box>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
+        <Box>    
           { (pVenta0104) ? (
 
             <Tooltip title='ELIMINAR MASIVO' >
             <IconButton color="warning" 
                             //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
+                            sx={{
+                              ...toolbarIconSx,
+                              color: blueGrey[500],
+                              '&:hover': {
+                                backgroundColor: '#c2410c',
+                                borderColor: '#c2410c',
+                                color: '#fff',
+                              },
+                            }}
                             onClick={() => {
                               handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
                             }}
             >
-                  <FolderDeleteIcon style={{ fontSize: '40px' }}/>
+                  <FolderDeleteIcon sx={{ fontSize: 27 }}/>
             </IconButton>
             </Tooltip>
 
@@ -1082,9 +1310,9 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
           )
           }
 
-        </Grid>
+        </Box>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
+        <Box sx={{ height: 42, display: 'flex', alignItems: 'center' }}>
           <Tooltip title='EXPORTAR XLS' >
               <BotonExcelGeneral datos={registrosdet} 
                                   nombreArchivo="Reporte_Ventas"
@@ -1093,85 +1321,93 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                                   columnasExcluidas={['r_fecvcto','r_cod','r_serie','r_numero','r_cod_ref','r_serie_ref','r_numero_ref']}
               />
           </Tooltip>
-        </Grid>
+        </Box>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
 
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 2 : 0.7}>    
-
-        </Grid>
         
         {/* El componente del cuadro de diálogo */}
-        {isDialogOpen && (
-        
-        <Grid item xs={isSmallScreen ? 12 : 8.8}>
 
-        </Grid>
-
-        )}
-
-    <Grid item xs={isSmallScreen ? 12 : 8.3}>
-
-    </Grid>
-
-
-    <Grid item xs={isSmallScreen ? 12 : 12} >
         <TextField fullWidth variant="outlined" color="success" size="small"
-                                    //label="FILTRAR"
-                                    sx={{display:'block',
-                                          margin:'.0rem 0'}}
+                                    sx={{
+                                      flex: '1 1 280px',
+                                      minWidth: { xs: '100%', sm: 280 },
+                                      '& .MuiOutlinedInput-root': {
+                                        height: 42,
+                                        color: palette.text,
+                                        backgroundColor: palette.bg,
+                                        borderRadius: contentRadius,
+                                        '& fieldset': { borderColor: 'rgba(139,154,165,0.14)' },
+                                        '&:hover fieldset': { borderColor: 'rgba(139,154,165,0.24)' },
+                                        '&.Mui-focused fieldset': { borderColor: 'rgba(139,154,165,0.32)' },
+                                      },
+                                      '& input': {
+                                        color: palette.text,
+                                        fontSize: '13px',
+                                      },
+                                      '& input::placeholder': {
+                                        color: palette.muted,
+                                        opacity: 1,
+                                      },
+                                    }}
                                     name="busqueda"
-                                    placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE'
+                                    placeholder='Filtrar: RUC, razon social o comprobante'
                                     onChange={actualizaValorFiltro}
-                                    inputProps={{ style:{color:'white'} }}
                                     InputProps={{
                                         startAdornment: (
                                           <InputAdornment position="start">
-                                            <FindIcon />
+                                            <FindIcon sx={{ color: palette.muted }} />
                                           </InputAdornment>
-                                        ),
-                                        style:{color:'white'},
-                                        // Estilo para el placeholder
-                                        inputProps: { style: { fontSize: '14px', color: 'gray' } }                                         
+                                        ),                                     
                                     }}
         />
-    </Grid>
+  </Box>
 
-
-  </Grid>
-
-  <Datatable
-      //title="Registro - Pedidos"
-      theme="solarized"
-      columns={columnas}
-      data={registrosdet}
-      //selectableRows
-      //selectableRowsSingle 
-      //contextActions={contextActions}
-      //actions={actions}
-      onSelectedRowsChange={handleRowSelected}
-      clearSelectedRows={toggleCleared}
-      pagination
-      paginationPerPage={15}
-      paginationRowsPerPageOptions={[15, 50, 100]}
-
-      selectableRowsComponent={Checkbox} // Pass the function only
-      sortIcon={<ArrowDownward />}  
-      dense={true}
-      highlightOnHover //resalta la fila
+  <Box
+      sx={{
+        overflow: 'hidden',
+        borderRadius: contentRadius,
+        border: 0,
+        backgroundColor: listCardBg,
+        boxShadow: 'none',
+        px: { xs: 0.25, md: 0.75 },
+        py: { xs: 0.25, md: 0.75 },
+        minWidth: 0,
+        maxWidth: '100%',
+        '& .rdt_TableWrapper': {
+          maxWidth: '100%',
+          overflowX: 'auto',
+        },
+        '& .rdt_Table': {
+          minWidth: { xs: 960, md: '100%' },
+        },
+      }}
   >
-  </Datatable>
+    <Datatable
+        //title="Registro - Pedidos"
+        theme="solarized"
+        columns={columnas}
+        data={registrosdet}
+        customStyles={dataTableStyles}
+        //selectableRows
+        //selectableRowsSingle 
+        //contextActions={contextActions}
+        //actions={actions}
+        onSelectedRowsChange={handleRowSelected}
+        clearSelectedRows={toggleCleared}
+        pagination
+        paginationPerPage={15}
+        paginationRowsPerPageOptions={[15, 50, 100]}
+
+        selectableRowsComponent={Checkbox} // Pass the function only
+        sortIcon={<ArrowDownward />}  
+        dense={true}
+        highlightOnHover //resalta la fila
+    >
+    </Datatable>
+  </Box>
+  </Box>
 </div>
   </>
   );
 }
+

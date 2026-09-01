@@ -49,6 +49,7 @@ import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
 import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";
+import AdminCorrentistaHabitualList from "./components/Admin/venta/habituales/AdminCorrentistaHabitualList";
 import TrEncomiendaList from "./components/Admin/transporte/encomienda/TrEncomiendaList";
 import TrEncomiendaEntregaList from "./components/Admin/transporte/encomienda/entrega/TrEncomiendaEntregaList";
 import TrBoletosList from "./components/Admin/transporte/TrBoletosList";
@@ -75,8 +76,10 @@ function App(props) {
       <AdminConfirmDialogProvider>
       
       <Box sx={{ display: 'flex', 
-                 //backgroundColor: '#1e272e',
-                 backgroundColor: '#242e36ff',
+                 background: `
+                   radial-gradient(circle at 30% 0%, rgba(42,161,152,0.035) 0%, rgba(42,161,152,0) 32%),
+                   linear-gradient(180deg, #1a242b 0%, #1a2127 100%)
+                 `,
                  minHeight: "100vh", // 🔹 ocupa toda la altura disponible
               }}
       >
@@ -93,7 +96,21 @@ function App(props) {
 
 
           {/* Contenido principal con margen izquierdo */}
-          <Container maxWidth="xl" sx={{ paddingTop: isMobile ? 10 : 9, paddingLeft: 0, marginLeft:1 }}>
+          <Container
+            component="main"
+            maxWidth={false}
+            disableGutters
+            sx={{
+              flex: 1,
+              paddingTop: isMobile ? 10 : 9,
+              px: { xs: 1, sm: 2, md: 3 },
+              marginLeft: 0,
+              width: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box',
+              overflowX: 'hidden',
+            }}
+          >
             <Routes>
               {/* tus rutas originales, sin cambios */}
 
@@ -113,6 +130,7 @@ function App(props) {
               <Route path="/ad_transportezonas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrZonaList />} />
 
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
+              <Route path="/ad_correntistahabitual/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminCorrentistaHabitualList />} />
 
               <Route path="/ad_stockrepkardex/:id_anfitrion/:periodo/:documento_id/:dia/:id_producto/:id_almacen" element={<AdminStockRepKardex />} />
               <Route path="/ad_stockrepinventario/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminStockRepInventario />} />

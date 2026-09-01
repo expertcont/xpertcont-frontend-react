@@ -1,7 +1,27 @@
-import { Card } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import Datatable from 'react-data-table-component';
+import palette from '../../../../theme/palette';
+
+const tablePanelSx = {
+  mt: 1,
+  backgroundColor: palette.surface,
+  border: `1px solid ${palette.borderSoft}`,
+  borderRadius: 2,
+  overflow: 'hidden',
+};
+
+const tableHeaderSx = {
+  px: { xs: 1, md: 1.25 },
+  py: 0.9,
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: 1,
+  backgroundColor: palette.surfaceAlt,
+  borderBottom: `1px solid ${palette.borderSoft}`,
+};
 
 export default function AdminVentaFormTables({
   columnas,
@@ -14,13 +34,15 @@ export default function AdminVentaFormTables({
 }) {
   return (
     <>
-      <Card
-        sx={{ mt: 1 }}
-        style={{
-          background: '#1e272e',
-          padding: '1rem',
-        }}
-      >
+      <Box sx={tablePanelSx}>
+        <Box sx={tableHeaderSx}>
+          <Typography sx={{ color: palette.text, fontSize: '14px', fontWeight: 800 }}>
+            Detalle de venta
+          </Typography>
+          <Typography sx={{ color: palette.muted, fontSize: '12px' }}>
+            {`${registrosdet.length} items`}
+          </Typography>
+        </Box>
         <Datatable
           theme="solarized"
           columns={columnas}
@@ -33,15 +55,17 @@ export default function AdminVentaFormTables({
           dense={true}
           highlightOnHover
         />
-      </Card>
+      </Box>
 
-      <Card
-        sx={{ mt: 1 }}
-        style={{
-          background: '#1e272e',
-          padding: '1rem',
-        }}
-      >
+      <Box sx={tablePanelSx}>
+        <Box sx={tableHeaderSx}>
+          <Typography sx={{ color: palette.text, fontSize: '14px', fontWeight: 800 }}>
+            Referencias
+          </Typography>
+          <Typography sx={{ color: palette.muted, fontSize: '12px' }}>
+            {`${registrosref.length} vinculadas`}
+          </Typography>
+        </Box>
         <Datatable
           theme="solarized"
           columns={columnasref}
@@ -52,7 +76,7 @@ export default function AdminVentaFormTables({
           dense={true}
           highlightOnHover
         />
-      </Card>
+      </Box>
     </>
   );
 }

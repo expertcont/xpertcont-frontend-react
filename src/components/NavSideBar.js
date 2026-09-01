@@ -28,21 +28,20 @@ import CloseIcon from '@mui/icons-material/Close';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import React, { useState, useEffect } from 'react';
-import LoginPerfil from "./LoginPerfil";
-import LoginLogoutBoton from "./LoginLogoutBoton";
 import { useAuth0 } from '@auth0/auth0-react';
+import logo from '../Logo04small-retocado-teal.png';
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 const sidebarColors = {
-  bg: '#172027',
-  surface: '#1e2931',
-  surfaceSoft: '#25323b',
-  border: 'rgba(125, 150, 164, 0.18)',
+  bg: '#0f171d',
+  surface: '#142027',
+  surfaceSoft: '#1b2a33',
+  border: 'rgba(125, 150, 164, 0.20)',
   text: '#f5f7f8',
   muted: '#90a4ae',
   accent: '#2aa198',
-  accentSoft: 'rgba(42, 161, 152, 0.16)',
+  accentSoft: 'rgba(42, 161, 152, 0.14)',
   danger: '#ff8a65',
 };
 
@@ -265,37 +264,51 @@ export default function NavSideBar(props) {
         onClick={onClick}
         sx={{
           position: 'relative',
-          minHeight: 46,
-          paddingY: 1,
-          paddingX: itemLabelVisible ? 1.5 : 0,
+          minHeight: 54,
+          paddingY: 1.05,
+          paddingLeft: itemLabelVisible ? 2.75 : 0,
+          paddingRight: itemLabelVisible ? 2 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
-          backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
+          background: isActive
+            ? 'linear-gradient(90deg, rgba(255,255,255,0.065) 0%, rgba(42,161,152,0.11) 58%, rgba(42,161,152,0.15) 100%)'
+            : 'transparent',
           color: sidebarColors.text,
           '&:before': {
             content: '""',
             position: 'absolute',
-            left: 6,
-            top: 10,
-            bottom: 10,
+            right: 0,
+            top: 0,
+            bottom: 0,
             width: 3,
-            borderRadius: 4,
+            borderRadius: '3px 0 0 3px',
             backgroundColor: isActive ? sidebarColors.accent : 'transparent',
+            boxShadow: isActive ? '0 0 10px rgba(42,161,152,0.24)' : 'none',
+          },
+          '&:after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            borderTop: isActive ? '1px solid rgba(255,255,255,0.055)' : '1px solid transparent',
+            borderBottom: isActive ? '1px solid rgba(0,0,0,0.22)' : '1px solid transparent',
           },
           '&:hover': {
-            backgroundColor: isActive ? sidebarColors.accentSoft : 'rgba(255,255,255,.055)',
+            background: isActive
+              ? 'linear-gradient(90deg, rgba(255,255,255,0.075) 0%, rgba(42,161,152,0.14) 58%, rgba(42,161,152,0.18) 100%)'
+              : 'linear-gradient(90deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.025) 100%)',
           },
-          borderRadius: 2,
-          marginY: 0.35,
-          marginX: 1,
-          transition: 'background-color .18s ease, color .18s ease',
+          borderRadius: 0,
+          marginY: 0,
+          marginX: 0,
+          transition: 'background .18s ease, color .18s ease, box-shadow .18s ease',
         }}
       >
         <ListItemIcon
           sx={{
             minWidth: itemLabelVisible ? 38 : 0,
-            color: isActive ? sidebarColors.accent : sidebarColors.muted,
+            color: isActive ? sidebarColors.accent : 'rgba(210,222,228,0.72)',
             justifyContent: 'center',
-            '& svg': { fontSize: 21 },
+            '& svg': { fontSize: 22 },
           }}
         >
           {badge && (
@@ -333,8 +346,8 @@ export default function NavSideBar(props) {
               primaryTypographyProps={{
                 fontFamily: sidebarFont,
                 fontSize: '0.86rem',
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? sidebarColors.text : '#dfe7ea',
+                fontWeight: isActive ? 600 : 500,
+                color: isActive ? '#ffffff' : 'rgba(223,231,234,0.88)',
               }}
             />
             {hasSubmenu && (isSubmenuOpen ? <ExpandLess sx={{ color: sidebarColors.muted }} /> : <ExpandMore sx={{ color: sidebarColors.muted }} />)}
@@ -358,22 +371,27 @@ export default function NavSideBar(props) {
         sx={{
           minHeight: 38,
           paddingY: 0.65,
-          paddingLeft: itemLabelVisible ? 5.75 : 0,
+          paddingLeft: itemLabelVisible ? 6.25 : 0,
           paddingRight: itemLabelVisible ? 1.5 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
-          backgroundColor: isActive ? 'rgba(42,161,152,.12)' : 'transparent',
+          background: isActive
+            ? 'linear-gradient(90deg, rgba(42,161,152,0.10) 0%, rgba(42,161,152,0.14) 100%)'
+            : 'transparent',
+          borderRight: isActive ? `3px solid ${sidebarColors.accent}` : '3px solid transparent',
           '&:hover': {
-            backgroundColor: isActive ? 'rgba(42,161,152,.16)' : 'rgba(255,255,255,.045)',
+            background: isActive
+              ? 'linear-gradient(90deg, rgba(42,161,152,0.13) 0%, rgba(42,161,152,0.17) 100%)'
+              : 'rgba(255,255,255,.04)',
           },
-          borderRadius: 1.5,
+          borderRadius: 0,
           marginY: 0.15,
-          marginX: 1,
+          marginX: 0,
         }}
       >
         <ListItemIcon
           sx={{
             minWidth: itemLabelVisible ? 30 : 0,
-            color: isActive ? sidebarColors.accent : '#78909c',
+            color: isActive ? sidebarColors.accent : 'rgba(144,164,174,0.72)',
             justifyContent: 'center',
             '& svg': { fontSize: 17 },
           }}
@@ -387,7 +405,7 @@ export default function NavSideBar(props) {
               fontFamily: sidebarFont,
               fontSize: '0.8rem',
               fontWeight: isActive ? 700 : 500,
-              color: isActive ? sidebarColors.text : '#c5d0d6',
+              color: isActive ? sidebarColors.text : 'rgba(197,208,214,0.84)',
             }}
           />
         )}
@@ -407,106 +425,73 @@ export default function NavSideBar(props) {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: `linear-gradient(180deg, ${sidebarColors.bg} 0%, #11181e 100%)`,
+        background: `
+          radial-gradient(circle at 35% 0%, rgba(42,161,152,0.07) 0%, rgba(42,161,152,0) 32%),
+          linear-gradient(180deg, #121c23 0%, ${sidebarColors.bg} 44%, #0a1116 100%)
+        `,
         borderRight: `1px solid ${sidebarColors.border}`,
-        boxShadow: '10px 0 28px rgba(0,0,0,.16)',
+        boxShadow: 'inset -1px 0 0 rgba(255,255,255,0.035), 12px 0 32px rgba(0,0,0,.30)',
       }}
     >
       {/* Header */}
       <Box
         sx={{
           display: 'flex',
+          flexDirection: itemLabelVisible ? 'row' : 'column',
           alignItems: 'center',
-          justifyContent: (isMobile || isExpanded) ? 'space-between' : 'center',
-          px: itemLabelVisible ? 2 : 1,
-          py: 1.5,
-          minHeight: 70,
-          backgroundColor: 'rgba(255,255,255,.018)',
+          justifyContent: itemLabelVisible ? 'space-between' : 'center',
+          gap: itemLabelVisible ? 0 : 0.5,
+          px: itemLabelVisible ? 1.75 : 0.75,
+          py: itemLabelVisible ? 1.35 : 1,
+          minHeight: itemLabelVisible ? 66 : 78,
+          position: 'relative',
+          background: 'linear-gradient(180deg, rgba(255,255,255,.055) 0%, rgba(255,255,255,0.012) 100%)',
           borderBottom: `1px solid ${sidebarColors.border}`,
         }}
       >
         {itemLabelVisible ? (
-          <Box>
-            <Typography sx={{ color: sidebarColors.text, fontWeight: 800, fontSize: '1rem', lineHeight: 1, letterSpacing: 0, fontFamily: sidebarFont }}>
-              XpertCont
-            </Typography>
-            <Typography sx={{ color: sidebarColors.muted, fontWeight: 600, fontSize: '.68rem', mt: 0.45, fontFamily: sidebarFont }}>
+          <Box sx={{ minWidth: 0, width: '100%', display: 'grid', justifyItems: 'center' }}>
+            <Box
+              component="img"
+              src={logo}
+              alt="XpertCont"
+              sx={{
+                display: 'block',
+                width: 104,
+                maxWidth: '100%',
+                height: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+            <Typography sx={{ color: sidebarColors.muted, fontWeight: 500, fontSize: '.66rem', mt: 0.35, fontFamily: sidebarFont, textAlign: 'center' }}>
               {subtituloRubro}
             </Typography>
           </Box>
         ) : (
           <Box
+            component="img"
+            src={logo}
+            alt="XpertCont"
             sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 2,
-              display: 'grid',
-              placeItems: 'center',
-              backgroundColor: sidebarColors.accentSoft,
-              color: sidebarColors.accent,
-              fontWeight: 900,
-              fontFamily: sidebarFont,
+              width: 36,
+              height: 'auto',
+              objectFit: 'contain',
             }}
-          >
-            X
-          </Box>
+          />
         )}
-        {itemLabelVisible && (
-          <IconButton onClick={toggleDrawer} size="small" sx={{ color: sidebarColors.muted, '&:hover': { color: sidebarColors.text, backgroundColor: sidebarColors.surfaceSoft } }}>
-            {isMobile ? <CloseIcon /> : <ArrowBackIosIcon sx={{ fontSize: 18 }} />}
-          </IconButton>
-        )}
-      </Box>
-
-      <Divider sx={{ borderColor: sidebarColors.border }} />
-
-      {/* Usuario y Logout */}
-      <Box sx={{ px: itemLabelVisible ? 2 : 1, py: 1.75, textAlign: 'center' }}>
-        <Box
+        <IconButton
+          onClick={toggleDrawer}
+          size="small"
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: itemLabelVisible ? 1.25 : 1,
+            position: itemLabelVisible ? 'absolute' : 'static',
+            right: itemLabelVisible ? 8 : 'auto',
+            top: itemLabelVisible ? 12 : 'auto',
+            color: sidebarColors.muted,
+            '&:hover': { color: sidebarColors.text, backgroundColor: sidebarColors.surfaceSoft },
           }}
         >
-          <IconButton
-            onClick={() => {
-              navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
-              handleClick('icono00');
-            }}
-            sx={{
-              p: 0.55,
-              border: `1px solid ${sidebarColors.border}`,
-              backgroundColor: 'rgba(255,255,255,.035)',
-              boxShadow: '0 10px 22px rgba(0,0,0,.18)',
-              '& .MuiAvatar-root': {
-                width: itemLabelVisible ? 52 : 42,
-                height: itemLabelVisible ? 52 : 42,
-              },
-              '&:hover': {
-                backgroundColor: sidebarColors.accentSoft,
-                borderColor: 'rgba(42,161,152,.45)',
-              },
-            }}
-          >
-            <LoginPerfil />
-          </IconButton>
-          {itemLabelVisible && (
-            <Box sx={{ width: '100%', maxWidth: 150, mx: 'auto', display: 'flex', justifyContent: 'center' }}>
-              <LoginLogoutBoton sidebar />
-            </Box>
-          )}
-          {!itemLabelVisible && (
-            <>
-              <LoginLogoutBoton sidebar compact />
-              <IconButton onClick={toggleDrawer} size="small" sx={{ color: sidebarColors.muted, '&:hover': { color: sidebarColors.text, backgroundColor: sidebarColors.surfaceSoft } }}>
-                <MenuIcon />
-              </IconButton>
-            </>
-          )}
-        </Box>
+          {isMobile ? <CloseIcon /> : itemLabelVisible ? <ArrowBackIosIcon sx={{ fontSize: 18 }} /> : <MenuIcon />}
+        </IconButton>
       </Box>
 
       <Divider sx={{ borderColor: sidebarColors.border }} />
@@ -577,6 +562,15 @@ export default function NavSideBar(props) {
                   onClick={() => {
                     navigate(`/ad_ventarepref/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono02-3');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<BadgeIcon />}
+                  label="Habituales"
+                  isActive={selectedButton === 'icono02-4'}
+                  onClick={() => {
+                    navigate(`/ad_correntistahabitual/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono02-4');
                   }}
                 />
               </List>

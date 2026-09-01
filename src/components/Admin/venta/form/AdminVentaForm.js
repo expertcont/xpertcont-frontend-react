@@ -31,6 +31,269 @@ import { ensureAdminVentaTableTheme } from '../common/adminVentaTableTheme';
 import AdminVentaProductoModal from './AdminVentaProductoModal';
 import AdminVentaEmisionModal from './AdminVentaEmisionModal';
 import AdminVentaFormTables from './AdminVentaFormTables';
+import palette from '../../../../theme/palette';
+
+const formShellSx = {
+  backgroundColor: 'transparent',
+  border: 0,
+  borderRadius: 2,
+  boxShadow: 'none',
+  overflow: 'visible',
+};
+
+const formFieldSx = {
+  mt: 0,
+  '& .MuiOutlinedInput-root': {
+    minHeight: 42,
+    color: palette.text,
+    backgroundColor: 'rgba(26, 33, 39, 0.48)',
+    borderRadius: 2,
+    '& fieldset': { borderColor: 'rgba(139,154,165,0.10)' },
+    '&:hover': { backgroundColor: 'rgba(26, 33, 39, 0.62)' },
+    '&:hover fieldset': { borderColor: 'rgba(42,161,152,0.24)' },
+    '&.Mui-focused': { backgroundColor: 'rgba(34,45,53,0.66)' },
+    '&.Mui-focused fieldset': { borderColor: 'rgba(42,161,152,0.42)' },
+  },
+  '& input': {
+    color: palette.text,
+    fontSize: '13px',
+  },
+  '& input::placeholder': {
+    color: palette.muted,
+    opacity: 1,
+  },
+  '& label': {
+    color: palette.muted,
+    fontSize: '12px',
+  },
+  '& label.Mui-focused': {
+    color: palette.accent,
+  },
+};
+
+const formSelectSx = {
+  width: '100%',
+  height: 42,
+  mt: 0,
+  color: palette.text,
+  backgroundColor: 'rgba(26, 33, 39, 0.38)',
+  border: 0,
+  borderRadius: 2,
+  fontSize: '13px',
+  '.MuiSelect-select': {
+    py: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+  '& .MuiSelect-icon': { color: palette.muted },
+  '&:hover': {
+    backgroundColor: 'rgba(26, 33, 39, 0.56)',
+  },
+  '&.Mui-focused': {
+    backgroundColor: 'rgba(34,45,53,0.64)',
+  },
+};
+
+const actionButtonSx = {
+  height: 42,
+  borderRadius: 2,
+  boxShadow: 'none',
+  fontSize: '12px',
+  fontWeight: 800,
+  textTransform: 'none',
+  '&:hover': {
+    boxShadow: 'none',
+  },
+};
+
+const emitButtonSx = {
+  ...actionButtonSx,
+  backgroundColor: 'rgba(139,154,165,0.10)',
+  border: '1px solid rgba(139,154,165,0.16)',
+  color: '#d7e7e5',
+  '&:hover': {
+    backgroundColor: 'rgba(42,161,152,0.16)',
+    borderColor: 'rgba(42,161,152,0.30)',
+    color: '#bff5ef',
+    boxShadow: 'none',
+  },
+};
+
+const modifyButtonSx = {
+  ...actionButtonSx,
+  backgroundColor: 'rgba(42,161,152,0.14)',
+  border: '1px solid rgba(42,161,152,0.34)',
+  color: palette.text,
+  '&:hover': {
+    backgroundColor: palette.accent,
+    color: palette.surface,
+    boxShadow: 'none',
+  },
+};
+
+const headerSummarySx = {
+  mb: 1.15,
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  alignItems: 'stretch',
+  gap: 1.2,
+};
+
+const infoPillSx = {
+  px: 0,
+  py: 0,
+  display: 'grid',
+  gap: 0.35,
+  alignContent: 'start',
+  backgroundColor: 'transparent',
+  color: palette.muted,
+  width: { xs: '100%', md: 260 },
+};
+
+const headerBlockSx = {
+  width: { xs: '100%', md: 440 },
+  maxWidth: { xs: '100%', md: 440 },
+};
+
+const emitColumnWidthSx = {
+  width: { xs: '100%', md: 172 },
+  maxWidth: { xs: '100%', md: 172 },
+};
+
+const totalMiniSelectSx = {
+  height: 26,
+  color: palette.text,
+  backgroundColor: 'rgba(26, 33, 39, 0.24)',
+  borderRadius: 1.4,
+  fontSize: '12px',
+  '.MuiSelect-select': {
+    py: 0.35,
+    px: 0.9,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    textAlign: 'left',
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+  '& .MuiSelect-icon': {
+    color: palette.muted,
+    fontSize: 17,
+  },
+  '&:hover': {
+    backgroundColor: 'rgba(26, 33, 39, 0.48)',
+    color: palette.text,
+  },
+};
+
+const totalLineSx = {
+  display: 'grid',
+  gridTemplateColumns: '90px minmax(0, 1fr)',
+  alignItems: 'center',
+  gap: 0.75,
+};
+
+const totalLabelSx = {
+  color: 'rgba(139,154,165,0.88)',
+  fontSize: '12px',
+  fontWeight: 600,
+  textAlign: 'left',
+  textTransform: 'none',
+};
+
+const npActionBarSx = {
+  mt: 0.85,
+  display: 'flex',
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  gap: 0.8,
+  flexShrink: 0,
+};
+
+const dangerIconButtonSx = {
+  width: 40,
+  height: 40,
+  borderRadius: 2,
+  backgroundColor: 'rgba(139,154,165,0.08)',
+  color: '#caa79c',
+  '&:hover': {
+    backgroundColor: 'rgba(239, 116, 82, 0.12)',
+    color: '#efb8a8',
+  },
+  '&.Mui-disabled': {
+    color: palette.muted,
+    backgroundColor: 'rgba(139,154,165,0.08)',
+  },
+};
+
+const toolbarIconButtonSx = {
+  width: 40,
+  height: 40,
+  borderRadius: 2,
+  backgroundColor: 'rgba(139,154,165,0.10)',
+  color: palette.muted,
+  transition: 'all 0.18s ease',
+  '&:hover': {
+    backgroundColor: palette.chip,
+    color: palette.text,
+  },
+};
+
+const backIconButtonSx = {
+  ...toolbarIconButtonSx,
+  color: '#a8c7ff',
+  '&:hover': {
+    backgroundColor: 'rgba(96,165,250,0.18)',
+    color: '#d7e7ff',
+  },
+};
+
+const addProductIconButtonSx = {
+  ...toolbarIconButtonSx,
+  color: '#7ddbd3',
+  '&:hover': {
+    backgroundColor: 'rgba(42,161,152,0.20)',
+    color: '#9ff2ec',
+  },
+};
+
+const addReferenceIconButtonSx = {
+  ...toolbarIconButtonSx,
+  color: '#f4c46f',
+  '&:hover': {
+    backgroundColor: 'rgba(245,158,11,0.18)',
+    color: '#ffd98a',
+  },
+};
+
+const searchIconButtonSx = {
+  color: '#f4c46f',
+  '&:hover': {
+    backgroundColor: 'rgba(245,158,11,0.12)',
+    color: '#ffd98a',
+  },
+};
+
+const rowDeleteIconSx = {
+  cursor: 'pointer',
+  color: '#ff9f7a',
+  transition: 'color 0.18s ease',
+  '&:hover': {
+    color: '#ffd1c2',
+  },
+};
+
+const rowEditIconSx = {
+  cursor: 'pointer',
+  color: '#7ddbd3',
+  transition: 'color 0.18s ease',
+  '&:hover': {
+    color: '#b6fff9',
+  },
+};
 
 export default function AdminVentaForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -618,9 +881,12 @@ export default function AdminVentaForm() {
     if (name === 'r_serie'){
       setSerieEmite(value);
     }
+    if (name === 'r_id_doc'){
+      setIdDocBusca(value);
+    }
 
     console.log('handleChangeEmite: ', datosEmitir);
-    setDatosEmitir({...datosEmitir, [name]: value});
+    setDatosEmitir(prevState => ({...prevState, [name]: value}));
   }
     
   const handleChange = e => {
@@ -1342,11 +1608,7 @@ export default function AdminVentaForm() {
         (  //modificar urgente con permiso para eliminar detalle
           <DeleteIcon
             onClick={() => handleDelete(row.item)}
-            style={{
-              cursor: 'pointer',
-              color: 'orange',
-              transition: 'color 0.3s ease',
-            }}
+            sx={rowDeleteIconSx}
           />
         ) : null
       ),
@@ -1367,10 +1629,9 @@ export default function AdminVentaForm() {
         (
           <DriveFileRenameOutlineIcon
             onClick={() => handleEditarDetalleClick(row)}
-            style={{
-              cursor: 'pointer',
-              color: copiedRowId === row.documento_id ? 'green' : 'skyblue',
-              transition: 'color 0.3s ease',
+            sx={{
+              ...rowEditIconSx,
+              color: copiedRowId === row.documento_id ? '#86efac' : rowEditIconSx.color,
             }}
           />
         ):null
@@ -1463,7 +1724,8 @@ export default function AdminVentaForm() {
   
   const actions = (
     <>
-    <IconButton color="warning" 
+    <IconButton
+      sx={backIconButtonSx}
       onClick = {()=> {
                   //Icono retroceder pagina
                   navigate(-1, { replace: true });
@@ -1515,8 +1777,8 @@ export default function AdminVentaForm() {
     { pVenta010202 && !visualizando ?
     (
     <Tooltip title="Agregar Productos" arrow>
-      <IconButton color="primary" 
-        sx={{ width: 40, height: 40 }}
+      <IconButton
+        sx={addProductIconButtonSx}
         onClick = {()=> {
                     //Agregar Producto
                     //setShowModalProducto(true);   
@@ -1528,7 +1790,7 @@ export default function AdminVentaForm() {
                   }
                 }
       >
-        <AddIcon sx={{ fontSize: 50 }} />
+        <AddIcon sx={{ fontSize: 32 }} />
       </IconButton>
     </Tooltip>
     ):
@@ -1538,15 +1800,15 @@ export default function AdminVentaForm() {
     { pVenta010202 && !visualizando ?
     (
     <Tooltip title="Agregar Notas Venta" arrow>
-      <IconButton color="primary" 
-        sx={{ width: 40, height: 40 }}
+      <IconButton
+        sx={addReferenceIconButtonSx}
         onClick = {()=> {
                     //Agregar Pedidos en forma de popup form AdminventaFormFactPedido
                     abrirModalPedidos();
                   }
                 }
       >
-        <AssignmentTurnedInIcon sx={{ fontSize: 40 }}/>
+        <AssignmentTurnedInIcon sx={{ fontSize: 28 }}/>
       </IconButton>
     </Tooltip>
     ):
@@ -1604,8 +1866,74 @@ export default function AdminVentaForm() {
     });
   };
 
+  const comprobanteCabecera = comprobanteEmitido
+    ? 'Emitido Final'
+    : params.comprobante.includes('NP')
+      ? 'NP en Proceso'
+      : (
+        (venta.r_cod_ref==null)
+          ? venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero
+          : venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
+      );
+
+  const totalCabecera = parseFloat(venta.r_monto_total || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  const emitirAction = (
+    <Button variant='contained'
+            color='primary'
+            fullWidth
+            sx={emitButtonSx}
+            onClick = { () => {
+              //Valores deafult
+              //setValorEmite('03'); //por default
+              setDatosEmitir(prevState => ({
+                ...prevState,
+                efectivo: venta.r_monto_total
+              }));
+              setDatosEmitir(prevState => ({
+                ...prevState,
+                efectivo2: 0
+              }));
+              setShowModalEmite(true);
+              }
+            }
+            disabled={!venta.r_fecemi}
+            >
+            { cargando ? (
+            <CircularProgress color="inherit" size={24} />
+            ) : (
+            'EMITIR')
+            }
+    </Button>
+  );
+
+  const liberarProcesoAction = (
+    <Tooltip title="Liberar Proceso">
+      <span>
+        <IconButton
+          color="primary"
+          onClick={() => {
+            handleLiberarProceso(params.comprobante, 1);
+          }}
+          disabled={!venta.r_fecemi}
+          size="large"
+          sx={dangerIconButtonSx}
+        >
+          {cargando ? (
+            <CircularProgress size={20} />
+          ) : (
+            <DeleteIcon sx={{ fontSize: 26 }} />
+          )}
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+
   return (
-  <div> 
+  <Box sx={{ backgroundColor: palette.bg, p: { xs: 0.75, md: 1 }, minHeight: '100%' }}> 
       <div></div>
             {/* ========================================================== */}
             {/* MODAL PEDIDOS */}
@@ -1635,100 +1963,101 @@ export default function AdminVentaForm() {
               </DialogContent>
             </Dialog>
 
-            <Card sx={{mt:1}}
-                  style={{
-                    background:'#1e272e',
-                    //width: '700px', // Ajusta este valor según tu preferencia
-                    padding:'0rem'
-                  }}
-            >
-                <CardContent >
+            <Card sx={{ mt: 0, ...formShellSx }}>
+                <CardContent sx={{ p: { xs: 1, md: 1.25 }, '&:last-child': { pb: { xs: 1, md: 1.25 } } }}>
                     <form onSubmit={handleSubmit} >
+                          <Box sx={headerSummarySx}>
+                            <Box sx={{ minWidth: 0, ...headerBlockSx }}>
+                              <Typography sx={{ color: palette.text, fontSize: '20px', fontWeight: 800, lineHeight: 1.1 }}>
+                                {comprobanteCabecera}
+                              </Typography>
+                              <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
+                                {`${registrosdet.length} detalles - ${registrosref.length} referencias - Periodo ${params.periodo}`}
+                              </Typography>
+                              <Box sx={{ display: 'flex', flexWrap: { xs: 'wrap', md: 'nowrap' }, alignItems: 'center', gap: 0.8, mt: 0.85 }}>
+                                <Box sx={{ flex: '1 1 180px', minWidth: 0 }}>
+                                  <TextField variant="outlined"
+                                            fullWidth
+                                            size="small"
+                                            sx={formFieldSx}
+                                            name="r_fecemi"
+                                            type="date"
+                                            value={venta.r_fecemi}
+                                            onChange={handleChange}
+                                            inputProps={{ style:{color:'white'} }}
+                                            InputLabelProps={{ style:{color:'white'} }}
+                                  />
+                                </Box>
+                                {params.comprobante.includes('NP') && (
+                                  <Box sx={npActionBarSx}>
+                                    <Box sx={{ width: 40, flexShrink: 0 }}>
+                                      {liberarProcesoAction}
+                                    </Box>
+                                    <Box sx={{ width: { xs: 'calc(100% - 48px)', md: 172 }, maxWidth: { xs: 'calc(100% - 48px)', md: 172 }, flexShrink: 0 }}>
+                                      {emitirAction}
+                                    </Box>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
 
-                          <Grid container spacing={0}
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', flex: 1 }}>
+                              <Box sx={infoPillSx}>
+                                <Typography sx={{ color: palette.muted, fontSize: '13px', fontWeight: 600, lineHeight: 1.2 }}>
+                                  Datos del comprobante
+                                </Typography>
+                                <Box sx={totalLineSx}>
+                                  <Typography sx={totalLabelSx}>
+                                    Total
+                                  </Typography>
+                                  <Typography sx={{ color: '#8de5de', fontSize: '20px', fontWeight: 800, lineHeight: 1, whiteSpace: 'nowrap', textAlign: 'left' }}>
+                                    {`S/ ${totalCabecera}`}
+                                  </Typography>
+                                </Box>
+                                <Box sx={totalLineSx}>
+                                  <Typography sx={totalLabelSx}>
+                                    Pago
+                                  </Typography>
+                                  <Select
+                                    size='small'
+                                    value={datosEmitir.forma_pago}
+                                    name="forma_pago"
+                                    sx={totalMiniSelectSx}
+                                    onChange={(e) => handleChangeEmite("forma_pago", e.target.value)}
+                                  >
+                                    <MenuItem value="Contado">CONTADO</MenuItem>
+                                    <MenuItem value="Credito">CREDITO</MenuItem>
+                                  </Select>
+                                </Box>
+                                <Box sx={totalLineSx}>
+                                  <Typography sx={totalLabelSx}>
+                                    Moneda
+                                  </Typography>
+                                  <Select
+                                    size='small'
+                                    value={datosEmitir.r_moneda}
+                                    name="r_moneda"
+                                    sx={totalMiniSelectSx}
+                                    onChange={(e) => handleChangeEmite("r_moneda", e.target.value)}
+                                  >
+                                    <MenuItem value="PEN">PEN</MenuItem>
+                                    <MenuItem value="USD">USD</MenuItem>
+                                  </Select>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </Box>
+
+                          <Grid container spacing={1}
                                   //direction= {isSmallScreen ? "column": "row"} 
                                   alignItems="center"
                                   justifyContent="left"
                           >
-                            <Grid item xs={isSmallScreen ? 12 : 2}>
-                              <Typography variant='h6' color='white' textAlign='center'>
-                                  { comprobanteEmitido ? 
-                                    (
-                                      ('Emitido Final')
-                                    )
-                                    :
-                                    (
-                                      params.comprobante.includes('NP') ?
-                                      ('NP en Proceso')
-                                      :
-                                      (  //cambiamos la vista del comprobante a mostrar
-                                        (venta.r_cod_ref==null) ?
-                                        venta.r_cod+"-"+venta.r_serie+"-"+venta.r_numero
-                                        :
-                                        venta.r_cod_ref+"-"+venta.r_serie_ref+"-"+venta.r_numero_ref
-                                      ) 
-                                    )
-                                  }
-                              </Typography>
-                            </Grid>
-
-                            <Grid item xs={isSmallScreen ? 12 : 2}>
-                              <TextField variant="outlined" 
-                                        //label="fecha"
-                                        fullWidth
-                                        size="small"
-                                        sx={{display:'block',
-                                              margin:'.5rem 0'}}
-                                        name="r_fecemi"
-                                        type="date"
-                                        //format="yyyy/MM/dd"
-                                        value={venta.r_fecemi}
-                                        onChange={handleChange}
-                                        inputProps={{ style:{color:'white'} }}
-                                        InputLabelProps={{ style:{color:'white'} }}
-                                />
-                              </Grid>
-
-                              <Grid item xs={isSmallScreen ? 12 : 2.5}>
-                                <Typography variant='h5' color='white' textAlign='center'>
-                                  {
-                                    (`Total: S/ ${parseFloat(venta.r_monto_total).toLocaleString('en-US', {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2
-                                    })}`) 
-                                  }
-                                </Typography>
-                              </Grid>
-
-                              <Grid item xs={isSmallScreen ? 8 : 1}>
-                                    <Select
-                                          size='small'
-                                          value={datosEmitir.forma_pago}
-                                          name="forma_pago"
-                                          sx={{display:'block',
-                                          margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
-                                          onChange={(e) => handleChangeEmite("forma_pago", e.target.value)}
-                                          >
-                                            <MenuItem value="Contado">CONTADO</MenuItem>
-                                            <MenuItem value="Credito">CREDITO</MenuItem>
-                                    </Select>
-                              </Grid>
-                              <Grid item xs={isSmallScreen ? 4 : 0.5}>
-                                    <Select
-                                          size='small'
-                                          value={datosEmitir.r_moneda}
-                                          name="r_moneda"
-                                          sx={{display:'block',
-                                          margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
-                                          onChange={(e) => handleChangeEmite("r_moneda", e.target.value)}
-                                          >
-                                            <MenuItem value="PEN">PEN</MenuItem>
-                                            <MenuItem value="USD">USD</MenuItem>
-                                    </Select>
-                              </Grid>
-
-                              
-                              <Grid item xs={isSmallScreen ? 12 : 1}>
+                              <Grid
+                                item
+                                xs={isSmallScreen ? 12 : 1}
+                                sx={{ display: params.comprobante.includes('NP') ? 'none' : 'block' }}
+                              >
                                   {//En caso de NP en Proceso, n o se muestra este campo
                                   params.comprobante.includes('NP') ?
                                   (
@@ -1741,7 +2070,7 @@ export default function AdminVentaForm() {
                                         //placeholder="EFECTIVO"
                                         label="EFECTIVO"
                                         size="small"
-                                        sx={{ mt: 1 }}
+                                        sx={formFieldSx}
                                         fullWidth
                                         name="efectivo"
                                         //value={venta.efectivo}
@@ -1757,7 +2086,11 @@ export default function AdminVentaForm() {
                                   }
                               </Grid>
 
-                              <Grid item xs={isSmallScreen ? 12 : 0.8}>
+                              <Grid
+                                item
+                                xs={isSmallScreen ? 12 : 0.8}
+                                sx={{ display: params.comprobante.includes('NP') ? 'none' : 'block' }}
+                              >
                                   {//En caso de NP en Proceso, n o se muestra este campo
                                   params.comprobante.includes('NP') ?
                                   (
@@ -1769,8 +2102,7 @@ export default function AdminVentaForm() {
                                           size='small'
                                           value={datosEmitir.forma_pago2}
                                           name="forma_pago2"
-                                          sx={{display:'block',
-                                          margin:'.1rem 0', color:"skyblue", fontSize: '16px',mt:1 }}
+                                          sx={formSelectSx}
                                           onChange={(e) => handleChangeEmite("forma_pago2", e.target.value)}
                                           >
                                             <MenuItem value="default">SELECCIONA </MenuItem>
@@ -1784,7 +2116,11 @@ export default function AdminVentaForm() {
                                   )
                                   }
                               </Grid>
-                              <Grid item xs={isSmallScreen ? 12 : 1}>
+                              <Grid
+                                item
+                                xs={isSmallScreen ? 12 : 1}
+                                sx={{ display: params.comprobante.includes('NP') ? 'none' : 'block' }}
+                              >
                                   {//En caso de NP en Proceso, n o se muestra este campo
                                   params.comprobante.includes('NP') ?
                                   (
@@ -1797,7 +2133,7 @@ export default function AdminVentaForm() {
                                       //placeholder="OTROS"
                                       label="OTROS"
                                       size="small"
-                                      sx={{ mt: 1 }}
+                                      sx={formFieldSx}
                                       fullWidth
                                       name="efectivo2"
                                       //value={venta.efectivo2}
@@ -1813,40 +2149,23 @@ export default function AdminVentaForm() {
                                   }
                               </Grid>
 
-                              <Grid item xs={isSmallScreen ? 11 : 1}>
+                              <Grid
+                                item
+                                xs={isSmallScreen ? 11 : 1}
+                                sx={{
+                                  display: params.comprobante.includes('NP') ? 'none' : 'block',
+                                  ml: params.comprobante.includes('NP') ? { md: 0 } : 0,
+                                  order: params.comprobante.includes('NP') ? { md: 2 } : 0,
+                                  ...(params.comprobante.includes('NP') ? {
+                                    flexBasis: { md: 172 },
+                                    maxWidth: { md: 172 },
+                                  } : {}),
+                                }}
+                              >
                               {//En caso de NP en Proceso, solo se emite comprobante
                                params.comprobante.includes('NP') ?
                                (
-                                  <Button variant='contained' 
-                                          color='primary' 
-                                          //type='submit'
-                                          fullWidth
-                                          sx={{display:'block',
-                                          margin:'.5rem 0'}}
-                                          onClick = { () => {
-                                            //Valores deafult
-                                            //setValorEmite('03'); //por default
-                                            setDatosEmitir(prevState => ({
-                                              ...prevState,
-                                              efectivo: venta.r_monto_total
-                                            }));
-                                            setDatosEmitir(prevState => ({
-                                              ...prevState,
-                                              efectivo2: 0
-                                            }));
-                                            setShowModalEmite(true);
-                                            }
-                                          }
-                                          disabled={
-                                                    !venta.r_fecemi 
-                                                    }
-                                          >
-                                          { cargando ? (
-                                          <CircularProgress color="inherit" size={24} />
-                                          ) : (
-                                          'EMITIR')
-                                          }
-                                  </Button>
+                                  <></>
                                )
                                :
                                (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
@@ -1855,8 +2174,7 @@ export default function AdminVentaForm() {
                                           color='primary' 
                                           type='submit'
                                           fullWidth
-                                          sx={{display:'block',
-                                          margin:'.5rem 0'}}
+                                          sx={modifyButtonSx}
                                           disabled={
                                                     !venta.r_fecemi 
                                                     //|| !venta.r_documento_id 
@@ -1876,29 +2194,20 @@ export default function AdminVentaForm() {
                               </Grid>
 
                               <Grid item xs={isSmallScreen ? 1 : 0.2} 
-                                sx={{ ml: -1.5}}
+                                sx={{
+                                  display: params.comprobante.includes('NP') ? 'none' : 'flex',
+                                  justifyContent: 'center',
+                                  ml: params.comprobante.includes('NP') ? { md: 'auto' } : 0,
+                                  order: params.comprobante.includes('NP') ? { md: 1 } : 0,
+                                  ...(params.comprobante.includes('NP') ? {
+                                    flexBasis: { md: 40 },
+                                    maxWidth: { md: 40 },
+                                  } : {}),
+                                }}
                               >
                               {
                                 params.comprobante.includes('NP') ? (
-                                  <Tooltip title="Liberar Proceso">
-                                    <span>
-                                      <IconButton
-                                        color="primary"
-                                        onClick={() => {
-
-                                          handleLiberarProceso(params.comprobante, 1);
-                                        }}
-                                        disabled={!venta.r_fecemi}
-                                        size="large"
-                                      >
-                                        {cargando ? (
-                                          <CircularProgress size={20} />
-                                        ) : (
-                                          <DeleteIcon sx={{ fontSize: 45 }} />
-                                        )}
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
+                                  <></>
                                 ) : (
                                   <></>
                                 )
@@ -1906,7 +2215,7 @@ export default function AdminVentaForm() {
                               </Grid>
 
                               {!params.comprobante.includes('NP') && (
-                              <Grid container spacing={0}
+                              <Grid container spacing={1}
                                       //direction= {isSmallScreen ? "column": "row"} 
                                       alignItems="center"
                                       justifyContent="left"
@@ -1916,7 +2225,7 @@ export default function AdminVentaForm() {
                                           variant="outlined"
                                           placeholder="RUC/DNI"
                                           size="small"
-                                          sx={{ mt: 1 }}
+                                          sx={formFieldSx}
                                           fullWidth
                                           name="r_documento_id"
                                           value={venta.r_documento_id}
@@ -1928,13 +2237,13 @@ export default function AdminVentaForm() {
                                             endAdornment: (
                                               <InputAdornment position="end">
                                                 <IconButton
-                                                  color="warning"
+                                                  sx={searchIconButtonSx}
                                                   onClick={() => {
                                                     // acción del botón de búsqueda
                                                   }}
                                                   edge="end"
                                                 >
-                                                  <FindIcon />
+                                                  <FindIcon sx={{ fontSize: 21 }} />
                                                 </IconButton>
                                               </InputAdornment>
                                             ),
@@ -1946,7 +2255,7 @@ export default function AdminVentaForm() {
                                         <TextField variant="outlined" 
                                                     placeholder="RAZON SOCIAL"
                                                     size="small"
-                                                    sx={{mt:1}}
+                                                    sx={formFieldSx}
                                                     fullWidth
                                                     name="r_razon_social"
                                                     value={venta.r_razon_social}
@@ -1964,7 +2273,7 @@ export default function AdminVentaForm() {
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="r_direccion"
                                                 value={venta.r_direccion}
                                                 onChange={handleChange}
@@ -2020,6 +2329,9 @@ export default function AdminVentaForm() {
                             onSwitchPago={handleSwitch}
                             onSaveComprobante={handleSaveComprobante}
                             onClose={() => setShowModalEmite(false)}
+                            backHost={back_host}
+                            idAnfitrion={params.id_anfitrion}
+                            documentoId={params.documento_id}
                           />
 
                     </form>
@@ -2038,6 +2350,8 @@ export default function AdminVentaForm() {
             />
 
 
-  </div>    
+  </Box>    
   );
 }
+
+

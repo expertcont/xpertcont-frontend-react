@@ -1,58 +1,129 @@
 import React from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Box,
   Button,
-  useMediaQuery
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
 } from "@mui/material";
-import { CheckCircle, Warning, Info, Error as ErrorIcon } from "@mui/icons-material";
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { CheckCircle, Info, Error as ErrorIcon } from "@mui/icons-material";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import palette from "../../theme/palette";
 
 const icons = {
-  success: <CheckCircle color="success" sx={{ fontSize: 40, mr: 1 }} />,
-  warning: <ErrorOutlineIcon color="warning" sx={{ fontSize: 40, mr: 1 }} />,
-  info: <Info color="info" sx={{ fontSize: 40, mr: 1 }} />,
-  error: <ErrorIcon color="error" sx={{ fontSize: 40, mr: 1 }} />,
+  success: <CheckCircle sx={{ fontSize: 34, color: "#7ddbd3" }} />,
+  warning: <ErrorOutlineIcon sx={{ fontSize: 34, color: "#f4c46f" }} />,
+  info: <Info sx={{ fontSize: 34, color: "#a8c7ff" }} />,
+  error: <ErrorIcon sx={{ fontSize: 34, color: "#ff9f7a" }} />,
+};
+
+const paperSx = {
+  m: { xs: 1.5, sm: 2 },
+  width: { xs: "calc(100vw - 24px)", sm: 380 },
+  maxWidth: "calc(100vw - 24px)",
+  backgroundColor: palette.surface,
+  color: palette.text,
+  border: `1px solid ${palette.border}`,
+  borderRadius: 2,
+  boxShadow: "0 18px 48px rgba(0,0,0,0.34)",
+  overflow: "hidden",
+};
+
+const confirmButtonSx = {
+  minWidth: 118,
+  height: 38,
+  borderRadius: 2,
+  backgroundColor: "rgba(42,161,152,0.18)",
+  border: "1px solid rgba(42,161,152,0.30)",
+  color: "#bff5ef",
+  boxShadow: "none",
+  fontSize: "12px",
+  fontWeight: 800,
+  "&:hover": {
+    backgroundColor: "rgba(42,161,152,0.28)",
+    borderColor: "rgba(42,161,152,0.42)",
+    boxShadow: "none",
+  },
+};
+
+const cancelButtonSx = {
+  minWidth: 118,
+  height: 38,
+  borderRadius: 2,
+  backgroundColor: "rgba(139,154,165,0.10)",
+  border: "1px solid rgba(139,154,165,0.16)",
+  color: palette.text,
+  fontSize: "12px",
+  fontWeight: 800,
+  "&:hover": {
+    backgroundColor: "rgba(139,154,165,0.16)",
+  },
 };
 
 const AdminConfirmDialog = ({ open, options, onClose }) => {
-  const isSmallScreen = useMediaQuery('(max-width: 600px)');
   if (!options) return null;
 
   return (
-    <Dialog open={open} 
-            onClose={() => onClose(false)}
-            PaperProps={{
-              style: {
-                top: isSmallScreen ? "-10vh" : "0vh",
-                left: isSmallScreen ? "0%" : "0%",
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                marginTop: '10vh',
-                background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia
-                color:'white',
-                width: isSmallScreen ? ('100%') : ('30%'),
-              },
-            }}
+    <Dialog
+      open={open}
+      onClose={() => onClose(false)}
+      PaperProps={{ sx: paperSx }}
     >
-      <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
-        {options.icon && icons[options.icon]}
-        {options.title}
+      <DialogTitle
+        sx={{
+          px: 2,
+          py: 1.6,
+          display: "grid",
+          justifyItems: "center",
+          gap: 0.8,
+          textAlign: "center",
+          borderBottom: `1px solid ${palette.borderSoft}`,
+        }}
+      >
+        {options.icon && (
+          <Box
+            sx={{
+              width: 42,
+              height: 42,
+              display: "grid",
+              placeItems: "center",
+              borderRadius: 2,
+              backgroundColor: "rgba(139,154,165,0.08)",
+            }}
+          >
+            {icons[options.icon]}
+          </Box>
+        )}
+        <Typography sx={{ color: palette.text, fontSize: "17px", fontWeight: 700, lineHeight: 1.2 }}>
+          {options.title}
+        </Typography>
       </DialogTitle>
-      <DialogContent>{options.message}</DialogContent>
-      <DialogActions>
-        {/* Mostrar el botón solo si viene cancelText */}
+
+      {options.message && (
+        <DialogContent
+          sx={{
+            px: 2,
+            py: 1.5,
+            color: palette.muted,
+            fontSize: "13px",
+            textAlign: "center",
+            whiteSpace: "pre-line",
+          }}
+        >
+          {options.message}
+        </DialogContent>
+      )}
+
+      <DialogActions sx={{ px: 2, py: 1.5, justifyContent: "center", gap: 1 }}>
         {options.cancelText && (
-          <Button onClick={() => onClose(false)} color="inherit">
+          <Button onClick={() => onClose(false)} sx={cancelButtonSx}>
             {options.cancelText}
           </Button>
         )}
-        {/* Mostrar el botón solo si viene confirmText */}
         {options.confirmText && (
-          <Button onClick={() => onClose(true)} color="primary" variant="contained">
+          <Button onClick={() => onClose(true)} variant="contained" sx={confirmButtonSx}>
             {options.confirmText}
           </Button>
         )}

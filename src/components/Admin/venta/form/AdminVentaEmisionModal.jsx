@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Button,
   Dialog,
+  DialogContent,
   DialogTitle,
   IconButton,
   InputAdornment,
+  List,
+  ListItemButton,
+  ListItemText,
   MenuItem,
   Select,
   TextField,
@@ -16,6 +20,118 @@ import {
 } from "@mui/material";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import FindIcon from "@mui/icons-material/FindInPage";
+import ManageSearchIcon from "@mui/icons-material/ManageSearch";
+import palette from "../../../../theme/palette";
+
+const modalWidthSx = {
+  width: { xs: "calc(100vw - 24px)", sm: 420 },
+  maxWidth: "calc(100vw - 24px)",
+};
+
+const modalPaperSx = {
+  m: { xs: 1.5, sm: 2 },
+  mt: { xs: 1.5, sm: 5 },
+  ...modalWidthSx,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  backgroundColor: palette.surface,
+  color: palette.text,
+  border: `1px solid ${palette.border}`,
+  borderRadius: 2,
+  boxShadow: "0 18px 48px rgba(0,0,0,0.34)",
+  overflow: "hidden",
+};
+
+const modalFieldSx = {
+  width: 270,
+  "& .MuiOutlinedInput-root": {
+    minHeight: 40,
+    color: palette.text,
+    backgroundColor: "rgba(26,33,39,0.48)",
+    borderRadius: 2,
+    "& fieldset": { borderColor: "rgba(139,154,165,0.14)" },
+    "&:hover fieldset": { borderColor: "rgba(42,161,152,0.28)" },
+    "&.Mui-focused fieldset": { borderColor: "rgba(42,161,152,0.45)" },
+  },
+  "& input": {
+    color: palette.text,
+    fontSize: "13px",
+  },
+  "& input::placeholder": {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
+const modalSelectSx = {
+  width: 270,
+  height: 40,
+  color: palette.text,
+  backgroundColor: "rgba(26,33,39,0.48)",
+  borderRadius: 2,
+  fontSize: "13px",
+  ".MuiSelect-select": {
+    display: "flex",
+    justifyContent: "center",
+    textAlign: "center",
+  },
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(139,154,165,0.14)" },
+  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(42,161,152,0.28)" },
+  "& .MuiSelect-icon": { color: palette.muted },
+};
+
+const toggleButtonSx = {
+  flex: 1,
+  borderColor: "rgba(139,154,165,0.16)",
+  color: palette.muted,
+  fontSize: "12px",
+  fontWeight: 700,
+  "&.Mui-selected": {
+    backgroundColor: "rgba(42,161,152,0.18)",
+    color: "#9fe7e0",
+  },
+  "&.Mui-selected:hover": {
+    backgroundColor: "rgba(42,161,152,0.25)",
+  },
+  "&:hover": {
+    backgroundColor: "rgba(139,154,165,0.08)",
+    color: palette.text,
+  },
+};
+
+const primaryButtonSx = {
+  width: 270,
+  height: 40,
+  borderRadius: 2,
+  backgroundColor: "rgba(42,161,152,0.18)",
+  border: "1px solid rgba(42,161,152,0.30)",
+  color: "#bff5ef",
+  boxShadow: "none",
+  fontSize: "12px",
+  fontWeight: 800,
+  "&:hover": {
+    backgroundColor: "rgba(42,161,152,0.28)",
+    borderColor: "rgba(42,161,152,0.42)",
+    boxShadow: "none",
+  },
+};
+
+const secondaryButtonSx = {
+  width: 270,
+  height: 40,
+  borderRadius: 2,
+  backgroundColor: "rgba(139,154,165,0.10)",
+  border: "1px solid rgba(139,154,165,0.16)",
+  color: palette.text,
+  boxShadow: "none",
+  fontSize: "12px",
+  fontWeight: 800,
+  "&:hover": {
+    backgroundColor: "rgba(139,154,165,0.16)",
+    boxShadow: "none",
+  },
+};
 
 export default function AdminVentaEmisionModal({
   open,
@@ -37,7 +153,61 @@ export default function AdminVentaEmisionModal({
   onSwitchPago,
   onSaveComprobante,
   onClose,
+  backHost,
+  idAnfitrion,
+  documentoId,
 }) {
+  const [showHabituales, setShowHabituales] = useState(false);
+  const [clientesHabituales, setClientesHabituales] = useState([]);
+  const [filtroHabitual, setFiltroHabitual] = useState("");
+  const [cargandoHabituales, setCargandoHabituales] = useState(false);
+
+  const clientesFiltrados = useMemo(() => {
+    const filtro = filtroHabitual.trim().toLowerCase();
+    if (!filtro) return clientesHabituales;
+
+    return clientesHabituales.filter((cliente) => {
+      const documento = cliente.documento_id?.toString().toLowerCase() || "";
+      const razonSocial = cliente.razon_social?.toString().toLowerCase() || "";
+      const direccion = cliente.direccion?.toString().toLowerCase() || "";
+
+      return documento.includes(filtro) || razonSocial.includes(filtro) || direccion.includes(filtro);
+    });
+  }, [clientesHabituales, filtroHabitual]);
+
+  const cargarHabituales = async () => {
+    setShowHabituales(true);
+    setCargandoHabituales(true);
+
+    try {
+      const response = await fetch(`${backHost}/correntistahabitual/${idAnfitrion}/${documentoId}`);
+      const data = await response.json();
+      const clientes = Array.isArray(data)
+        ? data.map((cliente) => ({
+            documento_id: cliente.hab_documento_id || cliente.documento_id || "",
+            razon_social: cliente.hab_razon_social || cliente.razon_social || "",
+            id_doc: cliente.hab_id_doc || cliente.id_doc || "",
+            direccion: cliente.hab_direccion || cliente.direccion || "-",
+          }))
+        : [];
+      setClientesHabituales(clientes);
+    } catch (error) {
+      console.log("Error cargando clientes habituales:", error);
+      setClientesHabituales([]);
+    } finally {
+      setCargandoHabituales(false);
+    }
+  };
+
+  const seleccionarHabitual = (cliente) => {
+    onChangeEmite("r_documento_id", cliente.documento_id || "");
+    onChangeEmite("r_id_doc", cliente.id_doc || "");
+    onChangeEmite("r_razon_social", cliente.razon_social || "");
+    onChangeEmite("r_direccion", cliente.direccion || "-");
+    setFiltroHabitual("");
+    setShowHabituales(false);
+  };
+
   if (!open) {
     return null;
   }
@@ -49,20 +219,25 @@ export default function AdminVentaEmisionModal({
       maxWidth="md"
       disableScrollLock
       PaperProps={{
-        style: {
-          top: isSmallScreen ? "-10vh" : "0vh",
-          left: isSmallScreen ? "0%" : "0%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          marginTop: "10vh",
-          background: "rgba(30, 39, 46, 0.95)",
-          color: "white",
-          width: isSmallScreen ? "70%" : "30%",
-        },
+        sx: modalPaperSx,
       }}
     >
-      <DialogTitle>Datos - Emision</DialogTitle>
+      <DialogTitle
+        sx={{
+          width: "100%",
+          px: 2,
+          py: 1.35,
+          textAlign: "center",
+          borderBottom: `1px solid ${palette.borderSoft}`,
+        }}
+      >
+        <Typography sx={{ color: palette.text, fontSize: "17px", fontWeight: 700, lineHeight: 1.2 }}>
+          Datos de emision
+        </Typography>
+        <Typography sx={{ color: palette.muted, fontSize: "12px", mt: 0.25 }}>
+          Cliente, comprobante y condicion de pago
+        </Typography>
+      </DialogTitle>
 
       <ToggleButtonGroup
         color="success"
@@ -73,18 +248,17 @@ export default function AdminVentaEmisionModal({
         aria-label="Platform"
         sx={{
           width: 270,
-          margin: "0.5rem 0",
+          mt: 1.35,
+          mb: 0.75,
+          backgroundColor: "rgba(26,33,39,0.34)",
+          borderRadius: 2,
+          overflow: "hidden",
         }}
       >
         {isAllowed("01") && (
           <ToggleButton
             value="01"
-            sx={{ flex: 1 }}
-            style={{
-              backgroundColor: valorEmite === "01" ? "lightblue" : "transparent",
-              color: valorEmite === "01" ? "orange" : "gray",
-              borderRadius: "4px",
-            }}
+            sx={toggleButtonSx}
           >
             FACT
           </ToggleButton>
@@ -93,12 +267,7 @@ export default function AdminVentaEmisionModal({
         {isAllowed("03") && (
           <ToggleButton
             value="03"
-            sx={{ flex: 1 }}
-            style={{
-              backgroundColor: valorEmite === "03" ? "lightblue" : "transparent",
-              color: valorEmite === "03" ? "orange" : "gray",
-              borderRadius: "4px",
-            }}
+            sx={toggleButtonSx}
           >
             BOL
           </ToggleButton>
@@ -107,12 +276,7 @@ export default function AdminVentaEmisionModal({
         {isAllowed("NV") && (
           <ToggleButton
             value="NV"
-            sx={{ flex: 1 }}
-            style={{
-              backgroundColor: valorEmite === "NV" ? "lightblue" : "transparent",
-              color: valorEmite === "NV" ? "orange" : "gray",
-              borderRadius: "4px",
-            }}
+            sx={toggleButtonSx}
           >
             NV
           </ToggleButton>
@@ -121,19 +285,14 @@ export default function AdminVentaEmisionModal({
         {isAllowed("07") && (
           <ToggleButton
             value="07"
-            sx={{ flex: 1 }}
-            style={{
-              backgroundColor: valorEmite === "07" ? "lightblue" : "transparent",
-              color: valorEmite === "07" ? "orange" : "gray",
-              borderRadius: "4px",
-            }}
+            sx={toggleButtonSx}
           >
             NCred
           </ToggleButton>
         )}
       </ToggleButtonGroup>
 
-      <Box sx={{ position: "relative", width: 270, mt: -1 }}>
+      <Box sx={{ position: "relative", width: 270, mt: 0 }}>
         <TextField
           variant="outlined"
           size="small"
@@ -144,10 +303,9 @@ export default function AdminVentaEmisionModal({
               <InputAdornment position="start">
                 <Typography
                   sx={{
-                    color: "#9ca3af",
+                    color: palette.muted,
                     fontSize: "0.82rem",
                     fontWeight: 600,
-                    letterSpacing: 0.5,
                     width: 55,
                   }}
                 >
@@ -163,7 +321,7 @@ export default function AdminVentaEmisionModal({
                   variant="standard"
                   disableUnderline
                   sx={{
-                    color: "white",
+                    color: palette.text,
                     fontSize: "0.90rem",
                     fontWeight: 600,
                     width: 90,
@@ -172,7 +330,7 @@ export default function AdminVentaEmisionModal({
                       textAlign: "center",
                     },
                     "& .MuiSelect-icon": {
-                      color: "gray",
+                      color: palette.muted,
                     },
                   }}
                 >
@@ -190,16 +348,14 @@ export default function AdminVentaEmisionModal({
             ),
           }}
           sx={{
-            width: 270,
+            ...modalFieldSx,
             "& input": {
               color: "transparent",
               caretColor: "transparent",
               cursor: "default",
             },
-            "& fieldset": {
-              borderColor: "#555",
-            },
             "& .MuiOutlinedInput-root": {
+              ...modalFieldSx["& .MuiOutlinedInput-root"],
               paddingRight: "6px",
             },
           }}
@@ -215,35 +371,53 @@ export default function AdminVentaEmisionModal({
         name="r_documento_id"
         value={datosEmitir.r_documento_id}
         onChange={(event) => onChangeEmite("r_documento_id", event.target.value)}
-        InputLabelProps={{ style: { color: "white" } }}
+        InputLabelProps={{ style: { color: palette.muted } }}
         InputProps={{
-          style: { color: "white", width: 270 },
+          style: { color: palette.text, width: 270 },
           endAdornment: (
-            <IconButton
-              color="default"
-              aria-label="upload picture"
-              component="label"
-              size="small"
+            <Box
               sx={{
                 position: "absolute",
                 top: "50%",
                 right: 0,
                 transform: "translateY(-50%)",
-                color: "orange",
+                display: "flex",
               }}
-              onClick={() => onBuscarRazonSocial(datosEmitir.r_documento_id)}
             >
-              <FindIcon />
-            </IconButton>
+              <Tooltip title="Buscar RUC/DNI">
+                <IconButton
+                  color="default"
+                  aria-label="buscar ruc dni"
+                  size="small"
+                  sx={{ color: "#f4c46f", "&:hover": { backgroundColor: "rgba(245,158,11,0.12)" } }}
+                  onClick={() => onBuscarRazonSocial(datosEmitir.r_documento_id)}
+                >
+                  <FindIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Clientes habituales">
+                <IconButton
+                  color="default"
+                  aria-label="clientes habituales"
+                  size="small"
+                  sx={{ color: "#7ddbd3", "&:hover": { backgroundColor: "rgba(42,161,152,0.12)" } }}
+                  onClick={cargarHabituales}
+                >
+                  <ManageSearchIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
           ),
           inputProps: {
             style: {
               paddingLeft: "32px",
+              paddingRight: "72px",
               fontSize: "18px",
             },
           },
         }}
         sx={{
+          ...modalFieldSx,
           mt: 0,
           "& .MuiInputBase-input": {
             textAlign: "center",
@@ -256,16 +430,7 @@ export default function AdminVentaEmisionModal({
         value={idDocBusca || datosEmitir.r_id_doc}
         size="small"
         name="r_id_doc"
-        sx={{
-          display: "block",
-          mt: 0,
-          width: "270px",
-          textAlign: "center",
-          ".MuiSelect-select": {
-            textAlign: "center",
-          },
-          color: "white",
-        }}
+        sx={modalSelectSx}
         label="doc"
         onChange={(event) => onChangeEmite("r_id_doc", event.target.value)}
       >
@@ -283,12 +448,12 @@ export default function AdminVentaEmisionModal({
           autoFocus
           size="small"
           autoComplete="off"
-          sx={{ mt: 0 }}
+          sx={{ ...modalFieldSx, mt: 0 }}
           name="r_razon_social"
           value={datosEmitir.r_razon_social}
           onChange={(event) => onChangeEmite("r_razon_social", event.target.value)}
-          inputProps={{ style: { color: "white", width: 240, textAlign: "center", readOnly: true } }}
-          InputLabelProps={{ style: { color: "white" } }}
+          inputProps={{ style: { color: palette.text, width: 240, textAlign: "center", readOnly: true } }}
+          InputLabelProps={{ style: { color: palette.muted } }}
         />
       </Tooltip>
 
@@ -301,8 +466,9 @@ export default function AdminVentaEmisionModal({
         name="r_direccion"
         value={datosEmitir.r_direccion}
         onChange={(event) => onChangeEmite("r_direccion", event.target.value)}
-        inputProps={{ style: { color: "white", width: 240, textAlign: "center", readOnly: true } }}
-        InputLabelProps={{ style: { color: "white" } }}
+        sx={modalFieldSx}
+        inputProps={{ style: { color: palette.text, width: 240, textAlign: "center", readOnly: true } }}
+        InputLabelProps={{ style: { color: palette.muted } }}
       />
 
       {valorEmite === "07" && (
@@ -312,16 +478,7 @@ export default function AdminVentaEmisionModal({
           value={datosEmitir.r_idmotivo_ref}
           size="small"
           name="r_idmotivo_ref"
-          sx={{
-            display: "block",
-            mt: 0,
-            width: "270px",
-            textAlign: "center",
-            ".MuiSelect-select": {
-              textAlign: "center",
-            },
-            color: "white",
-          }}
+          sx={modalSelectSx}
           onChange={(event) => onChangeEmite("r_idmotivo_ref", event.target.value)}
         >
           {motivoSelect.map((elemento) => (
@@ -337,16 +494,7 @@ export default function AdminVentaEmisionModal({
         value={datosEmitir.r_moneda}
         size="small"
         name="r_moneda"
-        sx={{
-          display: "block",
-          mt: 0,
-          width: "270px",
-          textAlign: "center",
-          ".MuiSelect-select": {
-            textAlign: "center",
-          },
-          color: "white",
-        }}
+        sx={modalSelectSx}
         label="doc"
         onChange={(event) => onChangeEmite("r_moneda", event.target.value)}
       >
@@ -364,9 +512,11 @@ export default function AdminVentaEmisionModal({
           onChange={(event) => onFormaPago(event.target.value)}
           size="small"
           sx={{
+            ...modalSelectSx,
             width: 130,
             mr: 0,
-            color: "white",
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
           }}
         >
           <MenuItem value="Contado">Contado</MenuItem>
@@ -380,10 +530,16 @@ export default function AdminVentaEmisionModal({
           onChange={(event) => onDiasCredito(event.target.value)}
           disabled={datosEmitir.r_forma_pago_id !== "Credito"}
           sx={{
+            ...modalFieldSx,
             width: 140,
+            "& .MuiOutlinedInput-root": {
+              ...modalFieldSx["& .MuiOutlinedInput-root"],
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+            },
             "& input": {
               textAlign: "center",
-              color: "white",
+              color: palette.text,
             },
           }}
           InputProps={{
@@ -408,28 +564,29 @@ export default function AdminVentaEmisionModal({
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Box sx={{ color: "gray", fontSize: "0.85rem" }}>EFECTIVO</Box>
+                <Box sx={{ color: palette.muted, fontSize: "0.85rem" }}>EFECTIVO</Box>
               </InputAdornment>
             ),
             endAdornment: datosEmitir.efectivo > 0 && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={() => onSwitchPago("efectivo")}>
-                  <CompareArrowsIcon sx={{ color: "white" }} />
+                  <CompareArrowsIcon sx={{ color: "#7ddbd3" }} />
                 </IconButton>
               </InputAdornment>
             ),
           }}
           sx={{
+            ...modalFieldSx,
             width: 270,
             "& input": {
               textAlign: "center",
-              color: "white",
+              color: palette.text,
             },
             "& .MuiOutlinedInput-root": {
               paddingRight: "4px",
             },
           }}
-          InputLabelProps={{ style: { color: "white" } }}
+          InputLabelProps={{ style: { color: palette.muted } }}
         />
       </Box>
 
@@ -450,10 +607,10 @@ export default function AdminVentaEmisionModal({
                   variant="standard"
                   disableUnderline
                   sx={{
-                    color: "gray",
+                    color: palette.muted,
                     fontSize: "0.85rem",
                     width: 90,
-                    "& .MuiSelect-icon": { color: "gray" },
+                    "& .MuiSelect-icon": { color: palette.muted },
                   }}
                 >
                   {formasPago.map((forma) => (
@@ -467,22 +624,23 @@ export default function AdminVentaEmisionModal({
             endAdornment: datosEmitir.efectivo2 > 0 && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={() => onSwitchPago("efectivo2")}>
-                  <CompareArrowsIcon sx={{ color: "white" }} />
+                  <CompareArrowsIcon sx={{ color: "#7ddbd3" }} />
                 </IconButton>
               </InputAdornment>
             ),
           }}
           sx={{
+            ...modalFieldSx,
             width: 270,
             "& input": {
               textAlign: "center",
-              color: "white",
+              color: palette.text,
             },
             "& .MuiOutlinedInput-root": {
               paddingRight: "4px",
             },
           }}
-          InputLabelProps={{ style: { color: "white" } }}
+          InputLabelProps={{ style: { color: palette.muted } }}
         />
       </Box>
 
@@ -490,26 +648,101 @@ export default function AdminVentaEmisionModal({
         variant="contained"
         color="primary"
         onClick={onSaveComprobante}
-        sx={{ display: "block", margin: ".5rem 0", width: 270 }}
+        sx={{ ...primaryButtonSx, mt: 1.2 }}
       >
         GRABAR
       </Button>
       <Button
         variant="contained"
         onClick={onClose}
-        sx={{
-          display: "block",
-          margin: ".5rem 0",
-          width: 270,
-          backgroundColor: "rgba(30, 39, 46)",
-          "&:hover": {
-            backgroundColor: "rgba(30, 39, 46, 0.1)",
-          },
-          mt: -0.5,
-        }}
+        sx={{ ...secondaryButtonSx, mt: 0.75, mb: 1.35 }}
       >
         ESC - CERRAR
       </Button>
+
+      <Dialog
+        open={showHabituales}
+        onClose={() => setShowHabituales(false)}
+        maxWidth="sm"
+        fullWidth
+        disableScrollLock
+        PaperProps={{
+          sx: {
+            backgroundColor: palette.surface,
+            color: palette.text,
+            border: `1px solid ${palette.border}`,
+            borderRadius: 2,
+            overflow: "hidden",
+          },
+        }}
+      >
+        <DialogTitle sx={{ borderBottom: `1px solid ${palette.borderSoft}`, py: 1.25 }}>
+          Clientes habituales
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            variant="outlined"
+            placeholder="Filtrar cliente"
+            size="small"
+            autoComplete="off"
+            value={filtroHabitual}
+            onChange={(event) => setFiltroHabitual(event.target.value)}
+            autoFocus
+            sx={{
+              ...modalFieldSx,
+              width: "100%",
+              mb: 1,
+            }}
+          />
+
+          <List
+            dense
+            sx={{
+              maxHeight: isSmallScreen ? "50vh" : "55vh",
+              overflowY: "auto",
+              py: 0,
+            }}
+          >
+            {cargandoHabituales && (
+              <ListItemText
+                primary="Cargando clientes..."
+                primaryTypographyProps={{ sx: { color: "#d1d5db", textAlign: "center", py: 2 } }}
+              />
+            )}
+
+            {!cargandoHabituales && clientesFiltrados.map((cliente) => (
+              <ListItemButton
+                key={cliente.documento_id}
+                onClick={() => seleccionarHabitual(cliente)}
+                sx={{
+                  borderBottom: `1px solid ${palette.borderSoft}`,
+                  "&:hover": {
+                    backgroundColor: "rgba(42,161,152,0.08)",
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={`${cliente.documento_id} - ${cliente.razon_social || ""}`}
+                  secondary={cliente.direccion || "-"}
+                  primaryTypographyProps={{
+                    sx: { color: palette.text, fontSize: "0.88rem" },
+                  }}
+                  secondaryTypographyProps={{
+                    sx: { color: palette.muted, fontSize: "0.78rem" },
+                  }}
+                />
+              </ListItemButton>
+            ))}
+
+            {!cargandoHabituales && clientesFiltrados.length === 0 && (
+              <ListItemText
+                primary="Sin clientes habituales"
+                primaryTypographyProps={{ sx: { color: "#d1d5db", textAlign: "center", py: 2 } }}
+              />
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

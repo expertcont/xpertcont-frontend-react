@@ -2,7 +2,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useDialog } from "./AdminConfirmDialogProvider";
-import { Dialog, DialogTitle, Button, useMediaQuery, InputAdornment, IconButton, TextField, Box, Typography } from "@mui/material";
+import { Dialog, DialogTitle, Button, useMediaQuery, TextField, Box, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import Sunat01Icon from '../../assets/images/sunat0.png'; //Azul
 import Sunat03Icon from '../../assets/images/sunat9.png'; //Granate
@@ -10,6 +10,125 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import CodeIcon from '@mui/icons-material/Code';
 import DescriptionIcon from '@mui/icons-material/Description';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import palette from '../../theme/palette';
+
+const modalPaperSx = {
+  m: { xs: 1.5, sm: 2 },
+  mt: { xs: 1.5, sm: 5 },
+  width: { xs: "calc(100vw - 24px)", sm: 420 },
+  maxWidth: "calc(100vw - 24px)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  backgroundColor: palette.surface,
+  color: palette.text,
+  border: `1px solid ${palette.border}`,
+  borderRadius: 2,
+  boxShadow: "0 18px 48px rgba(0,0,0,0.34)",
+  overflow: "hidden",
+};
+
+const documentButtonSx = {
+  width: 270,
+  height: 40,
+  justifyContent: "center",
+  borderRadius: 2,
+  backgroundColor: "rgba(139,154,165,0.10)",
+  border: "1px solid rgba(139,154,165,0.16)",
+  color: "rgba(255,255,255,0.90)",
+  boxShadow: "none",
+  fontSize: "12px",
+  fontWeight: 500,
+  textAlign: "center",
+  position: "relative",
+  "& .MuiButton-startIcon": {
+    position: "absolute",
+    left: 18,
+    m: 0,
+    color: "#7ddbd3",
+  },
+  "&:hover": {
+    backgroundColor: "rgba(42,161,152,0.14)",
+    borderColor: "rgba(42,161,152,0.28)",
+    boxShadow: "none",
+  },
+};
+
+const pdfButtonSx = {
+  ...documentButtonSx,
+  backgroundColor: "rgba(42,161,152,0.20)",
+  border: "1px solid rgba(42,161,152,0.38)",
+  color: "rgba(255,255,255,0.94)",
+  fontWeight: 600,
+  "& .MuiButton-startIcon": {
+    ...documentButtonSx["& .MuiButton-startIcon"],
+    color: "#8ee0d8",
+  },
+  "&:hover": {
+    backgroundColor: "rgba(42,161,152,0.28)",
+    borderColor: "rgba(42,161,152,0.48)",
+    boxShadow: "0 8px 18px rgba(42,161,152,0.12)",
+  },
+};
+
+const phoneFieldSx = {
+  width: 270,
+  "& .MuiOutlinedInput-root": {
+    height: 40,
+    color: palette.text,
+    backgroundColor: "rgba(26,33,39,0.48)",
+    borderRadius: 2,
+    "& fieldset": { borderColor: "rgba(139,154,165,0.14)" },
+    "&:hover fieldset": { borderColor: "rgba(42,161,152,0.28)" },
+    "&.Mui-focused fieldset": { borderColor: "rgba(42,161,152,0.45)" },
+  },
+  "& input": {
+    color: palette.text,
+    fontSize: "13px",
+    textAlign: "center",
+  },
+  "& input::placeholder": {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
+const closeButtonSx = {
+  width: 270,
+  height: 40,
+  justifyContent: "center",
+  borderRadius: 2,
+  backgroundColor: "rgba(139,154,165,0.10)",
+  border: "1px solid rgba(139,154,165,0.16)",
+  color: palette.text,
+  boxShadow: "none",
+  fontSize: "12px",
+  fontWeight: 500,
+  "&:hover": {
+    backgroundColor: "rgba(139,154,165,0.16)",
+    boxShadow: "none",
+  },
+};
+
+const downloadInfoSx = {
+  width: 270,
+  mt: 0.75,
+  color: palette.muted,
+  textAlign: "center",
+  fontSize: "11px",
+  fontWeight: 500,
+  lineHeight: 1.45,
+};
+
+const comprobanteInfoSx = {
+  width: 270,
+  mt: 1.5,
+  color: "rgba(255,255,255,0.96)",
+  textAlign: "center",
+  fontSize: "13px",
+  fontWeight: 600,
+  lineHeight: 1.25,
+};
 
 const AdminSunatIcon = ({
   comprobante_key,            // ej. "01-F001-12345" pero es KEY del registro
@@ -37,6 +156,46 @@ const AdminSunatIcon = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [phone, setPhone] = useState("");
 
+  const obtenerErrorSunat = (errorOrData) => {
+    const responseData = errorOrData?.response?.data || errorOrData?.data || errorOrData || {};
+    const data = responseData?.error || responseData;
+    const nivel = data?.nivel || "ERROR";
+
+    const tituloPorNivel = {
+      RECHAZADO: "Comprobante rechazado",
+      PENDIENTE: "CDR pendiente",
+      ERROR: "No se pudo enviar a SUNAT",
+    };
+
+    const mensaje =
+      data?.mensaje_usuario ||
+      data?.respuesta_sunat_descripcion ||
+      data?.detalle_tecnico ||
+      data?.message ||
+      errorOrData?.message ||
+      "SIN DETALLE";
+
+    return {
+      titulo: data?.titulo_usuario || tituloPorNivel[nivel] || tituloPorNivel.ERROR,
+      mensaje,
+      detalle: data?.detalle_tecnico,
+    };
+  };
+
+  const mostrarErrorSunat = async (errorOrData, tituloFallback = "No se pudo enviar a SUNAT") => {
+    const errorSunat = obtenerErrorSunat(errorOrData);
+    const detalle = errorSunat.detalle && errorSunat.detalle !== errorSunat.mensaje
+      ? `\n\nDetalle: ${errorSunat.detalle}`
+      : "";
+
+    await confirmDialog({
+      title: errorSunat.titulo || tituloFallback,
+      message: `${comprobante}\n${errorSunat.mensaje}${detalle}`,
+      icon: "error",
+      confirmText: "ACEPTAR",
+    });
+  };
+
   const handleSunat = async () => {
     try {
       //kEY PARA PROCESAMIENTO SUNAT
@@ -60,12 +219,7 @@ const AdminSunatIcon = ({
       await enviaSunat();
 
     } catch (error) {
-      await confirmDialog({
-        title: "Error en procesamiento Interno",
-        message: `${error.message}`, //new
-        icon: "error",
-        confirmText: "ACEPTAR",
-      });
+      await mostrarErrorSunat(error, "Error en procesamiento Interno");
     }
 
   };
@@ -76,7 +230,7 @@ const AdminSunatIcon = ({
       //comprobante(0) PARA MOSTRAR LINKS
       //const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
 
-      // Confirmación antes de enviar
+      // Confirmacion antes de enviar
       const result = await confirmDialog({
         title: "Enviar a SUNAT?",
         message: `${comprobante}`,
@@ -87,38 +241,38 @@ const AdminSunatIcon = ({
 
       if (!result.isConfirmed) return;
 
-      const response = await axios.post(`${backHost}/ad_ventacpe`, {
-        p_periodo: periodoTrabajo,
-        p_id_usuario: idAnfitrion,
-        p_documento_id: contabilidadTrabajo,
-        p_r_cod: COD,
-        p_r_serie: SERIE,
-        p_r_numero: NUMERO,
-        p_elemento: elemento,
-      });
-
-      if (response.data?.codigo_hash) {
-        setRutaXml(response.data.ruta_xml);
-        setRutaCdr(response.data.ruta_cdr);
-        setRutaPdf(response.data.ruta_pdf);
-        setShowModal(true);
-      }else{
-        await confirmDialog({
-          title: "Error de envío SUNAT",
-           message: `${comprobante} \n${response.data?.respuesta_sunat_descripcion || "SIN DETALLE"}`, //new
-          icon: "error",
-          confirmText: "ACEPTAR",
+      try {
+        const response = await axios.post(`${backHost}/ad_ventacpe`, {
+          p_periodo: periodoTrabajo,
+          p_id_usuario: idAnfitrion,
+          p_documento_id: contabilidadTrabajo,
+          p_r_cod: COD,
+          p_r_serie: SERIE,
+          p_r_numero: NUMERO,
+          p_elemento: elemento,
         });
+
+        if (response.data?.codigo_hash) {
+          setRutaXml(response.data.ruta_xml);
+          setRutaCdr(response.data.ruta_cdr);
+          setRutaPdf(response.data.ruta_pdf);
+          setShowModal(true);
+          return;
+        }
+
+        await mostrarErrorSunat(response.data, "Error de envio SUNAT");
+      }
+      catch (error) {
+        await mostrarErrorSunat(error, "Error de envio SUNAT");
       }
   };
-
   const enviaSunatReprocesoCDR = async () => {
       //kEY PARA PROCESAMIENTO SUNAT
       const [COD, SERIE, NUMERO] = (comprobante_key || "").split("-");
       //comprobante(0) PARA MOSTRAR LINKS
       //const [COD0, SERIE0, NUMERO0] = (comprobante || "").split("-");
 
-      // Confirmación antes de enviar
+      // Confirmacion antes de enviar
       const result = await confirmDialog({
         title: "Solicitar a Sunat Descarga CDR?",
         message: `${comprobante}`,
@@ -129,31 +283,31 @@ const AdminSunatIcon = ({
 
       if (!result.isConfirmed) return;
 
-      const response = await axios.post(`${backHost}/ad_ventacpe`, {
-        p_periodo: periodoTrabajo,
-        p_id_usuario: idAnfitrion,
-        p_documento_id: contabilidadTrabajo,
-        p_r_cod: COD,
-        p_r_serie: SERIE,
-        p_r_numero: NUMERO,
-        p_elemento: elemento,
-      });
-      
-      //console.log('response del reproceso: ', response);
-      if (response.data?.estado) {
-        setRutaXml(response.data.ruta_xml);
-        setRutaCdr(response.data.ruta_cdr);
-        setRutaPdf(response.data.ruta_pdf);
-      }else{
-        await confirmDialog({
-          title: "Error de solicitud CDR SUNAT",
-           message: `${comprobante} \n${response.data?.respuesta_sunat_descripcion || "SIN DETALLE"}`, //new
-          icon: "error",
-          confirmText: "ACEPTAR",
+      try {
+        const response = await axios.post(`${backHost}/ad_ventacpe`, {
+          p_periodo: periodoTrabajo,
+          p_id_usuario: idAnfitrion,
+          p_documento_id: contabilidadTrabajo,
+          p_r_cod: COD,
+          p_r_serie: SERIE,
+          p_r_numero: NUMERO,
+          p_elemento: elemento,
         });
+
+        //console.log('response del reproceso: ', response);
+        if (response.data?.estado) {
+          setRutaXml(response.data.ruta_xml);
+          setRutaCdr(response.data.ruta_cdr);
+          setRutaPdf(response.data.ruta_pdf);
+          return;
+        }
+
+        await mostrarErrorSunat(response.data, "Error de solicitud CDR SUNAT");
+      }
+      catch (error) {
+        await mostrarErrorSunat(error, "Error de solicitud CDR SUNAT");
       }
   };
-
   const handleOpenLink = async (url) => {
     if (cdr_pendiente === '1') {
       // Si el CDR está pendiente, intentar reprocesar
@@ -261,89 +415,78 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         maxWidth="md"
         disableScrollLock
         PaperProps={{
-          style: {
+          sx: {
+            ...modalPaperSx,
             top: isSmallScreen ? "-20vh" : "0vh",
             left: isSmallScreen ? "0%" : "0%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            marginTop: "10vh",
-            background: "rgba(30, 39, 46, 0.95)",
-            color: "white",
-            width: isSmallScreen ? "70%" : "30%",
+            mt: "10vh",
+            width: isSmallScreen ? "min(360px, 70vw)" : 420,
           },
         }}
       >
-        <DialogTitle>Datos - Emisión</DialogTitle>
+        <DialogTitle
+          sx={{
+            width: "100%",
+            py: 1.5,
+            color: "rgba(255,255,255,0.92)",
+            fontSize: "14px",
+            fontWeight: 600,
+            textAlign: "center",
+            backgroundColor: palette.surfaceAlt,
+            borderBottom: `1px solid ${palette.border}`,
+          }}
+        >
+          Links de descarga
+        </DialogTitle>
+
+        <Typography sx={comprobanteInfoSx}>
+          {comprobante}
+        </Typography>
+
+        <Typography sx={downloadInfoSx}>
+          Puede descargar o enviar estos links por WhatsApp.
+        </Typography>
 
         <Button
           variant="contained"
-          //color="primary"
-          color="inherit"
           onClick={() => handleOpenLink(rutaXml)}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                margin: ".5rem 0", 
-                width: 270,
-                color: "black", 
-                fontWeight: "bold",
-                }}
+          sx={{ ...documentButtonSx, mt: 1.5 }}
           startIcon={<CodeIcon />} 
         >
-          XML
+          Descargar XML
         </Button>
 
         <Button
           variant="contained"
-          //color="inherit"
-          color="primary"
           onClick={() => handleOpenLink(rutaCdr)}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                margin: ".5rem 0", 
-                width: 270, 
-                mt: -0.5, 
-                //color: "black", 
-                fontWeight: "bold",
-             }}
+          sx={{ ...documentButtonSx, mt: 1 }}
           startIcon={<TaskAltIcon />} 
         >
-          CDR
+          Descargar CDR
         </Button>
 
         <Button
           variant="contained"
-          color="warning"
           onClick={() => handleOpenLink(rutaPdf)}
-          sx={{ //display: "block", 
-                display: "flex",          // 🔹 asegura layout en fila
-                alignItems: "center",     // centra verticalmente
-                //justifyContent: "flex-start", // texto alineado con el ícono            
-                margin: ".5rem 0", 
-                width: 270, 
-                mt: -0.5, 
-                fontWeight: "bold" }}
+          sx={{ ...pdfButtonSx, mt: 1 }}
           startIcon={<DescriptionIcon />}
         >
-          PDF
+          Descargar PDF
         </Button>
 
-    <Box sx={{ position: "relative", width: 270 }}>
+    <Box sx={{ position: "relative", width: 270, mt: 1 }}>
       {/* Centro: Icono + WSP */}
       <Box
         onClick={() => handleOpenLinkWhatsApp(phone)}
         sx={{
           position: "absolute",
-          left: "42%",
+          left: 16,
           top: "50%",
-          transform: "translate(-50%, -50%)",
+          transform: "translateY(-50%)",
           display: "flex",
           alignItems: "center",
           gap: 0.5,
-          //backgroundColor: "#374151",
-          color: "#fff",
+          color: phone.length >= 9 ? "#7ddbd3" : palette.muted,
           px: 1.2,
           py: 0.4,
           borderRadius: 1,
@@ -352,7 +495,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
           opacity: phone.length >= 9 ? 1 : 0.6,
           "&:hover": {
             backgroundColor:
-              phone.length >= 9 ? "#4B5563" : "#374151"
+              phone.length >= 9 ? "rgba(42,161,152,0.14)" : "transparent"
           }
         }}
       >
@@ -369,15 +512,11 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
           setPhone(e.target.value.replace(/\D/g, ""))
         }
         sx={{
-          width: "100%",
-          height: 45,
-          color: "white",
-          "& .MuiInputBase-root": {
-            color: "white",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-          },
+          ...phoneFieldSx,
           "& input": {
-            paddingLeft: "133px"
+            ...phoneFieldSx["& input"],
+            paddingLeft: "48px",
+            paddingRight: "16px",
           }
         }}
       />
@@ -407,14 +546,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         <Button
           variant="contained"
           onClick={handleCloseModal}
-          sx={{
-            display: "block",
-            margin: ".5rem 0",
-            width: 270,
-            backgroundColor: "rgba(30, 39, 46)",
-            "&:hover": { backgroundColor: "rgba(30, 39, 46, 0.1)" },
-            mt: -0.5,
-          }}
+          sx={{ ...closeButtonSx, my: 2 }}
         >
           ESC - CERRAR
         </Button>

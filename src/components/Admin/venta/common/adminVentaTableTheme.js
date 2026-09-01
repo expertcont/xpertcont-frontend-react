@@ -17,7 +17,7 @@ export const ensureAdminVentaTableTheme = () => {
       text: "#FFFFFF",
     },
     divider: {
-      default: "#073642",
+      default: "rgba(139,154,165,0.10)",
     },
     action: {
       button: "rgba(0,0,0,.54)",
