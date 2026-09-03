@@ -1,17 +1,15 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Card,CardContent,Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography} from "@mui/material";
+import { Box,Modal, Button,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography,InputBase} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
-import FindIcon from '@mui/icons-material/FindInPage';
+import { Search } from 'lucide-react';
 //import createPdfTicket from './AdminVentaPdf';
-import DaySelector from "./AdminDias";
+import DaySelector from "../../AdminDias";
 
-import Datatable, {createTheme} from 'react-data-table-component';
+import Datatable from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
-import '../../App.css';
+import '../../../../App.css';
 import 'styled-components';
 //import axios from 'axios';
 
@@ -20,44 +18,182 @@ import Tooltip from '@mui/material/Tooltip';
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelGeneral from '../BotonExcelGeneral';
+import BotonExcelGeneral from '../../../BotonExcelGeneral';
 
 //import { AdminVentasDetColumnas } from './AdminColumnas';
-import { getColumnasDet } from './AdminColumnas';
+import { getColumnasDet } from '../../AdminColumnas';
+import { ensureAdminVentaTableTheme } from '../common/adminVentaTableTheme';
+import palette from '../../../../theme/palette';
+
+const contentRadius = 1;
+
+const panelSx = {
+  backgroundColor: 'transparent',
+  border: '0',
+  borderRadius: contentRadius,
+  boxShadow: 'none',
+  p: 0,
+};
+
+const listContentSx = {
+  width: '100%',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  minWidth: 0,
+  ml: 0,
+  mr: 0,
+  p: 0,
+  display: 'grid',
+  gap: 1.15,
+};
+
+const toolbarSurfaceSx = {
+  backgroundColor: '#1c252c',
+  borderRadius: contentRadius,
+  px: { xs: 1, md: 1.5 },
+  py: { xs: 0.9, md: 1.25 },
+};
+
+const selectSx = {
+  width: '100%',
+  height: 42,
+  color: palette.text,
+  backgroundColor: palette.chip,
+  border: `1px solid ${palette.border}`,
+  borderRadius: contentRadius,
+  fontSize: '13px',
+  '.MuiSelect-select': {
+    py: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+  '& .MuiSelect-icon': { color: palette.muted },
+};
+
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      backgroundColor: palette.surface,
+      color: palette.text,
+      border: `1px solid ${palette.border}`,
+      '& .MuiMenuItem-root': { fontSize: '13px' },
+    },
+  },
+};
+
+const searchSx = {
+  flex: '1 1 280px',
+  minWidth: { xs: '100%', sm: 280 },
+  height: 42,
+  px: 1.15,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.85,
+  color: palette.text,
+  backgroundColor: palette.bg,
+  border: '1px solid rgba(139,154,165,0.14)',
+  borderRadius: contentRadius,
+  '&:focus-within': {
+    borderColor: 'rgba(139,154,165,0.32)',
+  },
+};
+
+const inputSx = {
+  color: palette.text,
+  fontSize: '13px',
+  width: '100%',
+  '& input': {
+    color: palette.text,
+    fontSize: '13px',
+  },
+  '& input::placeholder': {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
+const actionButtonSx = {
+  height: 42,
+  borderRadius: contentRadius,
+  boxShadow: 'none',
+  fontSize: '12px',
+  fontWeight: 800,
+  textTransform: 'none',
+  backgroundColor: 'rgba(42,161,152,0.14)',
+  border: '1px solid rgba(42,161,152,0.34)',
+  color: palette.text,
+  px: 1.5,
+  whiteSpace: 'nowrap',
+  '&:hover': {
+    backgroundColor: palette.accent,
+    color: palette.surface,
+    boxShadow: 'none',
+  },
+};
+
+const listCardBg = '#1c252c';
+
+const dataTableStyles = {
+  table: { style: { backgroundColor: listCardBg } },
+  tableWrapper: { style: { backgroundColor: listCardBg } },
+  responsiveWrapper: { style: { backgroundColor: listCardBg } },
+  headRow: {
+    style: {
+      backgroundColor: listCardBg,
+      color: palette.muted,
+      borderBottom: `1px solid ${palette.borderSoft}`,
+      minHeight: '38px',
+    },
+  },
+  headCells: {
+    style: {
+      color: palette.muted,
+      fontSize: '11px',
+      fontWeight: 800,
+      textTransform: 'uppercase',
+    },
+  },
+  rows: {
+    style: {
+      backgroundColor: listCardBg,
+      color: palette.text,
+      borderBottom: `1px solid ${palette.borderSoft}`,
+      minHeight: '42px',
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: palette.surfaceAlt,
+      color: palette.text,
+      borderBottomColor: palette.border,
+    },
+  },
+  cells: {
+    style: {
+      color: palette.text,
+      fontSize: '12.5px',
+      minWidth: 0,
+    },
+  },
+  pagination: {
+    style: {
+      backgroundColor: listCardBg,
+      color: palette.muted,
+      borderTop: `1px solid ${palette.borderSoft}`,
+    },
+  },
+};
 
 
-export default function AdminStockRepDet() {
+export default function AdminVentaRepDet() {
   //Control de useffect en retroceso de formularios
-  //verificamos si es pantalla pequeña y arreglamos el grid de fechas
-  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  //verificamos si es pantalla pequeÃ±a y arreglamos el grid de fechas
 
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
 
-  createTheme('solarized', {
-    text: {
-      //primary: '#268bd2',
-      primary: '#ffffff',
-      secondary: '#2aa198',
-    },
-    background: {
-      //default: '#002b36',
-      default: '#1e272e'
-    },
-    context: {
-      background: '#cb4b16',
-      //background: '#1e272e',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: '#073642',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
+  ensureAdminVentaTableTheme();
 
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
@@ -107,26 +243,15 @@ export default function AdminStockRepDet() {
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
     }
     
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
+    //setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
   
-  // Agrega íconos al inicio de cada columna
-  
-  // valores adicionales para Carga Archivo
-  const [datosCarga, setDatosCarga] = useState({
-    id_anfitrion: '',
-    documento_id: '',
-    periodo: '',
-    id_libro: '',
-    id_invitado: '',
-  });  
-
   const handleRowSelected = useCallback(state => {
         setSelectedRows(state.selectedRows);
     }, []);
 
   
-  /*const procesaPDF = async (comprobante, nElem, tamaño) => {
+  /*const procesaPDF = async (comprobante, nElem, tamaÃ±o) => {
     try {
         const [COD, SERIE, NUM] = comprobante.split('-');
 
@@ -136,7 +261,7 @@ export default function AdminStockRepDet() {
             fetch(`${back_host}/ad_ventadet/${periodo_trabajo}/${params.id_anfitrion}/${params.documento_id}/${COD}/${SERIE}/${NUM}/${nElem}`).then((res) => res.json())
         ]);
 
-        // Configuración del ticket
+        // ConfiguraciÃ³n del ticket
         const options = {
             comprobante,
             documento_id: params.documento_id,
@@ -144,14 +269,14 @@ export default function AdminStockRepDet() {
             venta: resVenta,
             ventadet: resVentaDet,
             logo,
-            size: tamaño
+            size: tamaÃ±o
         };
 
         // Generar el PDF
         let pdfUrl = "#";
         try {
-            pdfUrl = await createPdfTicket(options); // Asegúrate de manejar correctamente esta función
-            // Abre la URL en una nueva pestaña del navegador
+            pdfUrl = await createPdfTicket(options); // AsegÃºrate de manejar correctamente esta funciÃ³n
+            // Abre la URL en una nueva pestaÃ±a del navegador
             window.open(pdfUrl, '_blank');
         } catch (error) {
             console.error("Error al generar el PDF:", error);
@@ -172,13 +297,13 @@ export default function AdminStockRepDet() {
     console.log("cargaRegistro sDia: ", sDia);
     //Cargamos asientos correspondientes al id_usuario,contabilidad y periodo
     if (strHistorialValorVista==='' || strHistorialValorVista===undefined || strHistorialValorVista===null){
-        console.log(`${back_host}/ad_stockdettodos/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
-        response = await fetch(`${back_host}/ad_stockdettodos/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
+        console.log(`${back_host}/ad_ventadettodos/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
+        response = await fetch(`${back_host}/ad_ventadettodos/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${sDia}`);
     }
     else{
         //usamos los historiales
-        console.log(`${back_host}/ad_stockdettodos/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
-        response = await fetch(`${back_host}/ad_stockdettodos/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
+        console.log(`${back_host}/ad_ventadettodos/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
+        response = await fetch(`${back_host}/ad_ventadettodos/${strHistorialPeriodo}/${params.id_anfitrion}/${strHistorialContabilidad}/${sDia}`);
     }
     
     const data = await response.json();
@@ -207,7 +332,7 @@ export default function AdminStockRepDet() {
       if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase()) || descripcion.includes(strBusca.toLowerCase())) {
         return elemento;
       }
-      return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
+      return null; // Agrega esta lÃ­nea para manejar el caso en que no haya coincidencia
     });
   
     resultadosBusqueda = resultadosBusqueda.filter(Boolean); // Filtra los elementos nulos
@@ -253,33 +378,12 @@ export default function AdminStockRepDet() {
 
   },[isAuthenticated, user]) //Aumentamos IsAuthenticated y user
 
-  /*useEffect( ()=> {
+  useEffect( ()=> {
     
-      //Carga por cada cambio de seleccion en toggleButton
-      console.log('2do useeffect periodo_trabajo: ',periodo_trabajo);
-
-      //Verifica historial id_libro
-      const st_id_libro = sessionStorage.getItem('id_libro');
-      const st_valorVista = (sessionStorage.getItem('valorVista') || 'ventas'); //new para el toggleButton
-
-      if (st_id_libro) {
-        //Establecer valor historial al toggleButton
-        setValorVista(st_valorVista);
-      }
-
-      if (st_valorVista===null || st_valorVista===undefined || st_valorVista===''){
-
-      setValorVista('ventas'); //Por default, la 1era vez
-      //st_valorVista = 'ventas'; //new 
-      }else{
-      setValorVista(st_valorVista);
-      }
 
       //fcuando carga x primera vez, sale vacio ... arreglar esto
-      cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel);
     
-      fetchTotalVentas();
-  },[updateTrigger, diaSel]) //Aumentamos*/
+  },[updateTrigger, diaSel])
 
 
   useEffect( ()=> {
@@ -299,7 +403,7 @@ export default function AdminStockRepDet() {
 
     //Secundario despues de seleccion en toggleButton
     let columnasEspecificas;
-    columnasEspecificas = getColumnasDet('stock');
+    columnasEspecificas = getColumnasDet('ventas');
 
     // Finalmente seteamos
     setColumnas(columnasEspecificas);    
@@ -308,11 +412,6 @@ export default function AdminStockRepDet() {
     cargaRegistro(st_valorVista,periodo_trabajo,contabilidad_trabajo, diaSel); //new cambio
 
     //Datos listos en caso de volver por aqui, para envio
-    setDatosCarga(prevState => ({ ...prevState, id_anfitrion: params.id_anfitrion }));
-    setDatosCarga(prevState => ({ ...prevState, periodo: st_periodo_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, documento_id: st_contabilidad_trabajo }));
-    setDatosCarga(prevState => ({ ...prevState, id_libro: st_id_libro }));
-    setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
     
     //fetchTotalVentas();
   },[valorVista, diaSel]) //Solo cuando este completo estado
@@ -376,8 +475,7 @@ const handleDayFilter = (selectedDay) => {
   
 
 const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
-  //setShowModalMostrarRecaudacion(true);
-  axios.get(`${back_host}/ad_stockunidades/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
+  axios.get(`${back_host}/ad_ventaunidades/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
           .then(res => {
             if (res.data.success) {
               setRegistrosdet(res.data.data);
@@ -385,186 +483,164 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
           })
           .catch(err => console.error(err));
   //setUpdateTrigger(Math.random());//experimento para actualizar el dom        
-
 };
 
  return (
-  <>
-   <div style={{ backgroundColor: '#1e272e', 
-                 //minHeight: '100vh', 
-                 //padding: '20px', 
-                 //marginTop: 30,  
-                 //marginLeft: -65, 
-                 margin: 0,
-                 width: "100%" }}
-    > 
-
-  <div>
-  </div>
-
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'column' : 'row'}
-      //alignItems={isSmallScreen ? 'center' : 'center'}
-      justifyContent={isSmallScreen ? 'center' : 'center'}
-  >
-      <Grid item xs={1.5} sm={1.5}>
-          <Select
-                labelId="periodo"
-                //id={periodo_select.periodo}
-                size='small'
-                value={periodo_trabajo}
-                name="periodo"
-                sx={{display:'block',
-                margin:'.1rem 0', color:"skyblue", fontSize: '13px' }}
-                label="Periodo Cont"
-                onChange={handleChange}
+  <Box sx={listContentSx}>
+    <Box
+      sx={{
+        ...panelSx,
+        ...toolbarSurfaceSx,
+        display: 'flex',
+        alignItems: { xs: 'stretch', md: 'center' },
+        justifyContent: 'space-between',
+        gap: 1,
+        flexDirection: { xs: 'column', md: 'row' },
+      }}
+    >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
+              Detalle de ventas
+            </Typography>
+            <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
+              {`${registrosdet.length} registros visibles`}
+              {contabilidad_nombre ? ` - ${contabilidad_nombre}` : ''}
+              {` - Dia ${diaSel === '*' ? 'Todos' : diaSel}`}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 180px) minmax(240px, 1fr)', md: '150px minmax(280px, 360px)' },
+              gap: 1,
+              alignItems: 'center',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
+              <Box sx={{ width: '100%' }}>
+                <Select
+                  labelId="periodo"
+                  size='small'
+                  value={periodo_trabajo}
+                  name="periodo"
+                  sx={{ ...selectSx, color: palette.accent }}
+                  label="Periodo Cont"
+                  onChange={handleChange}
+                  MenuProps={selectMenuProps}
                 >
                   <MenuItem value="default">SELECCIONA </MenuItem>
-                {   
-                    periodo_select.map(elemento => (
+                  {periodo_select.map(elemento => (
                     <MenuItem key={elemento.periodo} value={elemento.periodo}>
                       {elemento.periodo}
-                    </MenuItem>)) 
-                }
-          </Select>
-      </Grid>
-      <Grid item xs={4} sm={4}>
-          <Select
-                labelId="contabilidad_select"
-                //id={contabilidad_select.documento_id}
-                size='small'
-                value={contabilidad_trabajo}
-                name="contabilidad"
-                sx={{display:'block',
-                margin:'.1rem 0', color:"white", fontSize: '13px' }}
-                label="Contabilidad"
-                onChange={handleChange}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Select
+                  labelId="contabilidad_select"
+                  size='small'
+                  value={contabilidad_trabajo}
+                  name="contabilidad"
+                  sx={selectSx}
+                  label="Contabilidad"
+                  onChange={handleChange}
+                  MenuProps={selectMenuProps}
                 >
                   <MenuItem value="default">SELECCIONA </MenuItem>
-                {   
-                    contabilidad_select.map(elemento => (
+                  {contabilidad_select.map(elemento => (
                     <MenuItem key={elemento.documento_id} value={elemento.documento_id}>
                       {elemento.razon_social}
-                    </MenuItem>)) 
-                }
-          </Select>
-      </Grid>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Box>
+          </Box>
+    </Box>
 
-      <Grid item xs={2} sm={2}>
-        <Button variant="contained" 
-                color="primary" 
-                onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
-                fullWidth
-        >AGRUPAR DET.MOVIMIENTOS
-        </Button>
-      </Grid>
+        <Box sx={{ ...panelSx, overflowX: 'auto' }}>
+          <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
+        </Box>
 
-  </Grid>
+        <Box
+          sx={{
+            ...panelSx,
+            ...toolbarSurfaceSx,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Box sx={searchSx}>
+            <Search size={16} color={palette.muted} />
+            <InputBase
+              name="busqueda"
+              placeholder="Filtrar: RUC, razon social, comprobante o descripcion"
+              onChange={actualizaValorFiltro}
+              sx={inputSx}
+            />
+          </Box>
 
-  
-  <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
-  
-  <div>
-  </div>
-    
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'row' : 'row'}
-      alignItems={isSmallScreen ? 'center' : 'left'}
-      justifyContent={isSmallScreen ? 'left' : 'left'}
-  >
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
+            sx={actionButtonSx}
+          >
+            Agrupar detalle
+          </Button>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-          <Tooltip title='EXPORTAR XLS' >
-              <BotonExcelGeneral datos={registrosdet} 
-                                  nombreArchivo="Detalle_Stocks"
-                                  tituloReporte={`Detalle de Stocks:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
-                                  columnasNumericas={['ingreso','egreso','precio_neto','porc_igv']}
-                                  columnasExcluidas={['cod','serie','numero']}
+          <Box sx={{ height: 42, display: 'flex', alignItems: 'center' }}>
+            <Tooltip title='EXPORTAR XLS'>
+              <BotonExcelGeneral
+                datos={registrosdet}
+                nombreArchivo="Detalle_Ventas"
+                tituloReporte={`Detalle de Ventas:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
+                columnasNumericas={['ingreso','egreso','precio_neto','porc_igv']}
+                columnasExcluidas={['r_cod','r_serie','r_numero','r_cod_ref','r_serie_ref','r_numero_ref']}
               />
-          </Tooltip>
-        </Grid>
+            </Tooltip>
+          </Box>
+        </Box>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-            <div></div>
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 2 : 0.7}>    
-
-        </Grid>
-        
-        {/* El componente del cuadro de diálogo */}
-        {isDialogOpen && (
-        
-        <Grid item xs={isSmallScreen ? 12 : 8.8}>
-
-        </Grid>
-
-        )}
-
-    <Grid item xs={isSmallScreen ? 12 : 8.3}>
-
-    </Grid>
-
-
-    <Grid item xs={isSmallScreen ? 12 : 12} >
-        <TextField fullWidth variant="outlined" color="success" size="small"
-                                    //label="FILTRAR"
-                                    sx={{display:'block',
-                                          margin:'.0rem 0'}}
-                                    name="busqueda"
-                                    placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE  DESCRIPCION'
-                                    onChange={actualizaValorFiltro}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputProps={{
-                                        startAdornment: (
-                                          <InputAdornment position="start">
-                                            <FindIcon />
-                                          </InputAdornment>
-                                        ),
-                                        style:{color:'white'},
-                                        // Estilo para el placeholder
-                                        inputProps: { style: { fontSize: '14px', color: 'gray' } }                                         
-                                    }}
-        />
-    </Grid>
-
-
-  </Grid>
-
-  <Datatable
-      //title="Registro - Pedidos"
-      theme="solarized"
-      columns={columnas}
-      data={registrosdet}
-      onSelectedRowsChange={handleRowSelected}
-      clearSelectedRows={toggleCleared}
-      pagination
-      paginationPerPage={15}
-      paginationRowsPerPageOptions={[15, 50, 100]}
-
-      selectableRowsComponent={Checkbox} // Pass the function only
-      sortIcon={<ArrowDownward />}  
-      dense={true}
-      highlightOnHover //resalta la fila
-  >
-  </Datatable>
-</div>
-  </>
+        <Box
+          sx={{
+            overflow: 'hidden',
+            borderRadius: contentRadius,
+            border: 0,
+            backgroundColor: listCardBg,
+            boxShadow: 'none',
+            px: { xs: 0.25, md: 0.75 },
+            py: { xs: 0.25, md: 0.75 },
+            minWidth: 0,
+            maxWidth: '100%',
+            '& .rdt_TableWrapper': {
+              maxWidth: '100%',
+              overflowX: 'auto',
+            },
+            '& .rdt_Table': {
+              minWidth: { xs: 960, md: '100%' },
+            },
+          }}
+        >
+          <Datatable
+            theme="solarized"
+            columns={columnas}
+            data={registrosdet}
+            customStyles={dataTableStyles}
+            onSelectedRowsChange={handleRowSelected}
+            clearSelectedRows={toggleCleared}
+            pagination
+            paginationPerPage={15}
+            paginationRowsPerPageOptions={[15, 50, 100]}
+            selectableRowsComponent={Checkbox}
+            sortIcon={<ArrowDownward />}
+            dense={true}
+            highlightOnHover
+          />
+        </Box>
+  </Box>
   );
 }

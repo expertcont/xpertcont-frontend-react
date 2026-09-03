@@ -1,32 +1,26 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Card,CardContent,Box,Modal,Grid, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography} from "@mui/material";
+import { Card,CardContent,Box,Modal, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography,InputBase} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AutoDeleteIcon from '@mui/icons-material/AutoDelete';
-import FindIcon from '@mui/icons-material/FindInPage';
-import AddBoxIcon from '@mui/icons-material/AddBox';
 import { blueGrey } from '@mui/material/colors';
 //import createPdfTicket from './AdminVentaPdf';
-import DaySelector from "./AdminDias";
-import { useDialog } from "./AdminConfirmDialogProvider";
+import DaySelector from "../../AdminDias";
+import { useDialog } from "../../AdminConfirmDialogProvider";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";   
 
 //import PrintIcon from '@mui/icons-material/Print';
 import FindInPageIcon from '@mui/icons-material/FindInPage';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
-import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
-
-import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
 import swal2 from 'sweetalert2'
-import Datatable, {createTheme} from 'react-data-table-component';
+import Datatable from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
-import '../../App.css';
+import '../../../../App.css';
 import 'styled-components';
 //import axios from 'axios';
 
@@ -38,9 +32,153 @@ import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutli
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelVentas from '../BotonExcelVentas';
+import BotonExcelVentas from '../../../BotonExcelVentas';
+import AppButton from '../../../ui/AppButton';
+import { Plus, Search, Trash2 } from 'lucide-react';
 
-import { AdminStocksColumnas } from './AdminColumnas';
+import { AdminStocksColumnas } from '../../AdminColumnas';
+import { ensureAdminStockTableTheme } from '../common/adminStockTableTheme';
+import palette from '../../../../theme/palette';
+
+const contentRadius = 1;
+
+const panelSx = {
+  backgroundColor: 'transparent',
+  border: '0',
+  borderRadius: contentRadius,
+  p: 0,
+};
+
+const listContentSx = {
+  width: '100%',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  minWidth: 0,
+  ml: 0,
+  mr: 0,
+  p: 0,
+  display: 'grid',
+  gap: 1.15,
+};
+
+const toolbarSurfaceSx = {
+  backgroundColor: '#1c252c',
+  borderRadius: contentRadius,
+  px: { xs: 1, md: 1.5 },
+  py: { xs: 0.9, md: 1.25 },
+};
+
+const selectSx = {
+  width: '100%',
+  height: 42,
+  color: palette.text,
+  backgroundColor: palette.chip,
+  border: `1px solid ${palette.border}`,
+  borderRadius: contentRadius,
+  fontSize: '13px',
+  '.MuiSelect-select': {
+    py: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+  '& .MuiSelect-icon': { color: palette.muted },
+};
+
+const selectMenuProps = {
+  PaperProps: {
+    sx: {
+      backgroundColor: palette.surface,
+      color: palette.text,
+      border: `1px solid ${palette.border}`,
+      '& .MuiMenuItem-root': { fontSize: '13px' },
+    },
+  },
+};
+
+const searchSx = {
+  flex: '1 1 280px',
+  minWidth: { xs: '100%', sm: 280 },
+  height: 42,
+  px: 1.15,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.85,
+  color: palette.text,
+  backgroundColor: palette.bg,
+  border: '1px solid rgba(139,154,165,0.14)',
+  borderRadius: contentRadius,
+  '&:focus-within': {
+    borderColor: 'rgba(139,154,165,0.32)',
+  },
+};
+
+const inputSx = {
+  color: palette.text,
+  fontSize: '13px',
+  width: '100%',
+  '& input': {
+    color: palette.text,
+    fontSize: '13px',
+  },
+  '& input::placeholder': {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
+const listCardBg = '#1c252c';
+
+const dataTableStyles = {
+  table: { style: { backgroundColor: listCardBg } },
+  tableWrapper: { style: { backgroundColor: listCardBg } },
+  responsiveWrapper: { style: { backgroundColor: listCardBg } },
+  headRow: {
+    style: {
+      backgroundColor: listCardBg,
+      color: palette.muted,
+      borderBottom: `1px solid ${palette.borderSoft}`,
+      minHeight: '38px',
+    },
+  },
+  headCells: {
+    style: {
+      color: palette.muted,
+      fontSize: '11px',
+      fontWeight: 800,
+      textTransform: 'uppercase',
+    },
+  },
+  rows: {
+    style: {
+      backgroundColor: listCardBg,
+      color: palette.text,
+      borderBottom: `1px solid ${palette.borderSoft}`,
+      minHeight: '42px',
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: palette.surfaceAlt,
+      color: palette.text,
+      borderBottomColor: palette.border,
+    },
+  },
+  cells: {
+    style: {
+      color: palette.text,
+      fontSize: '12.5px',
+      minWidth: 0,
+    },
+  },
+  pagination: {
+    style: {
+      backgroundColor: listCardBg,
+      color: palette.muted,
+      borderTop: `1px solid ${palette.borderSoft}`,
+    },
+  },
+};
 
 export default function AdminStockList() {
   //Control de useffect en retroceso de formularios
@@ -49,33 +187,7 @@ export default function AdminStockList() {
   const { confirmDialog } = useDialog(); //unico dialogo
   const [fecha_clon, setFechaClon] = useState("");
 
-  //Seccion Dialog
-  const [isDialogOpen, setDialogOpen] = useState(false);
-
-  createTheme('solarized', {
-    text: {
-      //primary: '#268bd2',
-      primary: '#ffffff',
-      secondary: '#2aa198',
-    },
-    background: {
-      //default: '#002b36',
-      default: '#1e272e'
-    },
-    context: {
-      background: '#cb4b16',
-      //background: '#1e272e',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: '#073642',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
+  ensureAdminStockTableTheme();
 
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
@@ -1211,22 +1323,47 @@ const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
                 )
               }  
 
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'column' : 'row'}
-      //alignItems={isSmallScreen ? 'center' : 'center'}
-      justifyContent={isSmallScreen ? 'center' : 'center'}
+  <Box sx={listContentSx}>
+  <Box
+      sx={{
+        ...panelSx,
+        ...toolbarSurfaceSx,
+        display: 'flex',
+        alignItems: { xs: 'stretch', md: 'center' },
+        justifyContent: 'space-between',
+        gap: 1,
+        flexDirection: { xs: 'column', md: 'row' },
+      }}
   >
-      <Grid item xs={1.5} sm={1.5}>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
+        Movimientos de almacen
+      </Typography>
+      <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
+        {`${registrosdet.length} comprobantes visibles`}
+        {contabilidad_nombre ? ` - ${contabilidad_nombre}` : ''}
+      </Typography>
+    </Box>
+  <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 180px) minmax(240px, 1fr)', md: '150px minmax(280px, 360px)' },
+        gap: 1,
+        alignItems: 'center',
+        width: { xs: '100%', md: 'auto' },
+      }}
+  >
+      <Box sx={{ width: '100%' }}>
           <Select
                 labelId="periodo"
                 //id={periodo_select.periodo}
                 size='small'
                 value={periodo_trabajo}
                 name="periodo"
-                sx={{display:'block',
-                margin:'.1rem 0', color:"skyblue", fontSize: '13px' }}
+                sx={{ ...selectSx, color: palette.accent }}
                 label="Periodo Cont"
                 onChange={handleChange}
+                MenuProps={selectMenuProps}
                 >
                   <MenuItem value="default">SELECCIONA </MenuItem>
                 {   
@@ -1236,18 +1373,18 @@ const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
                     </MenuItem>)) 
                 }
           </Select>
-      </Grid>
-      <Grid item xs={4} sm={4}>
+      </Box>
+      <Box>
           <Select
                 labelId="contabilidad_select"
                 //id={contabilidad_select.documento_id}
                 size='small'
                 value={contabilidad_trabajo}
                 name="contabilidad"
-                sx={{display:'block',
-                margin:'.1rem 0', color:"white", fontSize: '13px' }}
+                sx={selectSx}
                 label="Contabilidad"
                 onChange={handleChange}
+                MenuProps={selectMenuProps}
                 >
                   <MenuItem value="default">SELECCIONA </MenuItem>
                 {   
@@ -1257,147 +1394,115 @@ const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
                     </MenuItem>)) 
                 }
           </Select>
-      </Grid>
+      </Box>
 
-      <Grid item xs={2} sm={2}>
-
-      </Grid>
-
-  </Grid>
+  </Box>
+  </Box>
 
   
-  <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
-  
-  <div>
-
-  </div>
+  <Box sx={{ ...panelSx, overflowX: 'auto' }}>
+    <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
+  </Box>
     
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'row' : 'row'}
-      alignItems={isSmallScreen ? 'center' : 'left'}
-      justifyContent={isSmallScreen ? 'left' : 'left'}
+  <Box
+      sx={{
+        ...panelSx,
+        ...toolbarSurfaceSx,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        flexWrap: 'wrap',
+      }}
   >
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-          <Tooltip title='AGREGAR NUEVO' >
-            <IconButton color="primary" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: 'gray' }}
-                            onClick={() => {
-                              generaMovimiento();
-                            }}
-            >
-                  <AddBoxIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-          </Tooltip>
-        </Grid>
+        <Box sx={searchSx}>
+          <Search size={16} color={palette.muted} />
+          <InputBase
+            name="busqueda"
+            placeholder="Filtrar: RUC, razon social o comprobante"
+            onChange={actualizaValorFiltro}
+            sx={inputSx}
+          />
+        </Box>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-          { (pVenta0104) ? (
+        <AppButton icon={<Plus size={16} />} onClick={generaMovimiento}>
+          Nuevo
+        </AppButton>
 
-            <Tooltip title='ELIMINAR MASIVO' >
-            <IconButton color="warning" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
-                            onClick={() => {
-                              handleDeleteOrigen(params.id_anfitrion,contabilidad_trabajo,periodo_trabajo,id_libro)
-                            }}
-            >
-                  <FolderDeleteIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-            </Tooltip>
+        {pVenta0104 && (
+          <AppButton
+            icon={<Trash2 size={16} />}
+            onClick={() => {
+              handleDeleteOrigen(params.id_anfitrion, contabilidad_trabajo, periodo_trabajo, id_libro);
+            }}
+            sx={{
+              color: blueGrey[100],
+              '&:hover': {
+                backgroundColor: '#c2410c',
+                borderColor: '#c2410c',
+                color: '#fff',
+              },
+            }}
+          >
+            Eliminar masivo
+          </AppButton>
+        )}
 
-          )
-          :
-          (
-            <div></div>
-          )
-          }
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
+        <Box sx={{ height: 42, display: 'flex', alignItems: 'center' }}>
           <Tooltip title='EXPORTAR XLS' >
               <BotonExcelVentas registrosdet={registrosdet} 
               />
           </Tooltip>
-        </Grid>
+        </Box>
 
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 1.2 : 0.5} >    
-
-        </Grid>
-
-        <Grid item xs={isSmallScreen ? 2 : 0.7}>    
-
-        </Grid>
-        
         {/* El componente del cuadro de diálogo */}
-        {isDialogOpen && (
         
-        <Grid item xs={isSmallScreen ? 12 : 8.8}>
+  </Box>
 
-        </Grid>
-
-        )}
-
-    <Grid item xs={isSmallScreen ? 12 : 8.3}>
-
-    </Grid>
-
-
-    <Grid item xs={isSmallScreen ? 12 : 12} >
-        <TextField fullWidth variant="outlined" color="success" size="small"
-                                    //label="FILTRAR"
-                                    sx={{display:'block',
-                                          margin:'.0rem 0'}}
-                                    name="busqueda"
-                                    placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE'
-                                    onChange={actualizaValorFiltro}
-                                    inputProps={{ style:{color:'white'} }}
-                                    InputProps={{
-                                        startAdornment: (
-                                          <InputAdornment position="start">
-                                            <FindIcon />
-                                          </InputAdornment>
-                                        ),
-                                        style:{color:'white'},
-                                        // Estilo para el placeholder
-                                        inputProps: { style: { fontSize: '14px', color: 'gray' } }                                         
-                                    }}
-        />
-    </Grid>
-
-
-  </Grid>
-
-  <Datatable
-      //title="Registro - Almacen"
-      theme="solarized"
-      columns={columnas}
-      data={registrosdet}
-      //selectableRows
-      //selectableRowsSingle 
-      //contextActions={contextActions}
-      //actions={actions}
-      onSelectedRowsChange={handleRowSelected}
-      clearSelectedRows={toggleCleared}
-      pagination
-      paginationPerPage={15}
-      paginationRowsPerPageOptions={[15, 50, 100]}
-
-      selectableRowsComponent={Checkbox} // Pass the function only
-      sortIcon={<ArrowDownward />}  
-      dense={true}
+  <Box
+      sx={{
+        overflow: 'hidden',
+        borderRadius: contentRadius,
+        border: 0,
+        backgroundColor: listCardBg,
+        boxShadow: 'none',
+        px: { xs: 0.25, md: 0.75 },
+        py: { xs: 0.25, md: 0.75 },
+        minWidth: 0,
+        maxWidth: '100%',
+        '& .rdt_TableWrapper': {
+          maxWidth: '100%',
+          overflowX: 'auto',
+        },
+        '& .rdt_Table': {
+          minWidth: { xs: 960, md: '100%' },
+        },
+      }}
   >
-  </Datatable>
+    <Datatable
+        //title="Registro - Almacen"
+        theme="solarized"
+        columns={columnas}
+        data={registrosdet}
+        customStyles={dataTableStyles}
+        //selectableRows
+        //selectableRowsSingle 
+        //contextActions={contextActions}
+        //actions={actions}
+        onSelectedRowsChange={handleRowSelected}
+        clearSelectedRows={toggleCleared}
+        pagination
+        paginationPerPage={15}
+        paginationRowsPerPageOptions={[15, 50, 100]}
+
+        selectableRowsComponent={Checkbox} // Pass the function only
+        sortIcon={<ArrowDownward />}  
+        dense={true}
+        highlightOnHover
+    >
+    </Datatable>
+  </Box>
+  </Box>
 
   </>
   );

@@ -19,6 +19,7 @@ import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import BadgeIcon from '@mui/icons-material/Badge';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
@@ -363,12 +364,14 @@ export default function NavSideBar(props) {
     );
   };
 
-  const SubMenuItem = ({ icon, label, isActive, onClick }) => {
+  const SubMenuItem = ({ icon, label, isActive, onClick, watermarkIcon = null }) => {
     const item = (
       <ListItem
         button
         onClick={onClick}
         sx={{
+          position: 'relative',
+          overflow: 'hidden',
           minHeight: 38,
           paddingY: 0.65,
           paddingLeft: itemLabelVisible ? 6.25 : 0,
@@ -388,6 +391,22 @@ export default function NavSideBar(props) {
           marginX: 0,
         }}
       >
+        {itemLabelVisible && watermarkIcon && (
+          <Box
+            sx={{
+              position: 'absolute',
+              right: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: isActive ? 'rgba(42,161,152,0.17)' : 'rgba(144,164,174,0.10)',
+              pointerEvents: 'none',
+              lineHeight: 0,
+              '& svg': { fontSize: 28 },
+            }}
+          >
+            {watermarkIcon}
+          </Box>
+        )}
         <ListItemIcon
           sx={{
             minWidth: itemLabelVisible ? 30 : 0,
@@ -547,8 +566,18 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
+                  icon={<BadgeIcon />}
+                  label="Clientes"
+                  isActive={selectedButton === 'icono02-4'}
+                  onClick={() => {
+                    navigate(`/ad_correntistahabitual/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono02-4');
+                  }}
+                />
+                <SubMenuItem
                   icon={<TableRowsIcon />}
                   label="Detalle"
+                  watermarkIcon={<InsertChartIcon />}
                   isActive={selectedButton === 'icono02-2'}
                   onClick={() => {
                     navigate(`/ad_ventarepdet/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
@@ -556,21 +585,13 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  //icon={<ShoppingCartIcon />}
-                  label="Resumen"
+                  icon={<AccountTreeIcon />}
+                  label="Ventas Ref."
+                  watermarkIcon={<InsertChartIcon />}
                   isActive={selectedButton === 'icono02-3'}
                   onClick={() => {
                     navigate(`/ad_ventarepref/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono02-3');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<BadgeIcon />}
-                  label="Habituales"
-                  isActive={selectedButton === 'icono02-4'}
-                  onClick={() => {
-                    navigate(`/ad_correntistahabitual/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono02-4');
                   }}
                 />
               </List>
@@ -730,6 +751,7 @@ export default function NavSideBar(props) {
                 <SubMenuItem
                   icon={<CompareArrowsIcon />}
                   label="Detalle"
+                  watermarkIcon={<InsertChartIcon />}
                   isActive={selectedButton === 'icono10-2'}
                   onClick={() => {
                     navigate(`/ad_stockrepdet/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
@@ -739,6 +761,7 @@ export default function NavSideBar(props) {
                 <SubMenuItem
                   icon={<SummarizeIcon />}
                   label="Inventarios Kardex"
+                  watermarkIcon={<InsertChartIcon />}
                   isActive={selectedButton === 'icono10-3'}
                   onClick={() => {
                     navigate(`/ad_stockrepinventario/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);

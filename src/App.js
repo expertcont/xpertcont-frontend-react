@@ -36,16 +36,16 @@ import AdminProductoFormPrecio from "./components/Admin/AdminProductoFormPrecio"
 // 👇 Importa el ConfirmProvider
 //import { DialogProvider } from "./components/Admin/AdminConfirmDialogProvider";
 import { AdminConfirmDialogProvider } from "./components/Admin/AdminConfirmDialogProvider";
-import AdminStockList from "./components/Admin/AdminStockList";
+import AdminStockList from "./components/Admin/stock/list/AdminStockList";
 
 import NavSideBar from "./components/NavSideBar";
 import Header from './components/Header'; // Importa el nuevo componente
-import AdminStockForm from "./components/Admin/AdminStockForm";
-import AdminVentaRepDet from "./components/Admin/AdminVentaRepDet";
-import AdminStockRepDet from "./components/Admin/AdminStockRepDet";
-import AdminStockRepInventario from "./components/Admin/AdminStockRepInventario";
-import AdminStockRepKardex from "./components/Admin/AdminStockRepKardex";
-import AdminVentaRepRef from "./components/Admin/AdminVentaRepRef";
+import AdminStockForm from "./components/Admin/stock/form/AdminStockForm";
+import AdminVentaRepDet from "./components/Admin/venta/reports/AdminVentaRepDet";
+import AdminStockRepDet from "./components/Admin/stock/reports/AdminStockRepDet";
+import AdminStockRepInventario from "./components/Admin/stock/reports/AdminStockRepInventario";
+import AdminStockRepKardex from "./components/Admin/stock/reports/AdminStockRepKardex";
+import AdminVentaRepRef from "./components/Admin/venta/reports/AdminVentaRepRef";
 import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVentaPresupuestoList";
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";

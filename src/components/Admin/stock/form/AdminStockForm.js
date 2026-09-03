@@ -9,14 +9,7 @@ import Tooltip from '@mui/material/Tooltip';
 import ReplyIcon from '@mui/icons-material/Reply';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import KeyboardIcon from '@mui/icons-material/Keyboard';
 
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import IndeterminateCheckBox from '@mui/icons-material/IndeterminateCheckBox';
-import Timer10SelectIcon from '@mui/icons-material/Timer10Select';
-import AddCircleIcon from '@mui/icons-material/AddBox'; // Ícono para aumentar de 10 en 10
-import Checkbox from '@mui/material/Checkbox';
-import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import UpdateIcon from '@mui/icons-material/Update';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 
@@ -24,16 +17,171 @@ import DeleteIcon from '@mui/icons-material/DeleteForeverRounded';
 import IconButton from '@mui/material/IconButton';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 //import logo from '../../Logo02.png';
-import logo from '../../Logo04small.png';
+import logo from '../../../../Logo04small.png';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import numeral from 'numeral';
-import ListaPopUp from '../ListaPopUp';
 
-import Datatable, {createTheme} from 'react-data-table-component';
 import QRCode from 'qrcode';
 import { NumerosALetras } from 'numero-a-letras';
-import { useDialog } from "./AdminConfirmDialogProvider";
+import { useDialog } from "../../AdminConfirmDialogProvider";
 import { da } from 'date-fns/locale';
+import { ensureAdminStockTableTheme } from '../common/adminStockTableTheme';
+import palette from '../../../../theme/palette';
+import AdminStockProductoModal from './AdminStockProductoModal';
+import AdminStockFormTables from './AdminStockFormTables';
+
+const formShellSx = {
+  backgroundColor: 'transparent',
+  border: 0,
+  borderRadius: 1,
+  boxShadow: 'none',
+  overflow: 'visible',
+};
+
+const formPanelSx = {
+  backgroundColor: '#1c252c',
+  borderRadius: 1,
+  px: { xs: 1, md: 1.5 },
+  py: { xs: 1, md: 1.35 },
+};
+
+const formFieldSx = {
+  mt: 0,
+  '& .MuiOutlinedInput-root': {
+    minHeight: 42,
+    color: palette.text,
+    backgroundColor: 'rgba(26, 33, 39, 0.48)',
+    borderRadius: 1,
+    '& fieldset': { borderColor: 'rgba(139,154,165,0.14)' },
+    '&:hover': { backgroundColor: 'rgba(26, 33, 39, 0.62)' },
+    '&:hover fieldset': { borderColor: 'rgba(42,161,152,0.24)' },
+    '&.Mui-focused': { backgroundColor: 'rgba(34,45,53,0.66)' },
+    '&.Mui-focused fieldset': { borderColor: 'rgba(42,161,152,0.42)' },
+  },
+  '& input': {
+    color: palette.text,
+    fontSize: '13px',
+  },
+  '& input::placeholder': {
+    color: palette.muted,
+    opacity: 1,
+  },
+  '& label': {
+    color: palette.muted,
+    fontSize: '12px',
+  },
+  '& label.Mui-focused': {
+    color: palette.accent,
+  },
+};
+
+const formSelectSx = {
+  width: '100%',
+  height: 42,
+  mt: 0,
+  color: palette.text,
+  backgroundColor: 'rgba(26, 33, 39, 0.38)',
+  border: 0,
+  borderRadius: 1,
+  fontSize: '13px',
+  '.MuiSelect-select': {
+    py: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+  },
+  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
+  '& .MuiSelect-icon': { color: palette.muted },
+  '&:hover': {
+    backgroundColor: 'rgba(26, 33, 39, 0.56)',
+  },
+  '&.Mui-focused': {
+    backgroundColor: 'rgba(34,45,53,0.64)',
+  },
+};
+
+const actionButtonSx = {
+  height: 42,
+  borderRadius: 1,
+  boxShadow: 'none',
+  fontSize: '12px',
+  fontWeight: 800,
+  textTransform: 'none',
+  '&:hover': {
+    boxShadow: 'none',
+  },
+};
+
+const primaryActionSx = {
+  ...actionButtonSx,
+  backgroundColor: 'rgba(42,161,152,0.14)',
+  border: '1px solid rgba(42,161,152,0.34)',
+  color: palette.text,
+  '&:hover': {
+    backgroundColor: palette.accent,
+    color: palette.surface,
+    boxShadow: 'none',
+  },
+};
+
+const headerSummarySx = {
+  mb: 1.15,
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'space-between',
+  alignItems: 'stretch',
+  gap: 1.2,
+};
+
+const headerBlockSx = {
+  width: { xs: '100%', md: 440 },
+  maxWidth: { xs: '100%', md: 440 },
+};
+
+const infoPillSx = {
+  px: 0,
+  py: 0,
+  display: 'grid',
+  gap: 0.45,
+  alignContent: 'start',
+  backgroundColor: 'transparent',
+  color: palette.muted,
+  width: { xs: '100%', md: 360 },
+};
+
+const totalLineSx = {
+  display: 'grid',
+  gridTemplateColumns: '88px minmax(0, 1fr)',
+  alignItems: 'center',
+  gap: 0.75,
+};
+
+const totalLabelSx = {
+  color: 'rgba(139,154,165,0.88)',
+  fontSize: '12px',
+  fontWeight: 600,
+  textAlign: 'left',
+  textTransform: 'none',
+};
+
+const headerActionBarSx = {
+  display: 'flex',
+  flexWrap: { xs: 'wrap', md: 'nowrap' },
+  alignItems: 'center',
+  gap: 0.8,
+  mt: 0.85,
+};
+
+const summaryTextSx = {
+  color: palette.text,
+  fontSize: '13px',
+  fontWeight: 700,
+  minHeight: 26,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+};
 
 export default function AdminStockForm() {
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
@@ -67,7 +215,6 @@ export default function AdminStockForm() {
   /////////
   const [showModal, setShowModal] = useState(false);
   const [showModalProducto, setShowModalProducto] = useState(false);
-  const [showModalProductoLista, setShowModalProductoLista] = useState(false);
 
   const [showModalEmite, setShowModalEmite] = useState(false);
 
@@ -278,17 +425,45 @@ export default function AdminStockForm() {
         console.log(error);
     });
   }
-const cargaSeguridadSeriesSelectIA = () =>{
+const cargaSeguridadSeriesSelectIA = (motivoParaAplicar = null) =>{
     axios
     .get(`${back_host}/seguridadserie/${params.id_anfitrion}/${params.documento_id}/${params.id_invitado}/IA`) //Solo para Ingresos Almacen
     .then((response) => {
         setSerieSelectIA(response.data);
         console.log('series cargadas: ', response.data);
+        if (motivoParaAplicar) {
+          aplicarAlmacenesDesdeMotivo(motivoParaAplicar, response.data);
+        }
     })
     .catch((error) => {
         console.log(error);
     });
   }
+
+  const obtenerSerieDesdeAlmacen = (series, idAlmacen) => {
+    const almacenSeleccionado = series.find(item => String(item.id_almacen) === String(idAlmacen));
+    return almacenSeleccionado ? almacenSeleccionado.descripcion.split('-')[0].trim() : '';
+  };
+
+  const aplicarAlmacenesDesdeMotivo = (motivoSeleccionado, seriesIngreso = serie_selectIA) => {
+    if (!motivoSeleccionado) return;
+
+    const saIdAlmacen = motivoSeleccionado.sa_id_almacen ? String(motivoSeleccionado.sa_id_almacen) : '';
+    const iaIdAlmacen = motivoSeleccionado.ia_id_almacen ? String(motivoSeleccionado.ia_id_almacen) : '';
+
+    setDatosEmitir(prev => ({
+      ...prev,
+      id_motivo: motivoSeleccionado.id_motivo,
+      ...(saIdAlmacen ? {
+        id_almacen: saIdAlmacen,
+        id_serie: obtenerSerieDesdeAlmacen(serie_select, saIdAlmacen),
+      } : {}),
+      ...(iaIdAlmacen ? {
+        id_almacen_ia: iaIdAlmacen,
+        serie_ia: obtenerSerieDesdeAlmacen(seriesIngreso, iaIdAlmacen),
+      } : {}),
+    }));
+  };
 
   const cargaPopUpProducto = () =>{
     //version para productos almacen, conf almacenable
@@ -510,12 +685,13 @@ const cargaSeguridadSeriesSelectIA = () =>{
     if (name === 'id_motivo') {
       const [ID_MOT, SA_TRANSF, SA_TRASL] = value.split('-');    
       console.log('Motivo seleccionado: ', ID_MOT, SA_TRANSF, SA_TRASL);
+      const motivoSeleccionado = motivo_select.find(item => item.id_motivo === value);
       
       //Actualizar useState opTraslado y opTransformacion
       if (SA_TRASL === '1'){
         setOpTraslado(true);
         //cargar select_almacen2 para IA
-        cargaSeguridadSeriesSelectIA();
+        cargaSeguridadSeriesSelectIA(motivoSeleccionado);
       }else{
         setOpTraslado(false);
       }
@@ -524,11 +700,14 @@ const cargaSeguridadSeriesSelectIA = () =>{
       }else{
         setOpTransformacion(false);
       }
+
+      aplicarAlmacenesDesdeMotivo(motivoSeleccionado);
+      return;
     }
 
     if (name === 'id_almacen_ia') {
        // Buscar el almacén seleccionado en tu arreglo
-      const almacenSeleccionadoIA = serie_selectIA.find(item => item.id_almacen === value);
+      const almacenSeleccionadoIA = serie_selectIA.find(item => String(item.id_almacen) === String(value));
 
       if (almacenSeleccionadoIA) {
         // Extraer la parte antes del guion ("0001" de "0001-CENTRAL")
@@ -549,9 +728,9 @@ const cargaSeguridadSeriesSelectIA = () =>{
     }
 
     // Si el campo que cambia es "id_almacen"
-    if (name === 'id_almacen') {
+    else if (name === 'id_almacen') {
       // Buscar el almacén seleccionado en tu arreglo
-      const almacenSeleccionado = serie_select.find(item => item.id_almacen === value);
+      const almacenSeleccionado = serie_select.find(item => String(item.id_almacen) === String(value));
 
       if (almacenSeleccionado) {
         // Extraer la parte antes del guion ("0001" de "0001-CENTRAL")
@@ -574,6 +753,32 @@ const cargaSeguridadSeriesSelectIA = () =>{
       setDatosEmitir(prev => ({ ...prev, [name]: value }));
     }
   };
+
+  useEffect(() => {
+    if (!datosEmitir.id_almacen || serie_select.length === 0) return;
+
+    const idSerie = obtenerSerieDesdeAlmacen(serie_select, datosEmitir.id_almacen);
+    if (!idSerie || datosEmitir.id_serie === idSerie) return;
+
+    setDatosEmitir(prev => ({
+      ...prev,
+      id_almacen: String(prev.id_almacen),
+      id_serie: idSerie,
+    }));
+  }, [serie_select, datosEmitir.id_almacen, datosEmitir.id_serie]);
+
+  useEffect(() => {
+    if (!datosEmitir.id_almacen_ia || serie_selectIA.length === 0) return;
+
+    const idSerieIA = obtenerSerieDesdeAlmacen(serie_selectIA, datosEmitir.id_almacen_ia);
+    if (!idSerieIA || datosEmitir.serie_ia === idSerieIA) return;
+
+    setDatosEmitir(prev => ({
+      ...prev,
+      id_almacen_ia: String(prev.id_almacen_ia),
+      serie_ia: idSerieIA,
+    }));
+  }, [serie_selectIA, datosEmitir.id_almacen_ia, datosEmitir.serie_ia]);
     
   const handleChange = e => {
     /*if (e.target.name === "id_motivo"){
@@ -1169,30 +1374,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
     </>
 );
 
-  createTheme('solarized', {
-    text: {
-      //primary: '#268bd2',
-      primary: '#ffffff',
-      secondary: '#2aa198',
-    },
-    background: {
-      //default: '#002b36',
-      default: '#1e272e'
-    },
-    context: {
-      background: '#cb4b16',
-      //background: '#1e272e',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: '#073642',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
+  ensureAdminStockTableTheme();
 
   const [id_docBusca, setIdDocBusca] = useState("");
   const mostrarRazonSocialGenera = (sDocumentoId) => {
@@ -1228,67 +1410,122 @@ const cargaSeguridadSeriesSelectIA = () =>{
 
   // Función para intercambiar valores al hacer clic en la flecha
   return (
-  <div> 
-      <div></div>
-            <Card sx={{mt:1}}
+  <Box sx={{ color: palette.text, display: 'grid', gap: 1.15 }}> 
+      <Box></Box>
+            <Card sx={{ ...formShellSx, ...formPanelSx }}
                   style={{
-                    background:'#1e272e',
+                    background:'transparent',
                     //width: '700px', // Ajusta este valor según tu preferencia
                     padding:'0rem'
                   }}
             >
-                <CardContent >
+                <CardContent sx={{ p: '0 !important' }}>
                     <form onSubmit={handleSubmit} >
-
-                          <Grid container spacing={0}
-                                  //direction= {isSmallScreen ? "column": "row"} 
-                                  alignItems="center"
-                                  justifyContent="left"
-                          >
-                            <Grid item xs={isSmallScreen ? 12 : 2}>
-                              <Typography variant='h6' color='white' textAlign='center'>
-                                  { comprobanteEmitido ? 
-                                    (
-                                      ('Emitido Final')
-                                    )
+                          <Box sx={headerSummarySx}>
+                            <Box sx={{ minWidth: 0, ...headerBlockSx }}>
+                              <Typography sx={{ color: palette.text, fontSize: '20px', fontWeight: 800, lineHeight: 1.1 }}>
+                                { comprobanteEmitido ? 
+                                  (
+                                    ('Emitido Final')
+                                  )
+                                  :
+                                  (
+                                    params.comprobante.includes('MV') ?
+                                    ('MV en Proceso')
                                     :
-                                    (
-                                      params.comprobante.includes('MV') ?
-                                      ('MV en Proceso')
+                                    (  //cambiamos la vista del comprobante a mostrar
+                                      (formulario.r_cod_ref==null) ?
+                                      formulario.cod+"-"+formulario.serie+"-"+formulario.numero
                                       :
-                                      (  //cambiamos la vista del comprobante a mostrar
-                                        (formulario.r_cod_ref==null) ?
-                                        formulario.cod+"-"+formulario.serie+"-"+formulario.numero
-                                        :
-                                        formulario.r_cod_ref+"-"+formulario.r_serie_ref+"-"+formulario.r_numero_ref
-                                      ) 
-                                    )
-                                  }
+                                      formulario.r_cod_ref+"-"+formulario.r_serie_ref+"-"+formulario.r_numero_ref
+                                    ) 
+                                  )
+                                }
                               </Typography>
-                            </Grid>
+                              <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
+                                {`${registrosdet.length} detalles - Periodo ${params.periodo}`}
+                              </Typography>
+                              <Box sx={headerActionBarSx}>
+                                <Box sx={{ flex: '1 1 180px', minWidth: 0 }}>
+                                  <TextField variant="outlined" 
+                                            fullWidth
+                                            size="small"
+                                            sx={formFieldSx}
+                                            name="fecha_emision"
+                                            type="date"
+                                            value={formulario.fecha_emision}
+                                            onChange={handleChange}
+                                            inputProps={{ style:{color:'white'} }}
+                                            InputLabelProps={{ style:{color:'white'} }}
+                                  />
+                                </Box>
+                                <Box sx={{ width: { xs: '100%', md: 132 }, flexShrink: 0 }}>
+                                  {//En caso de MV en Proceso, solo se emite comprobante
+                                  params.comprobante.includes('MV') ?
+                                  (
+                                      <Button variant='contained' 
+                                              color='primary' 
+                                              fullWidth
+                                              sx={primaryActionSx}
+                                              onClick = { () => {
+                                                //Valores deafult
+                                                setValorEmite('IA'); //por default
+                                                cargaMotivoSelect('IA'); //por default
+                                                cargaSeguridadSeriesSelect('IA'); //por default
+                                                setShowModalEmite(true);
+                                                }
+                                              }
+                                              disabled={
+                                                        !formulario.fecha_emision 
+                                                        }
+                                              >
+                                              { cargando ? (
+                                              <CircularProgress color="inherit" size={24} />
+                                              ) : (
+                                              'EMITIR')
+                                              }
+                                      </Button>
+                                  )
+                                  :
+                                  (  //Caso contrario, solo se modifica pero 'NV' (Notas)
+                                      //Comprobantes Sunat NO, porque ya estan declarados en OSE-sunat
+                                      <Button variant='contained' 
+                                              color='primary' 
+                                              type='submit'
+                                              fullWidth
+                                              sx={primaryActionSx}
+                                              disabled={
+                                                        !formulario.fecemi 
+                                                        //|| !venta.r_documento_id 
+                                                        //|| !pVenta010201 
+                                                        //|| !params.comprobante.includes('NV')
+                                                        }
+                                              >
+                                              { cargando ? (
+                                              <CircularProgress color="inherit" size={24} />
+                                              ) : (
+                                              'MODIFICA')
+                                              }
+                                      </Button>
+                                  )
+                                  }
+                                </Box>
+                              </Box>
+                            </Box>
 
-                            <Grid item xs={isSmallScreen ? 12 : 2}>
-                              <TextField variant="outlined" 
-                                        //label="fecha"
-                                        fullWidth
-                                        size="small"
-                                        sx={{display:'block',
-                                              margin:'.5rem 0'}}
-                                        name="fecha_emision"
-                                        type="date"
-                                        //format="yyyy/MM/dd"
-                                        value={formulario.fecha_emision}
-                                        onChange={handleChange}
-                                        inputProps={{ style:{color:'white'} }}
-                                        InputLabelProps={{ style:{color:'white'} }}
-                                />
-                              </Grid>
-
-                              <Grid item xs={isSmallScreen ? 12 : 4}>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', flex: 1 }}>
+                              <Box sx={infoPillSx}>
+                                <Typography sx={{ color: palette.muted, fontSize: '13px', fontWeight: 600, lineHeight: 1.2 }}>
+                                  Movimiento
+                                </Typography>
+                                <Box sx={totalLineSx}>
+                                  <Typography sx={totalLabelSx}>
+                                    Almacen
+                                  </Typography>
                                   {params.comprobante.includes('MV') ?
                                     (
-                                      <Typography variant='h6' color='white' textAlign='center'>
-                                          Almacen: {formulario.id_almacen}
+                                      <Typography sx={summaryTextSx}>
+                                        {formulario.id_almacen}
                                       </Typography>
                                     ):
                                     (
@@ -1296,9 +1533,8 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                           labelId="almacen_select"
                                           size='small'
                                           value={formulario.id_almacen}
-                                          name="almacen"
-                                          sx={{display:'block',
-                                          margin:'.1rem 0', color:"white", fontSize: '13px' }}
+                                          name="id_almacen"
+                                          sx={formSelectSx}
                                           label="Almacen"
                                           onChange={handleChange}
                                           >
@@ -1312,14 +1548,15 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                       </Select>
                                     )
                                   }
-                              </Grid>
-
-                              
-                              <Grid item xs={isSmallScreen ? 12 : 2.8}>
+                                </Box>
+                                <Box sx={totalLineSx}>
+                                  <Typography sx={totalLabelSx}>
+                                    Motivo
+                                  </Typography>
                                   {params.comprobante.includes('MV') ?
                                     (
-                                      <Typography variant='h6' color='white' textAlign='center'>
-                                          Motivo: {formulario.id_motivo}
+                                      <Typography sx={summaryTextSx}>
+                                        {formulario.id_motivo}
                                       </Typography>
                                     ):
                                     (
@@ -1328,8 +1565,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                             size='small'
                                             value={formulario.id_motivo}
                                             name="id_motivo"
-                                            sx={{display:'block',
-                                            margin:'.1rem 0', color:"white", fontSize: '13px' }}
+                                            sx={formSelectSx}
                                             label="Motivo"
                                             onChange={handleChange}
                                             >
@@ -1343,66 +1579,18 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                       </Select>
                                     )
                                   }
-                              </Grid>
+                                </Box>
+                              </Box>
+                            </Box>
+                          </Box>
 
-                              <Grid item xs={isSmallScreen ? 12 : 1.2}>
-                              {//En caso de MV en Proceso, solo se emite comprobante
-                               params.comprobante.includes('MV') ?
-                               (
-                                  <Button variant='contained' 
-                                          color='primary' 
-                                          //type='submit'
-                                          fullWidth
-                                          sx={{display:'block',
-                                          margin:'.5rem 0'}}
-                                          onClick = { () => {
-                                            //Valores deafult
-                                            setValorEmite('IA'); //por default
-                                            cargaMotivoSelect('IA'); //por default
-                                            cargaSeguridadSeriesSelect('IA'); //por default
-                                            setShowModalEmite(true);
-                                            }
-                                          }
-                                          disabled={
-                                                    !formulario.fecha_emision 
-                                                    }
-                                          >
-                                          { cargando ? (
-                                          <CircularProgress color="inherit" size={24} />
-                                          ) : (
-                                          'EMITIR')
-                                          }
-                                  </Button>
-                               )
-                               :
-                               (  //Caso contrario, solo se modifica pero 'NV' (Notas)
-                                  //Comprobantes Sunat NO, porque ya estan declarados en OSE-sunat
-                                  <Button variant='contained' 
-                                          color='primary' 
-                                          type='submit'
-                                          fullWidth
-                                          sx={{display:'block',
-                                          margin:'.5rem 0'}}
-                                          disabled={
-                                                    !formulario.fecemi 
-                                                    //|| !venta.r_documento_id 
-                                                    //|| !pVenta010201 
-                                                    //|| !params.comprobante.includes('NV')
-                                                    }
-                                          >
-                                          { cargando ? (
-                                          <CircularProgress color="inherit" size={24} />
-                                          ) : (
-                                          'MODIFICA')
-                                          }
-                                  </Button>
-                               )
-                              }
-
-                              </Grid>
-
+                          <Grid container spacing={1}
+                                  //direction= {isSmallScreen ? "column": "row"} 
+                                  alignItems="center"
+                                  justifyContent="left"
+                          >
                               {!params.comprobante.includes('MV') && (
-                              <Grid container spacing={0}
+                              <Grid container spacing={1}
                                       //direction= {isSmallScreen ? "column": "row"} 
                                       alignItems="center"
                                       justifyContent="left"
@@ -1412,7 +1600,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                           variant="outlined"
                                           placeholder="RUC/DNI"
                                           size="small"
-                                          sx={{ mt: 1 }}
+                                          sx={formFieldSx}
                                           fullWidth
                                           name="r_documento_id"
                                           value={formulario.r_documento_id}
@@ -1442,7 +1630,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                         <TextField variant="outlined" 
                                                     placeholder="RAZON SOCIAL"
                                                     size="small"
-                                                    sx={{mt:1}}
+                                                    sx={formFieldSx}
                                                     fullWidth
                                                     name="r_razon_social"
                                                     value={formulario.r_razon_social}
@@ -1461,7 +1649,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="r_cod"
                                                 value={formulario.r_cod}
                                                 onChange={handleChange}
@@ -1474,7 +1662,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="r_serie"
                                                 value={formulario.r_serie}
                                                 onChange={handleChange}
@@ -1487,7 +1675,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="r_numero"
                                                 value={formulario.r_numero}
                                                 onChange={handleChange}
@@ -1500,7 +1688,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="fecemi"
                                                 value={formulario.fecemi}
                                                 onChange={handleChange}
@@ -1518,7 +1706,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="gre_serie"
                                                 value={formulario.gre_serie}
                                                 onChange={handleChange}
@@ -1531,7 +1719,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                                 size="small"
                                                 //sx={{display:'block',
                                                 //      margin:'.5rem 0'}}
-                                                sx={{mt:1}}
+                                                sx={formFieldSx}
                                                 name="gre_numero"
                                                 value={formulario.gre_numero}
                                                 onChange={handleChange}
@@ -1546,308 +1734,24 @@ const cargaSeguridadSeriesSelectIA = () =>{
 
                           </Grid>
 
-                          { (showModalProducto) ?
-                            (   <>
-                                        {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                                        <Dialog
-                                          open={showModalProducto}
-                                          onClose={() => setShowModalProducto(false)}
-                                          maxWidth="md" // Valor predeterminado de 960px
-                                          //fullWidth
-                                          disableScrollLock // Evita que se modifique el overflow del body
-                                          PaperProps={{
-                                            style: {
-                                              top: isSmallScreen ? "-10vh" : "0vh", // Ajusta la distancia desde arriba
-                                              left: isSmallScreen ? "0%" : "0%", // Centrado horizontal
-                                              display: 'flex',
-                                              flexDirection: 'column',
-                                              alignItems: 'center',
-                                              marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                              //background:'#1e272e',
-                                              //background: 'rgba(33, 150, 243, 0.8)', // Cambiado a color RGBA para la transparencia                              
-                                              background: 'rgba(30, 39, 46, 0.9)', // Plomo transparencia                                                                            
-                                              color:'white',
-                                              width: isSmallScreen ? ('70%') : ('30%'), // Ajusta este valor según tus necesidades
-                                              //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                              //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                            },
-                                          }}
-                                        >
-                                        <DialogTitle>Producto - Item</DialogTitle>
-                                            <Tooltip title={producto.descripcion}>
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="PRODUCTO"
-                                              inputRef={inputProductoRef} // Asocia la referencia al campo de texto
-                                              onFocus={handleFocus} //Si esta en celular, quita el foco y desaparece automaticament el teclado
-                                              autoFocus
-                                              size="small"
-                                              name="id_producto"
-                                              value={producto.descripcion}
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              InputProps={{
-                                                style: { color: 'white', width: 270 },
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    
-                                                    <IconButton
-                                                      color="primary"
-                                                      //color = 'rgba(33, 150, 243, 0.8)'
-                                                      aria-label="upload picture"
-                                                      component="label"
-                                                      size="small"
-                                                      sx={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        left: 0,
-                                                        transform: 'translateY(-50%)',
-                                                      }}
-                                                      onClick={() => {
-                                                        setShowModalProductoLista(true);
-                                                      }}
-                                                    >
-                                                      <FindIcon />
-                                                    </IconButton>
-                                                    
-                                                    { //En caso celular, mostrar icono teclado, (desactivado teclado al momento del foco)
-                                                    isSmallScreen ? (
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="Muestra teclado"
-                                                      size="small"
-                                                      onClick={handleMostrarTecladoCelular} // Mostrar teclado virtual en celular
-                                                      sx={{
-                                                        padding: '0px',
-                                                        //height:'30',
-                                                        marginLeft:'20px',
-                                                        marginRight: '-30px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <KeyboardIcon />
-                                                    </IconButton>
-                                                    )
-                                                    :
-                                                    null
-                                                  }
-
-                                                  </InputAdornment>
-                                                ),
-
-                                                // Aquí se ajusta el padding del texto sin afectar el icono
-                                                inputProps: {
-                                                  style: {
-                                                    paddingLeft: '32px', // Mueve solo el texto a la derecha
-                                                      fontSize: '12px', // Ajusta el tamaño de letra aquí
-                                                  },
-                                                },
-                                              }}
-                                            />
-                                            </Tooltip>
-                                                  <ListaPopUp
-                                                      registroPopUp={producto_select}
-                                                      gruposPopUp={grupo_select}
-                                                      showModal={showModalProductoLista}
-                                                      setShowModal={setShowModalProductoLista}
-                                                      registro={producto}                    
-                                                      setRegistro={setProducto}                    
-                                                      idCodigoKey="id_producto"
-                                                      descripcionKey="descripcion"
-                                                      auxiliarKey="auxiliar"
-                                                  />
-
-                                            <TextField
-                                              variant="outlined"
-                                              placeholder="CANTIDAD"
-                                              label="CANTIDAD"
-                                              autoFocus
-                                              size="small"
-                                              sx={{ mt: 2 }}
-                                              name="cantidad"
-                                              value={producto.cantidad}
-                                              onChange={handleChangeProductoDatos}
-                                              inputProps={{
-                                                style: {
-                                                  color: 'white',
-                                                  width: 110,
-                                                  textAlign: 'right',
-                                                  readOnly: true,
-                                                },
-                                              }}
-                                              InputLabelProps={{ style: { color: 'white' } }}
-                                              InputProps={{
-                                                startAdornment: (
-                                                  <InputAdornment position="start">
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="reiniciar a 1"
-                                                      size="small"
-                                                      onClick={handleResetCantidad} // Función para retroceder cambios
-                                                      sx={{
-                                                        padding: '0px',
-                                                        height:'30',
-                                                        marginLeft:'-10px',
-                                                        marginRight: '0px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <RestartAltIcon />
-                                                    </IconButton>
-                                                    
-
-                                                  </InputAdornment>
-                                                ),
-                                                endAdornment: (
-                                                  <InputAdornment position="end">
-
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="disminuir en 1"
-                                                      size="small"
-                                                      onClick={handleDecreaseByOne} // Función para retroceder cambios
-                                                      sx={{
-                                                        padding: '0px',
-                                                        height: '48px',      // alto mayor
-                                                        marginRight: '0px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <IndeterminateCheckBox  color="inherit" style={{ width: 35, height: 35 }} />
-                                                    </IconButton>
-
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="aumentar de 1 en 1"
-                                                      size="small"
-                                                      onClick={handleIncreaseByOne} // Función para aumentar de 1 en 1
-                                                      sx={{
-                                                        padding: '0px',
-                                                        marginRight: '5px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                      <AddCircleIcon color="success" style={{ width: 35, height: 35 }}/>
-                                                    </IconButton>
-
-                                                    <IconButton
-                                                      color="default"
-                                                      aria-label="aumentar de 10 en 10"
-                                                      size="large"
-                                                      onClick={handleIncreaseByTen} // Función para aumentar de 10 en 10
-                                                      sx={{
-                                                        padding: '0px',
-                                                        marginRight: '-10px',
-                                                        backgroundColor: 'primary', // Color de fondo del ícono
-                                                        borderRadius: '4px', // Bordes redondeados
-                                                        '&:hover': {
-                                                          backgroundColor: 'skyblue', // Color de fondo al hacer hover
-                                                        },
-                                                      }}                                                        
-                                                    >
-                                                        <Box
-                                                          sx={{
-                                                            width: 25, 
-                                                            height: 35, 
-                                                            overflow: 'hidden' // recorta lo que sobre
-                                                          }}
-                                                        >
-                                                          <Timer10SelectIcon 
-                                                            color="success" 
-                                                            sx={{ fontSize: 35 }} 
-                                                          />
-                                                        </Box>
-                                                    </IconButton>
-                                                  </InputAdornment>
-                                                ),
-                                              }}
-                                            />
-
-                                            <TextField variant="outlined" 
-                                                      //maxWidth="md"
-                                                      placeholder='PRECIO U.'
-                                                      label='PRECIO U.'
-                                                      autoFocus
-                                                      size="small"
-                                                      //sx={{mt:-1}}
-                                                      name="precio_unitario"
-                                                      value={producto.precio_unitario}
-                                                      onChange={handleChangeProductoDatos}
-                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
-                                                      InputLabelProps={{ style:{color:'white'} }}
-                                            />
-                                            <TextField variant="outlined" 
-                                                      //maxWidth="md"
-                                                      placeholder='IMPORTE'
-                                                      label='IMPORTE'
-                                                      autoFocus
-                                                      size="small"
-                                                      //sx={{mt:-1}}
-                                                      name="precio_neto"
-                                                      value={producto.precio_neto}
-                                                      //onChange={handleSearchTextCuentaChange} //new para busqueda
-                                                      //onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                      inputProps={{ style:{color:'white',width: 240, textAlign: 'center',  readOnly: true} }}
-                                                      InputLabelProps={{ style:{color:'white'} }}
-                                            />
-                                            <Button variant='contained' 
-                                                        color='success' 
-                                                        //size='small'
-                                                        //startIcon={<AssessmentRoundedIcon />}
-                                                        onClick={handleSaveDetail}
-                                                        sx={{display:'block',margin:'.5rem 0', width: 270}}
-                                                        //sx={{margin:'.5rem 0', height:55}}
-                                                        >
-                                                        AGREGAR
-                                            </Button>
-                                            <Button variant='contained' 
-                                                        //color='warning' 
-                                                        //size='small'
-                                                        onClick={()=>{
-                                                              setShowModalProducto(false);
-                                                          }
-                                                        }
-                                                        sx={{display:'block',
-                                                             margin:'.5rem 0',
-                                                             width: 270, 
-                                                             backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                            '&:hover': {
-                                                                  backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                                },                                                             
-                                                             mt:-0.5}}
-                                                        >
-                                                        ESC - CERRAR
-                                            </Button>
-
-
-                                        </Dialog>
-                                        {/* FIN Seccion para mostrar Dialog tipo Modal */}
-                                </>
-                            )
-                            :
-                            (   
-                              <>
-                              </>
-                            )
-                          }
-
-
+                          <AdminStockProductoModal
+                            isSmallScreen={isSmallScreen}
+                            producto={producto}
+                            setProducto={setProducto}
+                            productoSelect={producto_select}
+                            grupoSelect={grupo_select}
+                            showModalProducto={showModalProducto}
+                            setShowModalProducto={setShowModalProducto}
+                            inputProductoRef={inputProductoRef}
+                            onFocus={handleFocus}
+                            onMostrarTecladoCelular={handleMostrarTecladoCelular}
+                            onChangeProductoDatos={handleChangeProductoDatos}
+                            onResetCantidad={handleResetCantidad}
+                            onDecreaseByOne={handleDecreaseByOne}
+                            onIncreaseByOne={handleIncreaseByOne}
+                            onIncreaseByTen={handleIncreaseByTen}
+                            onSaveDetail={handleSaveDetail}
+                          />
 
                           { (showModalEmite) ?
                             (   <>
@@ -1913,7 +1817,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
 
                                              <Select
                                                     labelId="serie_select"
-                                                    value={datosEmitir.id_almacen}  // 
+                                                    value={datosEmitir.id_almacen ? String(datosEmitir.id_almacen) : ''}  // 
                                                     size='small'
                                                     name="id_almacen"
                                                     //fullWidth
@@ -1932,7 +1836,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                              >
                                                     {   
                                                         serie_select.map(elemento => (
-                                                        <MenuItem key={elemento.id_almacen} value={elemento.id_almacen}
+                                                        <MenuItem key={elemento.id_almacen} value={String(elemento.id_almacen)}
                                                                   sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
                                                         >
                                                         {elemento.descripcion}
@@ -1972,7 +1876,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                             { (opTraslado) ?
                                             (   
                                               <Select
-                                                      value={datosEmitir.id_almacen_ia}  // 
+                                                      value={datosEmitir.id_almacen_ia ? String(datosEmitir.id_almacen_ia) : ''}  // 
                                                       size='small'
                                                       name="id_almacen_ia"
                                                       //fullWidth
@@ -1990,7 +1894,7 @@ const cargaSeguridadSeriesSelectIA = () =>{
                                               >
                                                       {   
                                                           serie_selectIA.map(elemento => (
-                                                          <MenuItem key={elemento.id_almacen} value={elemento.id_almacen}
+                                                          <MenuItem key={elemento.id_almacen} value={String(elemento.id_almacen)}
                                                                     sx={{ justifyContent: 'center' }} // Centra el texto en cada opción
                                                           >
                                                           {elemento.descripcion}
@@ -2248,29 +2152,15 @@ const cargaSeguridadSeriesSelectIA = () =>{
             </Card>
 
 
-    <Card sx={{mt:1}}
-                  style={{
-                    background:'#1e272e',
-                    //maxWidth: '700px', // Ajusta este valor según tu preferencia
-                    padding:'1rem',
-                  }}
-            >
-              <Datatable
-                //title={actions}
-                theme="solarized"
-                columns={columnas}
-                data={registrosdet}
-                contextActions={contextActions}
-                actions={actions}
-                onSelectedRowsChange={handleRowSelected}
-                selectableRowsComponent={Checkbox} // Pass the function only
-                sortIcon={<ArrowDownward />}
-                dense={true}
-                highlightOnHover //resalta la fila
-              >
-              </Datatable>
-            </Card>
+    <AdminStockFormTables
+      columnas={columnas}
+      registrosdet={registrosdet}
+      contextActions={contextActions}
+      actions={actions}
+      handleRowSelected={handleRowSelected}
+    />
 
-  </div>    
+
+  </Box>    
   );
 }

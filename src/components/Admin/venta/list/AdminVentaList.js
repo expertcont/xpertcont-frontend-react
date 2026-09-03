@@ -1,17 +1,16 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Box,Modal, Button,useMediaQuery,Select, MenuItem, Typography} from "@mui/material";
+import { Box,Modal, Button,useMediaQuery,Select, MenuItem, Typography, InputBase} from "@mui/material";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
-import FindIcon from '@mui/icons-material/FindInPage';
-import AddBoxIcon from '@mui/icons-material/AddBox';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import { Plus, Search } from 'lucide-react';
 import { blueGrey } from '@mui/material/colors';
 //import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "../../AdminDias";
 import { useDialog } from "../../AdminConfirmDialogProvider";
 
 //import PrintIcon from '@mui/icons-material/Print';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
 import FileCopyIcon from '@mui/icons-material/FileCopy';
 import CopyAllIcon from '@mui/icons-material/CopyAll';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -22,8 +21,6 @@ import IconButton from '@mui/material/IconButton';
 import swal2 from 'sweetalert2'
 import Datatable from 'react-data-table-component';
 import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import StackedLineChartIcon from '@mui/icons-material/StackedLineChart';
@@ -40,6 +37,7 @@ import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelGeneral from '../../../BotonExcelGeneral';
+import AppButton from '../../../ui/AppButton';
 
 import { AdminVentasColumnas } from '../../AdminColumnas';
 import { AdminCajaColumnas } from '../../AdminColumnas';
@@ -110,6 +108,37 @@ const selectMenuProps = {
   },
 };
 
+const searchSx = {
+  flex: '1 1 280px',
+  minWidth: { xs: '100%', sm: 280 },
+  height: 42,
+  px: 1.15,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.85,
+  color: palette.text,
+  backgroundColor: palette.bg,
+  border: '1px solid rgba(139,154,165,0.14)',
+  borderRadius: contentRadius,
+  '&:focus-within': {
+    borderColor: 'rgba(139,154,165,0.32)',
+  },
+};
+
+const inputSx = {
+  color: palette.text,
+  fontSize: '13px',
+  width: '100%',
+  '& input': {
+    color: palette.text,
+    fontSize: '13px',
+  },
+  '& input::placeholder': {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
 const toolbarIconSx = {
   width: 42,
   height: 42,
@@ -122,6 +151,32 @@ const toolbarIconSx = {
     backgroundColor: 'rgba(139,154,165,0.14)',
     borderColor: 'rgba(139,154,165,0.20)',
     color: palette.text,
+  },
+};
+
+const rowActionIconSx = {
+  color: 'rgba(144,164,174,0.78)',
+  cursor: 'pointer',
+  fontSize: 25,
+  display: 'block',
+  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.26))',
+  transition: 'color 0.18s ease, filter 0.18s ease, transform 0.18s ease',
+  '&:hover': {
+    color: '#7ddbd3',
+    filter: 'drop-shadow(0 0 6px rgba(125,219,211,0.24))',
+    transform: 'translateY(-1px) scale(1.03)',
+  },
+};
+
+const cloneActionIconSx = {
+  color: 'rgba(139,154,165,0.86)',
+  cursor: 'pointer',
+  fontSize: 23,
+  display: 'block',
+  transition: 'color 0.18s ease, transform 0.18s ease',
+  '&:hover': {
+    color: 'rgba(255,255,255,0.92)',
+    transform: 'translateY(-1px)',
   },
 };
 
@@ -236,7 +291,7 @@ const dataTableStyles = {
 
 export default function AdminVentaList() {
   //Control de useffect en retroceso de formularios
-  //verificamos si es pantalla pequeña y arreglamos el grid de fechas
+  //verificamos si es pantalla pequeÃ±a y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const { confirmDialog } = useDialog(); //unico dialogo
   const [fecha_clon, setFechaClon] = useState("");
@@ -311,7 +366,7 @@ export default function AdminVentaList() {
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
   
-  // Agrega íconos al inicio de cada columna
+  // Agrega Ã­conos al inicio de cada columna
   let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
   const [permisos, setPermisos] = useState([]); //Menu
@@ -359,17 +414,17 @@ export default function AdminVentaList() {
         cancelText: "CANCELAR",
     });
     if (result.isConfirmed) {
-          console.log("✅ Eliminado:", sComprobante);
+          console.log("âœ… Eliminado:", sComprobante);
           eliminarRegistroSeleccionado(sAnfitrion,sDocumentoId,sPeriodo,sComprobante,sElemento);
           setToggleCleared(!toggleCleared);
           setRegistrosdet(registrosdet.filter(
                           registrosdet => registrosdet.comprobante !== sComprobante
                           ));
-          setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+          setTimeout(() => { // Agrega una funciÃ³n para que se ejecute despuÃ©s del tiempo de espera
               setUpdateTrigger(Math.random());//experimento
           }, 200);
     } else {
-      console.log("❌ Cancelado");
+      console.log("âŒ Cancelado");
       return; // Salimos si el usuario cancela
     }
   }
@@ -428,7 +483,7 @@ export default function AdminVentaList() {
     const { value: selectedOrigen } = await swal2.fire({
       ...sweetAlertDarkOptions,
       title: 'Eliminar registros',
-      //text: 'Selecciona el origen para la eliminación masiva:',
+      //text: 'Selecciona el origen para la eliminaciÃ³n masiva:',
       input: 'select',
       icon: 'warning',
       //color: 'orange',
@@ -436,7 +491,7 @@ export default function AdminVentaList() {
         EXCEL: 'EXCEL',
         SIRE: 'SIRE',
         MANUAL: 'MANUAL',
-        // Agrega las opciones según los valores de "origen" de tu tabla
+        // Agrega las opciones segÃºn los valores de "origen" de tu tabla
       },
       inputAttributes: {
         style: `background:${palette.bg}; color:${palette.text}; border:1px solid ${palette.border}; border-radius:8px; height:40px; font-size:13px;`,
@@ -458,13 +513,13 @@ export default function AdminVentaList() {
 
     // Si el usuario hace clic en "Eliminar" y selecciona un origen
     if (selectedOrigen) {
-      // Aquí puedes realizar la lógica para eliminar registros masivamente con el origen seleccionado
+      // AquÃ­ puedes realizar la lÃ³gica para eliminar registros masivamente con el origen seleccionado
       //console.log('Eliminar registros con origen:', selectedOrigen);
       await fetch(`${back_host}/asientomasivo/${sAnfitrion}/${sDocumentoId}/${sPeriodo}/${sLibro}/${selectedOrigen}`, {
         method:"DELETE"
       });
 
-      setTimeout(() => { // Agrega una función para que se ejecute después del tiempo de espera
+      setTimeout(() => { // Agrega una funciÃ³n para que se ejecute despuÃ©s del tiempo de espera
         setUpdateTrigger(Math.random());//experimento
       }, 200);
       console.log('eliminadooooo todo, ahora debemos recargar en 2do useeffect');
@@ -477,7 +532,7 @@ export default function AdminVentaList() {
       // Verificar si el valor del campo de filtro coincide
       if (fila['r_moneda'] === filtro) {
         const valorColumna = fila[columna];
-        // Verificar si el valor no es nulo y es numérico antes de sumarlo
+        // Verificar si el valor no es nulo y es numÃ©rico antes de sumarlo
         if (valorColumna !== null && !isNaN(valorColumna)) {
           return acumulador + parseFloat(valorColumna);
         }
@@ -535,7 +590,7 @@ export default function AdminVentaList() {
       if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase())) {
         return elemento;
       }
-      return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
+      return null; // Agrega esta lÃ­nea para manejar el caso en que no haya coincidencia
     });
   
     resultadosBusqueda = resultadosBusqueda.filter(Boolean); // Filtra los elementos nulos
@@ -674,7 +729,7 @@ export default function AdminVentaList() {
     return [
       {
         name: '',
-        width: isSmallScreen ?  '40px' : '30px',
+        width: isSmallScreen ?  '36px' : '30px',
         cell: (row) => (
           (pVenta0103) && (row.r_cod !== 'NV') ? 
           (
@@ -689,7 +744,7 @@ export default function AdminVentaList() {
               idAnfitrion={params.id_anfitrion}
               contabilidadTrabajo={contabilidad_trabajo}
               backHost={back_host}
-              onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
+              onRefresh={() => setUpdateTrigger(Math.random())} // âœ… refresca al cerrar el modal
               size={26}
               cdr_nivel={row.cdr_nivel} //new
             />
@@ -700,7 +755,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: isSmallScreen ?  '40px' : '30px',
+        width: isSmallScreen ?  '38px' : '32px',
         cell: (row) => (
           (pVenta0102) && (row.r_vfirmado == null) ?
           (
@@ -715,14 +770,12 @@ export default function AdminVentaList() {
           )  
           : 
           (
-            <FindInPageIcon
-              onClick={() => handleUpdate(row.comprobante_key,true)}
-              style={{
-                cursor: 'pointer',
-                color: 'gray',
-                transition: 'color 0.3s ease',
-              }}
-            />
+            <Tooltip title="Ver contenido">
+              <SearchRoundedIcon
+                sx={rowActionIconSx}
+                onClick={() => handleUpdate(row.comprobante_key,true)}
+              />
+            </Tooltip>
 
           )
         ),
@@ -731,7 +784,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: isSmallScreen ?  '40px' : '30px',
+        width: isSmallScreen ?  '36px' : '30px',
         cell: (row) => (
           (pVenta0103) && (row.r_vfirmado == null) ?
           (
@@ -746,19 +799,17 @@ export default function AdminVentaList() {
           ) 
           : 
           (
-            <ContentCopyIcon
-              onClick={() => {
+            <Tooltip title="Clonar venta">
+              <ContentCopyIcon
+                sx={cloneActionIconSx}
+                onClick={() => {
                   setShowModalMostrarClonar(true);
                   setValorComprobante(row.comprobante_key);
                   //clonarVenta(row.comprobante_key);
                   }
                 }
-              style={{
-                cursor: 'pointer',
-                //color: 'primary',
-                transition: 'color 0.3s ease',
-              }}
-            />
+              />
+            </Tooltip>
 
           )
 
@@ -768,7 +819,7 @@ export default function AdminVentaList() {
       },
       {
         name: '',
-        width: isSmallScreen ?  '40px' : '30px',
+        width: isSmallScreen ?  '36px' : '30px',
         cell: (row) => (
           (pVenta0103) && (row.r_cod !== 'NV') ? 
           (
@@ -783,7 +834,7 @@ export default function AdminVentaList() {
               idInvitado={params.id_invitado} //new para GRE, identifica serie autorizada 
               contabilidadTrabajo={contabilidad_trabajo}
               backHost={back_host}
-              onRefresh={() => setUpdateTrigger(Math.random())} // ✅ refresca al cerrar el modal
+              onRefresh={() => setUpdateTrigger(Math.random())} // âœ… refresca al cerrar el modal
               size={26}
             />
           ) 
@@ -791,19 +842,17 @@ export default function AdminVentaList() {
           ( //Auxiliamos con clonar para pedidos, en caso modo simple
           (pVenta0103) && (row.r_cod === 'NV') ? 
           (
-            <ContentCopyIcon
-              onClick={() => {
+            <Tooltip title="Clonar venta">
+              <ContentCopyIcon
+                sx={cloneActionIconSx}
+                onClick={() => {
                   setShowModalMostrarClonar(true);
                   setValorComprobante(row.comprobante_key);
                   //clonarVenta(row.comprobante_key);
                   }
                 }
-              style={{
-                cursor: 'pointer',
-                //color: 'primary',
-                transition: 'color 0.3s ease',
-              }}
-            />
+              />
+            </Tooltip>
           )
           : null
           )
@@ -1017,7 +1066,7 @@ export default function AdminVentaList() {
   };
 
   const obtenerFecha = (periodo,bformatoBD,sDia) => {
-    // Obtener el mes y año del parámetro "periodo" en formato "AAAA-MM"
+    // Obtener el mes y aÃ±o del parÃ¡metro "periodo" en formato "AAAA-MM"
     const [year, month] = periodo.split('-').map(Number);
   
     // Obtener la fecha actual
@@ -1025,7 +1074,7 @@ export default function AdminVentaList() {
     
     /*if (sDia!==''){
         //restamos 1 al mes, pinche manejo de fecha js
-      const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
+      const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el dÃ­a, se obtiene el Ãºltimo dÃ­a del mes
       return formatearFecha(fechaSeleccionada,bformatoBD,sDia); // Retorna la fecha actual formateada
     }else{
       return formatearFecha(fechaActual,bformatoBD,sDia); // Retorna la fecha actual formateada
@@ -1035,12 +1084,12 @@ export default function AdminVentaList() {
       return formatearFecha(fechaActual,bformatoBD,sDia); // Retorna la fecha actual formateada
     }else{
       //restamos 1 al mes, pinche manejo de fecha js
-      const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el día, se obtiene el último día del mes
+      const fechaSeleccionada = new Date(year, month-1, sDia); // Al pasar 0 en el dÃ­a, se obtiene el Ãºltimo dÃ­a del mes
       return formatearFecha(fechaSeleccionada,bformatoBD,sDia); // Retorna la fecha actual formateada
     }
   };
 
-  // Función para formatear la fecha en DD/MM/YYYY
+  // FunciÃ³n para formatear la fecha en DD/MM/YYYY
   const formatearFecha = (fecha,bformatoBD,sDia) => {
     let dia;
     if (sDia==='' || sDia==='*'){
@@ -1261,24 +1310,25 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
         ...toolbarSurfaceSx,
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: 1,
         flexWrap: 'wrap',
       }}
   >
 
-        <Box>
-          <Tooltip title='AGREGAR NUEVO' >
-            <IconButton color="primary" 
-                            //style={{ padding: '0px'}}
-                            sx={toolbarIconSx}
-                            onClick={() => {
-                              generaVenta();
-                            }}
-            >
-                  <AddBoxIcon sx={{ fontSize: 28 }}/>
-            </IconButton>
-          </Tooltip>
+        <Box sx={searchSx}>
+          <Search size={16} color={palette.muted} />
+          <InputBase
+            name="busqueda"
+            placeholder="Filtrar: RUC, razon social o comprobante"
+            onChange={actualizaValorFiltro}
+            sx={inputSx}
+          />
         </Box>
+
+        <AppButton icon={<Plus size={16} />} onClick={generaVenta} sx={{ ml: 'auto' }}>
+          Nuevo
+        </AppButton>
 
         <Box>    
           { (pVenta0104) ? (
@@ -1325,41 +1375,7 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
 
 
         
-        {/* El componente del cuadro de diálogo */}
 
-        <TextField fullWidth variant="outlined" color="success" size="small"
-                                    sx={{
-                                      flex: '1 1 280px',
-                                      minWidth: { xs: '100%', sm: 280 },
-                                      '& .MuiOutlinedInput-root': {
-                                        height: 42,
-                                        color: palette.text,
-                                        backgroundColor: palette.bg,
-                                        borderRadius: contentRadius,
-                                        '& fieldset': { borderColor: 'rgba(139,154,165,0.14)' },
-                                        '&:hover fieldset': { borderColor: 'rgba(139,154,165,0.24)' },
-                                        '&.Mui-focused fieldset': { borderColor: 'rgba(139,154,165,0.32)' },
-                                      },
-                                      '& input': {
-                                        color: palette.text,
-                                        fontSize: '13px',
-                                      },
-                                      '& input::placeholder': {
-                                        color: palette.muted,
-                                        opacity: 1,
-                                      },
-                                    }}
-                                    name="busqueda"
-                                    placeholder='Filtrar: RUC, razon social o comprobante'
-                                    onChange={actualizaValorFiltro}
-                                    InputProps={{
-                                        startAdornment: (
-                                          <InputAdornment position="start">
-                                            <FindIcon sx={{ color: palette.muted }} />
-                                          </InputAdornment>
-                                        ),                                     
-                                    }}
-        />
   </Box>
 
   <Box
