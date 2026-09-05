@@ -20,6 +20,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import BadgeIcon from '@mui/icons-material/Badge';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
@@ -610,6 +611,15 @@ export default function NavSideBar(props) {
             />
             <Collapse in={openTransportes} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
+                <SubMenuItem
+                  icon={<DashboardCustomizeIcon />}
+                  label="Dashboard"
+                  isActive={selectedButton === 'icono11-0'}
+                  onClick={() => {
+                    navigate(`/ad_transportedashboard/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-0');
+                  }}
+                />
                 <SubMenuItem
                   icon={<Inventory2Icon />}
                   label="Encomiendas"

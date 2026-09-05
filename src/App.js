@@ -58,6 +58,7 @@ import TrLicenciaList from "./components/Admin/transporte/TrLicenciaList";
 import TrZonaList from "./components/Admin/transporte/TrZonaList";
 import AdminPuntoVentaList from "./components/Admin/AdminPuntoVentaList";
 import TrRutaList from "./components/Admin/transporte/TrRutaList";
+import TrEncomiendaDashboardMockup from "./components/Admin/transporte/dashboard/TrEncomiendaDashboardMockup";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
@@ -120,6 +121,7 @@ function App(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
+              <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />
               <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList />} />
               <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
               <Route path="/ad_puntoventa/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />

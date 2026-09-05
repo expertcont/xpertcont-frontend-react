@@ -4,6 +4,8 @@ import {
   BadgeCheck,
   Bus,
   Calendar,
+  CheckCircle2,
+  Clock3,
   MapPin,
   Package,
   Pencil,
@@ -76,6 +78,62 @@ const actionButtonSx = (danger = false) => ({
   },
 });
 
+function PaymentStatusChip({ children }) {
+  return (
+    <Box
+      sx={{
+        height: 28,
+        px: 1.35,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 1.2,
+        backgroundColor: "rgba(213,178,95,0.12)",
+        border: "1px solid rgba(213,178,95,0.28)",
+        color: "#e6c979",
+        fontSize: "11.5px",
+        fontWeight: 650,
+        letterSpacing: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function DeliveryStatusBadge({ entregada }) {
+  const Icon = entregada ? CheckCircle2 : Clock3;
+  const color = entregada ? "#8bc0a3" : "#d5b25f";
+  const bg = entregada ? "rgba(139,192,163,0.12)" : "rgba(213,178,95,0.12)";
+  const border = entregada ? "rgba(139,192,163,0.28)" : "rgba(213,178,95,0.28)";
+  const label = entregada ? "Entregada" : "Pendiente";
+
+  return (
+    <Box
+      sx={{
+        height: 28,
+        px: 1.15,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 0.55,
+        borderRadius: 1.2,
+        backgroundColor: bg,
+        border: `1px solid ${border}`,
+        color,
+        fontSize: "11.5px",
+        fontWeight: 650,
+        letterSpacing: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <Icon size={13} />
+      {label}
+    </Box>
+  );
+}
+
 function TrOperacionRow({ row, onEdit, onDelete, onEntrega }) {
   return (
     <Box sx={{ width: "100%", py: 2 }}>
@@ -109,11 +167,12 @@ function TrOperacionRow({ row, onEdit, onDelete, onEntrega }) {
             {row.numero}
           </Typography>
 
-          <AppChip>{row.tipoLabel}</AppChip>
-
-          {row.tipo_operacion === "E" && (
-            <AppChip>{row.entregada ? "Entregada" : "Pendiente entrega"}</AppChip>
+          {row.tipo_operacion === "E" && row.condicionPagoLabel && (
+            <PaymentStatusChip>{row.condicionPagoLabel}</PaymentStatusChip>
           )}
+          {row.tipo_operacion !== "E" && <AppChip>{row.tipoLabel}</AppChip>}
+
+          {row.tipo_operacion === "E" && <DeliveryStatusBadge entregada={row.entregada} />}
         </Box>
 
         <Box
