@@ -594,3 +594,171 @@ No se ejecuto build frontend por indicacion del usuario.
 6. Probar CRUD real de rutas.
 7. Crear una ruta y verificar que aparece en el selector de encomiendas.
 8. Registrar una encomienda con `id_ruta`.
+
+---
+
+## Plan de arquitectura clean para transporte dashboard
+
+### Contexto
+
+El dashboard de transporte ya cumple una funcion operativa y gerencial:
+
+- Control de caja por dia.
+- Control por agencia o punto de venta.
+- Control por usuario que registro la operacion.
+- Vista `*` para sumar todo el periodo y mostrar estadistica mensual.
+
+La logica actual funciona, pero el archivo backend `ventatrans.controllers.js` ya concentra demasiadas responsabilidades:
+
+- CRUD de operaciones de transporte.
+- Dashboard.
+- Reglas de acceso por anfitrion, superusuario e invitado.
+- Consultas SQL grandes.
+- Recaudacion por agencia.
+- Usuarios de trabajo desde `mve_transventa.ctrl_crea_us`.
+- Entregas de encomienda.
+- Generacion y consulta SUNAT/CPE.
+
+El objetivo de la siguiente etapa no es reescribir la logica, sino ordenarla sin perder el conocimiento ya probado.
+
+### Principio de refactor
+
+No cambiar comportamiento en la primera pasada.
+
+La prioridad es mover codigo a archivos con responsabilidad clara, manteniendo:
+
+- Las mismas rutas publicas.
+- Los mismos parametros.
+- La misma respuesta JSON.
+- El mismo SQL, salvo ajustes pequenos necesarios.
+- La misma regla de acceso.
+
+Esto reduce riesgo porque el dashboard tiene reglas de negocio sensibles para caja, turnos, agencias y montos.
+
+### Opcion recomendada: extraccion progresiva
+
+Primera fase recomendada:
+
+```text
+xpertcont-backend-js/src/controllers/ventatrans.controllers.js
+xpertcont-backend-js/src/controllers/ventatrans.dashboard.controllers.js
+xpertcont-backend-js/src/services/ventatrans.dashboard.service.js
+xpertcont-backend-js/src/repositories/ventatrans.dashboard.repository.js
+xpertcont-backend-js/src/utils/ventatrans.dashboard.filters.js
+```
+
+Responsabilidades:
+
+- `ventatrans.dashboard.controllers.js`
+  - Leer `req`.
+  - Validar parametros minimos.
+  - Llamar al service.
+  - Responder JSON.
+
+- `ventatrans.dashboard.service.js`
+  - Resolver reglas de acceso.
+  - Orquestar los bloques del dashboard.
+  - Decidir si se consulta por periodo, dia, agencia o usuario.
+  - Armar la respuesta final.
+
+- `ventatrans.dashboard.repository.js`
+  - Ejecutar SQL.
+  - Mantener consultas de resumen, productividad, SUNAT, rutas, comparativo, recaudacion y usuarios.
+  - No decidir reglas de negocio fuera del SQL estrictamente necesario.
+
+- `ventatrans.dashboard.filters.js`
+  - Normalizar filtros.
+  - Construir condiciones SQL reutilizables.
+  - Manejar `fecha`, `id_punto_venta`, lista de puntos y `ctrl_crea_us`.
+
+### Reglas que deben preservarse
+
+Acceso total:
+
+- Si `id_anfitrion === id_invitado`, el usuario ve toda la empresa.
+- Si el usuario invitado es superusuario, tambien ve toda la empresa.
+
+Acceso restringido:
+
+- Usuario normal solo ve sus puntos de venta asignados.
+- Si tiene mas de una agencia, puede usar `TODOS`, pero solo dentro de sus agencias permitidas.
+- Sus montos deben filtrarse por `mve_transventa.ctrl_crea_us = id_invitado`.
+
+Filtro por agencia:
+
+- Agencia seleccionada filtra `id_punto_venta`.
+- `TODOS` suma las agencias permitidas.
+- Para anfitrion/superusuario, `TODOS` equivale a toda la empresa.
+
+Filtro por usuario:
+
+- La fuente del usuario operativo es `mve_transventa.ctrl_crea_us`.
+- Por ahora se muestra el correo como nombre.
+- Anfitrion/superusuario pueden seleccionar un correo o `TODOS`.
+- Usuario normal solo ve su propio correo.
+
+Filtro por dia:
+
+- Dia especifico envia `fecha = YYYY-MM-DD`.
+- `*` no envia fecha y resume todo el periodo.
+
+### Orden sugerido de trabajo
+
+1. Crear los nuevos archivos vacios con exports basicos.
+2. Mover helpers de filtros del dashboard a `utils`.
+3. Mover consultas SQL puras a `repository`.
+4. Mover reglas de acceso y composicion a `service`.
+5. Dejar controller nuevo llamando al service.
+6. Cambiar `ventatrans.routes.js` para importar los handlers del controller nuevo.
+7. Mantener `ventatrans.controllers.js` con el resto de operaciones.
+8. Validar `node --check`.
+9. Probar manualmente las URLs del dashboard.
+
+### Pruebas manuales minimas
+
+Probar con anfitrion:
+
+- Dia actual + TODOS agencias + TODOS usuarios.
+- Dia actual + una agencia.
+- Dia actual + una agencia + un usuario.
+- `*` + TODOS agencias + TODOS usuarios.
+
+Probar con superusuario:
+
+- Igual que anfitrion.
+- Confirmar que el select de agencias carga todos los puntos.
+- Confirmar que el select de usuarios sale desde `ctrl_crea_us`.
+
+Probar con invitado normal:
+
+- Una sola agencia asignada.
+- Mas de una agencia asignada y opcion `TODOS`.
+- Confirmar que no ve agencias no asignadas.
+- Confirmar que solo ve su propio correo.
+
+### Riesgos a cuidar
+
+- No romper rutas existentes.
+- No cambiar nombres de campos JSON usados por el frontend.
+- No duplicar montos entre origen y destino.
+- No quitar filtro por `ctrl_crea_us` para usuarios normales.
+- No depender de columnas inexistentes en `mad_usuario`.
+- No mezclar datos si un usuario no tiene punto de venta vigente.
+
+### Meta de la primera fase
+
+Reducir el tamano de `ventatrans.controllers.js` sin cambiar comportamiento.
+
+Despues de esa fase, se puede continuar con una arquitectura por modulo:
+
+```text
+src/modules/transporte/
+  dashboard/
+  ventas/
+  entregas/
+  puntos-venta/
+  rutas/
+  sunat/
+```
+
+Pero esa segunda fase debe hacerse solo cuando el dashboard y caja ya esten estables en produccion.

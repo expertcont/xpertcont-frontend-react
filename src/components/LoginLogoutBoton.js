@@ -23,6 +23,14 @@ const theme = createTheme({
 const LoginLogoutBoton = ({ sidebar = false, compact = false }) => {
     const {loginWithRedirect,logout} = useAuth0();
     const {user, isAuthenticated } = useAuth0();
+    const loginWithGoogle = () => {
+        loginWithRedirect({
+            authorizationParams: {
+                // Salta la pantalla inicial de Auth0 y abre directamente el selector de cuentas Google.
+                connection: 'google-oauth2',
+            },
+        });
+    };
 
     if (sidebar) {
         return (
@@ -72,7 +80,7 @@ const LoginLogoutBoton = ({ sidebar = false, compact = false }) => {
                     <Button
                         variant="contained"
                         color="info"
-                        onClick={() => { loginWithRedirect(); }}
+                        onClick={loginWithGoogle}
                         sx={{
                             minWidth: compact ? 42 : "100%",
                             maxWidth: compact ? 42 : 132,
@@ -102,7 +110,7 @@ const LoginLogoutBoton = ({ sidebar = false, compact = false }) => {
             </ThemeProvider>
             ):
             (
-            <Button variant='contained' color='info' onClick={()=>{loginWithRedirect();}} >LOGIN</Button>
+            <Button variant='contained' color='info' onClick={loginWithGoogle} >LOGIN</Button>
             )
             }
         </ButtonGroup>
