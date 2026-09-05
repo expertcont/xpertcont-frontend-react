@@ -48,6 +48,17 @@ const fetchJson = async (url, options) => {
   };
 };
 
+const resolverUsuarioTrabajo = ({ rows, usuarioActual, permiteTodos }) => {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+  const usuarioValido = rows.some((item) => item.id_usuario === usuarioActual);
+
+  if (permiteTodos) {
+    return usuarioValido ? usuarioActual : "";
+  }
+
+  return usuarioValido ? usuarioActual : rows[0]?.id_usuario || "";
+};
+
 const ui = {
   page: palette.bg,
   shell: palette.bg,
@@ -842,20 +853,31 @@ export default function TrEncomiendaDashboardMockup() {
   const params = useParams();
   const navigate = useNavigate();
   const isDesktop = useMediaQuery("(min-width:1100px)");
+
+  // Estado principal del dashboard.
+  // dashboard guarda los indicadores; los demas estados controlan filtros.
   const [dashboard, setDashboard] = useState(dashboardVacio);
   const [periodos, setPeriodos] = useState([]);
   const [contabilidades, setContabilidades] = useState([]);
   const [puntosVentaAsignados, setPuntosVentaAsignados] = useState([]);
+  const [usuariosTrabajo, setUsuariosTrabajo] = useState([]);
   const [periodoTrabajo, setPeriodoTrabajo] = useState(sessionStorage.getItem("periodo_trabajo") || params.periodo || "");
   const [contabilidadTrabajo, setContabilidadTrabajo] = useState(sessionStorage.getItem("contabilidad_trabajo") || params.documento_id || "");
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
+  const [usuarioTrabajo, setUsuarioTrabajo] = useState("");
   const [diaSel, setDiaSel] = useState("*");
   const [activeTab, setActiveTab] = useState("resumen");
   const [loading, setLoading] = useState(false);
   const [errorCarga, setErrorCarga] = useState("");
+
+  // Reglas de acceso visual.
+  // El backend tambien valida estas reglas antes de consultar datos.
   const superUsuario = sessionStorage.getItem("super") || "0";
   const accesoTotalDashboard = params.id_anfitrion === params.id_invitado || superUsuario === "1";
+  const usuarioTieneVariasAgencias = puntosVentaAsignados.length > 1;
+  const usuarioPuedeVerTodosCorreos = accesoTotalDashboard && usuarioTieneVariasAgencias;
 
+  // Carga periodos y empresas disponibles para el usuario actual.
   const cargarCatalogos = useCallback(async () => {
     try {
       const [periodosData, contabilidadesData] = await Promise.all([
@@ -883,20 +905,27 @@ export default function TrEncomiendaDashboardMockup() {
     }
   }, [contabilidadTrabajo, params.id_anfitrion, params.id_invitado, periodoTrabajo]);
 
+  // Carga agencias/puntos de venta.
+  // Anfitrion/super ven todos; invitado normal ve solo sus puntos vigentes.
   const cargarPuntosVentaAsignados = useCallback(async () => {
-    if (!contabilidadTrabajo || !params.id_anfitrion || !params.id_invitado || accesoTotalDashboard) {
+    if (!contabilidadTrabajo || !params.id_anfitrion || !params.id_invitado) {
       setPuntosVentaAsignados([]);
       setPuntoVentaTrabajo("");
       return;
     }
 
     try {
-      const { result } = await fetchJson(`${backHost}/mad_punto_venta_usuario/${params.id_anfitrion}/${contabilidadTrabajo}/${params.id_invitado}`);
+      const url = accesoTotalDashboard
+        ? `${backHost}/mad_punto_venta/${params.id_anfitrion}/${contabilidadTrabajo}`
+        : `${backHost}/mad_punto_venta_usuario/${params.id_anfitrion}/${contabilidadTrabajo}/${params.id_invitado}`;
+      const { result } = await fetchJson(url);
       const rows = Array.isArray(result?.data) ? result.data : [];
       const sessionKey = `punto_venta_trabajo_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
       const puntoGuardado = sessionStorage.getItem(sessionKey) || "";
-      const puntoFinal = rows.some((item) => item.id_punto_venta === puntoGuardado)
-        ? puntoGuardado
+      const puntoGuardadoValido = rows.some((item) => item.id_punto_venta === puntoGuardado);
+      const permiteTodos = rows.length > 1;
+      const puntoFinal = permiteTodos
+        ? (puntoGuardadoValido ? puntoGuardado : "")
         : rows[0]?.id_punto_venta || "";
 
       setPuntosVentaAsignados(rows);
@@ -908,6 +937,57 @@ export default function TrEncomiendaDashboardMockup() {
     }
   }, [accesoTotalDashboard, contabilidadTrabajo, params.id_anfitrion, params.id_invitado]);
 
+  // Carga correos que registraron operaciones en el filtro actual.
+  // La fuente oficial del usuario operativo es mve_transventa.ctrl_crea_us.
+  const cargarUsuariosTrabajo = useCallback(async () => {
+    if (!periodoTrabajo || !contabilidadTrabajo || !params.id_anfitrion || !params.id_invitado) {
+      setUsuariosTrabajo([]);
+      setUsuarioTrabajo("");
+      return;
+    }
+
+    if (!accesoTotalDashboard) {
+      setUsuariosTrabajo([{ id_usuario: params.id_invitado, nombre: params.id_invitado }]);
+      setUsuarioTrabajo(params.id_invitado);
+      return;
+    }
+
+    try {
+      const query = new URLSearchParams();
+      query.set("id_invitado", params.id_invitado || "");
+      query.set("super_usuario", superUsuario);
+      if (puntoVentaTrabajo) {
+        query.set("id_punto_venta", puntoVentaTrabajo);
+      }
+      if (diaSel && diaSel !== "*") {
+        query.set("fecha", `${periodoTrabajo}-${diaSel}`);
+      }
+
+      const { result } = await fetchJson(`${backHost}/mve_transventa/dashboard/usuarios/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?${query.toString()}`);
+      const rows = Array.isArray(result?.data)
+        ? result.data
+        : Array.isArray(result?.data?.usuarios_trabajo)
+          ? result.data.usuarios_trabajo
+          : [];
+      const sessionKey = `usuario_dashboard_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
+      const usuarioGuardado = sessionStorage.getItem(sessionKey) || "";
+      const usuarioFinal = resolverUsuarioTrabajo({
+        rows,
+        usuarioActual: usuarioGuardado,
+        permiteTodos: usuarioPuedeVerTodosCorreos,
+      });
+
+      setUsuariosTrabajo(rows);
+      setUsuarioTrabajo(usuarioFinal);
+    } catch (error) {
+      console.log("Error cargando usuarios del dashboard:", error);
+      setUsuariosTrabajo([]);
+      setUsuarioTrabajo("");
+    }
+  }, [accesoTotalDashboard, contabilidadTrabajo, diaSel, params.id_anfitrion, params.id_invitado, periodoTrabajo, puntoVentaTrabajo, superUsuario, usuarioPuedeVerTodosCorreos]);
+
+  // Consulta los indicadores principales del dashboard.
+  // Si diaSel es "*", no se envia fecha y el backend resume todo el periodo.
   const cargarDashboard = useCallback(async () => {
     if (!periodoTrabajo || !contabilidadTrabajo || !params.id_anfitrion) {
       return;
@@ -921,8 +1001,11 @@ export default function TrEncomiendaDashboardMockup() {
       query.set("id_invitado", params.id_invitado || "");
       query.set("super_usuario", superUsuario);
 
-      if (!accesoTotalDashboard && puntoVentaTrabajo) {
+      if (puntoVentaTrabajo) {
         query.set("id_punto_venta", puntoVentaTrabajo);
+      }
+      if (usuarioTrabajo) {
+        query.set("id_usuario_trabajo", usuarioTrabajo);
       }
 
       const diaFiltro = diaSel || "*";
@@ -937,7 +1020,17 @@ export default function TrEncomiendaDashboardMockup() {
         throw new Error(`API ${response.status}: ${detail}`);
       }
 
-      setDashboard(result.data || dashboardVacio);
+      const dashboardData = result.data || dashboardVacio;
+      setDashboard(dashboardData);
+
+      if (Array.isArray(dashboardData.usuarios_trabajo)) {
+        setUsuariosTrabajo(dashboardData.usuarios_trabajo);
+        setUsuarioTrabajo((actual) => resolverUsuarioTrabajo({
+          rows: dashboardData.usuarios_trabajo,
+          usuarioActual: actual,
+          permiteTodos: usuarioPuedeVerTodosCorreos,
+        }));
+      }
     } catch (error) {
       console.log("Error cargando dashboard transporte:", error);
       setDashboard(dashboardVacio);
@@ -945,21 +1038,29 @@ export default function TrEncomiendaDashboardMockup() {
     } finally {
       setLoading(false);
     }
-  }, [accesoTotalDashboard, contabilidadTrabajo, diaSel, params.id_anfitrion, params.id_invitado, periodoTrabajo, puntoVentaTrabajo, superUsuario]);
+  }, [contabilidadTrabajo, diaSel, params.id_anfitrion, params.id_invitado, periodoTrabajo, puntoVentaTrabajo, superUsuario, usuarioPuedeVerTodosCorreos, usuarioTrabajo]);
 
+  // Carga inicial de periodo y razon social.
   useEffect(() => {
     cargarCatalogos();
   }, [cargarCatalogos]);
 
+  // Recarga agencias cuando cambia la empresa o el acceso del usuario.
   useEffect(() => {
     cargarPuntosVentaAsignados();
   }, [cargarPuntosVentaAsignados]);
 
+  // Recarga usuarios cuando cambia dia, agencia, periodo o empresa.
+  useEffect(() => {
+    cargarUsuariosTrabajo();
+  }, [cargarUsuariosTrabajo]);
+
+  // Recarga indicadores cuando cambia cualquier filtro de trabajo.
   useEffect(() => {
     sessionStorage.setItem("periodo_trabajo", periodoTrabajo || "");
     sessionStorage.setItem("contabilidad_trabajo", contabilidadTrabajo || "");
     cargarDashboard();
-  }, [cargarDashboard, periodoTrabajo, contabilidadTrabajo, diaSel, puntoVentaTrabajo]);
+  }, [cargarDashboard, periodoTrabajo, contabilidadTrabajo, diaSel, puntoVentaTrabajo, usuarioTrabajo]);
 
   const resumen = dashboard.resumen || {};
   const productividad = Array.isArray(dashboard.productividad) ? dashboard.productividad : [];
@@ -1007,6 +1108,8 @@ export default function TrEncomiendaDashboardMockup() {
     navigate(`/ad_transportedashboard/${params.id_anfitrion}/${params.id_invitado}/${periodo}/${documentoId}`);
   };
 
+  // Al cambiar periodo, se reinicia el dia para evitar seleccionar un dia
+  // que no exista en el nuevo mes.
   const handlePeriodoSelect = (event) => {
     const periodo = event.target.value;
     setPeriodoTrabajo(periodo);
@@ -1014,26 +1117,51 @@ export default function TrEncomiendaDashboardMockup() {
     navegarDashboard(periodo, contabilidadTrabajo);
   };
 
+  // Al cambiar empresa se limpian agencia y usuario porque dependen del RUC.
   const handleContabilidadSelect = (event) => {
     const documentoId = event.target.value;
     const seleccionada = contabilidades.find((item) => item.documento_id === documentoId);
     setContabilidadTrabajo(documentoId);
+    setPuntosVentaAsignados([]);
+    setPuntoVentaTrabajo("");
+    setUsuariosTrabajo([]);
+    setUsuarioTrabajo("");
     if (seleccionada?.razon_social) {
       sessionStorage.setItem("contabilidad_nombre", seleccionada.razon_social);
     }
     navegarDashboard(periodoTrabajo, documentoId);
   };
 
+  // Agencia vacia significa TODOS cuando el usuario tiene mas de un punto.
   const handlePuntoVentaSelect = (event) => {
     const puntoVenta = event.target.value;
     const sessionKey = `punto_venta_trabajo_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
     setPuntoVentaTrabajo(puntoVenta);
-    sessionStorage.setItem(sessionKey, puntoVenta);
+    setUsuarioTrabajo("");
+    if (puntoVenta) {
+      sessionStorage.setItem(sessionKey, puntoVenta);
+    } else {
+      sessionStorage.removeItem(sessionKey);
+    }
   };
 
+  // Dia "*" muestra todo el periodo; cualquier otro dia filtra caja diaria.
   const handleDayFilter = (selectedDay) => {
     const dia = selectedDay === "*" ? "*" : selectedDay.toString().padStart(2, "0");
+    setUsuarioTrabajo("");
     setDiaSel(dia);
+  };
+
+  // Usuario vacio significa TODOS los correos permitidos para el filtro actual.
+  const handleUsuarioSelect = (event) => {
+    const usuario = event.target.value;
+    const sessionKey = `usuario_dashboard_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
+    setUsuarioTrabajo(usuario);
+    if (usuario) {
+      sessionStorage.setItem(sessionKey, usuario);
+    } else {
+      sessionStorage.removeItem(sessionKey);
+    }
   };
 
   const contentByTab = {
@@ -1082,7 +1210,8 @@ export default function TrEncomiendaDashboardMockup() {
               </Box>
             </Box>
 
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: accesoTotalDashboard ? "140px minmax(220px, 320px) 40px 40px 40px" : "140px minmax(180px, 260px) minmax(180px, 240px) 40px 40px 40px" }, gap: 1, alignItems: "center", justifyContent: { xs: "stretch", md: "flex-end" } }}>
+            {/* Filtros principales: periodo, empresa, agencia y usuario de caja. */}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: `140px minmax(180px, 260px) ${puntosVentaAsignados.length > 0 ? "minmax(170px, 230px)" : ""} ${usuariosTrabajo.length > 0 ? "minmax(190px, 260px)" : ""} auto` }, gap: 1, alignItems: "center", justifyContent: { xs: "stretch", md: "flex-end" } }}>
               <Select
                 size="small"
                 value={periodoTrabajo}
@@ -1113,41 +1242,73 @@ export default function TrEncomiendaDashboardMockup() {
                   </MenuItem>
                 ))}
               </Select>
-              {!accesoTotalDashboard && (
+              {puntosVentaAsignados.length > 0 && (
                 <Select
                   size="small"
                   value={puntoVentaTrabajo}
                   onChange={handlePuntoVentaSelect}
                   displayEmpty
+                  renderValue={(value) => {
+                    if (!value && usuarioTieneVariasAgencias) return "TODOS";
+                    if (!value) return "Punto de venta";
+                    const punto = puntosVentaAsignados.find((item) => item.id_punto_venta === value);
+                    return punto ? `${punto.id_punto_venta} - ${punto.nombre || punto.id_punto_venta}` : value;
+                  }}
                   sx={selectSx}
                   MenuProps={{ PaperProps: { sx: { backgroundColor: ui.panel2, color: ui.text } } }}
                 >
-                  <MenuItem value="">Punto de venta</MenuItem>
+                  {usuarioTieneVariasAgencias && <MenuItem value="">TODOS</MenuItem>}
                   {puntosVentaAsignados.map((item) => (
                     <MenuItem key={item.id_punto_venta} value={item.id_punto_venta}>
-                      {item.nombre || item.id_punto_venta}
+                      {item.id_punto_venta} - {item.nombre || item.id_punto_venta}
                     </MenuItem>
                   ))}
                 </Select>
               )}
-              <Tooltip title="Buscar">
-                <IconButton sx={{ width: 40, height: 40, borderRadius: "50%", border: `1px solid ${ui.border}`, color: ui.text, backgroundColor: "rgba(255,255,255,0.03)" }}>
-                  <Search size={17} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Notificaciones">
-                <IconButton sx={{ width: 40, height: 40, borderRadius: "50%", border: `1px solid ${ui.border}`, color: ui.text, backgroundColor: "rgba(255,255,255,0.03)" }}>
-                  <Bell size={17} />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Actualizar">
-                <IconButton onClick={cargarDashboard} sx={{ width: 40, height: 40, borderRadius: "50%", border: `1px solid ${ui.border}`, color: ui.text, backgroundColor: "rgba(255,255,255,0.03)" }}>
-                  <RefreshCw size={17} />
-                </IconButton>
-              </Tooltip>
+              {usuariosTrabajo.length > 0 && (
+                <Select
+                  size="small"
+                  value={usuarioTrabajo}
+                  onChange={handleUsuarioSelect}
+                  displayEmpty
+                  renderValue={(value) => {
+                    if (!value && usuarioPuedeVerTodosCorreos) return "TODOS";
+                    if (!value) return "Usuario";
+                    const usuario = usuariosTrabajo.find((item) => item.id_usuario === value);
+                    return usuario?.nombre || value;
+                  }}
+                  sx={selectSx}
+                  MenuProps={{ PaperProps: { sx: { backgroundColor: ui.panel2, color: ui.text } } }}
+                >
+                  {usuarioPuedeVerTodosCorreos && <MenuItem value="">TODOS</MenuItem>}
+                  {usuariosTrabajo.map((item) => (
+                    <MenuItem key={item.id_usuario} value={item.id_usuario}>
+                      {item.nombre || item.id_usuario}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", justifyContent: { xs: "flex-start", sm: "flex-end" }, flexWrap: "nowrap" }}>
+                <Tooltip title="Buscar">
+                  <IconButton sx={{ width: 40, height: 40, flex: "0 0 40px", borderRadius: "50%", border: `1px solid ${ui.border}`, color: ui.text, backgroundColor: "rgba(255,255,255,0.03)" }}>
+                    <Search size={17} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Notificaciones">
+                  <IconButton sx={{ width: 40, height: 40, flex: "0 0 40px", borderRadius: "50%", border: `1px solid ${ui.border}`, color: ui.text, backgroundColor: "rgba(255,255,255,0.03)" }}>
+                    <Bell size={17} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Actualizar">
+                  <IconButton onClick={cargarDashboard} sx={{ width: 40, height: 40, flex: "0 0 40px", borderRadius: "50%", border: `1px solid ${ui.border}`, color: ui.text, backgroundColor: "rgba(255,255,255,0.03)" }}>
+                    <RefreshCw size={17} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
           </Box>
 
+          {/* Selector de dia: un dia controla caja diaria; "*" resume todo el periodo. */}
           <Box sx={{ mb: 2 }}>
             <DaySelector period={periodoTrabajo} onDaySelect={handleDayFilter} />
           </Box>
