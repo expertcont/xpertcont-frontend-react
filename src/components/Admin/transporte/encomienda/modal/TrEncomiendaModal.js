@@ -85,20 +85,20 @@ export default function TrEncomiendaModal({
 
   focusableRefs.length = 0;
   focusableRefs.push(
+    remitenteEntregaRef,
+    remitenteZonaRef,
+    remitenteDireccionRef,
     remitenteDocRef,
     remitenteNombreRef,
     remitenteTelefonoRef,
     clienteDireccionFactRef,
-    remitenteEntregaRef,
-    remitenteZonaRef,
-    remitenteDireccionRef,
     rutaRef,
-    destinatarioDocRef,
-    destinatarioNombreRef,
-    destinatarioTelefonoRef,
     destinatarioEntregaRef,
     destinatarioZonaRef,
     destinatarioDireccionRef,
+    destinatarioDocRef,
+    destinatarioNombreRef,
+    destinatarioTelefonoRef,
     descripcionRef,
     condicionPagoRef,
     totalRef,
@@ -198,6 +198,7 @@ export default function TrEncomiendaModal({
       id_ruta: item.id_ruta || "",
       id_punto_venta: item.id_punto_venta || puntoVentaOrigen || "",
       id_punto_venta_dest: item.id_punto_venta_dest || "",
+      punto_venta_dest_nombre: item.punto_venta_dest_nombre || item.punto_venta_destino_nombre || item.destino_nombre || "",
       placa: item.placa || "",
       licencia: item.licencia || "",
       descripcion: String(item.descripcion || "").toUpperCase(),
@@ -211,7 +212,7 @@ export default function TrEncomiendaModal({
     }, 80);
   };
 
-  const rutaSeleccionada = rutasDisponibles.find((ruta) => ruta.id_ruta === draft.id_ruta);
+  const rutaSeleccionada = rutasDisponibles.find((ruta) => String(ruta.id_ruta) === String(draft.id_ruta));
   const origenVisual = puntoVentaOrigenNombre || draft.id_punto_venta || puntoVentaOrigen;
   const esFactura = (operacion?.r_cod || draft.r_cod) === "01";
   const tipoComprobanteTexto = esFactura ? "Factura" : "Boleta";
@@ -232,6 +233,7 @@ export default function TrEncomiendaModal({
       id_ruta: ruta.id_ruta,
       id_punto_venta: ruta.id_punto_venta,
       id_punto_venta_dest: ruta.id_punto_venta_dest,
+      punto_venta_dest_nombre: ruta.punto_venta_dest_nombre || ruta.punto_venta_destino_nombre || ruta.destino_nombre || "",
       destinatario_zona: prev.id_punto_venta_dest === ruta.id_punto_venta_dest ? prev.destinatario_zona : "",
     }));
     setRutaPickerOpen(false);
@@ -242,6 +244,7 @@ export default function TrEncomiendaModal({
   };
 
   const seleccionarZonaRemitente = (zona) => {
+    updateDraft("remitente_entrega", "CLIENTE");
     updateDraft("remitente_zona", zona.nombre || "");
     setZonaPickerOpen("");
     window.setTimeout(() => {
@@ -251,6 +254,7 @@ export default function TrEncomiendaModal({
   };
 
   const seleccionarZonaDestinatario = (zona) => {
+    updateDraft("destinatario_entrega", "CLIENTE");
     updateDraft("destinatario_zona", zona.nombre || "");
     setZonaPickerOpen("");
     window.setTimeout(() => {
@@ -266,6 +270,7 @@ export default function TrEncomiendaModal({
       id_ruta: "",
       id_punto_venta: puntoVentaOrigen || "",
       id_punto_venta_dest: "",
+      punto_venta_dest_nombre: "",
       destinatario_zona: "",
     }));
   };

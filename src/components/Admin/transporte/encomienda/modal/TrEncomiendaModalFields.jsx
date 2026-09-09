@@ -38,7 +38,7 @@ export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
           }, 0);
         }}
         onKeyDown={(event) => {
-          if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+          if (["ArrowUp", "ArrowDown"].includes(event.key)) {
             if (focusByArrow(event, inputRef)) {
               return;
             }

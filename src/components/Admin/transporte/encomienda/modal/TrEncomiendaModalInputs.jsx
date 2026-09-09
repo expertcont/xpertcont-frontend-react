@@ -120,11 +120,11 @@ export const focusByArrow = (event, inputRef) => {
     return false;
   };
 
-  if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+  if (event.key === "ArrowDown") {
     return move(1);
   }
 
-  if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+  if (event.key === "ArrowUp") {
     return move(-1);
   }
 
@@ -185,11 +185,11 @@ export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, 
   );
 }
 
-export function MultilineCapture({ value, onChange, inputRef, nextRef, placeholder }) {
+export function MultilineCapture({ value, onChange, inputRef, nextRef, placeholder, minRows = 2, minHeight = 42 }) {
   return (
     <Box
       sx={{
-        minHeight: 42,
+        minHeight,
         px: 0.9,
         py: 0.55,
         display: "flex",
@@ -208,7 +208,7 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
       <InputBase
         inputRef={inputRef}
         multiline
-        minRows={2}
+        minRows={minRows}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
@@ -300,7 +300,7 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef }) {
             updateValue(-1);
             return;
           }
-          if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+          if (["ArrowUp", "ArrowDown"].includes(event.key)) {
             event.preventDefault();
             focusByArrow(event, inputRef);
             return;
@@ -361,7 +361,7 @@ export function SectionHeader({ icon, title }) {
   );
 }
 
-export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"], inputRef, nextRef }) {
+export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"], inputRef, nextRef, compact = false }) {
   const normalizedOptions = options.map((option) => ({
     value: option.value || option,
     label: option.label || option,
@@ -407,42 +407,53 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
       }}
       sx={{
         display: "flex",
-        gap: 0.6,
+        gap: 0,
         flexWrap: "nowrap",
         alignItems: "center",
         justifyContent: "flex-start",
         minWidth: 0,
-        width: "100%",
-        pl: 0.2,
+        width: compact ? "auto" : "100%",
+        alignSelf: "stretch",
+        p: 0.15,
         outline: "none",
-        borderRadius: 1.5,
+        borderRadius: 1.6,
+        overflow: "hidden",
+        backgroundColor: palette.bg,
+        border: `1px solid ${palette.border}`,
         "&:focus-visible": {
           boxShadow: `0 0 0 2px ${palette.accent}`,
         },
       }}
     >
-      {normalizedOptions.map((option) => (
+      {normalizedOptions.map((option, index) => (
         <Box
           key={option.value}
           role="radio"
           aria-checked={value === option.value}
           onClick={() => onChange(option.value)}
           sx={{
-            height: 20,
-            px: 0.65,
+            height: 26,
+            px: 0.95,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: 1.25,
-            backgroundColor: value === option.value ? palette.accentSoft : palette.chip,
-            border: `1px solid ${value === option.value ? palette.accent : palette.border}`,
-            color: value === option.value ? palette.accent : palette.text,
+            borderRadius: index === 0 ? "5px 0 0 5px" : index === normalizedOptions.length - 1 ? "0 5px 5px 0" : 0,
+            backgroundColor: value === option.value ? palette.accent : "transparent",
+            border: "1px solid transparent",
+            color: value === option.value ? palette.surface : palette.muted,
             fontSize: "10px",
             fontWeight: 800,
             cursor: "pointer",
             lineHeight: 1,
             whiteSpace: "nowrap",
-            flexShrink: 0,
+            flex: compact ? "0 0 auto" : 1,
+            minWidth: 0,
+            boxShadow: value === option.value ? "0 1px 4px rgba(0,0,0,.18)" : "none",
+            transition: "all .16s ease",
+            "&:hover": {
+              color: value === option.value ? palette.surface : palette.text,
+              backgroundColor: value === option.value ? palette.accent : palette.chip,
+            },
           }}
         >
           {option.label}

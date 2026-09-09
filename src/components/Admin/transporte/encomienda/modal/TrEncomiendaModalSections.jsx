@@ -51,12 +51,59 @@ export default function TrEncomiendaModalSections({
       <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
       <Box sx={sectionSx}>
         <Grid container spacing={1}>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={mostrarDireccionRemitente ? 4 : 9}>
             {/* Origen automatico desde el punto de venta operativo seleccionado antes de nueva encomienda. */}
-            <Field label="">
+            <Field label="Origen" labelWidth={58}>
               <PuntoVentaField value={origenVisual} />
             </Field>
           </Grid>
+          <Grid item xs={12} md={mostrarDireccionRemitente ? 2 : 3}>
+            <Field label="" labelWidth={0}>
+              <Box sx={{ width: 142, maxWidth: "100%", display: "flex" }}>
+                <ChoiceGroup
+                  compact
+                  value={draft.remitente_entrega}
+                  inputRef={refs.remitenteEntregaRef}
+                  nextRef={mostrarDireccionRemitente ? refs.remitenteZonaRef : refs.remitenteDocRef}
+                  onChange={(value) => {
+                    updateDraft("remitente_entrega", value);
+                    if (value === "OFICINA") {
+                      updateDraft("remitente_zona", "");
+                      updateDraft("remitente_direccion", "");
+                    }
+                  }}
+                />
+              </Box>
+            </Field>
+          </Grid>
+          {mostrarDireccionRemitente && (
+            <>
+              <Grid item xs={12} md={2.4}>
+                <Field label="Zona">
+                  {/* Zonas filtradas por id_punto_venta de origen; se guarda nombre de zona. */}
+                  <ZonaField
+                    value={draft.remitente_zona}
+                    onClear={() => updateDraft("remitente_zona", "")}
+                    onOpen={() => setZonaPickerOpen("remitente")}
+                    inputRef={refs.remitenteZonaRef}
+                    nextRef={refs.remitenteDireccionRef}
+                    placeholder="Escoger zona"
+                  />
+                </Field>
+              </Grid>
+              <Grid item xs={12} md={3.2}>
+                <Field label="Direccion">
+                  <CaptureInput
+                    value={draft.remitente_direccion}
+                    onChange={(value) => updateDraft("remitente_direccion", String(value || "").toUpperCase())}
+                    inputRef={refs.remitenteDireccionRef}
+                    nextRef={refs.remitenteDocRef}
+                    placeholder="Direccion si envia desde casa"
+                  />
+                </Field>
+              </Grid>
+            </>
+          )}
           <Grid item xs={12} md={3}>
             <Field label="DNI / RUC">
               <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
@@ -92,72 +139,26 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12} md={6}>
             <Field label="Nombres / R.Social">
-              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", value)} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
+              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
             </Field>
           </Grid>
           <Grid item xs={12} md={3}>
             <Field label="Telefono">
-              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.remitenteEntregaRef} placeholder="Celular" />
+              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.rutaRef} placeholder="Celular" />
             </Field>
           </Grid>
           {remitenteEsEmpresa && (
-            <Grid item xs={12} md={6}>
-              <Field label="Direccion fiscal">
+            <Grid item xs={12}>
+              <Field label="Dir Facturacion" labelWidth={92}>
                 <CaptureInput
                   value={draft.cliente_direccion_fact}
-                  onChange={(value) => updateDraft("cliente_direccion_fact", value)}
+                  onChange={(value) => updateDraft("cliente_direccion_fact", String(value || "").toUpperCase())}
                   inputRef={refs.clienteDireccionFactRef}
-                  nextRef={refs.remitenteEntregaRef}
+                  nextRef={refs.rutaRef}
                   placeholder="Direccion fiscal del RUC"
                 />
               </Field>
             </Grid>
-          )}
-          <Grid item xs={12} md={draft.remitente_entrega === "CLIENTE" ? 3 : 9}>
-            <Field label="" labelWidth={0}>
-              <ChoiceGroup
-                value={draft.remitente_entrega}
-                inputRef={refs.remitenteEntregaRef}
-                nextRef={mostrarDireccionRemitente ? refs.remitenteZonaRef : refs.rutaRef}
-                onChange={(value) => {
-                  updateDraft("remitente_entrega", value);
-                  if (value === "OFICINA") {
-                    updateDraft("remitente_zona", "");
-                    updateDraft("remitente_direccion", "");
-                  }
-                }}
-              />
-            </Field>
-          </Grid>
-          {mostrarDireccionRemitente && (
-            <>
-              {draft.remitente_entrega === "CLIENTE" && (
-                <Grid item xs={12} md={3}>
-                  <Field label="Zona">
-                    {/* Zonas filtradas por id_punto_venta de origen; se guarda nombre de zona. */}
-                    <ZonaField
-                      value={draft.remitente_zona}
-                      onClear={() => updateDraft("remitente_zona", "")}
-                      onOpen={() => setZonaPickerOpen("remitente")}
-                      inputRef={refs.remitenteZonaRef}
-                      nextRef={refs.remitenteDireccionRef}
-                      placeholder="Escoger zona"
-                    />
-                  </Field>
-                </Grid>
-              )}
-              <Grid item xs={12} md={3}>
-                <Field label="Direccion">
-                  <CaptureInput
-                    value={draft.remitente_direccion}
-                    onChange={(value) => updateDraft("remitente_direccion", value)}
-                    inputRef={refs.remitenteDireccionRef}
-                    nextRef={refs.rutaRef}
-                    placeholder="Direccion si envia desde casa"
-                  />
-                </Field>
-              </Grid>
-            </>
           )}
         </Grid>
       </Box>
@@ -165,18 +166,69 @@ export default function TrEncomiendaModalSections({
       <SectionHeader icon={<UserRound size={15} />} title="2. Destino" />
       <Box sx={sectionSx}>
         <Grid container spacing={1}>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={draft.destinatario_entrega === "CLIENTE" ? 4 : 9}>
             {/* Destino se escoge desde rutas; se conserva id_ruta para guardar la operacion. */}
-            <Field label="">
+            <Field label="Destino" labelWidth={58}>
               <RutaField
-                ruta={rutaSeleccionada || (draft.id_ruta ? { id_ruta: draft.id_ruta, id_punto_venta_dest: draft.id_punto_venta_dest } : null)}
+                ruta={rutaSeleccionada || (draft.id_ruta ? {
+                  id_ruta: draft.id_ruta,
+                  id_punto_venta_dest: draft.id_punto_venta_dest,
+                  punto_venta_dest_nombre: draft.punto_venta_dest_nombre,
+                } : null)}
                 onChange={limpiarRuta}
                 onOpen={() => setRutaPickerOpen(true)}
                 inputRef={refs.rutaRef}
-                nextRef={refs.destinatarioDocRef}
+                nextRef={refs.destinatarioEntregaRef}
               />
             </Field>
           </Grid>
+          <Grid item xs={12} md={draft.destinatario_entrega === "CLIENTE" ? 2 : 3}>
+            <Field label="" labelWidth={0}>
+              <Box sx={{ width: 142, maxWidth: "100%", display: "flex" }}>
+                <ChoiceGroup
+                  compact
+                  value={draft.destinatario_entrega}
+                  inputRef={refs.destinatarioEntregaRef}
+                  nextRef={draft.destinatario_entrega === "CLIENTE" ? refs.destinatarioZonaRef : refs.destinatarioDocRef}
+                  onChange={(value) => {
+                    updateDraft("destinatario_entrega", value);
+                    if (value === "OFICINA") {
+                      updateDraft("destinatario_zona", "");
+                      updateDraft("destinatario_direccion", "");
+                    }
+                  }}
+                />
+              </Box>
+            </Field>
+          </Grid>
+          {draft.destinatario_entrega === "CLIENTE" && (
+            <>
+              <Grid item xs={12} md={2.4}>
+                <Field label="Zona">
+                  {/* Zonas filtradas por id_punto_venta_dest de la ruta elegida; se guarda nombre de zona. */}
+                  <ZonaField
+                    value={draft.destinatario_zona}
+                    onClear={() => updateDraft("destinatario_zona", "")}
+                    onOpen={() => setZonaPickerOpen("destinatario")}
+                    inputRef={refs.destinatarioZonaRef}
+                    nextRef={refs.destinatarioDireccionRef}
+                    placeholder="Escoger zona"
+                  />
+                </Field>
+              </Grid>
+              <Grid item xs={12} md={3.2}>
+                <Field label="Direccion">
+                  <CaptureInput
+                    value={draft.destinatario_direccion}
+                    onChange={(value) => updateDraft("destinatario_direccion", String(value || "").toUpperCase())}
+                    inputRef={refs.destinatarioDireccionRef}
+                    nextRef={refs.destinatarioDocRef}
+                    placeholder="Direccion si recibe en casa"
+                  />
+                </Field>
+              </Grid>
+            </>
+          )}
           <Grid item xs={12} md={3}>
             <Field label="DNI">
               <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
@@ -207,125 +259,90 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12} md={6}>
             <Field label="NOMBRES APELLIDOS">
-              <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", value)} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
+              <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
             </Field>
           </Grid>
           <Grid item xs={12} md={3}>
             <Field label="Telefono">
-              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.destinatarioEntregaRef} placeholder="Celular" />
+              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.descripcionRef} placeholder="Celular" />
             </Field>
           </Grid>
-          <Grid item xs={12} md={draft.destinatario_entrega === "CLIENTE" ? 3 : 9}>
-            <Field label="" labelWidth={0}>
-              <ChoiceGroup
-                value={draft.destinatario_entrega}
-                inputRef={refs.destinatarioEntregaRef}
-                nextRef={draft.destinatario_entrega === "CLIENTE" ? refs.destinatarioZonaRef : refs.descripcionRef}
-                onChange={(value) => {
-                  updateDraft("destinatario_entrega", value);
-                  if (value === "OFICINA") {
-                    updateDraft("destinatario_zona", "");
-                    updateDraft("destinatario_direccion", "");
-                  }
-                }}
-              />
-            </Field>
-          </Grid>
-          {draft.destinatario_entrega === "CLIENTE" && (
-            <>
-              <Grid item xs={12} md={3}>
-                <Field label="Zona">
-                  {/* Zonas filtradas por id_punto_venta_dest de la ruta elegida; se guarda nombre de zona. */}
-                  <ZonaField
-                    value={draft.destinatario_zona}
-                    onClear={() => updateDraft("destinatario_zona", "")}
-                    onOpen={() => setZonaPickerOpen("destinatario")}
-                    inputRef={refs.destinatarioZonaRef}
-                    nextRef={refs.destinatarioDireccionRef}
-                    placeholder="Escoger zona"
-                  />
-                </Field>
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <Field label="Direccion">
-                  <CaptureInput
-                    value={draft.destinatario_direccion}
-                    onChange={(value) => updateDraft("destinatario_direccion", value)}
-                    inputRef={refs.destinatarioDireccionRef}
-                    nextRef={refs.descripcionRef}
-                    placeholder="Direccion si recibe en casa"
-                  />
-                </Field>
-              </Grid>
-            </>
-          )}
         </Grid>
       </Box>
 
       <SectionHeader icon={<Package size={15} />} title="3. Encomienda, pago y unidad" />
       <Box sx={sectionSx}>
         <Grid container spacing={1}>
-          <Grid item xs={12}>
+          <Grid item xs={12} md={8}>
+            <Typography sx={{ color: palette.muted, fontSize: "9px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
+              Descripcion encomienda
+            </Typography>
             <MultilineCapture
               value={draft.descripcion}
               onChange={(value) => updateDraft("descripcion", String(value || "").toUpperCase())}
               inputRef={refs.descripcionRef}
               nextRef={refs.condicionPagoRef}
-              placeholder="Descripcion encomienda: paquete, sobre, caja..."
+              placeholder="Paquete, sobre, caja..."
+              minRows={5}
+              minHeight={207}
             />
           </Grid>
-          <Grid item xs={12} md={2.8}>
-            <Field label="" tall labelWidth={0}>
-              <ChoiceGroup
-                value={draft.condicion_pago}
-                inputRef={refs.condicionPagoRef}
-                nextRef={refs.totalRef}
-                onChange={(value) => updateDraft("condicion_pago", value)}
-                options={[
-                  { value: "PAGADO", label: "PAGADO" },
-                  { value: "POR_COBRAR", label: "POR COBRAR" },
-                ]}
-              />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={5.2}>
-            <Field label="Total S/" tall>
-              <MoneyStepper
-                value={draft.r_monto_total}
-                onChange={(value) => updateDraft("r_monto_total", value)}
-                inputRef={refs.totalRef}
-                nextRef={refs.llegadaRef}
-              />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Field label="Llegada aprox." tall>
-              <CaptureInput value={draft.llegada_aprox} onChange={(value) => updateDraft("llegada_aprox", value)} inputRef={refs.llegadaRef} nextRef={refs.placaRef} align="center" />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Field label="" labelWidth={0}>
-              {/* Placa admite escritura manual; + o camion abren el catalogo mve_transplaca. */}
-              <PlacaField
-                value={draft.placa}
-                onChange={(value) => updateDraft("placa", value)}
-                onOpen={() => setPlacaPickerOpen(true)}
-                inputRef={refs.placaRef}
-                nextRef={refs.choferRef}
-              />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <Field label="" labelWidth={0}>
-              {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
-              <LicenciaField
-                value={draft.licencia}
-                onChange={(value) => updateDraft("licencia", value)}
-                onOpen={() => setLicenciaPickerOpen(true)}
-                inputRef={refs.choferRef}
-                nextRef={refs.grabarRef}
-              />
-            </Field>
+          <Grid item xs={12} md={4} sx={{ mt: { md: "17px" } }}>
+            <Grid container spacing={1}>
+              <Grid item xs={12}>
+                <Field label="" tall labelWidth={0}>
+                  <ChoiceGroup
+                    value={draft.condicion_pago}
+                    inputRef={refs.condicionPagoRef}
+                    nextRef={refs.totalRef}
+                    onChange={(value) => updateDraft("condicion_pago", value)}
+                    options={[
+                      { value: "PAGADO", label: "PAGADO" },
+                      { value: "POR_COBRAR", label: "POR COBRAR" },
+                    ]}
+                  />
+                </Field>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="Total S/" tall>
+                  <MoneyStepper
+                    value={draft.r_monto_total}
+                    onChange={(value) => updateDraft("r_monto_total", value)}
+                    inputRef={refs.totalRef}
+                    nextRef={refs.llegadaRef}
+                  />
+                </Field>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="Llegada aprox." tall>
+                  <CaptureInput value={draft.llegada_aprox} onChange={(value) => updateDraft("llegada_aprox", value)} inputRef={refs.llegadaRef} nextRef={refs.placaRef} align="center" />
+                </Field>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="" labelWidth={0}>
+                  {/* Placa admite escritura manual; + o camion abren el catalogo mve_transplaca. */}
+                  <PlacaField
+                    value={draft.placa}
+                    onChange={(value) => updateDraft("placa", value)}
+                    onOpen={() => setPlacaPickerOpen(true)}
+                    inputRef={refs.placaRef}
+                    nextRef={refs.choferRef}
+                  />
+                </Field>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="" labelWidth={0}>
+                  {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
+                  <LicenciaField
+                    value={draft.licencia}
+                    onChange={(value) => updateDraft("licencia", value)}
+                    onOpen={() => setLicenciaPickerOpen(true)}
+                    inputRef={refs.choferRef}
+                    nextRef={refs.grabarRef}
+                  />
+                </Field>
+              </Grid>
+            </Grid>
           </Grid>
         </Grid>
       </Box>

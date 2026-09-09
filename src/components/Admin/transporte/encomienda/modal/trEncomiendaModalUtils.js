@@ -51,38 +51,46 @@ export const destinoDesdeRuta = (ruta = {}) => {
   return ruta.id_punto_venta_dest || "";
 };
 
-export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
-  tipo_operacion: "E",
-  r_fecemi: String(operacion?.r_fecemi || fechaOperacion || `${periodoTrabajo}-01`).slice(0, 10),
-  r_cod: operacion?.r_cod || comprobanteDesdeDocumento(operacion?.cliente_documento || operacion?.cliente_documento_id).r_cod,
-  r_serie: operacion?.r_serie || "B001",
-  r_numero: operacion?.r_numero || "",
-  id_documento: operacion?.id_documento || operacion?.cliente_id_doc || documentoTipoDesdeNumero(operacion?.cliente_documento || operacion?.cliente_documento_id),
-  cliente: operacion?.cliente || "",
-  cliente_documento: operacion?.cliente_documento || operacion?.cliente_documento_id || "",
-  cliente_telefono: operacion?.cliente_telefono || "",
-  cliente_direccion_fact: operacion?.cliente_direccion_fact || "",
-  remitente_entrega: operacion?.remitente_entrega || "OFICINA",
-  remitente_zona: operacion?.remitente_zona || operacion?.cliente_zona || "",
-  remitente_direccion: operacion?.remitente_direccion || operacion?.cliente_direccion || "",
-  destinatario: operacion?.destinatario || "",
-  destinatario_documento: operacion?.destinatario_documento || operacion?.destinatario_documento_id || "",
-  destinatario_telefono: operacion?.destinatario_telefono || "",
-  destinatario_entrega: operacion?.destinatario_entrega || "OFICINA",
-  destinatario_zona: operacion?.destinatario_zona || "",
-  destinatario_direccion: operacion?.destinatario_direccion || "",
-  id_ruta: operacion?.id_ruta || "",
-  id_punto_venta: operacion?.id_punto_venta || "",
-  id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
-  placa: operacion?.placa || "",
-  licencia: operacion?.licencia || "",
-  descripcion: operacion?.descripcion || "",
-  r_monto_total: operacion?.r_monto_total || operacion?.precio_neto || "",
-  condicion_pago: normalizarCondicionPago(operacion?.condicion_pago || operacion?.numero_rdi),
-  celulares: false,
-  clave: "",
-  llegada_aprox: operacion?.llegada_aprox || operacion?.estado_sunat || toTimePlusHours(2),
-});
+export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => {
+  const remitenteZona = operacion?.remitente_zona || operacion?.cliente_zona || "";
+  const remitenteDireccion = operacion?.remitente_direccion || operacion?.cliente_direccion || "";
+  const destinatarioZona = operacion?.destinatario_zona || "";
+  const destinatarioDireccion = operacion?.destinatario_direccion || "";
+
+  return {
+    tipo_operacion: "E",
+    r_fecemi: String(operacion?.r_fecemi || fechaOperacion || `${periodoTrabajo}-01`).slice(0, 10),
+    r_cod: operacion?.r_cod || comprobanteDesdeDocumento(operacion?.cliente_documento || operacion?.cliente_documento_id).r_cod,
+    r_serie: operacion?.r_serie || "B001",
+    r_numero: operacion?.r_numero || "",
+    id_documento: operacion?.id_documento || operacion?.cliente_id_doc || documentoTipoDesdeNumero(operacion?.cliente_documento || operacion?.cliente_documento_id),
+    cliente: operacion?.cliente || "",
+    cliente_documento: operacion?.cliente_documento || operacion?.cliente_documento_id || "",
+    cliente_telefono: operacion?.cliente_telefono || "",
+    cliente_direccion_fact: operacion?.cliente_direccion_fact || "",
+    remitente_entrega: operacion?.remitente_entrega || (remitenteZona || remitenteDireccion ? "CLIENTE" : "OFICINA"),
+    remitente_zona: remitenteZona,
+    remitente_direccion: remitenteDireccion,
+    destinatario: operacion?.destinatario || "",
+    destinatario_documento: operacion?.destinatario_documento || operacion?.destinatario_documento_id || "",
+    destinatario_telefono: operacion?.destinatario_telefono || "",
+    destinatario_entrega: operacion?.destinatario_entrega || (destinatarioZona || destinatarioDireccion ? "CLIENTE" : "OFICINA"),
+    destinatario_zona: destinatarioZona,
+    destinatario_direccion: destinatarioDireccion,
+    id_ruta: operacion?.id_ruta || "",
+    id_punto_venta: operacion?.id_punto_venta || "",
+    id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
+    punto_venta_dest_nombre: operacion?.punto_venta_dest_nombre || operacion?.punto_venta_destino_nombre || operacion?.destino_nombre || "",
+    placa: operacion?.placa || "",
+    licencia: operacion?.licencia || "",
+    descripcion: operacion?.descripcion || "",
+    r_monto_total: operacion?.r_monto_total || operacion?.precio_neto || "",
+    condicion_pago: normalizarCondicionPago(operacion?.condicion_pago || operacion?.numero_rdi),
+    celulares: false,
+    clave: "",
+    llegada_aprox: operacion?.llegada_aprox || operacion?.estado_sunat || toTimePlusHours(2),
+  };
+};
 
 export const textoBusquedaClone = (item) => [
   item.r_fecemi,
