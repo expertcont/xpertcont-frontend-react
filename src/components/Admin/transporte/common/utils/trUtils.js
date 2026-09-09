@@ -11,6 +11,39 @@ export const formatFecha = (fecha) => {
   return fechaTexto.split("-").reverse().join("/");
 };
 
+export const formatHora = (fechaHora) => {
+  const valor = String(fechaHora || "").trim();
+  if (!valor) {
+    return "";
+  }
+
+  const horaTexto = valor.includes("T")
+    ? valor.split("T")[1]
+    : valor.split(" ")[1];
+
+  if (horaTexto) {
+    const [hora = "0", minuto = "00"] = horaTexto.split(".")[0].split(":");
+    const horaNumero = Number(hora);
+    if (Number.isFinite(horaNumero)) {
+      const periodo = horaNumero >= 12 ? "PM" : "AM";
+      const hora12 = horaNumero % 12 || 12;
+      return `${String(hora12).padStart(2, "0")}:${String(minuto).padStart(2, "0")} ${periodo}`;
+    }
+    return "";
+  }
+
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) {
+    return "";
+  }
+
+  return fecha.toLocaleTimeString("es-PE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 export const numeroOperacion = (item) => [
   item.r_cod,
   item.r_serie,
@@ -53,12 +86,15 @@ export const crearIndiceBusqueda = (item) => [
   item.condicion_pago,
   item.placa,
   item.licencia,
+  item.ctrl_crea_us,
+  item.autor,
 ].map(normalizarTextoBusqueda).join(" ");
 
 export const normalizarOperacion = (item) => ({
   ...item,
   numero: numeroOperacion(item),
   fecha: formatFecha(item.r_fecemi),
+  horaGrabacion: formatHora(item.ctrl_crea),
   tipoLabel: tipoOperacion(item),
   condicionPagoLabel: condicionPagoLabel(item),
   clienteLabel: item.cliente || "Sin cliente",

@@ -24,6 +24,8 @@ import Checkbox from '@mui/material/Checkbox';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import StackedLineChartIcon from '@mui/icons-material/StackedLineChart';
+import SummarizeIcon from '@mui/icons-material/Summarize';
+import SunatResumenIcon from '../../../../assets/images/sunat0.png';
 import '../../../../App.css';
 import 'styled-components';
 //import axios from 'axios';
@@ -217,6 +219,36 @@ const recordsButtonSx = {
     borderColor: palette.border,
     color: palette.text,
     boxShadow: 'none',
+  },
+};
+
+// Accion SUNAT diaria: usa el logo institucional y un indicador pequeño de resumen.
+const sunatResumenIconSx = {
+  position: 'relative',
+  width: 28,
+  height: 28,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '& img': {
+    width: 22,
+    height: 22,
+    objectFit: 'contain',
+    display: 'block',
+  },
+  '& .resumen-badge': {
+    position: 'absolute',
+    right: -2,
+    bottom: -1,
+    width: 13,
+    height: 13,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surface,
+    border: '1px solid rgba(77,163,255,0.46)',
+    color: '#8fc7ff',
   },
 };
 
@@ -1028,6 +1060,72 @@ export default function AdminVentaList() {
       console.log('Error al crear el pedido.');
     }    
   };
+
+  const enviarResumenBoletas = async () => {
+    if (!periodo_trabajo || !contabilidad_trabajo) {
+      await confirmDialog({
+        title: "Faltan datos",
+        message: "Selecciona periodo y contabilidad antes de enviar el resumen.",
+        icon: "warning",
+        confirmText: "ACEPTAR",
+      });
+      return;
+    }
+
+    if (!diaSel || diaSel === "*") {
+      await confirmDialog({
+        title: "Selecciona un dia",
+        message: "El resumen de boletas se envia por dia. Primero elige un dia en el calendario.",
+        icon: "warning",
+        confirmText: "ACEPTAR",
+      });
+      return;
+    }
+
+    const fechaResumen = obtenerFecha(periodo_trabajo, true, diaSel);
+    const result = await confirmDialog({
+      title: "Enviar resumen de boletas?",
+      message: `${contabilidad_nombre || contabilidad_trabajo}\nFecha: ${fechaResumen}`,
+      icon: "success",
+      confirmText: "ENVIAR",
+      cancelText: "CANCELAR",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await axios.post(`${back_host}/ad_ventacpe/resumen`, {
+        periodo: periodo_trabajo,
+        id_anfitrion: params.id_anfitrion,
+        id_invitado: params.id_invitado,
+        documento_id: contabilidad_trabajo,
+        fecha_documentos: fechaResumen,
+        solo_payload: false,
+      });
+
+      await confirmDialog({
+        title: "Resumen enviado",
+        message: `Resumen de boletas enviado para ${fechaResumen}.`,
+        icon: "success",
+        confirmText: "ACEPTAR",
+      });
+
+      cargaRegistro(valorVista, periodo_trabajo, contabilidad_trabajo, diaSel);
+    } catch (error) {
+      const mensaje =
+        error?.response?.data?.mensaje_usuario ||
+        error?.response?.data?.message ||
+        "Aun no se pudo procesar el resumen comercial. Revisa si el endpoint ya esta activo en backend.";
+
+      await confirmDialog({
+        title: "No se pudo enviar el resumen",
+        message: mensaje,
+        icon: "error",
+        confirmText: "ACEPTAR",
+      });
+    }
+  };
+
   const clonarVenta = async (sComprobante) => {
     try {
       //console.log('dia sel para clonado: ... ', diaSel);
@@ -1362,7 +1460,7 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
 
         </Box>
 
-        <Box sx={{ height: 42, display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ height: 42, display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Tooltip title='EXPORTAR XLS' >
               <BotonExcelGeneral datos={registrosdet} 
                                   nombreArchivo="Reporte_Ventas"
@@ -1371,6 +1469,31 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                                   columnasExcluidas={['r_fecvcto','r_cod','r_serie','r_numero','r_cod_ref','r_serie_ref','r_numero_ref']}
               />
           </Tooltip>
+
+          {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
+            <Tooltip title="ENVIAR RESUMEN DE BOLETAS">
+              <IconButton
+                color="primary"
+                sx={{
+                  ...toolbarIconSx,
+                  color: '#4da3ff',
+                  '&:hover': {
+                    backgroundColor: 'rgba(37,99,235,0.14)',
+                    borderColor: 'rgba(77,163,255,0.32)',
+                    color: '#8fc7ff',
+                  },
+                }}
+                onClick={enviarResumenBoletas}
+              >
+                <Box sx={sunatResumenIconSx}>
+                  <img src={SunatResumenIcon} alt="Resumen SUNAT" />
+                  <Box className="resumen-badge">
+                    <SummarizeIcon sx={{ fontSize: 9 }} />
+                  </Box>
+                </Box>
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
 

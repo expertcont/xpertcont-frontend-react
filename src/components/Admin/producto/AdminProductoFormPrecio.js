@@ -6,6 +6,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import axios from 'axios';
 import { ConstructionOutlined } from '@mui/icons-material';
 
+// Formulario de rangos de precio por producto/unidad; se usa para editar o clonar precios.
 export default function ProductoFormPrecio() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  

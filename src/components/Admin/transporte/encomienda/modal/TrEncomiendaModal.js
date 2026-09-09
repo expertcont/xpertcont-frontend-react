@@ -9,7 +9,6 @@ import swal2 from "sweetalert2";
 import AppButton from "../../../../ui/AppButton";
 import AppIconBox from "../../../../ui/AppIconBox";
 import palette from "../../../../../theme/palette";
-import crearTicketEncomiendaPdf from "./TrEncomiendaTicketPdf";
 import TrEncomiendaModalClone from "./TrEncomiendaModalClone";
 import TrEncomiendaModalSections from "./TrEncomiendaModalSections";
 import {
@@ -46,6 +45,7 @@ export default function TrEncomiendaModal({
   modalEditarTitulo = "Editar encomienda",
   onClose,
   onSubmit,
+  guardando = false,
 }) {
   const esEdicion = Boolean(operacion);
   const [draft, setDraft] = useState(() => crearDraft(operacion, periodoTrabajo, fechaOperacion));
@@ -59,10 +59,12 @@ export default function TrEncomiendaModal({
   const [cloneRows, setCloneRows] = useState([]);
   const [buscandoRemitente, setBuscandoRemitente] = useState(false);
   const [buscandoDestinatario, setBuscandoDestinatario] = useState(false);
+  const [imprimiendoTicket, setImprimiendoTicket] = useState(false);
 
   const remitenteDocRef = useRef(null);
   const remitenteNombreRef = useRef(null);
   const remitenteTelefonoRef = useRef(null);
+  const clienteDireccionFactRef = useRef(null);
   const remitenteEntregaRef = useRef(null);
   const remitenteZonaRef = useRef(null);
   const remitenteDireccionRef = useRef(null);
@@ -86,6 +88,7 @@ export default function TrEncomiendaModal({
     remitenteDocRef,
     remitenteNombreRef,
     remitenteTelefonoRef,
+    clienteDireccionFactRef,
     remitenteEntregaRef,
     remitenteZonaRef,
     remitenteDireccionRef,
@@ -182,6 +185,7 @@ export default function TrEncomiendaModal({
       cliente: item.cliente || "",
       cliente_documento: clienteDocumento,
       cliente_telefono: item.cliente_telefono || "",
+      cliente_direccion_fact: item.cliente_direccion_fact || "",
       remitente_entrega: remitenteTieneDireccion ? "CLIENTE" : "OFICINA",
       remitente_zona: item.remitente_zona || item.cliente_zona || "",
       remitente_direccion: item.remitente_direccion || item.cliente_direccion || "",
@@ -301,6 +305,7 @@ export default function TrEncomiendaModal({
     setError("");
     setDraft((prev) => ({
       ...prev,
+      cliente_direccion_fact: "",
       remitente_direccion: "",
     }));
 
@@ -315,7 +320,7 @@ export default function TrEncomiendaModal({
         id_documento: r_id_doc || documentoTipoDesdeNumero(documento),
         r_cod: comprobanteDesdeDocumento(documento).r_cod,
         cliente: nombre_o_razon_social || prev.cliente,
-        remitente_direccion: direccion_completa || "",
+        cliente_direccion_fact: direccion_completa || "",
       }));
       window.setTimeout(() => {
         const nextRef = nombre_o_razon_social ? remitenteTelefonoRef : remitenteNombreRef;
@@ -387,6 +392,10 @@ export default function TrEncomiendaModal({
   };
 
   const handleSubmit = () => {
+    if (guardando) {
+      return;
+    }
+
     if (!draft.id_ruta) {
       mostrarValidacion("Indica la ruta.", rutaRef);
       return;
@@ -437,6 +446,7 @@ export default function TrEncomiendaModal({
     const total = Math.round(Number(draft.r_monto_total || 0));
     const entregaRemitenteEnOficina = draft.remitente_entrega === "OFICINA";
     const entregaDestinatarioEnOficina = draft.destinatario_entrega === "OFICINA";
+    const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
     const clienteZonaFinal = entregaRemitenteEnOficina ? "" : draft.remitente_zona;
     const clienteDireccionFinal = entregaRemitenteEnOficina ? "" : draft.remitente_direccion;
     const destinatarioDireccionFinal = entregaDestinatarioEnOficina ? "" : draft.destinatario_direccion;
@@ -447,6 +457,7 @@ export default function TrEncomiendaModal({
       r_cod: comprobante.r_cod,
       cliente_id_doc: documentoTipoDesdeNumero(draft.cliente_documento),
       cliente_documento_id: draft.cliente_documento,
+      cliente_direccion_fact: remitenteEsEmpresa ? draft.cliente_direccion_fact : "",
       cliente_zona: clienteZonaFinal,
       cliente_direccion: clienteDireccionFinal,
       destinatario_id_doc: documentoTipoDesdeNumero(draft.destinatario_documento),
@@ -465,43 +476,54 @@ export default function TrEncomiendaModal({
   };
 
   const imprimirTicketModelo = async () => {
+    if (guardando || imprimiendoTicket) {
+      return;
+    }
+
+    const rCod = operacion?.r_cod || draft.r_cod;
+    const rSerie = operacion?.r_serie || draft.r_serie;
+    const rNumero = operacion?.r_numero || draft.r_numero;
+    const elemento = operacion?.elemento || draft.elemento || 1;
+
+    if (!rCod || !rSerie || !rNumero) {
+      swal2.fire({
+        title: "Primero graba la encomienda",
+        text: "El ticket con logo y QR necesita serie y numero real del comprobante.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
     const ticketWindow = window.open("about:blank", "_blank");
+    setImprimiendoTicket(true);
 
     try {
       ticketWindow?.document?.write("<p style=\"font-family:Arial,sans-serif;color:#334155\">Generando ticket...</p>");
 
-      const comprobante = comprobanteDesdeDocumento(draft.cliente_documento);
-      const total = Math.round(Number(draft.r_monto_total || 0));
-      const entregaRemitenteEnOficina = draft.remitente_entrega === "OFICINA";
-      const entregaDestinatarioEnOficina = draft.destinatario_entrega === "OFICINA";
-      const clienteZonaFinal = entregaRemitenteEnOficina ? "" : draft.remitente_zona;
-      const clienteDireccionFinal = entregaRemitenteEnOficina ? "" : draft.remitente_direccion;
-      const destinatarioDireccionFinal = entregaDestinatarioEnOficina ? "" : draft.destinatario_direccion;
-      const url = await crearTicketEncomiendaPdf({
-        encomienda: {
-          ...draft,
-          r_cod: operacion?.r_cod || comprobante.r_cod,
-          r_serie: operacion?.r_serie || draft.r_serie,
-          r_numero: operacion?.r_numero || draft.r_numero,
-          cliente_id_doc: documentoTipoDesdeNumero(draft.cliente_documento),
-          cliente_documento_id: draft.cliente_documento,
-          cliente_zona: clienteZonaFinal,
-          cliente_direccion: clienteDireccionFinal,
-          destinatario_id_doc: documentoTipoDesdeNumero(draft.destinatario_documento),
-          destinatario_documento_id: draft.destinatario_documento,
-          destinatario_direccion: destinatarioDireccionFinal,
-          precio_neto: total,
-          r_monto_total: total,
-        },
-        empresa: {
-          nombre: sessionStorage.getItem("contabilidad_nombre") || "",
-        },
+      const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda`, {
+        periodo: periodoTrabajo,
+        id_anfitrion: idAnfitrion,
+        documento_id: documentoId,
+        r_cod: rCod,
+        r_serie: rSerie,
+        r_numero: rNumero,
+        elemento,
       });
+      const rutaPdf = response.data?.ruta_pdf;
+
+      if (!rutaPdf || rutaPdf === "error") {
+        throw new Error(response.data?.message || response.data?.respuesta_sunat_descripcion || "No se pudo generar el ticket.");
+      }
+
+      const urlConBypassCache = `${rutaPdf}?t=${Date.now()}`;
 
       if (ticketWindow) {
-        ticketWindow.location.href = url;
+        ticketWindow.location.href = urlConBypassCache;
       } else {
-        window.open(url, "_blank");
+        window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
       }
     } catch (error) {
       ticketWindow?.close();
@@ -513,6 +535,8 @@ export default function TrEncomiendaModal({
         color: palette.text,
         background: palette.surface,
       });
+    } finally {
+      setImprimiendoTicket(false);
     }
   };
 
@@ -547,7 +571,7 @@ export default function TrEncomiendaModal({
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={onClose} sx={{ color: palette.muted }}>
+          <IconButton disabled={guardando} onClick={onClose} sx={{ color: palette.muted }}>
             <X size={18} />
           </IconButton>
         </Box>
@@ -573,6 +597,7 @@ export default function TrEncomiendaModal({
           remitenteDocRef,
           remitenteNombreRef,
           remitenteTelefonoRef,
+          clienteDireccionFactRef,
           remitenteEntregaRef,
           remitenteZonaRef,
           remitenteDireccionRef,
@@ -606,10 +631,12 @@ export default function TrEncomiendaModal({
           bottom: 0,
           zIndex: 1,
         }}>
-          <AppButton onClick={onClose}>Salir [Esc]</AppButton>
-          <AppButton onClick={imprimirTicketModelo}>Imprimir encomienda</AppButton>
-          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 700, fontSize: "13px" }}>
-            {textoBotonGuardar}
+          <AppButton onClick={onClose} disabled={guardando}>Salir [Esc]</AppButton>
+          <AppButton onClick={imprimirTicketModelo} disabled={guardando || imprimiendoTicket}>
+            {imprimiendoTicket ? "Generando PDF..." : "Imprimir encomienda"}
+          </AppButton>
+          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 700, fontSize: "13px" }}>
+            {guardando ? "Guardando..." : textoBotonGuardar}
           </AppButton>
         </Box>
       <RutaPickerModal

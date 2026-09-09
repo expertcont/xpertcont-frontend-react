@@ -10,14 +10,20 @@ export default function AppButton({
   fullWidth = false,
   sx = {},
   buttonRef,
+  disabled = false,
 }) {
   return (
     <Box
       ref={buttonRef}
       role="button"
-      tabIndex={0}
-      onClick={onClick}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      onClick={(event) => {
+        if (disabled) return;
+        onClick?.(event);
+      }}
       onKeyDown={(event) => {
+        if (disabled) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           onClick?.(event);
@@ -44,15 +50,17 @@ export default function AppButton({
         fontSize: "13px",
         fontWeight: 600,
 
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.55 : 1,
+        pointerEvents: disabled ? "none" : "auto",
 
         transition: "all .18s ease",
 
         "&:hover": {
-          backgroundColor: palette.accent,
-          borderColor: palette.accent,
-          color: palette.surface,
-          transform: "translateY(-1px)",
+          backgroundColor: disabled ? palette.chip : palette.accent,
+          borderColor: disabled ? palette.border : palette.accent,
+          color: disabled ? palette.text : palette.surface,
+          transform: disabled ? "none" : "translateY(-1px)",
         },
         ...sx,
       }}

@@ -24,14 +24,14 @@ import ReportesList from "./components/ReportesList";
 import AsientoGenericoForm from "./components/AsientoGenericoForm";
 
 import AdminVentaList from "./components/Admin/venta/list/AdminVentaList";
-import AdminProductoList from "./components/Admin/AdminProductoList";
-import AdminProductoForm from "./components/Admin/AdminProductoForm";
+import AdminProductoList from "./components/Admin/producto/AdminProductoList";
+import AdminProductoForm from "./components/Admin/producto/AdminProductoForm";
 import AdminVentaForm from "./components/Admin/venta/form/AdminVentaForm";
 import AdminEquipoList from "./components/Admin/AdminEquipoList";
 import AdminEquipoForm from "./components/Admin/AdminEquipoForm";
 import AdminPuntoVentaUsuarioList from "./components/Admin/AdminPuntoVentaUsuarioList";
 import AdminPuntoVentaUsuarioForm from "./components/Admin/AdminPuntoVentaUsuarioForm";
-import AdminProductoFormPrecio from "./components/Admin/AdminProductoFormPrecio";
+import AdminProductoFormPrecio from "./components/Admin/producto/AdminProductoFormPrecio";
 
 // 👇 Importa el ConfirmProvider
 //import { DialogProvider } from "./components/Admin/AdminConfirmDialogProvider";

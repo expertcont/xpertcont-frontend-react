@@ -213,6 +213,20 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
+          if (event.key === "+") {
+            event.preventDefault();
+            const target = event.target;
+            const start = target.selectionStart ?? String(value || "").length;
+            const end = target.selectionEnd ?? start;
+            const currentValue = String(value || "");
+            const nextValue = `${currentValue.slice(0, start)}\n${currentValue.slice(end)}`;
+            onChange(nextValue);
+            window.setTimeout(() => {
+              target.selectionStart = start + 1;
+              target.selectionEnd = start + 1;
+            }, 0);
+            return;
+          }
           if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && focusByArrow(event, inputRef)) {
             return;
           }

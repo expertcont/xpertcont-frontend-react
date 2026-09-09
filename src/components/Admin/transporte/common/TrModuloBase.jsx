@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import { Box } from "@mui/material";
@@ -78,6 +78,8 @@ export default function TrModuloBase({
   // Estado del modal de alta/edicion.
   const [modalOperacionOpen, setModalOperacionOpen] = useState(false);
   const [operacionEditando, setOperacionEditando] = useState(null);
+  const [guardandoOperacion, setGuardandoOperacion] = useState(false);
+  const guardandoOperacionRef = useRef(false);
 
   // -----------------------------
   // Catalogos y operaciones
@@ -248,15 +250,28 @@ export default function TrModuloBase({
   };
 
   const cerrarModalOperacion = () => {
+    if (guardandoOperacionRef.current) {
+      return;
+    }
+
     setModalOperacionOpen(false);
     setOperacionEditando(null);
   };
 
   // Une datos del modal con datos de ruta/usuario/periodo antes de enviar POST o PUT.
   const guardarOperacion = async (datosOperacion) => {
+    if (guardandoOperacionRef.current) {
+      return;
+    }
+
+    guardandoOperacionRef.current = true;
+    setGuardandoOperacion(true);
+
     const esEdicion = Boolean(operacionEditando);
 
     if (tipoOperacionFijo === "E" && !puntoVentaTrabajo) {
+      guardandoOperacionRef.current = false;
+      setGuardandoOperacion(false);
       swal2.fire({
         title: "Selecciona punto de venta",
         text: "Para guardar una encomienda primero selecciona un punto de venta.",
@@ -294,7 +309,8 @@ export default function TrModuloBase({
         throw new Error(dataResponse.message || "No se pudo guardar la encomienda.");
       }
 
-      cerrarModalOperacion();
+      setModalOperacionOpen(false);
+      setOperacionEditando(null);
       setUpdateTrigger(Date.now());
     } catch (error) {
       swal2.fire({
@@ -303,6 +319,9 @@ export default function TrModuloBase({
         icon: "error",
         confirmButtonText: "ACEPTAR",
       });
+    } finally {
+      guardandoOperacionRef.current = false;
+      setGuardandoOperacion(false);
     }
   };
 
@@ -483,6 +502,7 @@ export default function TrModuloBase({
             modalEditarTitulo={modalEditarTitulo}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
+            guardando={guardandoOperacion}
           />
         )}
 
@@ -497,6 +517,7 @@ export default function TrModuloBase({
             modalEditarTitulo={modalEditarTitulo}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
+            guardando={guardandoOperacion}
           />
         )}
 

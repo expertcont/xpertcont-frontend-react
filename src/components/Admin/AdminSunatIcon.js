@@ -2,13 +2,12 @@
 import { useState } from "react";
 import axios from "axios";
 import { useDialog } from "./AdminConfirmDialogProvider";
-import { Dialog, DialogTitle, Button, useMediaQuery, TextField, Box, Typography } from "@mui/material";
+import { Dialog, DialogTitle, Button, useMediaQuery, TextField, Box, Typography, SvgIcon } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import Sunat01Icon from '../../assets/images/sunat0.png'; //Azul
 import Sunat03Icon from '../../assets/images/sunat9.png'; //Granate
 import TaskAltIcon from "@mui/icons-material/TaskAlt";   
 import CodeIcon from '@mui/icons-material/Code';
-import DescriptionIcon from '@mui/icons-material/Description';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import palette from '../../theme/palette';
 
@@ -28,13 +27,13 @@ const modalPaperSx = {
   overflow: "hidden",
 };
 
-const documentButtonSx = {
+const createDownloadButtonSx = ({ accent, bg, border, hoverBg, hoverBorder }) => ({
   width: 270,
-  height: 40,
+  height: 42,
   justifyContent: "center",
   borderRadius: 2,
-  backgroundColor: "rgba(139,154,165,0.10)",
-  border: "1px solid rgba(139,154,165,0.16)",
+  backgroundColor: bg,
+  border,
   color: "rgba(255,255,255,0.90)",
   boxShadow: "none",
   fontSize: "12px",
@@ -43,33 +42,44 @@ const documentButtonSx = {
   position: "relative",
   "& .MuiButton-startIcon": {
     position: "absolute",
-    left: 18,
+    left: 16,
     m: 0,
-    color: "#7ddbd3",
+    color: accent,
+  },
+  "& .MuiButton-startIcon > *:nth-of-type(1)": {
+    fontSize: 22,
   },
   "&:hover": {
-    backgroundColor: "rgba(42,161,152,0.14)",
-    borderColor: "rgba(42,161,152,0.28)",
+    backgroundColor: hoverBg,
+    borderColor: hoverBorder,
     boxShadow: "none",
   },
-};
+});
 
-const pdfButtonSx = {
-  ...documentButtonSx,
-  backgroundColor: "rgba(42,161,152,0.20)",
-  border: "1px solid rgba(42,161,152,0.38)",
-  color: "rgba(255,255,255,0.94)",
-  fontWeight: 600,
-  "& .MuiButton-startIcon": {
-    ...documentButtonSx["& .MuiButton-startIcon"],
-    color: "#8ee0d8",
-  },
-  "&:hover": {
-    backgroundColor: "rgba(42,161,152,0.28)",
-    borderColor: "rgba(42,161,152,0.48)",
-    boxShadow: "0 8px 18px rgba(42,161,152,0.12)",
-  },
-};
+// Colores discretos por tipo de documento: tecnico, validacion y representacion impresa.
+const xmlButtonSx = createDownloadButtonSx({
+  accent: "#8fc7ff",
+  bg: "rgba(96,165,250,0.08)",
+  border: "1px solid rgba(96,165,250,0.20)",
+  hoverBg: "rgba(96,165,250,0.13)",
+  hoverBorder: "rgba(143,199,255,0.30)",
+});
+
+const cdrButtonSx = createDownloadButtonSx({
+  accent: "#7ddbd3",
+  bg: "rgba(42,161,152,0.10)",
+  border: "1px solid rgba(42,161,152,0.24)",
+  hoverBg: "rgba(42,161,152,0.15)",
+  hoverBorder: "rgba(125,219,211,0.34)",
+});
+
+const pdfButtonSx = createDownloadButtonSx({
+  accent: "#f2c185",
+  bg: "rgba(242,193,133,0.08)",
+  border: "1px solid rgba(242,193,133,0.20)",
+  hoverBg: "rgba(242,193,133,0.13)",
+  hoverBorder: "rgba(242,193,133,0.30)",
+});
 
 const phoneFieldSx = {
   width: 270,
@@ -129,6 +139,19 @@ const comprobanteInfoSx = {
   fontWeight: 600,
   lineHeight: 1.25,
 };
+
+// Icono PDF propio: version coral, redondeada y legible para boton compacto.
+function PdfFileIcon(props) {
+  return (
+    <SvgIcon viewBox="0 0 64 64" {...props}>
+      <path d="M14 5h31l9 9v40c0 4.2-2.8 7-7 7H17c-4.2 0-7-2.8-7-7V12c0-4.2 2.8-7 7-7z" fill="#df514d" />
+      <path d="M45 5v10c0 3.9 2.2 6.1 6.1 6.1H54z" fill="#f1a09b" />
+      <text x="17" y="39" fill="#ffffff" fontSize="15.5" fontWeight="900" fontFamily="Arial, sans-serif">
+        PDF
+      </text>
+    </SvgIcon>
+  );
+}
 
 const AdminSunatIcon = ({
   comprobante_key,            // ej. "01-F001-12345" pero es KEY del registro
@@ -427,16 +450,22 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         <DialogTitle
           sx={{
             width: "100%",
-            py: 1.5,
-            color: "rgba(255,255,255,0.92)",
-            fontSize: "14px",
-            fontWeight: 600,
+            py: 1.4,
+            color: "rgba(255,255,255,0.94)",
             textAlign: "center",
             backgroundColor: palette.surfaceAlt,
             borderBottom: `1px solid ${palette.border}`,
           }}
         >
-          Links de descarga
+          <Box sx={{ display: "grid", justifyItems: "center", gap: 0.35 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, color: "#7ddbd3", fontSize: "14px", fontWeight: 800 }}>
+              <TaskAltIcon sx={{ fontSize: 18 }} />
+              Envio exitoso
+            </Box>
+            <Typography sx={{ color: palette.muted, fontSize: "11.5px", fontWeight: 500 }}>
+              Comprobante procesado y documentos disponibles
+            </Typography>
+          </Box>
         </DialogTitle>
 
         <Typography sx={comprobanteInfoSx}>
@@ -450,7 +479,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         <Button
           variant="contained"
           onClick={() => handleOpenLink(rutaXml)}
-          sx={{ ...documentButtonSx, mt: 1.5 }}
+          sx={{ ...xmlButtonSx, mt: 1.5 }}
           startIcon={<CodeIcon />} 
         >
           Descargar XML
@@ -459,7 +488,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         <Button
           variant="contained"
           onClick={() => handleOpenLink(rutaCdr)}
-          sx={{ ...documentButtonSx, mt: 1 }}
+          sx={{ ...cdrButtonSx, mt: 1 }}
           startIcon={<TaskAltIcon />} 
         >
           Descargar CDR
@@ -469,7 +498,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
           variant="contained"
           onClick={() => handleOpenLink(rutaPdf)}
           sx={{ ...pdfButtonSx, mt: 1 }}
-          startIcon={<DescriptionIcon />}
+          startIcon={<PdfFileIcon sx={{ fontSize: 34 }} />}
         >
           Descargar PDF
         </Button>
@@ -499,7 +528,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
           }
         }}
       >
-        <WhatsAppIcon fontSize="medium" />
+        <WhatsAppIcon sx={{ fontSize: 23 }} />
       </Box>
 
       {/* Input */}

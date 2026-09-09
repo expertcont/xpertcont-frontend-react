@@ -209,15 +209,24 @@ function TrOperacionRow({ row, onEdit, onDelete, onEntrega }) {
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: 0.5,
+              gap: 0.85,
               color: palette.accent,
               fontWeight: 600,
               fontSize: "12.5px",
               height: { xs: 42, sm: "auto" },
+              flexWrap: "wrap",
             }}
           >
-            <Calendar size={13} />
-            {row.fecha}
+            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, whiteSpace: "nowrap" }}>
+              <Calendar size={13} />
+              {row.fecha}
+            </Box>
+            {row.horaGrabacion && (
+              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, color: palette.muted, whiteSpace: "nowrap" }}>
+                <Clock3 size={13} />
+                {row.horaGrabacion}
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

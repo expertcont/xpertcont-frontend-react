@@ -61,6 +61,7 @@ export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
   cliente: operacion?.cliente || "",
   cliente_documento: operacion?.cliente_documento || operacion?.cliente_documento_id || "",
   cliente_telefono: operacion?.cliente_telefono || "",
+  cliente_direccion_fact: operacion?.cliente_direccion_fact || "",
   remitente_entrega: operacion?.remitente_entrega || "OFICINA",
   remitente_zona: operacion?.remitente_zona || operacion?.cliente_zona || "",
   remitente_direccion: operacion?.remitente_direccion || operacion?.cliente_direccion || "",

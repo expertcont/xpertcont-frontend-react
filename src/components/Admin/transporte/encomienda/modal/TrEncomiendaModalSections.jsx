@@ -43,6 +43,9 @@ export default function TrEncomiendaModalSections({
   buscandoDestinatario,
   refs,
 }) {
+  const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
+  const mostrarDireccionRemitente = draft.remitente_entrega === "CLIENTE";
+
   return (
     <Box sx={{ px: { xs: 0.8, md: 1 }, pb: 0.75, overflowY: "auto" }}>
       <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
@@ -94,15 +97,28 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12} md={3}>
             <Field label="Telefono">
-              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={refs.remitenteEntregaRef} placeholder="Celular" />
+              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.remitenteEntregaRef} placeholder="Celular" />
             </Field>
           </Grid>
+          {remitenteEsEmpresa && (
+            <Grid item xs={12} md={6}>
+              <Field label="Direccion fiscal">
+                <CaptureInput
+                  value={draft.cliente_direccion_fact}
+                  onChange={(value) => updateDraft("cliente_direccion_fact", value)}
+                  inputRef={refs.clienteDireccionFactRef}
+                  nextRef={refs.remitenteEntregaRef}
+                  placeholder="Direccion fiscal del RUC"
+                />
+              </Field>
+            </Grid>
+          )}
           <Grid item xs={12} md={draft.remitente_entrega === "CLIENTE" ? 3 : 9}>
             <Field label="" labelWidth={0}>
               <ChoiceGroup
                 value={draft.remitente_entrega}
                 inputRef={refs.remitenteEntregaRef}
-                nextRef={draft.remitente_entrega === "CLIENTE" ? refs.remitenteZonaRef : refs.rutaRef}
+                nextRef={mostrarDireccionRemitente ? refs.remitenteZonaRef : refs.rutaRef}
                 onChange={(value) => {
                   updateDraft("remitente_entrega", value);
                   if (value === "OFICINA") {
@@ -113,21 +129,23 @@ export default function TrEncomiendaModalSections({
               />
             </Field>
           </Grid>
-          {draft.remitente_entrega === "CLIENTE" && (
+          {mostrarDireccionRemitente && (
             <>
-              <Grid item xs={12} md={3}>
-                <Field label="Zona">
-                  {/* Zonas filtradas por id_punto_venta de origen; se guarda nombre de zona. */}
-                  <ZonaField
-                    value={draft.remitente_zona}
-                    onClear={() => updateDraft("remitente_zona", "")}
-                    onOpen={() => setZonaPickerOpen("remitente")}
-                    inputRef={refs.remitenteZonaRef}
-                    nextRef={refs.remitenteDireccionRef}
-                    placeholder="Escoger zona"
-                  />
-                </Field>
-              </Grid>
+              {draft.remitente_entrega === "CLIENTE" && (
+                <Grid item xs={12} md={3}>
+                  <Field label="Zona">
+                    {/* Zonas filtradas por id_punto_venta de origen; se guarda nombre de zona. */}
+                    <ZonaField
+                      value={draft.remitente_zona}
+                      onClear={() => updateDraft("remitente_zona", "")}
+                      onOpen={() => setZonaPickerOpen("remitente")}
+                      inputRef={refs.remitenteZonaRef}
+                      nextRef={refs.remitenteDireccionRef}
+                      placeholder="Escoger zona"
+                    />
+                  </Field>
+                </Grid>
+              )}
               <Grid item xs={12} md={3}>
                 <Field label="Direccion">
                   <CaptureInput

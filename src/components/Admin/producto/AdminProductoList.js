@@ -1,76 +1,82 @@
 import React from 'react';
-import { useEffect, useState, useMemo, useCallback } from "react"
-import { Modal,Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
+import { useEffect, useState, useCallback } from "react"
+import { Box,useMediaQuery} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import FindIcon from '@mui/icons-material/FindInPage';
-import UpdateIcon from '@mui/icons-material/UpdateSharp';
-import Add from '@mui/icons-material/Add';
-import FindInPageIcon from '@mui/icons-material/FindInPage';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import BoltIcon from '@mui/icons-material/Bolt';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import DownloadIcon from '@mui/icons-material/Download';
-import { blueGrey } from '@mui/material/colors';
-import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
-import FolderDeleteIcon from '@mui/icons-material/FolderDelete';          
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
-
-import IconButton from '@mui/material/IconButton';
 import swal from 'sweetalert';
 import swal2 from 'sweetalert2'
-import Datatable, {createTheme} from 'react-data-table-component';
-import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import ArrowDownward from '@mui/icons-material/ArrowDownward';
-import '../../App.css';
+import '../../../App.css';
 import 'styled-components';
 //import axios from 'axios';
 
 //import { utils, writeFile } from 'xlsx';
-import Tooltip from '@mui/material/Tooltip';
 import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import axios from 'axios';
 
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
-import BotonExcelVentas from '../BotonExcelVentas';
-import AdminFileProducto from './producto/AdminFileProducto';
 import { saveAs } from 'file-saver';
+import palette from '../../../theme/palette';
+import AdminProductoCloneDialog from './AdminProductoCloneDialog';
+import AdminProductoListHeader from './AdminProductoListHeader';
+import AdminProductoTable from './AdminProductoTable';
+import AdminProductoToolbar from './AdminProductoToolbar';
 
-export default function AdminCertificadoList() {
+// Pantalla principal del modulo Productos: lista productos o rangos de precios segun valorVista.
+// Layout base del listado: deja el contenido compacto y alineado con los modulos redisenados.
+const pageSx = {
+  width: '100%',
+  maxWidth: '100%',
+  boxSizing: 'border-box',
+  minWidth: 0,
+  display: 'grid',
+  gap: 1.15,
+  p: { xs: 1, md: 1.25 },
+  pt: 1,
+  color: palette.text,
+};
+
+// Icono de editar en cada fila; el hover teal ayuda a distinguir acciones positivas.
+const rowActionIconSx = {
+  color: palette.accent,
+  cursor: 'pointer',
+  fontSize: 20,
+  display: 'block',
+  transition: 'color 0.18s ease, transform 0.18s ease',
+  '&:hover': {
+    color: '#7ddbd3',
+    transform: 'translateY(-1px)',
+  },
+};
+
+// Icono de clonar: se mantiene neutro para no competir con editar/eliminar.
+const cloneActionIconSx = {
+  color: 'rgba(139,154,165,0.86)',
+  cursor: 'pointer',
+  fontSize: 22,
+  display: 'block',
+  transition: 'color 0.18s ease, transform 0.18s ease',
+  '&:hover': {
+    color: 'rgba(255,255,255,0.92)',
+    transform: 'translateY(-1px)',
+  },
+};
+
+// Icono de eliminar con hover calido para senalar accion destructiva sin saturar la tabla.
+const deleteActionIconSx = {
+  ...rowActionIconSx,
+  color: '#ff9f7a',
+  '&:hover': {
+    color: '#ffc6b1',
+    transform: 'translateY(-1px)',
+  },
+};
+
+export default function AdminProductoList() {
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
-
-  createTheme('solarized', {
-    text: {
-      //primary: '#268bd2',
-      primary: '#ffffff',
-      secondary: '#2aa198',
-    },
-    background: {
-      //default: '#002b36',
-      default: '#1e272e'
-    },
-    context: {
-      background: '#cb4b16',
-      //background: '#1e272e',
-      text: '#FFFFFF',
-    },
-    divider: {
-      default: '#073642',
-    },
-    action: {
-      button: 'rgba(0,0,0,.54)',
-      hover: 'rgba(0,0,0,.08)',
-      disabled: 'rgba(0,0,0,.12)',
-    },
-  }, 'dark');
 
   ///////////////////////////////////////////////////
   /*function exportToExcel(data) {
@@ -94,21 +100,22 @@ export default function AdminCertificadoList() {
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
   const {user, isAuthenticated } = useAuth0();
   const [valorVista, setValorVista] = useState("productos");
+  
+  const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
+  const [id_producto, setIdProducto] = useState("");
+  const [id_producto_nuevo, setIdProductoNuevo] = useState("");
+  const [nombre_nuevo, setNombreNuevo] = useState("");
 
   // Agrega íconos al inicio de cada columna
   const columnas = [
     {
       name: '',
-      width: '40px',
+      width: isSmallScreen ? '36px' : '32px',
       cell: (row) => (
         pVenta0101 ? (
           <DriveFileRenameOutlineIcon
-            onClick={() => handleUpdate(row.id_producto)}
-            style={{
-              cursor: 'pointer',
-              color: 'skyblue',
-              transition: 'color 0.3s ease',
-            }}
+            onClick={() => handleUpdate(row.id_producto, row.descripcion)} //descripcion contiene campo unidades
+            sx={rowActionIconSx}
           />
         ) : null
       ),
@@ -117,15 +124,32 @@ export default function AdminCertificadoList() {
     },
     {
       name: '',
-      width: '40px',
+      width: isSmallScreen ? '36px' : '30px',
+      cell: (row) => (
+            <ContentCopyIcon
+              onClick={() => {
+                    if (valorVista === 'precios') {	
+                      //unidades = row.descripcion
+                      navigate(`/ad_productoprecio/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${row.id_producto}/${row.descripcion}/clonar`);
+                    } else {	
+                      setShowModalMostrarClonar(true);
+                      setIdProducto(row.id_producto);
+                    }
+                }
+              }
+              sx={cloneActionIconSx}
+            />
+      ),
+      allowOverflow: true,
+      button: true,
+    },
+    {
+      name: '',
+      width: isSmallScreen ? '36px' : '30px',
       cell: (row) => (
           <DeleteIcon
             onClick={() => handleDelete(row.id_producto)}
-            style={{
-              cursor: 'pointer',
-              color: 'orange',
-              transition: 'color 0.3s ease',
-            }}
+            sx={deleteActionIconSx}
           />
       ),
       allowOverflow: true,
@@ -134,17 +158,20 @@ export default function AdminCertificadoList() {
     { name:'ID', 
       selector:row => row.id_producto,
       sortable: true,
-      width: '110px'
+      compact: true,
+      width: '80px'
       //key:true
     },
     { name:'NOMBRE', 
       selector:row => row.nombre,
-      width: '250px',
+      width: '350px',
+      compact: true,
       sortable: true
     },
     { name:'DESCRIPCION', 
       selector:row => row.descripcion,
       width: '100px',
+      compact: true,
       sortable: true
     },
     { name:'PRECIO', 
@@ -183,18 +210,16 @@ export default function AdminCertificadoList() {
   });  
 
   const handleRowSelected = useCallback(state => {
-        setSelectedRows(state.selectedRows);
-    }, []);
+		setSelectedRows(state.selectedRows);
+	}, []);
 
-  const handleUpdate = (id_producto) => {
+  const handleUpdate = (id_producto,unidades) => {
     //Mostrar formulario para edicion
-    if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-        console.log("Estás usando un dispositivo móvil!!");
-        //Validamos libro a mostrar
+    if (valorVista === 'productos') {
         navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${id_producto}/edit`);
-    } else {
-        navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${id_producto}/edit`);
-    }    
+    }else{
+        navigate(`/ad_productoprecio/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${id_producto}/${unidades}/edit`);
+    }
   };
   const handleDelete = (id_producto) => {
     //console.log(num_asiento);
@@ -420,155 +445,97 @@ export default function AdminCertificadoList() {
 
     //Lo dejaremos terminar el evento de cambio o change
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
-  }
+  };
 
+  const clonarProducto = async (sIdProducto, sIdProductoNuevo, sNombreNuevo) => {
+    try {
+      const response = await axios.post(
+        `${back_host}/ad_productoclon`,
+        {
+          id_anfitrion: params.id_anfitrion,        // o como lo tengas guardado
+          documento_id: params.documento_id,      // desde tu contexto o estado
+          id_producto: sIdProducto,
+          id_producto_nuevo: sIdProductoNuevo,
+          nombre_nuevo: sNombreNuevo
+        }
+      );
+
+      const { exito, mensaje } = response.data;
+
+      // Opcional: mostrar alertas o snackbars
+      if (exito) {
+        alert(mensaje);
+      } else {
+        alert(mensaje);
+      }
+
+      return { exito, mensaje };
+
+    } catch (error) {
+      console.error("Error al clonar producto:", error);
+
+      alert("Error al clonar producto (conexión o servidor).");
+
+      return { exito: false, mensaje: "Error de conexión o servidor" };
+    }
+  };
+
+  const handleChange = e => {
+    //Para todos los demas casos ;)
+    if (e.target.name==="id_producto_nuevo"){
+      setIdProductoNuevo(e.target.value);
+    }
+    if (e.target.name==="nombre_nuevo"){
+      setNombreNuevo(e.target.value);
+    }
+    
+    setUpdateTrigger(Math.random());//experimento para actualizar el dom
+  };
+  
  return (
   <>
+    <AdminProductoCloneDialog
+      open={showModalMostrarClonar}
+      isSmallScreen={isSmallScreen}
+      idProducto={id_producto}
+      idProductoNuevo={id_producto_nuevo}
+      nombreNuevo={nombre_nuevo}
+      onChange={handleChange}
+      onClose={() => setShowModalMostrarClonar(false)}
+      onClonar={() => {
+        clonarProducto(id_producto, id_producto_nuevo, nombre_nuevo);
+        setShowModalMostrarClonar(false);
+      }}
+    />
 
-  <div>
-  </div>
-  <div>
-  <ToggleButtonGroup
-    color="success"
-    //value={valorVista}
-    exclusive
-    onChange={actualizaValorVista}
-    aria-label="Platform"
-  >
+    <Box sx={pageSx}>
+      {/* Componente de presentacion: titulo del modulo y cambio Productos/Precios. */}
+      <AdminProductoListHeader
+        valorVista={valorVista}
+        onVistaChange={actualizaValorVista}
+      />
 
-      <ToggleButton value="productos"
-                    style={{
-                      backgroundColor: valorVista === 'productos' ? 'lightblue' : 'transparent',
-                      color: valorVista === 'productos' ? "orange" : "gray"
-                    }}
+      {/* Componente operativo: acciones de archivo, altas, borrado masivo y filtro. */}
+      <AdminProductoToolbar
+        isSmallScreen={isSmallScreen}
+        registrosdet={registrosdet}
+        datosCarga={datosCarga}
+        valorVista={valorVista}
+        onNuevo={() => navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/new`)}
+        onDescargarPlantilla={handleDescargarExcelVacio}
+        onEliminarMasivo={() => handleDeleteOrigen(params.id_anfitrion, params.documento_id)}
+        onImportOk={handleActualizaImportaOK}
+        onFiltroChange={actualizaValorFiltro}
+      />
 
-      >Productos</ToggleButton>
-
-
-    <ToggleButton value="precios"
-                  style={{
-                    backgroundColor: valorVista === 'precios' ? 'lightblue' : 'transparent',
-                    color: valorVista === 'precios' ? 'orange' : 'gray',
-                  }}
-    >Precios</ToggleButton>
-
-
-  </ToggleButtonGroup>      
-  </div>
-    
-  <Grid container spacing={0}
-      direction={isSmallScreen ? 'row' : 'row'}
-      alignItems={isSmallScreen ? 'center' : 'left'}
-      justifyContent={isSmallScreen ? 'left' : 'left'}
-  >
-      <Grid item xs={isSmallScreen ? 1.2 : 0.5} >
-        <Tooltip title='AGREGAR NUEVO' >
-          <IconButton color="primary" 
-                          //style={{ padding: '0px'}}
-                          style={{ padding: '0px', color: blueGrey[700] }}
-                          onClick={() => {
-                            if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i) || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i) || navigator.userAgent.match(/Windows Phone/i)) {
-                              //movil
-                                navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/new`);
-                            } else {
-                                navigate(`/ad_producto/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/new`);
-                            }
-                          }}
-          >
-                <AddBoxIcon style={{ fontSize: '40px' }}/>
-          </IconButton>
-        </Tooltip>
-      </Grid>
-
-      <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-        <Tooltip title='EXPORTAR XLS' >
-            <BotonExcelVentas registrosdet={registrosdet} 
-            />
-        </Tooltip>
-      </Grid>
-      
-      <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-        <Tooltip title='DESCARGA XLS VACIO' >
-            <IconButton color="primary" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
-                            onClick={() => {
-                                  handleDescargarExcelVacio();
-                            }}
-            >
-                  <KeyboardDoubleArrowDownIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-        </Tooltip>
-      </Grid>
-      
-      <Grid item xs={isSmallScreen ? 1.2 : 0.5}  >    
-        <Tooltip title='ELIMINAR MASIVO' >
-            <IconButton color="warning" 
-                            //style={{ padding: '0px'}}
-                            style={{ padding: '0px', color: blueGrey[700] }}
-                            onClick={() => {
-                              handleDeleteOrigen(params.id_anfitrion,params.documento_id)
-                            }}
-            >
-                  <FolderDeleteIcon style={{ fontSize: '40px' }}/>
-            </IconButton>
-        </Tooltip>
-      </Grid>
-
-      <Grid item xs={isSmallScreen ? 12 : 10}>
-        <AdminFileProducto datosCarga={datosCarga} 
-                           onActualizaImportaOK={handleActualizaImportaOK} 
-                           //urlApiDestino='/ad_productoexcel'
-                           urlApiDestino={valorVista === 'productos' ? '/ad_productoexcel' : '/ad_productoprecioexcel'}
-                           >
-        </AdminFileProducto>
-      </Grid>
-
-      <Grid item xs={isSmallScreen ? 12 : 12} >
-          <TextField fullWidth variant="outlined" color="success" size="small"
-                                      //label="FILTRAR"
-                                      sx={{display:'block',
-                                            margin:'.0rem 0'}}
-                                      name="busqueda"
-                                      placeholder='FILTRAR:  RUC   RAZON SOCIAL   COMPROBANTE'
-                                      onChange={actualizaValorFiltro}
-                                      inputProps={{ style:{color:'white'} }}
-                                      InputProps={{
-                                          startAdornment: (
-                                            <InputAdornment position="start">
-                                              <FindIcon />
-                                            </InputAdornment>
-                                          ),
-                                          style:{color:'white'},
-                                          // Estilo para el placeholder
-                                          inputProps: { style: { fontSize: '14px', color: 'gray' } }                                         
-                                      }}
-          />
-      </Grid>
-
-  </Grid>
-
-  <Datatable
-      //title="Registro - Pedidos"
-      theme="solarized"
-      columns={columnas}
-      data={registrosdet}
-      //selectableRows
-      //selectableRowsSingle 
-      //contextActions={contextActions}
-      //actions={actions}
-      onSelectedRowsChange={handleRowSelected}
-      clearSelectedRows={toggleCleared}
-      pagination
-      paginationPerPage={15}
-      paginationRowsPerPageOptions={[15, 50, 100]}
-
-      selectableRowsComponent={Checkbox} // Pass the function only
-      sortIcon={<ArrowDownward />}  
-      dense={true}
-  >
-  </Datatable>
-
+      {/* Componente de datos: encapsula tema, paginacion y estilos del DataTable. */}
+      <AdminProductoTable
+        columns={columnas}
+        data={registrosdet}
+        onSelectedRowsChange={handleRowSelected}
+        clearSelectedRows={toggleCleared}
+      />
+    </Box>
   </>
   );
 }

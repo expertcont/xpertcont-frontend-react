@@ -5,6 +5,7 @@ import React from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import axios from 'axios';
 
+// Formulario de alta/edicion del producto base; los rangos de precio viven en AdminProductoFormPrecio.
 export default function ProductoForm() {
   //const back_host = process.env.BACK_HOST || "http://localhost:4000";
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";  
