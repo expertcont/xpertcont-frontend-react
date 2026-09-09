@@ -419,11 +419,16 @@ export default function AdminVentaForm() {
 
 
   const actualizaValorEmite = (e) => {
-    setValorEmite(e.target.value);
-    setDatosEmitir(prevState => ({ ...prevState, r_cod_emitir: e.target.value }));
+    const valor = e.target.value;
+    setValorEmite(valor);
+    setDatosEmitir(prevState => ({
+      ...prevState,
+      r_cod_emitir: valor,
+      registrar_habitual: valor === '01' ? prevState.registrar_habitual : false
+    }));
     //Aqui cargamos las series acordes cal comprobante
     //New
-    cargaSeriesUsuario(e.target.value);
+    cargaSeriesUsuario(valor);
   }
 
   const cargaMotivosSelect = () =>{
@@ -558,7 +563,8 @@ export default function AdminVentaForm() {
     r_moneda:'PEN',         //new default
     r_forma_pago_id:'Contado', //new default
     dias_credito:0,         //new default
-    r_idmotivo_ref:'' //new
+    r_idmotivo_ref:'', //new
+    registrar_habitual:false,
   });
 
   const handleCodigoKeyDown = async (event) => {
@@ -1373,6 +1379,7 @@ export default function AdminVentaForm() {
         r_moneda:datosEmitir.r_moneda,                //new
         r_forma_pago_id:datosEmitir.r_forma_pago_id,  //new
         dias_credito:datosEmitir.dias_credito,        //new
+        registrar_habitual: valorEmite === '01' && datosEmitir.registrar_habitual,
 
         r_cod_ref: venta.r_cod_ref,      //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null
         r_serie_ref: venta.r_serie_ref,  //parte de la referencia a emitir, proc postgresql se encarga de procesarlo o setearlo a null

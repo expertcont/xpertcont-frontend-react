@@ -2,9 +2,11 @@ import React, { useMemo, useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   List,
@@ -470,6 +472,35 @@ export default function AdminVentaEmisionModal({
         inputProps={{ style: { color: palette.text, width: 240, textAlign: "center", readOnly: true } }}
         InputLabelProps={{ style: { color: palette.muted } }}
       />
+
+      {valorEmite === "01" && (
+        <FormControlLabel
+          sx={{
+            width: 270,
+            m: 0,
+            color: palette.text,
+            "& .MuiFormControlLabel-label": {
+              fontSize: "13px",
+              fontWeight: 700,
+            },
+          }}
+          control={
+            <Checkbox
+              size="small"
+              checked={Boolean(datosEmitir.registrar_habitual)}
+              disabled={!datosEmitir.r_documento_id || !datosEmitir.r_razon_social}
+              onChange={(event) => onChangeEmite("registrar_habitual", event.target.checked)}
+              sx={{
+                color: "rgba(139,154,165,0.56)",
+                "&.Mui-checked": {
+                  color: "#7ddbd3",
+                },
+              }}
+            />
+          }
+          label="Guardar como cliente habitual"
+        />
+      )}
 
       {valorEmite === "07" && (
         <Select
