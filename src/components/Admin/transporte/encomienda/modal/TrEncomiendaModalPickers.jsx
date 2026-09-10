@@ -25,9 +25,9 @@ function PickerSearch({ inputRef, value, placeholder, onChange, onKeyDown }) {
   );
 }
 
-function PickerLayout({ open, title, subtitle, search, children, onClose }) {
+function PickerLayout({ open, title, subtitle, search, children, onClose, onKeyDown }) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} onKeyDown={onKeyDown} maxWidth="sm" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: 3 } }}>
       <Box sx={{ p: 1.1 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
           <Box>
@@ -69,6 +69,28 @@ function PickerOption({ selected, onSelect, optionRef, children }) {
       {children}
     </Box>
   );
+}
+
+function handlePickerKeyDown(event, items, selectedIndex, setSelectedIndex, onSelect) {
+  if (event.key === "ArrowDown" && items.length > 0) {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedIndex(Math.min(selectedIndex + 1, items.length - 1));
+    return;
+  }
+
+  if (event.key === "ArrowUp" && items.length > 0) {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedIndex(Math.max(selectedIndex - 1, 0));
+    return;
+  }
+
+  if (event.key === "Enter" && items[selectedIndex]) {
+    event.preventDefault();
+    event.stopPropagation();
+    onSelect(items[selectedIndex]);
+  }
 }
 
 function usePickerState(open, itemsLength) {
@@ -179,7 +201,7 @@ export function RutaPickerModal({ open, rutas, onClose, onSelect }) {
 }
 
 export function ZonaPickerModal({ open, titulo, zonas, onClose, onSelect }) {
-  const state = usePickerState(open, 0);
+  const state = usePickerState(open, zonas.length);
   const filtradas = zonas.filter((zona) => [
     zona.id_zona,
     zona.nombre,
@@ -245,13 +267,20 @@ export function ZonaPickerModal({ open, titulo, zonas, onClose, onSelect }) {
 }
 
 export function PlacaPickerModal({ open, placas, onClose, onSelect }) {
-  const state = usePickerState(open, 0);
+  const state = usePickerState(open, placas.length);
   const filtradas = placas.filter((item) => [
     item.placa,
     item.marca,
     item.certificado,
   ].some((field) => String(field || "").toLowerCase().includes(state.busqueda.toLowerCase())));
   const indexFinal = Math.min(state.selectedIndex, Math.max(0, filtradas.length - 1));
+  const handleKeyDown = (event) => handlePickerKeyDown(
+    event,
+    filtradas,
+    indexFinal,
+    state.setSelectedIndex,
+    onSelect
+  );
 
   return (
     <PickerLayout
@@ -259,28 +288,14 @@ export function PlacaPickerModal({ open, placas, onClose, onSelect }) {
       title="Escoger placa"
       subtitle="Busca por placa, marca o certificado"
       onClose={onClose}
+      onKeyDown={handleKeyDown}
       search={(
         <PickerSearch
           inputRef={state.busquedaRef}
           value={state.busqueda}
           onChange={state.setBusqueda}
           placeholder="Buscar placa..."
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown" && filtradas.length > 0) {
-              event.preventDefault();
-              state.setSelectedIndex((prev) => Math.min(prev + 1, filtradas.length - 1));
-              return;
-            }
-            if (event.key === "ArrowUp" && filtradas.length > 0) {
-              event.preventDefault();
-              state.setSelectedIndex((prev) => Math.max(prev - 1, 0));
-              return;
-            }
-            if (event.key === "Enter" && filtradas[indexFinal]) {
-              event.preventDefault();
-              onSelect(filtradas[indexFinal]);
-            }
-          }}
+          onKeyDown={handleKeyDown}
         />
       )}
     >
@@ -311,7 +326,7 @@ export function PlacaPickerModal({ open, placas, onClose, onSelect }) {
 }
 
 export function LicenciaPickerModal({ open, licencias, onClose, onSelect }) {
-  const state = usePickerState(open, 0);
+  const state = usePickerState(open, licencias.length);
   const filtradas = licencias.filter((item) => [
     item.licencia,
     item.nombre,
@@ -319,6 +334,13 @@ export function LicenciaPickerModal({ open, licencias, onClose, onSelect }) {
     item.descripcion,
   ].some((field) => String(field || "").toLowerCase().includes(state.busqueda.toLowerCase())));
   const indexFinal = Math.min(state.selectedIndex, Math.max(0, filtradas.length - 1));
+  const handleKeyDown = (event) => handlePickerKeyDown(
+    event,
+    filtradas,
+    indexFinal,
+    state.setSelectedIndex,
+    onSelect
+  );
 
   return (
     <PickerLayout
@@ -326,28 +348,14 @@ export function LicenciaPickerModal({ open, licencias, onClose, onSelect }) {
       title="Escoger licencia"
       subtitle="Busca por licencia, nombre, DNI o descripcion"
       onClose={onClose}
+      onKeyDown={handleKeyDown}
       search={(
         <PickerSearch
           inputRef={state.busquedaRef}
           value={state.busqueda}
           onChange={state.setBusqueda}
           placeholder="Buscar licencia..."
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown" && filtradas.length > 0) {
-              event.preventDefault();
-              state.setSelectedIndex((prev) => Math.min(prev + 1, filtradas.length - 1));
-              return;
-            }
-            if (event.key === "ArrowUp" && filtradas.length > 0) {
-              event.preventDefault();
-              state.setSelectedIndex((prev) => Math.max(prev - 1, 0));
-              return;
-            }
-            if (event.key === "Enter" && filtradas[indexFinal]) {
-              event.preventDefault();
-              onSelect(filtradas[indexFinal]);
-            }
-          }}
+          onKeyDown={handleKeyDown}
         />
       )}
     >

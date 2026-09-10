@@ -64,6 +64,20 @@ export const searchIconButtonSx = {
   },
 };
 
+const focusControl = (ref) => {
+  const target = ref?.current;
+
+  if (!target) {
+    return;
+  }
+
+  target.focus();
+
+  if (target.tagName !== "TEXTAREA") {
+    target.select?.();
+  }
+};
+
 export function Field({ label, icon, children, labelWidth = "auto", tall = false }) {
   return (
     <Box sx={{ ...fieldSx, minHeight: tall ? 35 : fieldSx.minHeight }}>
@@ -110,8 +124,7 @@ export const focusByArrow = (event, inputRef) => {
       const nextRef = focusableRefs[nextIndex];
       if (nextRef?.current) {
         event.preventDefault();
-        nextRef.current.focus();
-        nextRef.current.select?.();
+        focusControl(nextRef);
         return true;
       }
       nextIndex += delta;
@@ -168,8 +181,7 @@ export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, 
         }
         if (event.key === "Enter" && !multiline && nextRef?.current) {
           event.preventDefault();
-          nextRef.current.focus();
-          nextRef.current.select?.();
+          focusControl(nextRef);
         }
       }}
       sx={{
@@ -212,30 +224,6 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "+") {
-            event.preventDefault();
-            const target = event.target;
-            const start = target.selectionStart ?? String(value || "").length;
-            const end = target.selectionEnd ?? start;
-            const currentValue = String(value || "");
-            const nextValue = `${currentValue.slice(0, start)}\n${currentValue.slice(end)}`;
-            onChange(nextValue);
-            window.setTimeout(() => {
-              target.selectionStart = start + 1;
-              target.selectionEnd = start + 1;
-            }, 0);
-            return;
-          }
-          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && focusByArrow(event, inputRef)) {
-            return;
-          }
-          if (event.key === "Enter" && nextRef?.current) {
-            event.preventDefault();
-            nextRef.current.focus();
-            nextRef.current.select?.();
-          }
-        }}
         sx={{
           ...inputSx,
           alignItems: "flex-start",
@@ -307,8 +295,7 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef }) {
           }
           if (event.key === "Enter" && nextRef?.current) {
             event.preventDefault();
-            nextRef.current.focus();
-            nextRef.current.select?.();
+            focusControl(nextRef);
           }
         }}
         sx={{
@@ -392,8 +379,7 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
         }
         if (event.key === "ArrowDown" && nextRef?.current) {
           event.preventDefault();
-          nextRef.current.focus();
-          nextRef.current.select?.();
+          focusControl(nextRef);
           return;
         }
         if (event.key === "ArrowUp" && focusByArrow(event, inputRef)) {
@@ -401,8 +387,7 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
         }
         if (event.key === "Enter" && nextRef?.current) {
           event.preventDefault();
-          nextRef.current.focus();
-          nextRef.current.select?.();
+          focusControl(nextRef);
         }
       }}
       sx={{

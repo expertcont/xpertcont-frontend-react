@@ -314,9 +314,9 @@ export default function AdminPuntoVentaUsuarioList() {
         </Box>
       ),
     },
-    { name: etiquetaPunto, selector: row => `${row.id_punto_venta} - ${row.punto_venta_nombre || ""}`, grow: 1.2 },
-    { name: "Activo", width: "92px", cell: row => <EstadoChip active={row.activo} trueLabel="Activo" falseLabel="Inactivo" /> },
-    { name: "Libre", width: "86px", cell: row => <EstadoChip active={row.sin_restriccion} trueLabel="Libre" falseLabel="Turno" /> },
+    { name: etiquetaPunto, selector: row => `${row.punto_venta_nombre || ""}`, grow: 1.2 },
+    { name: "Activo", width: "90px", cell: row => <EstadoChip active={row.activo} trueLabel="Activo" falseLabel="Inactivo" /> },
+    { name: "Libre", width: "80px", cell: row => <EstadoChip active={row.sin_restriccion} trueLabel="Libre" falseLabel="Turno" /> },
     { name: "Turno 1", selector: row => `${formatTime(row.turno1_inicio)} - ${formatTime(row.turno1_fin)}`, width: "145px" },
     { name: "Turno 2", selector: row => `${formatTime(row.turno2_inicio)} - ${formatTime(row.turno2_fin)}`, width: "145px" },
     { name: "Turno 3", selector: row => `${formatTime(row.turno3_inicio)} - ${formatTime(row.turno3_fin)}`, width: "145px" },
