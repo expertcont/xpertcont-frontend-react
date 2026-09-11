@@ -35,7 +35,7 @@ export const inputSx = {
 export const sectionSx = {
   p: { xs: 0.65, md: 0.7 },
   borderRadius: 2,
-  backgroundColor: "rgba(255,255,255,.018)",
+  backgroundColor: palette.overlaySoft,
   border: `1px solid ${palette.borderSoft}`,
 };
 
@@ -56,7 +56,7 @@ export const searchIconButtonSx = {
   "&:hover": {
     backgroundColor: palette.accent,
     borderColor: palette.accent,
-    color: palette.surface,
+    color: palette.onAccent,
     transform: "translateY(-1px)",
   },
   "&:active": {
@@ -425,7 +425,7 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
             borderRadius: index === 0 ? "5px 0 0 5px" : index === normalizedOptions.length - 1 ? "0 5px 5px 0" : 0,
             backgroundColor: value === option.value ? palette.accent : "transparent",
             border: "1px solid transparent",
-            color: value === option.value ? palette.surface : palette.muted,
+            color: value === option.value ? palette.onAccent : palette.muted,
             fontSize: "10px",
             fontWeight: 800,
             cursor: "pointer",
@@ -433,10 +433,10 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
             whiteSpace: "nowrap",
             flex: compact ? "0 0 auto" : 1,
             minWidth: 0,
-            boxShadow: value === option.value ? "0 1px 4px rgba(0,0,0,.18)" : "none",
+            boxShadow: value === option.value ? palette.shadowSoft : "none",
             transition: "all .16s ease",
             "&:hover": {
-              color: value === option.value ? palette.surface : palette.text,
+              color: value === option.value ? palette.onAccent : palette.text,
               backgroundColor: value === option.value ? palette.accent : palette.chip,
             },
           }}

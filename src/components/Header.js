@@ -4,13 +4,17 @@ import { useMediaQuery, useTheme } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import PaletteIcon from '@mui/icons-material/Palette';
 import { useAuth0 } from '@auth0/auth0-react';
+import palette, { applyTheme, getStoredThemeId, getThemeValues, themeOptions } from '../theme/palette';
 
 export default function Header() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, isAuthenticated, loginWithRedirect, logout } = useAuth0();
   const [profileAnchor, setProfileAnchor] = useState(null);
+  const [themeAnchor, setThemeAnchor] = useState(null);
+  const [selectedThemeId, setSelectedThemeId] = useState(getStoredThemeId());
   const userName = user?.name || user?.email || 'Usuario';
   const userInitials = userName
     .split(/[\s@._-]+/)
@@ -22,12 +26,12 @@ export default function Header() {
   const headerIconSx = {
     width: 34,
     height: 34,
-    color: 'rgba(255,255,255,0.70)',
+    color: palette.muted,
     border: 'none',
-    backgroundColor: 'rgba(255,255,255,0.025)',
+    backgroundColor: palette.overlaySoft,
     '&:hover': {
-      color: '#ffffff',
-      backgroundColor: 'rgba(56,199,189,0.12)',
+      color: palette.accent,
+      backgroundColor: palette.accentSoft,
     },
   };
 
@@ -39,11 +43,25 @@ export default function Header() {
     setProfileAnchor(null);
   };
 
+  const handleOpenTheme = (event) => {
+    setThemeAnchor(event.currentTarget);
+  };
+
+  const handleCloseTheme = () => {
+    setThemeAnchor(null);
+  };
+
+  const handleSelectTheme = (themeId) => {
+    applyTheme(themeId);
+    setSelectedThemeId(themeId);
+    handleCloseTheme();
+  };
+
   return (
     <AppBar
       position="fixed"
       sx={{
-        background: 'transparent',
+        backgroundColor: palette.bg,
         boxShadow: 'none',
         borderBottom: 'none',
         width: '100%',
@@ -71,10 +89,85 @@ export default function Header() {
                 <HelpOutlineIcon fontSize="small" />
               </IconButton>
             </Tooltip>
+            <Tooltip title="Color de resalte">
+              <IconButton
+                size="small"
+                onClick={handleOpenTheme}
+                sx={{
+                  ...headerIconSx,
+                  color: palette.accent,
+                  backgroundColor: palette.accentSoft,
+                }}
+              >
+                <PaletteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Popover
+              open={Boolean(themeAnchor)}
+              anchorEl={themeAnchor}
+              onClose={handleCloseTheme}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              PaperProps={{
+                sx: {
+                  mt: 1.25,
+                  p: 1,
+                  backgroundColor: palette.surface,
+                  color: palette.text,
+                  border: `1px solid ${palette.border}`,
+                  borderRadius: 2,
+                  boxShadow: palette.shadowSoft,
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                {themeOptions.map((themeOption) => {
+                  const values = getThemeValues(themeOption.id);
+                  const isSelected = selectedThemeId === themeOption.id;
+
+                  return (
+                    <Tooltip key={themeOption.id} title={themeOption.label}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleSelectTheme(themeOption.id)}
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          p: 0.35,
+                          border: `1px solid ${isSelected ? values.accent : palette.borderSoft}`,
+                          backgroundColor: isSelected ? values.accentSoft : palette.overlaySoft,
+                          '&:hover': {
+                            backgroundColor: values.accentSoft,
+                            borderColor: values.accent,
+                          },
+                        }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            backgroundColor: values.accent,
+                            boxShadow: isSelected ? `0 0 0 3px ${values.accentSoft}` : 'none',
+                          }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  );
+                })}
+              </Box>
+            </Popover>
             {!isMobile && (
               <Typography
                 sx={{
-                  color: 'rgba(255,255,255,0.86)',
+                  color: palette.text,
                   fontSize: '0.84rem',
                   fontWeight: 500,
                   maxWidth: 220,
@@ -93,14 +186,14 @@ export default function Header() {
                 sx={{
                   width: 34,
                   height: 34,
-                  bgcolor: 'rgba(56,199,189,0.86)',
-                  color: '#062421',
+                  bgcolor: palette.accent,
+                  color: palette.onAccent,
                   fontSize: '0.78rem',
                   fontWeight: 700,
-                  border: '1px solid rgba(125,219,211,0.42)',
+                  border: `1px solid ${palette.accent}`,
                   cursor: 'pointer',
                   '&:hover': {
-                    boxShadow: '0 0 0 3px rgba(56,199,189,0.13)',
+                    boxShadow: palette.shadowSoft,
                   },
                 }}
               >
@@ -124,11 +217,11 @@ export default function Header() {
                   mt: 1.25,
                   width: 240,
                   p: 2,
-                  background: 'linear-gradient(180deg, rgba(20,32,39,0.98) 0%, rgba(12,20,26,0.98) 100%)',
-                  color: '#ffffff',
-                  border: '1px solid rgba(125,150,164,0.20)',
+                  backgroundColor: palette.surface,
+                  color: palette.text,
+                  border: `1px solid ${palette.border}`,
                   borderRadius: 2,
-                  boxShadow: '0 18px 42px rgba(0,0,0,0.35)',
+                  boxShadow: palette.shadowSoft,
                 },
               }}
             >
@@ -139,11 +232,11 @@ export default function Header() {
                   sx={{
                     width: 56,
                     height: 56,
-                    bgcolor: 'rgba(56,199,189,0.86)',
-                    color: '#062421',
+                    bgcolor: palette.accent,
+                    color: palette.onAccent,
                     fontSize: '1rem',
                     fontWeight: 700,
-                    border: '1px solid rgba(125,219,211,0.38)',
+                    border: `1px solid ${palette.accent}`,
                   }}
                 >
                   {userInitials || 'U'}
@@ -151,7 +244,7 @@ export default function Header() {
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
                     sx={{
-                      color: 'rgba(255,255,255,0.94)',
+                      color: palette.text,
                       fontSize: '0.9rem',
                       fontWeight: 600,
                       whiteSpace: 'nowrap',
@@ -163,7 +256,7 @@ export default function Header() {
                   </Typography>
                   <Typography
                     sx={{
-                      color: 'rgba(144,164,174,0.92)',
+                      color: palette.muted,
                       fontSize: '0.74rem',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -179,13 +272,13 @@ export default function Header() {
               size="small"
               onClick={() => logout()}
               sx={{
-                color: 'rgba(255,255,255,0.72)',
-                border: '1px solid rgba(139,154,165,0.16)',
-                backgroundColor: 'rgba(255,255,255,0.035)',
+                color: palette.muted,
+                border: `1px solid ${palette.borderSoft}`,
+                backgroundColor: palette.overlaySoft,
                 '&:hover': {
-                  color: '#ffffff',
-                  backgroundColor: 'rgba(42,161,152,0.14)',
-                  borderColor: 'rgba(42,161,152,0.34)',
+                  color: palette.accent,
+                  backgroundColor: palette.accentSoft,
+                  borderColor: palette.accent,
                 },
               }}
             >
@@ -197,13 +290,13 @@ export default function Header() {
             variant="outlined"
             onClick={() => loginWithRedirect()}
             sx={{
-              color: '#dff7f3',
-              borderColor: 'rgba(42,161,152,0.42)',
+              color: palette.accent,
+              borderColor: palette.accent,
               textTransform: 'none',
               fontWeight: 600,
               '&:hover': {
-                borderColor: '#2aa198',
-                backgroundColor: 'rgba(42,161,152,0.12)',
+                borderColor: palette.accent,
+                backgroundColor: palette.accentSoft,
               },
             }}
           >

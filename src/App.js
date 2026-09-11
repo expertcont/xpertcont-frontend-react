@@ -1,12 +1,11 @@
 import {BrowserRouter,Routes,Route} from "react-router-dom";
 import {Box,Container,useMediaQuery} from "@mui/material";
-import NavBar from "./components/NavBar";
 import CorrentistaForm from "./components/CorrentistaForm";
 import CorrentistaList from "./components/CorrentistaList";
 import SeguridadList from "./components/SeguridadList";
 import { useAuth0 } from '@auth0/auth0-react'; 
 import Inicio from "./components/Inicio";
-import { useEffect,useState } from 'react';
+import { useEffect } from 'react';
 
 import AsientoVentaForm from './components/AsientoVentaForm';
 import AsientoCompraForm from './components/AsientoCompraForm';
@@ -59,11 +58,11 @@ import TrZonaList from "./components/Admin/transporte/TrZonaList";
 import AdminPuntoVentaList from "./components/Admin/AdminPuntoVentaList";
 import TrRutaList from "./components/Admin/transporte/TrRutaList";
 import TrEncomiendaDashboardMockup from "./components/Admin/transporte/dashboard/TrEncomiendaDashboardMockup";
+import palette from "./theme/palette";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
   const isMobile = useMediaQuery("(max-width:600px)");
-  const [open, setOpen] = useState(false);
 
   useEffect( ()=> {
     if (isAuthenticated && user && user.email) {
@@ -77,10 +76,8 @@ function App(props) {
       <AdminConfirmDialogProvider>
       
       <Box sx={{ display: 'flex', 
-                 background: `
-                   radial-gradient(circle at 30% 0%, rgba(42,161,152,0.035) 0%, rgba(42,161,152,0) 32%),
-                   linear-gradient(180deg, #1a242b 0%, #1a2127 100%)
-                 `,
+                 backgroundColor: palette.bg,
+                 color: palette.text,
                  minHeight: "100vh", // 🔹 ocupa toda la altura disponible
               }}
       >

@@ -96,7 +96,7 @@ export default function TrHeaderMenuPicker({ label, value, displayValue, options
               whiteSpace: "normal",
               "&:hover": {
                 backgroundColor: palette.accent,
-                color: palette.surface,
+                color: palette.onAccent,
               },
             },
           },

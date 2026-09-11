@@ -506,7 +506,7 @@ export default function TrEncomiendaModal({
     setImprimiendoTicket(true);
 
     try {
-      ticketWindow?.document?.write("<p style=\"font-family:Arial,sans-serif;color:#334155\">Generando ticket...</p>");
+      ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Generando ticket...</p>`);
 
       const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda`, {
         periodo: periodoTrabajo,
@@ -640,7 +640,7 @@ export default function TrEncomiendaModal({
           <AppButton onClick={imprimirTicketModelo} disabled={guardando || imprimiendoTicket}>
             {imprimiendoTicket ? "Generando PDF..." : "Imprimir encomienda"}
           </AppButton>
-          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 700, fontSize: "13px" }}>
+          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
             {guardando ? "Guardando..." : textoBotonGuardar}
           </AppButton>
         </Box>

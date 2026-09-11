@@ -6,7 +6,7 @@ import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
 import palette from "../../../../../theme/palette";
 
-// Cabecera superior del formulario: titulo, contador, boton nuevo y buscador.
+// Cabecera superior del formulario: titulo, contador, buscador y accion principal.
 export default function TrHeader({
   titulo,
   contador,
@@ -38,30 +38,42 @@ export default function TrHeader({
         </Typography>
       </Box>
 
-      <AppButton
-        icon={<Plus size={18} />}
-        onClick={onNuevo}
-        disabled={nuevoDeshabilitado}
+      <Box
         sx={{
-          backgroundColor: nuevoDeshabilitado ? palette.chip : palette.accent,
-          borderColor: nuevoDeshabilitado ? palette.border : palette.accent,
-          color: nuevoDeshabilitado ? palette.muted : palette.surface,
-          fontWeight: 800,
-          "&:hover": {
-            backgroundColor: nuevoDeshabilitado ? palette.chip : palette.accent,
-            borderColor: nuevoDeshabilitado ? palette.border : palette.accent,
-            color: nuevoDeshabilitado ? palette.muted : palette.surface,
-          },
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 1,
+          width: { xs: "100%", sm: "auto" },
+          flexWrap: { xs: "wrap", md: "nowrap" },
         }}
       >
-        {nuevoTexto}
-      </AppButton>
+        <AppSearch
+          placeholder={buscarTexto}
+          value={valorBusqueda}
+          onChange={onBuscar}
+        />
 
-      <AppSearch
-        placeholder={buscarTexto}
-        value={valorBusqueda}
-        onChange={onBuscar}
-      />
+        <AppButton
+          icon={<Plus size={18} />}
+          onClick={onNuevo}
+          disabled={nuevoDeshabilitado}
+          sx={{
+            backgroundColor: nuevoDeshabilitado ? palette.chip : palette.accent,
+            borderColor: nuevoDeshabilitado ? palette.border : palette.accent,
+            color: nuevoDeshabilitado ? palette.muted : palette.onAccent,
+            fontWeight: 800,
+            ml: { xs: "auto", sm: 0 },
+            "&:hover": {
+              backgroundColor: nuevoDeshabilitado ? palette.chip : palette.accent,
+              borderColor: nuevoDeshabilitado ? palette.border : palette.accent,
+              color: nuevoDeshabilitado ? palette.muted : palette.onAccent,
+            },
+          }}
+        >
+          {nuevoTexto}
+        </AppButton>
+      </Box>
     </Box>
   );
 }

@@ -12,6 +12,7 @@ import {
   Gauge,
   LayoutDashboard,
   Package,
+  Paintbrush,
   RefreshCw,
   Search,
   Send,
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 
 import DaySelector from "../../AdminDias";
-import palette from "../../../../theme/palette";
+import palette, { applyTheme, getStoredThemeId, getThemeValues, themeOptions } from "../../../../theme/palette";
 
 const backHost = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
 
@@ -66,17 +67,24 @@ const ui = {
   panel2: palette.surfaceAlt,
   panel3: palette.chip,
   border: palette.border,
-  borderStrong: "rgba(139,154,165,0.32)",
+  borderStrong: palette.border,
   text: palette.text,
   muted: palette.muted,
-  muted2: "#6f7f8a",
-  cyan: "#cdeff6",
-  peach: "#ffc480",
-  mint: "#d5efbd",
-  blue: "#8fb7d7",
-  green: "#8bc0a3",
-  yellow: "#d5b25f",
-  red: "#d68f8f",
+  muted2: palette.muted,
+  cyan: palette.accent,
+  peach: palette.warning,
+  mint: palette.success,
+  blue: palette.accent,
+  green: palette.success,
+  yellow: palette.warning,
+  red: palette.danger,
+  accentSoft: palette.accentSoft,
+  overlaySoft: palette.overlaySoft,
+  shadowSoft: palette.shadowSoft,
+  onAccent: palette.onAccent,
+  successSoft: palette.successSoft,
+  warningSoft: palette.warningSoft,
+  dangerSoft: palette.dangerSoft,
 };
 
 const formatCantidad = (value) => new Intl.NumberFormat("es-PE", {
@@ -109,13 +117,13 @@ const panelSx = {
   backgroundColor: ui.panel,
   border: `1px solid ${ui.border}`,
   borderRadius: 2,
-  boxShadow: "0 24px 70px rgba(0,0,0,0.18)",
+  boxShadow: ui.shadowSoft,
 };
 
 const selectSx = {
   minHeight: 40,
   color: ui.text,
-  backgroundColor: "rgba(255,255,255,0.04)",
+  backgroundColor: ui.overlaySoft,
   borderRadius: 2,
   fontSize: "12.5px",
   fontWeight: 700,
@@ -274,6 +282,55 @@ function StatusChip({ label, type = "default" }) {
       }}
     >
       {label}
+    </Box>
+  );
+}
+
+function ThemePicker({ value, onChange }) {
+  return (
+    <Box
+      sx={{
+        minHeight: 40,
+        px: 0.8,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.7,
+        borderRadius: 5,
+        border: `1px solid ${ui.border}`,
+        backgroundColor: ui.overlaySoft,
+        flexShrink: 0,
+      }}
+    >
+      <Paintbrush size={16} color={ui.muted} />
+      {themeOptions.map((theme) => {
+        const values = getThemeValues(theme.id);
+        const selected = value === theme.id;
+
+        return (
+          <Tooltip key={theme.id} title={theme.label}>
+            <Box
+              component="button"
+              type="button"
+              aria-label={`Tema ${theme.label}`}
+              onClick={() => onChange(theme.id)}
+              sx={{
+                width: 22,
+                height: 22,
+                p: 0,
+                borderRadius: "50%",
+                border: `2px solid ${selected ? ui.text : ui.border}`,
+                backgroundColor: values.accent,
+                boxShadow: selected ? `0 0 0 3px ${values.accentSoft}` : "none",
+                cursor: "pointer",
+                transition: "transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                },
+              }}
+            />
+          </Tooltip>
+        );
+      })}
     </Box>
   );
 }

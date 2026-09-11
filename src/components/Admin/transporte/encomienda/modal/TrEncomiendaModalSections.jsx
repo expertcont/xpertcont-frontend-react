@@ -348,7 +348,7 @@ export default function TrEncomiendaModalSections({
       </Box>
 
       {error && (
-        <Typography sx={{ color: "#ff8a65", fontSize: "12px", mt: 0.85 }}>
+        <Typography sx={{ color: palette.danger, fontSize: "12px", mt: 0.85 }}>
           {error}
         </Typography>
       )}

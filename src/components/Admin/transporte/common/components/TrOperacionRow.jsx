@@ -66,15 +66,15 @@ const actionButtonSx = (danger = false) => ({
   color: palette.muted,
   cursor: "pointer",
   transition: "all .18s ease",
-  boxShadow: { xs: "0 8px 18px rgba(0,0,0,.16)", sm: "none" },
+  boxShadow: { xs: palette.shadowSoft, sm: "none" },
   "& svg": {
     width: { xs: 20, sm: 14 },
     height: { xs: 20, sm: 14 },
   },
   "&:hover": {
-    backgroundColor: danger ? "#c2410c" : palette.accent,
-    borderColor: danger ? "#c2410c" : palette.accent,
-    color: "#ffffff",
+    backgroundColor: danger ? palette.danger : palette.accent,
+    borderColor: danger ? palette.danger : palette.accent,
+    color: palette.onAccent,
   },
 });
 
@@ -88,9 +88,9 @@ function PaymentStatusChip({ children }) {
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 1.2,
-        backgroundColor: "rgba(213,178,95,0.12)",
-        border: "1px solid rgba(213,178,95,0.28)",
-        color: "#e6c979",
+        backgroundColor: palette.warningSoft,
+        border: `1px solid ${palette.warning}`,
+        color: palette.warning,
         fontSize: "11.5px",
         fontWeight: 650,
         letterSpacing: 0,
@@ -104,9 +104,9 @@ function PaymentStatusChip({ children }) {
 
 function DeliveryStatusBadge({ entregada }) {
   const Icon = entregada ? CheckCircle2 : Clock3;
-  const color = entregada ? "#8bc0a3" : "#d5b25f";
-  const bg = entregada ? "rgba(139,192,163,0.12)" : "rgba(213,178,95,0.12)";
-  const border = entregada ? "rgba(139,192,163,0.28)" : "rgba(213,178,95,0.28)";
+  const color = entregada ? palette.success : palette.warning;
+  const bg = entregada ? palette.successSoft : palette.warningSoft;
+  const border = entregada ? palette.success : palette.warning;
   const label = entregada ? "Entregada" : "Pendiente";
 
   return (

@@ -27,7 +27,7 @@ export default function AppChip({
         "&:hover": {
           backgroundColor: palette.accent,
           borderColor: palette.accent,
-          color: palette.surface,
+          color: palette.onAccent,
           transform: "translateY(-1px)",
         },
       }}

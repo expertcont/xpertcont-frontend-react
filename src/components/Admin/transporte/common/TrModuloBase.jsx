@@ -22,12 +22,12 @@ createTheme(
   {
     text: { primary: palette.text, secondary: palette.accent },
     background: { default: "transparent" },
-    context: { background: palette.accent, text: "#FFFFFF" },
+    context: { background: palette.accent, text: palette.onAccent },
     divider: { default: palette.borderSoft },
     action: {
-      button: "rgba(255,255,255,.54)",
-      hover: "rgba(42,161,152,0.06)",
-      disabled: "rgba(255,255,255,.12)",
+      button: palette.muted,
+      hover: palette.accentSoft,
+      disabled: palette.border,
     },
   },
   "dark",

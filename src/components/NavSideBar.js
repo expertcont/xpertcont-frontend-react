@@ -32,19 +32,23 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import logo from '../Logo04small-retocado-teal.png';
+import palette from '../theme/palette';
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 const sidebarColors = {
-  bg: '#0f171d',
-  surface: '#142027',
-  surfaceSoft: '#1b2a33',
-  border: 'rgba(125, 150, 164, 0.20)',
-  text: '#f5f7f8',
-  muted: '#90a4ae',
-  accent: '#2aa198',
-  accentSoft: 'rgba(42, 161, 152, 0.14)',
-  danger: '#ff8a65',
+  bg: palette.bg,
+  surface: palette.surface,
+  surfaceSoft: palette.surfaceAlt,
+  border: palette.borderSoft,
+  text: palette.text,
+  muted: palette.muted,
+  accent: palette.accent,
+  accentSoft: palette.accentSoft,
+  danger: palette.danger,
+  onAccent: palette.onAccent,
+  overlaySoft: palette.overlaySoft,
+  shadowSoft: palette.shadowSoft,
 };
 
 // Fuente personalizada para todo el Sidebar
@@ -271,9 +275,7 @@ export default function NavSideBar(props) {
           paddingLeft: itemLabelVisible ? 2.75 : 0,
           paddingRight: itemLabelVisible ? 2 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
-          background: isActive
-            ? 'linear-gradient(90deg, rgba(255,255,255,0.065) 0%, rgba(42,161,152,0.11) 58%, rgba(42,161,152,0.15) 100%)'
-            : 'transparent',
+          backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
           color: sidebarColors.text,
           '&:before': {
             content: '""',
@@ -284,31 +286,29 @@ export default function NavSideBar(props) {
             width: 3,
             borderRadius: '3px 0 0 3px',
             backgroundColor: isActive ? sidebarColors.accent : 'transparent',
-            boxShadow: isActive ? '0 0 10px rgba(42,161,152,0.24)' : 'none',
+            boxShadow: 'none',
           },
           '&:after': {
             content: '""',
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            borderTop: isActive ? '1px solid rgba(255,255,255,0.055)' : '1px solid transparent',
-            borderBottom: isActive ? '1px solid rgba(0,0,0,0.22)' : '1px solid transparent',
+            borderTop: '1px solid transparent',
+            borderBottom: '1px solid transparent',
           },
           '&:hover': {
-            background: isActive
-              ? 'linear-gradient(90deg, rgba(255,255,255,0.075) 0%, rgba(42,161,152,0.14) 58%, rgba(42,161,152,0.18) 100%)'
-              : 'linear-gradient(90deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.025) 100%)',
+            backgroundColor: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
           },
           borderRadius: 0,
           marginY: 0,
           marginX: 0,
-          transition: 'background .18s ease, color .18s ease, box-shadow .18s ease',
+          transition: 'background-color .18s ease, color .18s ease, box-shadow .18s ease',
         }}
       >
         <ListItemIcon
           sx={{
             minWidth: itemLabelVisible ? 38 : 0,
-            color: isActive ? sidebarColors.accent : 'rgba(210,222,228,0.72)',
+            color: isActive ? sidebarColors.accent : sidebarColors.muted,
             justifyContent: 'center',
             '& svg': { fontSize: 22 },
           }}
@@ -327,7 +327,7 @@ export default function NavSideBar(props) {
                   height: 15,
                   borderRadius: 8,
                   backgroundColor: sidebarColors.accent,
-                  color: '#08221f',
+                  color: sidebarColors.onAccent,
                   fontSize: '0.58rem',
                   fontWeight: 800,
                   fontFamily: sidebarFont,
@@ -349,7 +349,7 @@ export default function NavSideBar(props) {
                 fontFamily: sidebarFont,
                 fontSize: '0.86rem',
                 fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#ffffff' : 'rgba(223,231,234,0.88)',
+                color: isActive ? sidebarColors.text : sidebarColors.muted,
               }}
             />
             {hasSubmenu && (isSubmenuOpen ? <ExpandLess sx={{ color: sidebarColors.muted }} /> : <ExpandMore sx={{ color: sidebarColors.muted }} />)}
@@ -378,14 +378,10 @@ export default function NavSideBar(props) {
           paddingLeft: itemLabelVisible ? 6.25 : 0,
           paddingRight: itemLabelVisible ? 1.5 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
-          background: isActive
-            ? 'linear-gradient(90deg, rgba(42,161,152,0.10) 0%, rgba(42,161,152,0.14) 100%)'
-            : 'transparent',
+          backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
           borderRight: isActive ? `3px solid ${sidebarColors.accent}` : '3px solid transparent',
           '&:hover': {
-            background: isActive
-              ? 'linear-gradient(90deg, rgba(42,161,152,0.13) 0%, rgba(42,161,152,0.17) 100%)'
-              : 'rgba(255,255,255,.04)',
+            backgroundColor: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
           },
           borderRadius: 0,
           marginY: 0.15,
@@ -399,7 +395,7 @@ export default function NavSideBar(props) {
               right: 12,
               top: '50%',
               transform: 'translateY(-50%)',
-              color: isActive ? 'rgba(42,161,152,0.17)' : 'rgba(144,164,174,0.10)',
+              color: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
               pointerEvents: 'none',
               lineHeight: 0,
               '& svg': { fontSize: 28 },
@@ -411,7 +407,7 @@ export default function NavSideBar(props) {
         <ListItemIcon
           sx={{
             minWidth: itemLabelVisible ? 30 : 0,
-            color: isActive ? sidebarColors.accent : 'rgba(144,164,174,0.72)',
+            color: isActive ? sidebarColors.accent : sidebarColors.muted,
             justifyContent: 'center',
             '& svg': { fontSize: 17 },
           }}
@@ -425,7 +421,7 @@ export default function NavSideBar(props) {
               fontFamily: sidebarFont,
               fontSize: '0.8rem',
               fontWeight: isActive ? 700 : 500,
-              color: isActive ? sidebarColors.text : 'rgba(197,208,214,0.84)',
+              color: isActive ? sidebarColors.text : sidebarColors.muted,
             }}
           />
         )}
@@ -445,12 +441,9 @@ export default function NavSideBar(props) {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: `
-          radial-gradient(circle at 35% 0%, rgba(42,161,152,0.07) 0%, rgba(42,161,152,0) 32%),
-          linear-gradient(180deg, #121c23 0%, ${sidebarColors.bg} 44%, #0a1116 100%)
-        `,
-        borderRight: `1px solid ${sidebarColors.border}`,
-        boxShadow: 'inset -1px 0 0 rgba(255,255,255,0.035), 12px 0 32px rgba(0,0,0,.30)',
+        backgroundColor: sidebarColors.bg,
+        borderRight: 'none',
+        boxShadow: 'none',
       }}
     >
       {/* Header */}
@@ -465,8 +458,8 @@ export default function NavSideBar(props) {
           py: itemLabelVisible ? 1.35 : 1,
           minHeight: itemLabelVisible ? 66 : 78,
           position: 'relative',
-          background: 'linear-gradient(180deg, rgba(255,255,255,.055) 0%, rgba(255,255,255,0.012) 100%)',
-          borderBottom: `1px solid ${sidebarColors.border}`,
+          backgroundColor: sidebarColors.surface,
+          borderBottom: 'none',
         }}
       >
         {itemLabelVisible ? (
@@ -910,7 +903,7 @@ export default function NavSideBar(props) {
               overflowX: 'hidden',
               overflowY: 'hidden',
               border: 'none',
-              backgroundColor: '#1e272e',
+              backgroundColor: sidebarColors.bg,
             },
           }}
         >
@@ -931,7 +924,7 @@ export default function NavSideBar(props) {
               width: drawerWidthExpanded,
               boxSizing: 'border-box',
               border: 'none',
-              backgroundColor: '#1e272e',
+              backgroundColor: sidebarColors.bg,
             },
           }}
         >

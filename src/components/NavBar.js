@@ -9,7 +9,6 @@ import InsertChartIcon from '@mui/icons-material/InsertChart';
 import PaidIcon from '@mui/icons-material/Paid';
 import axios from 'axios';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
-import { blueGrey } from '@mui/material/colors';
 import Tooltip from '@mui/material/Tooltip';
 import NextWeekIcon from '@mui/icons-material/NextWeek';
 import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpdateGood';
@@ -22,6 +21,7 @@ import LoginPerfil from "./LoginPerfil" //new
 import LoginLogoutBoton from "./LoginLogoutBoton" //new
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import { useEffect } from "react"
+import palette from "../theme/palette";
 //import { Button } from "reactstrap";
 
 export default function NavBar(props) {
@@ -55,6 +55,16 @@ export default function NavBar(props) {
 
   const [contabilidad_trabajo, setContabilidadTrabajo] = useState("");
   const [contabilidad_select,setContabilidadesSelect] = useState([]);
+
+  const navIconSx = (buttonId) => ({
+    color: selectedButton === buttonId ? palette.accent : palette.muted,
+    flexGrow: 1,
+    transition: "color .16s ease, background-color .16s ease",
+    "&:hover": {
+      color: palette.accent,
+      backgroundColor: palette.accentSoft,
+    },
+  });
   
     const handleClick = (buttonId) => {
     setSelectedButton(buttonId);
@@ -223,14 +233,12 @@ export default function NavBar(props) {
   }
 
   return (
-    <Box sx={{ flexGrow:1 }} >
+    <Box sx={{ flexGrow:1, backgroundColor: palette.bg }} >
         <Container>
             <Toolbar>
 
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono00' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono00')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
@@ -242,9 +250,7 @@ export default function NavBar(props) {
                     </IconButton>
 
                     <IconButton  
-                        sx={{
-                          color: blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('iconoLogout')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
@@ -255,9 +261,7 @@ export default function NavBar(props) {
                     </IconButton>
                   
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono01' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono01')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/${props.idAnfitrion}/${props.idInvitado}`);
@@ -272,9 +276,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="ADMIN Ventas">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono02' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono02')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
@@ -296,9 +298,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="ADMIN Productos">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono03' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono03')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
@@ -319,9 +319,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="ADMIN Stocks">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono10' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono10')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
@@ -347,9 +345,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="REGISTRO Asientos">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono04' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono04')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                     //el ventalist se encargara de verificar permisos Comandos, con email
@@ -375,9 +371,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="REPORTES">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono05' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono05')}
                         color="primary" aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/reporte/${props.idAnfitrion}/${props.idInvitado}`);
@@ -400,9 +394,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="Panel 01 CONTABILIDADES">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono06' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono06')}
                                 component="label" size="large" color="success"
                                 onClick = {()=> {
                                   navigate(`/contabilidades/${props.idAnfitrion}/${props.idInvitado}`);
@@ -425,9 +417,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="Panel 02 TIPO-CAMBIO">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono07' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono07')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/correntista`);
@@ -451,9 +441,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="Panel 03 CENTRO COSTOS">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono08' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono08')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   //navigate(`/producto`);
@@ -477,9 +465,7 @@ export default function NavBar(props) {
                     (
                     <Tooltip title="Panel 04 SEGURIDAD USUARIOS">
                     <IconButton  
-                        sx={{
-                          color: selectedButton === 'icono09' ? 'primary.main' : blueGrey[300],flexGrow:1
-                        }}
+                        sx={navIconSx('icono09')}
                         aria-label="upload picture" component="label" size="large"
                                 onClick = {()=> {
                                   navigate(`/seguridad/${props.idAnfitrion}`);

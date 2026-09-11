@@ -5,6 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Auth0Provider } from '@auth0/auth0-react';
 import BienvenidaXpert from './components/BienvenidaXpert'; // Importa el componente de bienvenida
+import { applyStoredTheme } from './theme/palette';
 
 
 const domain = "dev-i4ndxhhmhmbyd4tt.us.auth0.com"; //auth0 propio expertcontperu@gmail.com
@@ -19,6 +20,8 @@ const domain = "dev-i4ndxhhmhmbyd4tt.us.auth0.com"; //auth0 propio expertcontper
 const clientId = "vFKcLZ6SHdwEWUWrMzkty0PDVjLbTZrW"; //auth0 propio expertcontperu@gmail.com
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+applyStoredTheme();
 
 function Main() {
   // Define un estado para controlar si se muestra la pantalla de bienvenida o la aplicación principal.

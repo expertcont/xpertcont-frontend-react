@@ -59,7 +59,7 @@ export default function AppButton({
         "&:hover": {
           backgroundColor: disabled ? palette.chip : palette.accent,
           borderColor: disabled ? palette.border : palette.accent,
-          color: disabled ? palette.text : palette.surface,
+          color: disabled ? palette.text : palette.onAccent,
           transform: disabled ? "none" : "translateY(-1px)",
         },
         ...sx,
