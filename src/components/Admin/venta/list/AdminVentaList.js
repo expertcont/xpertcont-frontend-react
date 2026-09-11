@@ -1094,18 +1094,29 @@ export default function AdminVentaList() {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.post(`${back_host}/ad_ventacpe/resumen`, {
+      const response = await axios.post(`${back_host}/ad_ventacpe/resumen`, {
         periodo: periodo_trabajo,
         id_anfitrion: params.id_anfitrion,
         id_invitado: params.id_invitado,
         documento_id: contabilidad_trabajo,
         fecha_documentos: fechaResumen,
+        origen: "VENTA_COMERCIAL",
         solo_payload: false,
       });
 
+      if (!response.data?.success) {
+        await confirmDialog({
+          title: response.data?.ya_generado ? "Resumen existente" : "Sin boletas pendientes",
+          message: response.data?.mensaje_usuario || response.data?.message || `No hay boletas pendientes para ${fechaResumen}.`,
+          icon: response.data?.ya_generado ? "success" : "info",
+          confirmText: "ACEPTAR",
+        });
+        return;
+      }
+
       await confirmDialog({
-        title: "Resumen enviado",
-        message: `Resumen de boletas enviado para ${fechaResumen}.`,
+        title: "Resumen generado",
+        message: `${response.data.numero_rdi || "RDI generado"}\n${response.data.cantidad || 0} boletas incluidas.`,
         icon: "success",
         confirmText: "ACEPTAR",
       });

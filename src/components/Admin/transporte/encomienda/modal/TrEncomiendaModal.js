@@ -60,6 +60,7 @@ export default function TrEncomiendaModal({
   const [buscandoRemitente, setBuscandoRemitente] = useState(false);
   const [buscandoDestinatario, setBuscandoDestinatario] = useState(false);
   const [imprimiendoTicket, setImprimiendoTicket] = useState(false);
+  const [imprimiendoTicketAdmin, setImprimiendoTicketAdmin] = useState(false);
 
   const remitenteDocRef = useRef(null);
   const remitenteNombreRef = useRef(null);
@@ -480,8 +481,10 @@ export default function TrEncomiendaModal({
     });
   };
 
-  const imprimirTicketModelo = async () => {
-    if (guardando || imprimiendoTicket) {
+  const imprimirTicketModelo = async ({ admin = false } = {}) => {
+    const estaImprimiendo = admin ? imprimiendoTicketAdmin : imprimiendoTicket;
+
+    if (guardando || estaImprimiendo) {
       return;
     }
 
@@ -503,12 +506,16 @@ export default function TrEncomiendaModal({
     }
 
     const ticketWindow = window.open("about:blank", "_blank");
-    setImprimiendoTicket(true);
+    if (admin) {
+      setImprimiendoTicketAdmin(true);
+    } else {
+      setImprimiendoTicket(true);
+    }
 
     try {
       ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Generando ticket...</p>`);
 
-      const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda`, {
+      const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda${admin ? "/admin" : ""}`, {
         periodo: periodoTrabajo,
         id_anfitrion: idAnfitrion,
         documento_id: documentoId,
@@ -541,7 +548,11 @@ export default function TrEncomiendaModal({
         background: palette.surface,
       });
     } finally {
-      setImprimiendoTicket(false);
+      if (admin) {
+        setImprimiendoTicketAdmin(false);
+      } else {
+        setImprimiendoTicket(false);
+      }
     }
   };
 
@@ -637,8 +648,11 @@ export default function TrEncomiendaModal({
           zIndex: 1,
         }}>
           <AppButton onClick={onClose} disabled={guardando}>Salir [Esc]</AppButton>
-          <AppButton onClick={imprimirTicketModelo} disabled={guardando || imprimiendoTicket}>
+          <AppButton onClick={() => imprimirTicketModelo()} disabled={guardando || imprimiendoTicket}>
             {imprimiendoTicket ? "Generando PDF..." : "Imprimir encomienda"}
+          </AppButton>
+          <AppButton onClick={() => imprimirTicketModelo({ admin: true })} disabled={guardando || imprimiendoTicketAdmin}>
+            {imprimiendoTicketAdmin ? "Generando PDF..." : "Ticket Admin"}
           </AppButton>
           <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
             {guardando ? "Guardando..." : textoBotonGuardar}
