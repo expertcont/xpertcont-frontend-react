@@ -117,6 +117,8 @@ export default function TrEncomiendaModalSections({
                   inputRef={refs.remitenteDocRef}
                   nextRef={draft.cliente ? refs.remitenteTelefonoRef : refs.remitenteNombreRef}
                   placeholder="Documento"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   align="right"
                   onPlus={buscarRemitente}
                   onF3={abrirClonePicker}
@@ -144,7 +146,7 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12} md={3}>
             <Field label="Telefono">
-              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.rutaRef} placeholder="Celular" />
+              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.rutaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
             </Field>
           </Grid>
           {remitenteEsEmpresa && (
@@ -238,6 +240,8 @@ export default function TrEncomiendaModalSections({
                   inputRef={refs.destinatarioDocRef}
                   nextRef={draft.destinatario ? refs.destinatarioTelefonoRef : refs.destinatarioNombreRef}
                   placeholder="Documento"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   align="right"
                   onPlus={buscarDestinatario}
                 />
@@ -264,7 +268,7 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12} md={3}>
             <Field label="Telefono">
-              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.descripcionRef} placeholder="Celular" />
+              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.descripcionRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
             </Field>
           </Grid>
         </Grid>

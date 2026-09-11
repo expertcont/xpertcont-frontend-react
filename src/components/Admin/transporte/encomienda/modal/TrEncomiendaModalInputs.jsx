@@ -144,11 +144,15 @@ export const focusByArrow = (event, inputRef) => {
   return false;
 };
 
-export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, type = "text", multiline = false, align = "left", readOnly = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
+export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
   return (
     <InputBase
       inputRef={inputRef}
       type={type}
+      inputProps={{
+        inputMode,
+        pattern,
+      }}
       value={value}
       placeholder={placeholder}
       multiline={multiline}
