@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, MapPin, Package, ReceiptText, Search, Truck, UserRound } from "lucide-react";
+import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
+import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, Package, ReceiptText, Search, Truck, UserRound, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -18,6 +18,11 @@ const normalizarTexto = (value) => String(value || "")
 
 const numeroOperacion = (item) => [
   item.r_cod,
+  item.r_serie,
+  item.r_numero,
+].filter(Boolean).join("-");
+
+const numeroTicketAdmin = (item) => [
   item.r_serie,
   item.r_numero,
 ].filter(Boolean).join("-");
@@ -42,6 +47,7 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
 
 const crearIndiceBusqueda = (item) => [
   numeroOperacion(item),
+  numeroTicketAdmin(item),
   item.cliente,
   item.cliente_documento,
   item.cliente_documento_id,
@@ -139,6 +145,11 @@ export default function TrEncomiendaEntregaList() {
   const [periodosBusqueda, setPeriodosBusqueda] = useState(3);
   const [loading, setLoading] = useState(false);
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerError, setScannerError] = useState("");
+  const scannerVideoRef = useRef(null);
+  const scannerStreamRef = useRef(null);
+  const scannerFrameRef = useRef(null);
 
   const registros = useMemo(() => {
     const busqueda = normalizarTexto(valorBusqueda).trim();
@@ -258,6 +269,96 @@ export default function TrEncomiendaEntregaList() {
     cargarPendientes();
   }, [cargarPendientes, updateTrigger]);
 
+  useEffect(() => {
+    if (!scannerOpen) {
+      return undefined;
+    }
+
+    let cancelado = false;
+    let detector = null;
+
+    const cerrarStream = () => {
+      if (scannerFrameRef.current) {
+        cancelAnimationFrame(scannerFrameRef.current);
+        scannerFrameRef.current = null;
+      }
+      if (scannerStreamRef.current) {
+        scannerStreamRef.current.getTracks().forEach((track) => track.stop());
+        scannerStreamRef.current = null;
+      }
+    };
+
+    const leerFrame = async () => {
+      if (cancelado || !scannerVideoRef.current || !detector) {
+        return;
+      }
+
+      try {
+        if (scannerVideoRef.current.readyState >= 2) {
+          const codes = await detector.detect(scannerVideoRef.current);
+          const codigo = String(codes?.[0]?.rawValue || "").trim();
+
+          if (codigo) {
+            setValorBusqueda(codigo);
+            setScannerOpen(false);
+            cerrarStream();
+            return;
+          }
+        }
+      } catch (error) {
+        console.log("Error leyendo codigo de encomienda:", error);
+      }
+
+      scannerFrameRef.current = requestAnimationFrame(leerFrame);
+    };
+
+    const iniciarScanner = async () => {
+      setScannerError("");
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setScannerError("Este navegador no permite acceder a la camara.");
+        return;
+      }
+
+      if (!("BarcodeDetector" in window)) {
+        setScannerError("Este navegador no soporta lector de codigos desde la camara.");
+        return;
+      }
+
+      try {
+        detector = new window.BarcodeDetector({
+          formats: ["qr_code", "code_128", "code_39", "ean_13"],
+        });
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+          },
+          audio: false,
+        });
+
+        scannerStreamRef.current = stream;
+
+        if (scannerVideoRef.current) {
+          scannerVideoRef.current.srcObject = stream;
+          await scannerVideoRef.current.play();
+        }
+
+        scannerFrameRef.current = requestAnimationFrame(leerFrame);
+      } catch (error) {
+        console.log("Error abriendo scanner de encomienda:", error);
+        setScannerError("No se pudo abrir la camara. Revisa permisos del navegador.");
+      }
+    };
+
+    iniciarScanner();
+
+    return () => {
+      cancelado = true;
+      cerrarStream();
+    };
+  }, [scannerOpen]);
+
   const handleContabilidadSelect = (documentoId) => {
     setContabilidadTrabajo(documentoId);
     setPuntosVentaAsignados([]);
@@ -372,6 +473,15 @@ export default function TrEncomiendaEntregaList() {
               value={valorBusqueda}
               onChange={(event) => setValorBusqueda(event.target.value)}
             />
+            <Tooltip title="Escanear ticket" arrow>
+              <Box>
+                <AppButton
+                  icon={<Camera size={17} />}
+                  onClick={() => setScannerOpen(true)}
+                  sx={{ width: 40, height: 40, minWidth: 40, p: 0, color: palette.accent }}
+                />
+              </Box>
+            </Tooltip>
           </Box>
         </Box>
 
@@ -483,6 +593,47 @@ export default function TrEncomiendaEntregaList() {
           ))}
         </Box>
       </Box>
+
+      <Dialog
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            backgroundColor: palette.surface,
+            color: palette.text,
+            border: `1px solid ${palette.border}`,
+            borderRadius: 2,
+            overflow: "hidden",
+          },
+        }}
+      >
+        <Box sx={{ p: 1.1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, borderBottom: `1px solid ${palette.borderSoft}` }}>
+          <Typography sx={{ fontSize: "14px", fontWeight: 800 }}>
+            Escanear ticket
+          </Typography>
+          <IconButton onClick={() => setScannerOpen(false)} sx={{ color: palette.muted }}>
+            <X size={18} />
+          </IconButton>
+        </Box>
+        <Box sx={{ p: 1.2, display: "grid", gap: 1 }}>
+          <Box sx={{ position: "relative", width: "100%", aspectRatio: "3 / 4", overflow: "hidden", borderRadius: 2, backgroundColor: "#05070a", border: `1px solid ${palette.border}` }}>
+            <video
+              ref={scannerVideoRef}
+              muted
+              playsInline
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            <Box sx={{ position: "absolute", inset: "22% 12%", border: `2px solid ${palette.accent}`, borderRadius: 2, boxShadow: "0 0 0 999px rgba(0,0,0,.35)" }} />
+          </Box>
+          {scannerError && (
+            <Typography sx={{ color: palette.warning || palette.accent, fontSize: "12.5px", lineHeight: 1.35 }}>
+              {scannerError}
+            </Typography>
+          )}
+        </Box>
+      </Dialog>
     </Box>
   );
 }
