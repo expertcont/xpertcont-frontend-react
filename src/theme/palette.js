@@ -87,10 +87,53 @@ export const themeOptions = [
 ];
 
 const defaultThemeValues = themeOptions[0].values;
+const CUSTOM_THEME_ID = "custom";
+
+const hexToRgb = (hex) => {
+  const normalized = String(hex || "").replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
+    return null;
+  }
+
+  return {
+    r: parseInt(normalized.slice(0, 2), 16),
+    g: parseInt(normalized.slice(2, 4), 16),
+    b: parseInt(normalized.slice(4, 6), 16),
+  };
+};
+
+const accentSoftFromHex = (hex) => {
+  const rgb = hexToRgb(hex);
+  return rgb ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.15)` : defaultThemeValues.accentSoft;
+};
+
+const onAccentFromHex = (hex) => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    return defaultThemeValues.onAccent;
+  }
+
+  const brightness = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
+  return brightness > 150 ? "#101820" : "#f4f8fb";
+};
+
+export const getStoredCustomAccent = () => {
+  if (typeof window === "undefined") {
+    return defaultThemeValues.accent;
+  }
+
+  return sessionStorage.getItem("xpertcont_custom_accent") || defaultThemeValues.accent;
+};
 
 export const getThemeValues = (themeId = "default") => ({
   ...defaultThemeValues,
-  ...(themeOptions.find((theme) => theme.id === themeId)?.values || {}),
+  ...(themeId === CUSTOM_THEME_ID
+    ? {
+      accent: getStoredCustomAccent(),
+      accentSoft: accentSoftFromHex(getStoredCustomAccent()),
+      onAccent: onAccentFromHex(getStoredCustomAccent()),
+    }
+    : themeOptions.find((theme) => theme.id === themeId)?.values || {}),
 });
 
 export const getStoredThemeId = () => {
@@ -135,6 +178,14 @@ export const applyTheme = (themeId = "default") => {
   if (typeof window !== "undefined") {
     sessionStorage.setItem("xpertcont_theme_id", themeId);
   }
+};
+
+export const applyCustomAccent = (accent) => {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("xpertcont_custom_accent", accent);
+  }
+
+  applyTheme(CUSTOM_THEME_ID);
 };
 
 export const applyStoredTheme = () => {

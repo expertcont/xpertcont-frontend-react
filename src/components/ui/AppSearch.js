@@ -25,6 +25,8 @@ export default function AppSearch({
         py: 0.75,
 
         width,
+        minWidth: 0,
+        boxSizing: "border-box",
       }}
     >
       <Search

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, Package, ReceiptText, Search, Truck, UserRound, X } from "lucide-react";
+import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, Mic, Package, ReceiptText, Search, Truck, UserRound, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -16,6 +16,23 @@ const normalizarTexto = (value) => String(value || "")
   .normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "");
 
+const normalizarTextoFonico = (value) => normalizarTexto(value)
+  .replace(/qu/g, "k")
+  .replace(/c(?=[eiy])/g, "s")
+  .replace(/c/g, "k")
+  .replace(/v/g, "b")
+  .replace(/z/g, "s")
+  .replace(/h/g, "")
+  .replace(/ll/g, "y")
+  .replace(/[^a-z0-9-]+/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+
+const normalizarSerieCodigo = (value) => String(value || "")
+  .toUpperCase()
+  .replace(/^K(?=\d{3})/, "C")
+  .replace(/^Q(?=\d{3})/, "C");
+
 const numeroOperacion = (item) => [
   item.r_cod,
   item.r_serie,
@@ -27,6 +44,17 @@ const numeroTicketAdmin = (item) => [
   item.r_numero,
 ].filter(Boolean).join("-");
 
+const nombreOrigenRuta = (item) => {
+  const ruta = String(item.nombre_ruta || "").trim();
+  if (!ruta) {
+    return "-";
+  }
+
+  return ruta
+    .split(/\s*(?:->|=>|—|–|-|\/)\s*/)[0]
+    .trim() || "-";
+};
+
 const formatFecha = (value) => {
   const text = String(value || "").slice(0, 10);
   return text ? text.split("-").reverse().join("/") : "";
@@ -37,6 +65,9 @@ const formatMoney = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", 
   maximumFractionDigits: 2,
 })}`;
 
+const esPorCobrar = (value) => normalizarTexto(value)
+  .replace(/[^a-z]/g, "") === "porcobrar";
+
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
   "&": "&amp;",
   "<": "&lt;",
@@ -45,7 +76,42 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
   "'": "&#039;",
 }[char]));
 
-const crearIndiceBusqueda = (item) => [
+const normalizarCodigoDictado = (value) => {
+  const reemplazos = {
+    cero: "0",
+    uno: "1",
+    una: "1",
+    dos: "2",
+    tres: "3",
+    cuatro: "4",
+    cinco: "5",
+    seis: "6",
+    siete: "7",
+    ocho: "8",
+    nueve: "9",
+    guion: "-",
+    guión: "-",
+  };
+  const texto = normalizarTexto(value)
+    .replace(/\b(be|ve|ube)\b/g, "b")
+    .replace(/\b(ce|se|ese|ke|ka|k)\b/g, "c")
+    .replace(/\befe\b/g, "f")
+    .replace(/\b([a-z])\s+(\d)/g, "$1$2")
+    .split(/\s+/)
+    .map((parte) => reemplazos[parte] || parte)
+    .join("")
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "");
+  const match = texto.match(/^([A-Z]\d{3})-?(\d{1,10})$/);
+
+  if (match) {
+    return `${normalizarSerieCodigo(match[1])}-${match[2].padStart(10, "0")}`;
+  }
+
+  return normalizarSerieCodigo(texto);
+};
+
+const valoresBusqueda = (item) => [
   numeroOperacion(item),
   numeroTicketAdmin(item),
   item.cliente,
@@ -59,7 +125,11 @@ const crearIndiceBusqueda = (item) => [
   item.nombre_ruta,
   item.placa,
   item.licencia,
-].map(normalizarTexto).join(" ");
+];
+
+const crearIndiceBusqueda = (item) => valoresBusqueda(item).map(normalizarTexto).join(" ");
+
+const crearIndiceBusquedaFonica = (item) => valoresBusqueda(item).map(normalizarTextoFonico).join(" ");
 
 const timestampLocal = () => {
   const date = new Date();
@@ -147,16 +217,22 @@ export default function TrEncomiendaEntregaList() {
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState("");
+  const [escuchandoCodigo, setEscuchandoCodigo] = useState(false);
   const scannerVideoRef = useRef(null);
   const scannerStreamRef = useRef(null);
   const scannerFrameRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
 
   const registros = useMemo(() => {
     const busqueda = normalizarTexto(valorBusqueda).trim();
+    const busquedaFonica = normalizarTextoFonico(valorBusqueda);
     if (!busqueda) {
       return tablaBase;
     }
-    return tablaBase.filter((item) => item._textoBusqueda?.includes(busqueda));
+    return tablaBase.filter((item) => (
+      item._textoBusqueda?.includes(busqueda) ||
+      (busquedaFonica && item._textoBusquedaFonica?.includes(busquedaFonica))
+    ));
   }, [tablaBase, valorBusqueda]);
   const periodoLimiteBusqueda = useMemo(
     () => sumarMesesPeriodo(periodoTrabajo, -(periodosBusqueda - 1)),
@@ -245,6 +321,7 @@ export default function TrEncomiendaEntregaList() {
       setTablaBase(rows.map((item) => ({
         ...item,
         _textoBusqueda: crearIndiceBusqueda(item),
+        _textoBusquedaFonica: crearIndiceBusquedaFonica(item),
       })));
     } catch (error) {
       console.log("Error cargando encomiendas por entregar:", error);
@@ -268,6 +345,10 @@ export default function TrEncomiendaEntregaList() {
   useEffect(() => {
     cargarPendientes();
   }, [cargarPendientes, updateTrigger]);
+
+  useEffect(() => () => {
+    speechRecognitionRef.current?.abort?.();
+  }, []);
 
   useEffect(() => {
     if (!scannerOpen) {
@@ -375,19 +456,93 @@ export default function TrEncomiendaEntregaList() {
     }
   };
 
+  const escucharCodigo = () => {
+    if (escuchandoCodigo) {
+      speechRecognitionRef.current?.stop?.();
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      swal2.fire({
+        title: "Microfono no disponible",
+        text: "Este navegador no soporta reconocimiento de voz.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    speechRecognitionRef.current = recognition;
+    recognition.lang = "es-PE";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 3;
+
+    recognition.onstart = () => setEscuchandoCodigo(true);
+    recognition.onend = () => setEscuchandoCodigo(false);
+    recognition.onerror = () => setEscuchandoCodigo(false);
+    recognition.onresult = (event) => {
+      const alternativas = Array.from(event.results?.[0] || []);
+      const texto = alternativas[0]?.transcript || "";
+      const codigo = normalizarCodigoDictado(texto);
+
+      if (codigo) {
+        setValorBusqueda(codigo);
+      }
+    };
+
+    recognition.start();
+  };
+
   const marcarEntregado = async (item) => {
     const operacion = numeroOperacion(item);
     const destinatario = item.destinatario || "Sin destinatario";
     const documentoDestinatario = item.destinatario_documento || item.destinatario_documento_id || "";
     const contenido = item.descripcion || "Sin descripcion";
+    const porCobrar = esPorCobrar(item.condicion_pago || item.numero_rdi);
+    const monto = formatMoney(item.r_monto_total || item.precio_neto);
+
+    if (porCobrar && navigator.vibrate) {
+      navigator.vibrate([160, 80, 160]);
+    }
 
     const result = await swal2.fire({
       title: "Confirmar entrega",
       html: `
+        ${porCobrar ? `
+          <style>
+            @keyframes alerta-cobro-pulse {
+              0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 ${palette.accentSoft};
+              }
+              50% {
+                transform: scale(1.015);
+                box-shadow: 0 0 0 5px ${palette.accentSoft};
+              }
+            }
+            @keyframes alerta-cobro-text {
+              0%, 100% { opacity: 1; }
+              50% { opacity: .45; }
+            }
+          </style>
+        ` : ""}
         <div style="text-align:left;display:grid;gap:10px;font-family:Arial,sans-serif">
           <div style="padding:10px 12px;border:1px solid ${palette.border};border-radius:8px;background:${palette.bg};color:${palette.text};font-weight:800;text-align:center">
             ${escapeHtml(operacion)}
           </div>
+          ${porCobrar ? `
+            <div style="padding:12px;border:1px solid ${palette.accent};border-radius:8px;background:${palette.accentSoft};text-align:center;animation:alerta-cobro-pulse 1.05s ease-in-out infinite">
+              <div style="color:${palette.accent};font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;animation:alerta-cobro-text .8s ease-in-out infinite">Por cobrar</div>
+              <div style="color:${palette.text};font-size:26px;font-weight:900;line-height:1.15;margin-top:2px">${escapeHtml(monto)}</div>
+              <div style="color:${palette.muted};font-size:12px;font-weight:700;margin-top:4px">Cobrar antes de registrar la entrega.</div>
+            </div>
+          ` : ""}
           <div style="display:grid;gap:4px">
             <span style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:${palette.muted};font-weight:800">Destinatario</span>
             <span style="color:${palette.text};font-size:14px;font-weight:700">${escapeHtml(destinatario)}${documentoDestinatario ? ` - ${escapeHtml(documentoDestinatario)}` : ""}</span>
@@ -400,11 +555,11 @@ export default function TrEncomiendaEntregaList() {
       `,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Registrar entrega",
+      confirmButtonText: porCobrar ? "Registrar entrega y cobro" : "Registrar entrega",
       cancelButtonText: "Cancelar",
       color: palette.text,
       background: palette.surface,
-      confirmButtonColor: palette.accent,
+      confirmButtonColor: porCobrar ? palette.warning : palette.accent,
       cancelButtonColor: palette.border,
     });
 
@@ -467,11 +622,18 @@ export default function TrEncomiendaEntregaList() {
               {registros.length} pendientes en destino
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", width: { xs: "100%", md: "auto" }, flexWrap: "wrap" }}>
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr) 40px 40px", md: "260px 40px 40px" },
+            gap: 1,
+            alignItems: "center",
+            width: { xs: "100%", md: "auto" },
+          }}>
             <AppSearch
               placeholder="Buscar por numero, remitente, destinatario..."
               value={valorBusqueda}
               onChange={(event) => setValorBusqueda(event.target.value)}
+              width="100%"
             />
             <Tooltip title="Escanear ticket" arrow>
               <Box>
@@ -479,6 +641,23 @@ export default function TrEncomiendaEntregaList() {
                   icon={<Camera size={17} />}
                   onClick={() => setScannerOpen(true)}
                   sx={{ width: 40, height: 40, minWidth: 40, p: 0, color: palette.accent }}
+                />
+              </Box>
+            </Tooltip>
+            <Tooltip title={escuchandoCodigo ? "Escuchando codigo" : "Dictar codigo"} arrow>
+              <Box>
+                <AppButton
+                  icon={<Mic size={17} />}
+                  onClick={escucharCodigo}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    minWidth: 40,
+                    p: 0,
+                    color: escuchandoCodigo ? palette.onAccent : palette.accent,
+                    backgroundColor: escuchandoCodigo ? palette.accent : palette.surface,
+                    borderColor: escuchandoCodigo ? palette.accent : palette.border,
+                  }}
                 />
               </Box>
             </Tooltip>
@@ -543,7 +722,6 @@ export default function TrEncomiendaEntregaList() {
                   <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "15px" }}>
                     {numeroOperacion(item)}
                   </Typography>
-                  <AppChip>Destino {item.id_punto_venta_dest}</AppChip>
                   <AppChip>{item.condicion_pago || "PAGADO"}</AppChip>
                 </Box>
                 <AppButton icon={<BadgeCheck size={16} />} onClick={() => marcarEntregado(item)} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
@@ -564,11 +742,11 @@ export default function TrEncomiendaEntregaList() {
                   <Typography sx={{ color: palette.muted, fontSize: "11px", display: "flex", alignItems: "center", gap: 0.5 }}>
                     <UserRound size={13} /> Destinatario
                   </Typography>
-                  <Typography sx={{ color: palette.text, fontSize: "13px" }} noWrap>
+                  <Typography sx={{ color: palette.accent, fontSize: "13px" }} noWrap>
                     {item.destinatario || "-"} {item.destinatario_documento ? `- ${item.destinatario_documento}` : ""}
                   </Typography>
                 </Box>
-                <Typography sx={{ color: palette.accent, fontSize: "16px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                <Typography sx={{ color: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.accent : palette.text, fontSize: "16px", fontWeight: 800, whiteSpace: "nowrap" }}>
                   {formatMoney(item.r_monto_total || item.precio_neto)}
                 </Typography>
               </Box>
@@ -578,7 +756,7 @@ export default function TrEncomiendaEntregaList() {
                   <Calendar size={13} /> {formatFecha(item.r_fecemi)}
                 </Typography>
                 <Typography sx={{ fontSize: "12px", display: "flex", alignItems: "center", gap: 0.45 }}>
-                  <MapPin size={13} /> {item.nombre_ruta || item.id_ruta || "-"}
+                  <MapPin size={13} /> {nombreOrigenRuta(item)}
                 </Typography>
                 <Typography sx={{ color: palette.text, fontSize: "12.5px", minWidth: 0 }}>
                   {item.descripcion || "-"}

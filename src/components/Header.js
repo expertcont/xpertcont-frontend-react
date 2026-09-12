@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Avatar, Box, AppBar, Toolbar, Typography, Button, IconButton, Tooltip, Popover } from '@mui/material';
 import { useMediaQuery, useTheme } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -6,7 +6,7 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PaletteIcon from '@mui/icons-material/Palette';
 import { useAuth0 } from '@auth0/auth0-react';
-import palette, { applyTheme, getStoredThemeId, getThemeValues, themeOptions } from '../theme/palette';
+import palette, { applyCustomAccent, applyTheme, getStoredCustomAccent, getStoredThemeId, getThemeValues, themeOptions } from '../theme/palette';
 
 export default function Header() {
   const theme = useTheme();
@@ -15,6 +15,8 @@ export default function Header() {
   const [profileAnchor, setProfileAnchor] = useState(null);
   const [themeAnchor, setThemeAnchor] = useState(null);
   const [selectedThemeId, setSelectedThemeId] = useState(getStoredThemeId());
+  const [customAccent, setCustomAccent] = useState(getStoredCustomAccent());
+  const customColorRef = useRef(null);
   const userName = user?.name || user?.email || 'Usuario';
   const userInitials = userName
     .split(/[\s@._-]+/)
@@ -55,6 +57,13 @@ export default function Header() {
     applyTheme(themeId);
     setSelectedThemeId(themeId);
     handleCloseTheme();
+  };
+
+  const handleSelectCustomAccent = (event) => {
+    const accent = event.target.value;
+    setCustomAccent(accent);
+    applyCustomAccent(accent);
+    setSelectedThemeId('custom');
   };
 
   return (
@@ -162,6 +171,56 @@ export default function Header() {
                     </Tooltip>
                   );
                 })}
+                <Tooltip title="Color libre">
+                  <IconButton
+                    size="small"
+                    onClick={() => customColorRef.current?.click()}
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      p: 0.35,
+                      border: `1px solid ${selectedThemeId === 'custom' ? customAccent : palette.borderSoft}`,
+                      backgroundColor: selectedThemeId === 'custom' ? getThemeValues('custom').accentSoft : palette.overlaySoft,
+                      '&:hover': {
+                        backgroundColor: getThemeValues('custom').accentSoft,
+                        borderColor: customAccent,
+                      },
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: `conic-gradient(from 90deg, #ff4d6d, #ffd166, #06d6a0, #4dabf7, #845ef7, #ff4d6d)`,
+                        boxShadow: selectedThemeId === 'custom' ? `0 0 0 3px ${getThemeValues('custom').accentSoft}` : 'none',
+                        position: 'relative',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          inset: 4,
+                          borderRadius: '50%',
+                          backgroundColor: customAccent,
+                        },
+                      }}
+                    />
+                    <Box
+                      component="input"
+                      ref={customColorRef}
+                      type="color"
+                      value={customAccent}
+                      onChange={handleSelectCustomAccent}
+                      sx={{
+                        position: 'absolute',
+                        width: 1,
+                        height: 1,
+                        opacity: 0,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </Popover>
             {!isMobile && (
