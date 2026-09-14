@@ -31,7 +31,7 @@ export default function TrFiltros({
         justifyContent: "flex-start",
         mb: { xs: 1, md: 2 },
         p: { xs: 0.75, md: 2 },
-        borderRadius: 3,
+        borderRadius: palette.radius.listCard,
         backgroundColor: palette.surface,
         border: `1px solid ${palette.border}`,
       }}

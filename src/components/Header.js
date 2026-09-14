@@ -68,12 +68,14 @@ export default function Header() {
 
   return (
     <AppBar
-      position="fixed"
+      position="sticky"
       sx={{
-        backgroundColor: palette.bg,
+        backgroundColor: palette.navBg,
         boxShadow: 'none',
         borderBottom: 'none',
+        top: 0,
         width: '100%',
+        borderRadius: 0,
         zIndex: 1100,
       }}
     >
@@ -83,7 +85,13 @@ export default function Header() {
           justifyContent: 'flex-end',
           alignItems: 'center',
           minHeight: isMobile ? '56px' : '64px',
-          px: { xs: 2, md: 3 },
+          px: { xs: 1, sm: 2, md: 3 },
+          mx: 0,
+          mt: 0,
+          backgroundColor: 'transparent',
+          border: 'none',
+          borderRadius: 0,
+          boxShadow: 'none',
         }}
       >
         {isAuthenticated ? (

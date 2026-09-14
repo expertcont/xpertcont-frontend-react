@@ -25,6 +25,7 @@ import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import StackedLineChartIcon from '@mui/icons-material/StackedLineChart';
 import SummarizeIcon from '@mui/icons-material/Summarize';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import SunatResumenIcon from '../../../../assets/images/sunat0.png';
 import '../../../../App.css';
 import 'styled-components';
@@ -52,7 +53,7 @@ import AdminVentaCloneDialog from './AdminVentaCloneDialog';
 import AdminVentaRecaudacionDialog from './AdminVentaRecaudacionDialog';
 import palette from '../../../../theme/palette';
 
-const contentRadius = 1;
+const contentRadius = palette.radius.content;
 
 const panelSx = {
   backgroundColor: 'transparent',
@@ -250,6 +251,14 @@ const sunatResumenIconSx = {
     border: '1px solid rgba(77,163,255,0.46)',
     color: '#8fc7ff',
   },
+  '& .resumen-badge.ok': {
+    borderColor: 'rgba(146,214,173,0.50)',
+    color: palette.success,
+  },
+  '& .resumen-badge.warn': {
+    borderColor: 'rgba(232,198,109,0.50)',
+    color: palette.warning,
+  },
 };
 
 const sweetAlertDarkOptions = {
@@ -363,6 +372,7 @@ export default function AdminVentaList() {
   const [valorComprobante, setValorComprobante] = useState("");
 
   const [datosPopUp,setDatosPopUp] = useState([]);
+  const [colaResumenDia, setColaResumenDia] = useState([]);
   let [diaSel, setDiaSel] = useState("*");
 
   const handleChange = e => {
@@ -582,7 +592,6 @@ export default function AdminVentaList() {
     }, 0);
   };  
 
-
   ///////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////
   const cargaRegistro = async (strHistorialValorVista,strHistorialPeriodo,strHistorialContabilidad, sDia) => {
@@ -607,6 +616,66 @@ export default function AdminVentaList() {
   const navigate = useNavigate();
   //Para recibir parametros desde afuera
   const params = useParams();
+
+  const estadosRdiAbiertos = useMemo(() => (
+    ["PENDIENTE", "GENERADO", "ENVIADO", "INCIERTO", "ERROR"]
+  ), []);
+
+  const boletasPendientesResumen = useMemo(() => {
+    if (!diaSel || diaSel === "*") return 0;
+
+    return tabladet.filter((row) => (
+      String(row.r_cod || "") === "03" &&
+      !row.numero_rdi &&
+      !row.r_vfirmado
+    )).length;
+  }, [diaSel, tabladet]);
+
+  const resumenesAbiertosDia = useMemo(() => (
+    colaResumenDia.filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()))
+  ), [colaResumenDia, estadosRdiAbiertos]);
+
+  const totalPendienteResumenDia = boletasPendientesResumen + resumenesAbiertosDia.length;
+  const resumenDiaOk = Boolean(diaSel && diaSel !== "*") && totalPendienteResumenDia === 0;
+
+  const cargarColaResumenDia = useCallback(async () => {
+    if (!periodo_trabajo || !contabilidad_trabajo || contabilidad_trabajo === "default" || contabilidad_trabajo === "-" || !diaSel || diaSel === "*") {
+      setColaResumenDia([]);
+      return [];
+    }
+
+    const fechaResumen = `${periodo_trabajo}-${String(diaSel).padStart(2, "0")}`;
+    try {
+      const response = await axios.get(`${back_host}/ad_ventacpe/resumen/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}`, {
+        params: { origen: "VENTA_COMERCIAL" },
+      });
+      const data = response.data?.data || [];
+      const resumenesDia = data.filter((item) => String(item.fecha || "").substring(0, 10) === fechaResumen);
+      setColaResumenDia(resumenesDia);
+      return resumenesDia;
+    } catch (error) {
+      console.log("No se pudo cargar cola RDI:", error);
+      setColaResumenDia([]);
+      return [];
+    }
+  }, [back_host, contabilidad_trabajo, diaSel, params.id_anfitrion, periodo_trabajo]);
+
+  const construirMensajeColaResumen = (fechaResumen, resumenesDia, boletasSinResumen = boletasPendientesResumen) => {
+    const abiertos = resumenesDia.filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()));
+    const cerrados = resumenesDia.filter((item) => !estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()));
+    const lineasAbiertos = abiertos.map((item, index) => (
+      `${index + 1}. ${item.numero_rdi} - ${item.estado || "PENDIENTE"} - ${item.cantidad_boletas || 0} boletas${item.ticket ? ` - Ticket: ${item.ticket}` : ""}`
+    ));
+
+    return [
+      contabilidad_nombre || contabilidad_trabajo,
+      `Fecha: ${fechaResumen}`,
+      boletasSinResumen > 0 ? `Boletas nuevas sin RDI: ${boletasSinResumen}` : "Boletas nuevas sin RDI: 0",
+      abiertos.length > 0 ? `Resumenes abiertos en cola: ${abiertos.length}` : "Resumenes abiertos en cola: 0",
+      ...lineasAbiertos,
+      cerrados.length > 0 ? `Resumenes cerrados del dia: ${cerrados.length}` : null,
+    ].filter(Boolean).join("\n");
+  };
 
   const actualizaValorFiltro = e => {
     setValorBusqueda(e.target.value);
@@ -740,6 +809,10 @@ export default function AdminVentaList() {
 
   },[periodo_trabajo,contabilidad_trabajo,valorVista,diaSel,updateTrigger]);
 
+  useEffect(()=>{
+    cargarColaResumenDia();
+  },[cargarColaResumenDia, updateTrigger]);
+
   //Solo sincroniza datos
   useEffect(()=>{
 
@@ -771,6 +844,8 @@ export default function AdminVentaList() {
               cdr_pendiente={row.cdr_pendiente} //new
               elemento={row.elemento}
               firma={row.r_vfirmado}
+              cdr_descripcion={row.cdr_descripcion}
+              numeroRdi={row.numero_rdi}
               documentoId={params.documento_id}
               periodoTrabajo={periodo_trabajo}
               idAnfitrion={params.id_anfitrion}
@@ -1083,15 +1158,18 @@ export default function AdminVentaList() {
     }
 
     const fechaResumen = obtenerFecha(periodo_trabajo, true, diaSel);
+    const colaDia = await cargarColaResumenDia();
+    const abiertosDia = colaDia.filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()));
+    const totalPendienteActual = boletasPendientesResumen + abiertosDia.length;
     const result = await confirmDialog({
       title: "Enviar resumen de boletas?",
-      message: `${contabilidad_nombre || contabilidad_trabajo}\nFecha: ${fechaResumen}`,
-      icon: "success",
-      confirmText: "ENVIAR",
+      message: construirMensajeColaResumen(fechaResumen, colaDia),
+      icon: totalPendienteActual === 0 ? "info" : "success",
+      confirmText: totalPendienteActual === 0 ? "ACEPTAR" : "ENVIAR",
       cancelText: "CANCELAR",
     });
 
-    if (!result.isConfirmed) return;
+    if (!result.isConfirmed || totalPendienteActual === 0) return;
 
     try {
       const response = await axios.post(`${back_host}/ad_ventacpe/resumen`, {
@@ -1104,19 +1182,37 @@ export default function AdminVentaList() {
         solo_payload: false,
       });
 
+      const estadoRdi = response.data?.estado || response.data?.nivel;
+      const esAtencion = ["ERROR", "INCIERTO", "RECHAZADO"].includes(estadoRdi);
+
       if (!response.data?.success) {
         await confirmDialog({
-          title: response.data?.ya_generado ? "Resumen existente" : "Sin boletas pendientes",
+          title: esAtencion
+            ? "SUNAT requiere revision"
+            : response.data?.ya_generado
+              ? "Resumen existente"
+              : "Sin boletas pendientes",
           message: response.data?.mensaje_usuario || response.data?.message || `No hay boletas pendientes para ${fechaResumen}.`,
-          icon: response.data?.ya_generado ? "success" : "info",
+          icon: esAtencion ? "warning" : response.data?.ya_generado ? "success" : "info",
           confirmText: "ACEPTAR",
         });
+        cargaRegistro(valorVista, periodo_trabajo, contabilidad_trabajo, diaSel);
+        cargarColaResumenDia();
         return;
       }
 
+      const colaActualizada = await cargarColaResumenDia();
       await confirmDialog({
-        title: "Resumen generado",
-        message: `${response.data.numero_rdi || "RDI generado"}\n${response.data.cantidad || 0} boletas incluidas.`,
+        title: estadoRdi === "ACEPTADO" ? "Resumen aceptado" : "Resumen enviado",
+        message: [
+          response.data.numero_rdi || "RDI generado",
+          `${response.data.cantidad || response.data.total_documentos || 0} boletas incluidas.`,
+          response.data.ticket ? `Ticket: ${response.data.ticket}` : null,
+          response.data.mensaje_usuario || response.data.respuesta_sunat_descripcion || null,
+          "",
+          "Estado del dia:",
+          construirMensajeColaResumen(fechaResumen, colaActualizada),
+        ].filter(Boolean).join("\n"),
         icon: "success",
         confirmText: "ACEPTAR",
       });
@@ -1482,24 +1578,24 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
           </Tooltip>
 
           {(String(params.id_anfitrion) === String(params.id_invitado) || isSuper) && (
-            <Tooltip title="ENVIAR RESUMEN DE BOLETAS">
+            <Tooltip title={resumenDiaOk ? "TODO OK: SIN BOLETAS PENDIENTES" : `ENVIAR RESUMEN DE BOLETAS (${totalPendienteResumenDia})`}>
               <IconButton
                 color="primary"
                 sx={{
                   ...toolbarIconSx,
-                  color: '#4da3ff',
+                  color: resumenDiaOk ? palette.success : totalPendienteResumenDia > 0 ? palette.warning : '#4da3ff',
                   '&:hover': {
-                    backgroundColor: 'rgba(37,99,235,0.14)',
-                    borderColor: 'rgba(77,163,255,0.32)',
-                    color: '#8fc7ff',
+                    backgroundColor: resumenDiaOk ? palette.successSoft : 'rgba(37,99,235,0.14)',
+                    borderColor: resumenDiaOk ? 'rgba(146,214,173,0.32)' : 'rgba(77,163,255,0.32)',
+                    color: resumenDiaOk ? palette.success : '#8fc7ff',
                   },
                 }}
                 onClick={enviarResumenBoletas}
               >
                 <Box sx={sunatResumenIconSx}>
                   <img src={SunatResumenIcon} alt="Resumen SUNAT" />
-                  <Box className="resumen-badge">
-                    <SummarizeIcon sx={{ fontSize: 9 }} />
+                  <Box className={`resumen-badge ${resumenDiaOk ? "ok" : totalPendienteResumenDia > 0 ? "warn" : ""}`}>
+                    {resumenDiaOk ? <CheckCircleOutlineIcon sx={{ fontSize: 9 }} /> : <SummarizeIcon sx={{ fontSize: 9 }} />}
                   </Box>
                 </Box>
               </IconButton>

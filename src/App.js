@@ -1,5 +1,5 @@
 import {BrowserRouter,Routes,Route} from "react-router-dom";
-import {Box,Container,useMediaQuery} from "@mui/material";
+import {Box,Container} from "@mui/material";
 import CorrentistaForm from "./components/CorrentistaForm";
 import CorrentistaList from "./components/CorrentistaList";
 import SeguridadList from "./components/SeguridadList";
@@ -49,6 +49,7 @@ import AdminVentaPresupuestoList from "./components/Admin/presupuestos/AdminVent
 import AdminVentaPresupuestoForm from "./components/Admin/AdminVentaPresupuestoForm";
 import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/AdminVentaPresupuestoNuevoForm";
 import AdminCorrentistaHabitualList from "./components/Admin/venta/habituales/AdminCorrentistaHabitualList";
+import AdminVentaResumenSunatList from "./components/Admin/venta/list/AdminVentaResumenSunatList";
 import TrEncomiendaList from "./components/Admin/transporte/encomienda/TrEncomiendaList";
 import TrEncomiendaEntregaList from "./components/Admin/transporte/encomienda/entrega/TrEncomiendaEntregaList";
 import TrBoletosList from "./components/Admin/transporte/TrBoletosList";
@@ -62,7 +63,6 @@ import palette from "./theme/palette";
 
 function App(props) {
   const {user, isAuthenticated } = useAuth0();
-  const isMobile = useMediaQuery("(max-width:600px)");
 
   useEffect( ()=> {
     if (isAuthenticated && user && user.email) {
@@ -75,15 +75,16 @@ function App(props) {
       {/* 👇 Aquí envolvemos TODO dentro del ConfirmProvider */}
       <AdminConfirmDialogProvider>
       
-      <Box sx={{ display: 'flex', 
+      <Box sx={{ display: 'flex',
+                 gap: { xs: 0, md: 2 },
+                 alignItems: { xs: 'stretch', md: 'flex-start' },
                  backgroundColor: palette.bg,
                  color: palette.text,
+                 p: { xs: 0, md: 2 },
+                 boxSizing: 'border-box',
                  minHeight: "100vh", // 🔹 ocupa toda la altura disponible
               }}
       >
-          {/*     */}
-          <Header />
-          
           {/* Sidebar fijo a la izquierda */}
           <NavSideBar 
             idAnfitrion={props.idAnfitrion}
@@ -100,15 +101,40 @@ function App(props) {
             disableGutters
             sx={{
               flex: 1,
-              paddingTop: isMobile ? 10 : 9,
-              px: { xs: 1, sm: 2, md: 3 },
+              p: 0,
               marginLeft: 0,
               width: '100%',
+              minHeight: { xs: '100vh', md: 'calc(100vh - 32px)' },
+              height: { xs: 'auto', md: 'calc(100vh - 32px)' },
+              maxHeight: { xs: 'none', md: 'calc(100vh - 32px)' },
               minWidth: 0,
               boxSizing: 'border-box',
               overflowX: 'hidden',
+              overflowY: { xs: 'visible', md: 'auto' },
+              scrollbarWidth: 'thin',
+              scrollbarColor: `${palette.surfaceAlt} transparent`,
+              '&::-webkit-scrollbar': {
+                width: 10,
+              },
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: palette.surfaceAlt,
+                borderRadius: 999,
+                border: `3px solid ${palette.navBg}`,
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: palette.muted,
+              },
+              backgroundColor: palette.navBg,
+              border: 'none',
+              borderRadius: { xs: 0, md: 3 },
+              boxShadow: { xs: 'none', md: palette.shadowSoft },
             }}
           >
+            <Header />
+            <Box className="app-content-shell" sx={{ px: { xs: 1, sm: 2, md: 3 }, pt: { xs: 1, md: 2 }, pb: { xs: 1, md: 2 } }}>
             <Routes>
               {/* tus rutas originales, sin cambios */}
 
@@ -130,6 +156,7 @@ function App(props) {
 
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
               <Route path="/ad_correntistahabitual/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminCorrentistaHabitualList />} />
+              <Route path="/ad_ventaresumensunat/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaResumenSunatList />} />
 
               <Route path="/ad_stockrepkardex/:id_anfitrion/:periodo/:documento_id/:dia/:id_producto/:id_almacen" element={<AdminStockRepKardex />} />
               <Route path="/ad_stockrepinventario/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminStockRepInventario />} />
@@ -203,6 +230,7 @@ function App(props) {
               <Route path="/sirecomparacion/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro" element={<SireComparacionForm />} /> 
               <Route path="/asientogenerador/:id_anfitrion/:id_invitado/:periodo/:documento_id/:id_libro" element={<AsientoListPrev />} /> 
             </Routes>
+            </Box>
           </Container>
       </Box>
       </AdminConfirmDialogProvider>

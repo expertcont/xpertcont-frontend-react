@@ -66,22 +66,29 @@ const AdminDias = ({ period, onDaySelect }) => {
           flexWrap: isMobile ? "nowrap" : "wrap",
           //backgroundColor: "gray",
           backgroundColor:palette.chip,
-          color: "black",
+          color: palette.text,
           //color: palette.surface,
           "& .MuiToggleButton-root": {
             border: "1px solid",
-            borderColor: theme.palette.divider,
+            borderColor: palette.border,
             //color: "inherit",
             color: palette.accent,
             "&.Mui-selected": {
-              backgroundColor: "orange",
+              backgroundColor: palette.accent,
+              borderColor: palette.accent,
               //color: "white",
-              color: palette.surface,
+              color: palette.onAccent,
+              "&:hover": {
+                backgroundColor: palette.accent,
+                borderColor: palette.accent,
+                color: palette.onAccent,
+              },
             },
             "&:hover": {
               //backgroundColor: "lightgray",
-              backgroundColor: palette.accent,
-              color: palette.surface
+              backgroundColor: palette.accentSoft,
+              borderColor: palette.accent,
+              color: palette.accent
             },
           },
         }}
@@ -93,7 +100,7 @@ const AdminDias = ({ period, onDaySelect }) => {
             sx={{
               minWidth: 40,
               border: "1px solid",
-              borderColor: theme.palette.divider,
+              borderColor: palette.border,
             }}
           >
             {day}

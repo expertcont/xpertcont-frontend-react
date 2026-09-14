@@ -38,17 +38,13 @@ export const normalizarCondicionPago = (value) => {
 };
 
 export const destinoDesdeRuta = (ruta = {}) => {
-  const nombreDestino = ruta.punto_venta_dest_nombre || ruta.punto_venta_destino_nombre || ruta.destino_nombre || "";
-  if (nombreDestino) {
-    return nombreDestino;
+  const nombreRuta = String(ruta.nombre || ruta.nombre_ruta || ruta.rutaLabel || ruta.id_ruta || "").trim();
+  const partes = nombreRuta.split(/\s*(?:->|=>|—|–|-|\/)\s*/).filter(Boolean);
+  if (partes.length > 1) {
+    return partes[partes.length - 1].trim();
   }
 
-  const nombreRuta = String(ruta.nombre || "");
-  if (nombreRuta.includes(".")) {
-    return nombreRuta.split(".").pop();
-  }
-
-  return ruta.id_punto_venta_dest || "";
+  return ruta.punto_venta_dest_nombre || ruta.punto_venta_destino_nombre || ruta.destino_nombre || ruta.id_punto_venta_dest || "";
 };
 
 export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => {
@@ -78,6 +74,7 @@ export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => {
     destinatario_zona: destinatarioZona,
     destinatario_direccion: destinatarioDireccion,
     id_ruta: operacion?.id_ruta || "",
+    nombre_ruta: operacion?.nombre_ruta || operacion?.rutaLabel || "",
     id_punto_venta: operacion?.id_punto_venta || "",
     id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
     punto_venta_dest_nombre: operacion?.punto_venta_dest_nombre || operacion?.punto_venta_destino_nombre || operacion?.destino_nombre || "",

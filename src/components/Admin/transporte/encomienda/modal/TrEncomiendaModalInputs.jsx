@@ -12,7 +12,7 @@ export const fieldSx = {
   alignItems: "center",
   backgroundColor: palette.bg,
   border: `1px solid ${palette.border}`,
-  borderRadius: 2,
+  borderRadius: palette.radius.control,
   color: palette.text,
   fontSize: "13px",
   transition: "border-color .18s ease, background-color .18s ease",
@@ -34,7 +34,7 @@ export const inputSx = {
 
 export const sectionSx = {
   p: { xs: 0.65, md: 0.7 },
-  borderRadius: 2,
+  borderRadius: palette.radius.listCard,
   backgroundColor: palette.overlaySoft,
   border: `1px solid ${palette.borderSoft}`,
 };
@@ -43,7 +43,7 @@ export const searchIconButtonSx = {
   width: { xs: 34, md: 28 },
   height: { xs: 34, md: 28 },
   mr: 0.45,
-  borderRadius: 1.6,
+  borderRadius: palette.radius.control,
   color: palette.accent,
   backgroundColor: palette.accentSoft,
   border: `1px solid ${palette.border}`,
@@ -212,7 +212,7 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
         alignItems: "flex-start",
         backgroundColor: palette.bg,
         border: `1px solid ${palette.border}`,
-        borderRadius: 2,
+        borderRadius: palette.radius.control,
         color: palette.text,
         transition: "border-color .18s ease, background-color .18s ease",
         "&:focus-within": {
@@ -273,7 +273,7 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef }) {
         mr: -1,
         my: 0,
         overflow: "hidden",
-        borderRadius: 2,
+        borderRadius: palette.radius.control,
       }}
     >
       <InputBase
@@ -405,7 +405,7 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
         alignSelf: "stretch",
         p: 0.15,
         outline: "none",
-        borderRadius: 1.6,
+        borderRadius: palette.radius.control,
         overflow: "hidden",
         backgroundColor: palette.bg,
         border: `1px solid ${palette.border}`,
@@ -426,7 +426,11 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: index === 0 ? "5px 0 0 5px" : index === normalizedOptions.length - 1 ? "0 5px 5px 0" : 0,
+            borderRadius: index === 0
+              ? `${palette.radius.control} 0 0 ${palette.radius.control}`
+              : index === normalizedOptions.length - 1
+                ? `0 ${palette.radius.control} ${palette.radius.control} 0`
+                : 0,
             backgroundColor: value === option.value ? palette.accent : "transparent",
             border: "1px solid transparent",
             color: value === option.value ? palette.onAccent : palette.muted,

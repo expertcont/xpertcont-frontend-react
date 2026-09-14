@@ -1,12 +1,51 @@
+:root {
+  --app-font-sans: "Geist", "GeistInline", "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--app-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--app-bg, #151a1f);
+  background: var(--app-bg, #0c1117);
   color: var(--app-text, #f4f8fb);
+}
+
+button,
+input,
+textarea,
+select,
+.MuiTypography-root,
+.MuiButton-root,
+.MuiInputBase-root,
+.MuiMenuItem-root,
+.MuiListItemText-primary,
+.MuiTooltip-tooltip,
+.MuiChip-root {
+  font-family: var(--app-font-sans) !important;
+}
+
+.app-content-shell {
+  font-weight: 300;
+}
+
+.app-content-shell .MuiTypography-root {
+  font-weight: 360 !important;
+  font-variation-settings: "wght" 360;
+}
+
+.app-content-shell .MuiButton-root,
+.app-content-shell .MuiChip-root,
+.app-content-shell .MuiInputBase-root,
+.app-content-shell .MuiMenuItem-root {
+  font-weight: 360 !important;
+  font-variation-settings: "wght" 360;
+}
+
+.app-content-shell [role="columnheader"],
+.app-content-shell [role="cell"] {
+  font-weight: 360 !important;
+  font-variation-settings: "wght" 360;
 }
 
 code {

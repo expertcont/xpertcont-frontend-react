@@ -27,7 +27,7 @@ function PickerSearch({ inputRef, value, placeholder, onChange, onKeyDown }) {
 
 function PickerLayout({ open, title, subtitle, search, children, onClose, onKeyDown }) {
   return (
-    <Dialog open={open} onClose={onClose} onKeyDown={onKeyDown} maxWidth="sm" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} onKeyDown={onKeyDown} maxWidth="sm" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: palette.radius.modal } }}>
       <Box sx={{ p: 1.1 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
           <Box>
@@ -55,7 +55,7 @@ function PickerOption({ selected, onSelect, optionRef, children }) {
       onClick={onSelect}
       sx={{
         p: 0.85,
-        borderRadius: 2,
+        borderRadius: palette.radius.listCard,
         border: `1px solid ${selected ? palette.accent : palette.borderSoft}`,
         backgroundColor: selected ? palette.accentSoft : palette.bg,
         cursor: "pointer",

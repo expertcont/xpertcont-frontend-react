@@ -24,7 +24,7 @@ import { AdminVentasRefColumnas } from '../../AdminColumnas';
 import { ensureAdminVentaTableTheme } from '../common/adminVentaTableTheme';
 import palette from '../../../../theme/palette';
 
-const contentRadius = 1;
+const contentRadius = palette.radius.content;
 
 const panelSx = {
   backgroundColor: 'transparent',

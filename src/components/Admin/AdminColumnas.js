@@ -3,7 +3,7 @@ export const AdminVentasColumnas = [
     {//05
       name: 'Emision',
       selector: 'r_fecemi',
-      width: '100px',
+      width: '110px',
       sortable: true,
       cell: row => {
           const isNotaCredito = row.comprobante?.startsWith("07");
@@ -17,7 +17,7 @@ export const AdminVentasColumnas = [
     {//07-08-10
       name: 'Comprobante',
       selector: 'comprobante', //campo unido
-      width: '150px',
+      width: '140px',
       compact: true,
       sortable: true,
       cell: row => {

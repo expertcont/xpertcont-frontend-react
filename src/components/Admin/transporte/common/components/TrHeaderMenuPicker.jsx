@@ -11,7 +11,7 @@ const headerFieldSx = {
   alignItems: "center",
   backgroundColor: palette.bg,
   border: `1px solid ${palette.border}`,
-  borderRadius: 2,
+  borderRadius: palette.radius.control,
   color: palette.text,
   fontSize: { xs: "12px", md: "13px" },
 };

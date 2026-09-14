@@ -164,8 +164,12 @@ const AdminSunatIcon = ({
   idAnfitrion,            // params.id_anfitrion
   contabilidadTrabajo,    // contabilidad_trabajo
   backHost,               // ej. "https://tu-backend.com"
+  cpeEndpoint = "/ad_ventacpe",
+  cpeRequestExtra = {},
   size = 24,              // tamaño del ícono
   cdr_nivel,                //ACEPTADO,RECHAZADO,PENDIENTE
+  cdr_descripcion,
+  numeroRdi,
   onRefresh,              // ✅ función opcional para refrescar al cerrar el modal
   descargasHost = "http://74.208.184.113:8080", // opcional, por si cambia el host
 }) => {
@@ -173,11 +177,13 @@ const AdminSunatIcon = ({
   const [rutaXml, setRutaXml] = useState("");
   const [rutaCdr, setRutaCdr] = useState("");
   const [rutaPdf, setRutaPdf] = useState("");
+  const [modalResumenRdi, setModalResumenRdi] = useState(false);
   const { confirmDialog } = useDialog(); //unico dialogo
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [phone, setPhone] = useState("");
+  const firmaValor = String(firma || "").trim();
 
   const obtenerErrorSunat = (errorOrData) => {
     const responseData = errorOrData?.response?.data || errorOrData?.data || errorOrData || {};
@@ -229,11 +235,22 @@ const AdminSunatIcon = ({
       // Si ya está firmado, solo mostrar links
       //Pero si tiene cdr_pendiente, enviar de nuevo, api lo maneja
 
-      if (firma !== "" && firma !== null) {
+      if (firmaValor.startsWith("RDI:") || numeroRdi) {
+        const baseUrl = `${descargasHost}/descargas/${documentoId}`;
+        setRutaXml("");
+        setRutaCdr("");
+        setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        setModalResumenRdi(true);
+        setShowModal(true);
+        return;
+      }
+
+      if (firmaValor) {
         const baseUrl = `${descargasHost}/descargas/${documentoId}`;
         setRutaXml(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
         setRutaCdr(`${baseUrl}/R-${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
         setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        setModalResumenRdi(false);
         setShowModal(true);
         return;
       }
@@ -265,7 +282,7 @@ const AdminSunatIcon = ({
       if (!result.isConfirmed) return;
 
       try {
-        const response = await axios.post(`${backHost}/ad_ventacpe`, {
+        const response = await axios.post(`${backHost}${cpeEndpoint}`, {
           p_periodo: periodoTrabajo,
           p_id_usuario: idAnfitrion,
           p_documento_id: contabilidadTrabajo,
@@ -273,12 +290,14 @@ const AdminSunatIcon = ({
           p_r_serie: SERIE,
           p_r_numero: NUMERO,
           p_elemento: elemento,
+          ...cpeRequestExtra,
         });
 
         if (response.data?.codigo_hash) {
           setRutaXml(response.data.ruta_xml);
           setRutaCdr(response.data.ruta_cdr);
           setRutaPdf(response.data.ruta_pdf);
+          setModalResumenRdi(false);
           setShowModal(true);
           return;
         }
@@ -307,7 +326,7 @@ const AdminSunatIcon = ({
       if (!result.isConfirmed) return;
 
       try {
-        const response = await axios.post(`${backHost}/ad_ventacpe`, {
+        const response = await axios.post(`${backHost}${cpeEndpoint}`, {
           p_periodo: periodoTrabajo,
           p_id_usuario: idAnfitrion,
           p_documento_id: contabilidadTrabajo,
@@ -315,6 +334,7 @@ const AdminSunatIcon = ({
           p_r_serie: SERIE,
           p_r_numero: NUMERO,
           p_elemento: elemento,
+          ...cpeRequestExtra,
         });
 
         //console.log('response del reproceso: ', response);
@@ -367,12 +387,14 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
 
   // 💬 mensaje WhatsApp
   const mensaje =
-    `expertcont.pe 👋\n` +
-    `Te comparte tu comprobante electrónico:\n\n` +
-    `📄 PDF:\n${pdfFinal}\n` +
-    `📦 XML:\n${xmlFinal}\n` +
-    `✅ CDR:\n${cdrFinal}\n\n` +
-    `Copia y pega en tu navegador de preferencia.`;
+    modalResumenRdi
+      ? `expertcont.pe 👋\nTe comparte tu comprobante electrónico:\n\n📄 PDF:\n${pdfFinal}\n\nProcesado por Resumen Diario SUNAT ${numeroRdi || firmaValor.replace("RDI:", "")}.\nCopia y pega en tu navegador de preferencia.`
+      : `expertcont.pe 👋\n` +
+        `Te comparte tu comprobante electrónico:\n\n` +
+        `📄 PDF:\n${pdfFinal}\n` +
+        `📦 XML:\n${xmlFinal}\n` +
+        `✅ CDR:\n${cdrFinal}\n\n` +
+        `Copia y pega en tu navegador de preferencia.`;
 
   const waUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
 
@@ -396,6 +418,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
     // ✅ dispara el refresco si te pasaron la función
     if (onRefresh) onRefresh();
     setShowModal(false);
+    setModalResumenRdi(false);
   };
   
   const getSunatIcon = () => {
@@ -424,7 +447,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         alt="Icono Sunat01"
         style={{
           cursor: "pointer",
-          filter: (firma == null || firma === "") ? "grayscale(0.8)" : "grayscale(0)",
+          filter: firmaValor ? "grayscale(0)" : "grayscale(0.8)",
           transition: "color 0.3s ease",
           width: size,
           height: size,
@@ -460,10 +483,10 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
           <Box sx={{ display: "grid", justifyItems: "center", gap: 0.35 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, color: "#7ddbd3", fontSize: "14px", fontWeight: 800 }}>
               <TaskAltIcon sx={{ fontSize: 18 }} />
-              Envio exitoso
+              {modalResumenRdi ? "Procesado por Resumen Diario" : "Envio exitoso"}
             </Box>
             <Typography sx={{ color: palette.muted, fontSize: "11.5px", fontWeight: 500 }}>
-              Comprobante procesado y documentos disponibles
+              {modalResumenRdi ? `RDI: ${numeroRdi || firmaValor.replace("RDI:", "")}` : "Comprobante procesado y documentos disponibles"}
             </Typography>
           </Box>
         </DialogTitle>
@@ -473,31 +496,37 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         </Typography>
 
         <Typography sx={downloadInfoSx}>
-          Puede descargar o enviar estos links por WhatsApp.
+          {modalResumenRdi
+            ? (cdr_descripcion || "Este comprobante fue incluido en un Resumen Diario SUNAT. XML y CDR pertenecen al resumen.")
+            : "Puede descargar o enviar estos links por WhatsApp."}
         </Typography>
 
-        <Button
-          variant="contained"
-          onClick={() => handleOpenLink(rutaXml)}
-          sx={{ ...xmlButtonSx, mt: 1.5 }}
-          startIcon={<CodeIcon />} 
-        >
-          Descargar XML
-        </Button>
+        {!modalResumenRdi && (
+          <Button
+            variant="contained"
+            onClick={() => handleOpenLink(rutaXml)}
+            sx={{ ...xmlButtonSx, mt: 1.5 }}
+            startIcon={<CodeIcon />} 
+          >
+            Descargar XML
+          </Button>
+        )}
 
-        <Button
-          variant="contained"
-          onClick={() => handleOpenLink(rutaCdr)}
-          sx={{ ...cdrButtonSx, mt: 1 }}
-          startIcon={<TaskAltIcon />} 
-        >
-          Descargar CDR
-        </Button>
+        {!modalResumenRdi && (
+          <Button
+            variant="contained"
+            onClick={() => handleOpenLink(rutaCdr)}
+            sx={{ ...cdrButtonSx, mt: 1 }}
+            startIcon={<TaskAltIcon />} 
+          >
+            Descargar CDR
+          </Button>
+        )}
 
         <Button
           variant="contained"
           onClick={() => handleOpenLink(rutaPdf)}
-          sx={{ ...pdfButtonSx, mt: 1 }}
+          sx={{ ...pdfButtonSx, mt: modalResumenRdi ? 1.5 : 1 }}
           startIcon={<PdfFileIcon sx={{ fontSize: 34 }} />}
         >
           Descargar PDF

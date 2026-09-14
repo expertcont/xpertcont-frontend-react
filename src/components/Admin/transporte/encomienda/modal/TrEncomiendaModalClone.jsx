@@ -45,7 +45,7 @@ export default function TrEncomiendaModalClone({ open, loading, rows, initialSea
   }, [selectedIndex]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: 3 } }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: palette.radius.modal } }}>
       <Box sx={{ p: 1.1 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
           <Box sx={{ minWidth: 0 }}>
@@ -107,7 +107,7 @@ export default function TrEncomiendaModalClone({ open, loading, rows, initialSea
               onClick={() => onSelect(item)}
               sx={{
                 p: 0.85,
-                borderRadius: 2,
+                borderRadius: palette.radius.listCard,
                 border: `1px solid ${index === selectedIndex ? palette.accent : palette.borderSoft}`,
                 backgroundColor: index === selectedIndex ? palette.accentSoft : palette.bg,
                 cursor: "pointer",

@@ -48,7 +48,8 @@ export default function AppButton({
         color: palette.text,
 
         fontSize: "13px",
-        fontWeight: 600,
+        fontWeight: 360,
+        fontVariationSettings: '"wght" 360',
 
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.55 : 1,

@@ -53,7 +53,10 @@ export default function useTrOperaciones({
 
     setLoading(true);
     try {
-      const response = await fetch(`${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}`);
+      const url = puntoVentaTrabajo
+        ? `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}/${puntoVentaTrabajo}`
+        : `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}`;
+      const response = await fetch(url);
       const result = await response.json();
       const rows = (Array.isArray(result?.data) ? result.data : [])
         .filter((item) => item.tipo_operacion === tipoOperacionFijo);

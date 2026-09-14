@@ -121,7 +121,9 @@ function HeaderMenuPicker({ label, value, displayValue, options, onSelect }) {
 }
 
 const customStyles = {
-  table: { style: { backgroundColor: "transparent" } },
+  tableWrapper: { style: { borderRadius: palette.radius.listCard, overflow: "hidden", border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.surface } },
+  responsiveWrapper: { style: { borderRadius: palette.radius.listCard } },
+  table: { style: { backgroundColor: palette.surface } },
   headRow: { style: { backgroundColor: palette.surfaceAlt, color: palette.muted, borderBottom: `1px solid ${palette.borderSoft}` } },
   headCells: { style: { color: palette.muted, fontSize: "11px", fontWeight: 800, textTransform: "uppercase" } },
   rows: {
@@ -133,7 +135,7 @@ const customStyles = {
       "&:hover": { backgroundColor: palette.surfaceAlt },
     },
   },
-  pagination: { style: { backgroundColor: "transparent", color: palette.muted, borderTop: `1px solid ${palette.borderSoft}` } },
+  pagination: { style: { backgroundColor: palette.surface, color: palette.muted, borderTop: `1px solid ${palette.borderSoft}`, borderRadius: `0 0 ${palette.radius.listCard} ${palette.radius.listCard}` } },
 };
 
 const actionButtonSx = (danger = false) => ({
@@ -336,7 +338,7 @@ export default function AdminPuntoVentaUsuarioList() {
   ];
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: palette.bg, p: { xs: 1, md: 4 } }}>
+    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
       <Box sx={{ maxWidth: 1180, mx: "auto" }}>
         <Box sx={{ display: "flex", alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between", gap: 1.2, mb: 2, flexDirection: { xs: "column", sm: "row" } }}>
           <Box>

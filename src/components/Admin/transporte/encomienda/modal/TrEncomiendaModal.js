@@ -216,6 +216,8 @@ export default function TrEncomiendaModal({
   const rutaSeleccionada = rutasDisponibles.find((ruta) => String(ruta.id_ruta) === String(draft.id_ruta));
   const origenVisual = puntoVentaOrigenNombre || draft.id_punto_venta || puntoVentaOrigen;
   const esFactura = (operacion?.r_cod || draft.r_cod) === "01";
+  const encomiendaEnviadaSunat = Boolean(operacion?.numero_rdi || operacion?.r_vfirmado);
+  const puedeEditarFecha = esEdicion && !encomiendaEnviadaSunat;
   const tipoComprobanteTexto = esFactura ? "Factura" : "Boleta";
   const textoBotonGuardar = esEdicion
     ? `Actualizar ${tipoComprobanteTexto}`
@@ -402,6 +404,11 @@ export default function TrEncomiendaModal({
       return;
     }
 
+    if (esEdicion && puedeEditarFecha && !String(draft.r_fecemi || "").startsWith(`${periodoTrabajo}-`)) {
+      mostrarValidacion("La fecha debe pertenecer al periodo de trabajo.", null);
+      return;
+    }
+
     if (!draft.id_ruta) {
       mostrarValidacion("Indica la ruta.", rutaRef);
       return;
@@ -523,6 +530,8 @@ export default function TrEncomiendaModal({
         r_serie: rSerie,
         r_numero: rNumero,
         elemento,
+        endpoint_pdf: admin ? "/cpesunatticketencomienda" : "/cpesunatticketencomienda/v2",
+        rubro: "TRANS_ENCOMIENDA",
       });
       const rutaPdf = response.data?.ruta_pdf;
 
@@ -567,7 +576,7 @@ export default function TrEncomiendaModal({
           backgroundColor: palette.surface,
           color: palette.text,
           border: `1px solid ${palette.border}`,
-          borderRadius: 3,
+          borderRadius: palette.radius.modal,
           maxHeight: "calc(100vh - 48px)",
         },
       }}
@@ -596,6 +605,8 @@ export default function TrEncomiendaModal({
       <TrEncomiendaModalSections
         draft={draft}
         error={error}
+        esEdicion={esEdicion}
+        puedeEditarFecha={puedeEditarFecha}
         rutaSeleccionada={rutaSeleccionada}
         origenVisual={origenVisual}
         updateDraft={updateDraft}

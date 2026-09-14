@@ -40,7 +40,7 @@ import { AdminStocksColumnas } from '../../AdminColumnas';
 import { ensureAdminStockTableTheme } from '../common/adminStockTableTheme';
 import palette from '../../../../theme/palette';
 
-const contentRadius = 1;
+const contentRadius = palette.radius.content;
 
 const panelSx = {
   backgroundColor: 'transparent',

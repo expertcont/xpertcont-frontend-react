@@ -3,7 +3,8 @@ export const themeOptions = [
     id: "default",
     label: "Celeste",
     values: {
-      bg: "#151a1f",
+      bg: "#0c1117",
+      navBg: "#151a1f",
       surface: "#1d2329",
       surfaceAlt: "#252c33",
       chip: "#2a323a",
@@ -22,6 +23,10 @@ export const themeOptions = [
       warningSoft: "rgba(232,198,109,0.14)",
       success: "#92d6ad",
       successSoft: "rgba(146,214,173,0.14)",
+      radiusContent: "8px",
+      radiusControl: "8px",
+      radiusListCard: "12px",
+      radiusModal: "12px",
     },
   },
   {
@@ -153,6 +158,7 @@ export const applyTheme = (themeId = "default") => {
 
   Object.entries({
     "--app-bg": values.bg,
+    "--app-nav-bg": values.navBg,
     "--app-surface": values.surface,
     "--app-surface-alt": values.surfaceAlt,
     "--app-chip": values.chip,
@@ -171,6 +177,10 @@ export const applyTheme = (themeId = "default") => {
     "--app-warning-soft": values.warningSoft,
     "--app-success": values.success,
     "--app-success-soft": values.successSoft,
+    "--app-radius-content": values.radiusContent,
+    "--app-radius-control": values.radiusControl,
+    "--app-radius-list-card": values.radiusListCard,
+    "--app-radius-modal": values.radiusModal,
   }).forEach(([key, value]) => {
     document.documentElement.style.setProperty(key, value);
   });
@@ -193,7 +203,8 @@ export const applyStoredTheme = () => {
 };
 
 const palette = {
-  bg: "var(--app-bg, #151a1f)",
+  bg: "var(--app-bg, #0c1117)",
+  navBg: "var(--app-nav-bg, #151a1f)",
   surface: "var(--app-surface, #1d2329)",
   surfaceAlt: "var(--app-surface-alt, #252c33)",
   chip: "var(--app-chip, #2a323a)",
@@ -212,6 +223,12 @@ const palette = {
   warningSoft: "var(--app-warning-soft, rgba(232,198,109,0.14))",
   success: "var(--app-success, #92d6ad)",
   successSoft: "var(--app-success-soft, rgba(146,214,173,0.14))",
+  radius: {
+    content: "var(--app-radius-content, 8px)",
+    control: "var(--app-radius-control, 8px)",
+    listCard: "var(--app-radius-list-card, 12px)",
+    modal: "var(--app-radius-modal, 12px)",
+  },
 };
 
 export default palette;

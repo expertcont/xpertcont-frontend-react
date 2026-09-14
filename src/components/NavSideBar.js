@@ -13,7 +13,7 @@ import SummarizeIcon from '@mui/icons-material/Summarize';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import CropFreeIcon from '@mui/icons-material/CropFree';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
@@ -37,8 +37,8 @@ import palette from '../theme/palette';
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
 const sidebarColors = {
-  bg: palette.bg,
-  surface: palette.surface,
+  bg: palette.navBg,
+  surface: palette.navBg,
   surfaceSoft: palette.surfaceAlt,
   border: palette.borderSoft,
   text: palette.text,
@@ -53,7 +53,7 @@ const sidebarColors = {
 
 // Fuente personalizada para todo el Sidebar
 //const sidebarFont = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-const sidebarFont = 'Montserrat, sans-serif';
+const sidebarFont = 'var(--app-font-sans)';
 //const sidebarFont = 'IBM Plex Sans, sans-serif';
 
 export default function NavSideBar(props) {
@@ -270,23 +270,16 @@ export default function NavSideBar(props) {
         onClick={onClick}
         sx={{
           position: 'relative',
-          minHeight: 54,
-          paddingY: 1.05,
-          paddingLeft: itemLabelVisible ? 2.75 : 0,
-          paddingRight: itemLabelVisible ? 2 : 0,
+          overflow: 'hidden',
+          minHeight: 36,
+          paddingY: 0.25,
+          paddingLeft: itemLabelVisible ? 1.1 : 0,
+          paddingRight: itemLabelVisible ? 1 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
           backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
           color: sidebarColors.text,
           '&:before': {
-            content: '""',
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: 3,
-            borderRadius: '3px 0 0 3px',
-            backgroundColor: isActive ? sidebarColors.accent : 'transparent',
-            boxShadow: 'none',
+            content: 'none',
           },
           '&:after': {
             content: '""',
@@ -299,18 +292,18 @@ export default function NavSideBar(props) {
           '&:hover': {
             backgroundColor: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
           },
-          borderRadius: 0,
-          marginY: 0,
-          marginX: 0,
+          borderRadius: '10px',
+          marginY: 0.04,
+          marginX: itemLabelVisible ? 0.75 : 1,
           transition: 'background-color .18s ease, color .18s ease, box-shadow .18s ease',
         }}
       >
         <ListItemIcon
           sx={{
-            minWidth: itemLabelVisible ? 38 : 0,
+            minWidth: itemLabelVisible ? 30 : 0,
             color: isActive ? sidebarColors.accent : sidebarColors.muted,
             justifyContent: 'center',
-            '& svg': { fontSize: 22 },
+            '& svg': { fontSize: 20 },
           }}
         >
           {badge && (
@@ -347,9 +340,11 @@ export default function NavSideBar(props) {
               primary={label}
               primaryTypographyProps={{
                 fontFamily: sidebarFont,
-                fontSize: '0.86rem',
-                fontWeight: isActive ? 600 : 500,
+                fontSize: '0.78rem',
+                fontWeight: 200,
+                fontVariationSettings: '"wght" 200',
                 color: isActive ? sidebarColors.text : sidebarColors.muted,
+                opacity: isActive ? 0.74 : 0.5,
               }}
             />
             {hasSubmenu && (isSubmenuOpen ? <ExpandLess sx={{ color: sidebarColors.muted }} /> : <ExpandMore sx={{ color: sidebarColors.muted }} />)}
@@ -373,19 +368,19 @@ export default function NavSideBar(props) {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 38,
-          paddingY: 0.65,
-          paddingLeft: itemLabelVisible ? 6.25 : 0,
-          paddingRight: itemLabelVisible ? 1.5 : 0,
+          minHeight: 30,
+          paddingY: 0.18,
+          paddingLeft: itemLabelVisible ? 3.75 : 0,
+          paddingRight: itemLabelVisible ? 1 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
           backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
-          borderRight: isActive ? `3px solid ${sidebarColors.accent}` : '3px solid transparent',
+          borderRight: 'none',
           '&:hover': {
             backgroundColor: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
           },
-          borderRadius: 0,
-          marginY: 0.15,
-          marginX: 0,
+          borderRadius: '9px',
+          marginY: 0.03,
+          marginX: itemLabelVisible ? 0.75 : 1,
         }}
       >
         {itemLabelVisible && watermarkIcon && (
@@ -406,10 +401,10 @@ export default function NavSideBar(props) {
         )}
         <ListItemIcon
           sx={{
-            minWidth: itemLabelVisible ? 30 : 0,
+            minWidth: itemLabelVisible ? 28 : 0,
             color: isActive ? sidebarColors.accent : sidebarColors.muted,
             justifyContent: 'center',
-            '& svg': { fontSize: 17 },
+            '& svg': { fontSize: 16 },
           }}
         >
           {icon}
@@ -419,9 +414,11 @@ export default function NavSideBar(props) {
             primary={label}
             primaryTypographyProps={{
               fontFamily: sidebarFont,
-              fontSize: '0.8rem',
-              fontWeight: isActive ? 700 : 500,
+              fontSize: '0.72rem',
+              fontWeight: 200,
+              fontVariationSettings: '"wght" 200',
               color: isActive ? sidebarColors.text : sidebarColors.muted,
+              opacity: isActive ? 0.7 : 0.46,
             }}
           />
         )}
@@ -438,7 +435,7 @@ export default function NavSideBar(props) {
   const drawerContent = (
     <Box
       sx={{
-        height: '100vh',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: sidebarColors.bg,
@@ -458,7 +455,7 @@ export default function NavSideBar(props) {
           py: itemLabelVisible ? 1.35 : 1,
           minHeight: itemLabelVisible ? 66 : 78,
           position: 'relative',
-          backgroundColor: sidebarColors.surface,
+          backgroundColor: sidebarColors.bg,
           borderBottom: 'none',
         }}
       >
@@ -476,7 +473,7 @@ export default function NavSideBar(props) {
                 objectFit: 'contain',
               }}
             />
-            <Typography sx={{ color: sidebarColors.muted, fontWeight: 500, fontSize: '.66rem', mt: 0.35, fontFamily: sidebarFont, textAlign: 'center' }}>
+            <Typography sx={{ color: sidebarColors.muted, fontWeight: 200, fontVariationSettings: '"wght" 200', opacity: 0.58, fontSize: '.66rem', mt: 0.35, fontFamily: sidebarFont, textAlign: 'center' }}>
               {subtituloRubro}
             </Typography>
           </Box>
@@ -499,21 +496,25 @@ export default function NavSideBar(props) {
             position: itemLabelVisible ? 'absolute' : 'static',
             right: itemLabelVisible ? 8 : 'auto',
             top: itemLabelVisible ? 12 : 'auto',
-            color: sidebarColors.muted,
-            '&:hover': { color: sidebarColors.text, backgroundColor: sidebarColors.surfaceSoft },
+            color: itemLabelVisible ? sidebarColors.muted : sidebarColors.onAccent,
+            backgroundColor: itemLabelVisible ? 'transparent' : sidebarColors.accent,
+            '&:hover': {
+              color: itemLabelVisible ? sidebarColors.text : sidebarColors.onAccent,
+              backgroundColor: itemLabelVisible ? sidebarColors.surfaceSoft : sidebarColors.accent,
+            },
           }}
         >
           {isMobile ? <CloseIcon /> : itemLabelVisible ? <ArrowBackIosIcon sx={{ fontSize: 18 }} /> : <MenuIcon />}
         </IconButton>
       </Box>
 
-      <Divider sx={{ borderColor: sidebarColors.border }} />
+      <Divider sx={{ borderColor: 'transparent' }} />
 
       {/* Lista de menú */}
       <List sx={{ 
         flexGrow: 1, 
-        paddingTop: 1.25, 
-        paddingBottom: 2,
+        paddingTop: 0.35, 
+        paddingBottom: 0.75,
         overflowY: 'auto',
         '&::-webkit-scrollbar': {
           width: '0px',
@@ -588,6 +589,15 @@ export default function NavSideBar(props) {
                     handleClick('icono02-3');
                   }}
                 />
+                <SubMenuItem
+                  icon={<SummarizeIcon />}
+                  label="Resumenes SUNAT"
+                  isActive={selectedButton === 'icono02-5'}
+                  onClick={() => {
+                    navigate(`/ad_ventaresumensunat/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono02-5');
+                  }}
+                />
               </List>
             </Collapse>
           </>
@@ -596,8 +606,51 @@ export default function NavSideBar(props) {
         {accesoAdmin && esRubroTransporte && (
           <>
             <MenuItem
-              icon={<LocalShippingIcon />}
-              label="Transportes"
+              icon={
+                <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      left: -9,
+                      top: 5,
+                      width: 10,
+                      height: 2,
+                      borderRadius: 2,
+                      backgroundColor: 'currentColor',
+                      opacity: 0.62,
+                    }}
+                  />
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      left: -14,
+                      top: 11,
+                      width: 14,
+                      height: 2,
+                      borderRadius: 2,
+                      backgroundColor: 'currentColor',
+                      opacity: 0.72,
+                    }}
+                  />
+                  <Box
+                    component="span"
+                    sx={{
+                      position: 'absolute',
+                      left: -7,
+                      top: 17,
+                      width: 8,
+                      height: 2,
+                      borderRadius: 2,
+                      backgroundColor: 'currentColor',
+                      opacity: 0.48,
+                    }}
+                  />
+                  <AirportShuttleIcon sx={{ transform: 'skewX(-8deg) translateX(2px)' }} />
+                </Box>
+              }
+              label="Operaciones"
               onClick={handleTransportesClick}
               hasSubmenu={true}
               isSubmenuOpen={openTransportes}
@@ -640,42 +693,6 @@ export default function NavSideBar(props) {
                     handleClick('icono11-2');
                   }}
                 />
-                <SubMenuItem
-                  icon={<CompareArrowsIcon />}
-                  label="Rutas"
-                  isActive={selectedButton === 'icono11-4'}
-                  onClick={() => {
-                    navigate(`/ad_transporterutas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-4');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<DirectionsBusIcon />}
-                  label="Placas"
-                  isActive={selectedButton === 'icono11-5'}
-                  onClick={() => {
-                    navigate(`/ad_transporteplacas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-5');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<BadgeIcon />}
-                  label="Licencias"
-                  isActive={selectedButton === 'icono11-6'}
-                  onClick={() => {
-                    navigate(`/ad_transportelicencias/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-6');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<HolidayVillageIcon />}
-                  label="Zonas"
-                  isActive={selectedButton === 'icono11-7'}
-                  onClick={() => {
-                    navigate(`/ad_transportezonas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-7');
-                  }}
-                />
               </List>
             </Collapse>
           </>
@@ -703,6 +720,47 @@ export default function NavSideBar(props) {
               handleClick('icono11-3');
             }}
           />
+        )}
+
+        {accesoAdmin && esRubroTransporte && (
+          <>
+            <MenuItem
+              icon={<CompareArrowsIcon />}
+              label="Rutas"
+              isActive={selectedButton === 'icono11-4'}
+              onClick={() => {
+                navigate(`/ad_transporterutas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono11-4');
+              }}
+            />
+            <MenuItem
+              icon={<DirectionsBusIcon />}
+              label="Placas"
+              isActive={selectedButton === 'icono11-5'}
+              onClick={() => {
+                navigate(`/ad_transporteplacas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono11-5');
+              }}
+            />
+            <MenuItem
+              icon={<BadgeIcon />}
+              label="Licencias"
+              isActive={selectedButton === 'icono11-6'}
+              onClick={() => {
+                navigate(`/ad_transportelicencias/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono11-6');
+              }}
+            />
+            <MenuItem
+              icon={<HolidayVillageIcon />}
+              label="Zonas"
+              isActive={selectedButton === 'icono11-7'}
+              onClick={() => {
+                navigate(`/ad_transportezonas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono11-7');
+              }}
+            />
+          </>
         )}
 
         {accesoAdmin && (
@@ -778,7 +836,7 @@ export default function NavSideBar(props) {
 
         {esRubroContable && tieneOpcionesContables && (
           <>
-            <Divider sx={{ marginY: 1.5, borderColor: sidebarColors.border }} />
+            <Divider sx={{ marginY: 0.7, borderColor: 'transparent' }} />
             <MenuItem
               icon={<GradingIcon />}
               label="Contable"
@@ -855,7 +913,7 @@ export default function NavSideBar(props) {
 
         {permisoSeguridad && (
           <>
-            <Divider sx={{ marginY: 1.5, borderColor: sidebarColors.border }} />
+            <Divider sx={{ marginY: 0.7, borderColor: 'transparent' }} />
             <MenuItem
               icon={<SystemSecurityUpdateGoodIcon />}
               label="Seguridad"
@@ -875,7 +933,6 @@ export default function NavSideBar(props) {
     <>
       {isMobile && (
         <Fab
-          color="primary"
           aria-label="menu"
           onClick={handleDrawerToggle}
           sx={{
@@ -884,6 +941,12 @@ export default function NavSideBar(props) {
             left: 16,
             zIndex: 1300,
             boxShadow: 3,
+            backgroundColor: sidebarColors.accent,
+            color: sidebarColors.onAccent,
+            '&:hover': {
+              backgroundColor: sidebarColors.accent,
+              color: sidebarColors.onAccent,
+            },
           }}
         >
           <MenuIcon />
@@ -903,7 +966,13 @@ export default function NavSideBar(props) {
               overflowX: 'hidden',
               overflowY: 'hidden',
               border: 'none',
+              borderRight: 'none',
               backgroundColor: sidebarColors.bg,
+              top: 16,
+              left: 16,
+              height: 'calc(100vh - 32px)',
+              borderRadius: 3,
+              boxShadow: palette.shadowSoft,
             },
           }}
         >
@@ -924,7 +993,9 @@ export default function NavSideBar(props) {
               width: drawerWidthExpanded,
               boxSizing: 'border-box',
               border: 'none',
+              borderRight: 'none',
               backgroundColor: sidebarColors.bg,
+              borderRadius: '0 12px 12px 0',
             },
           }}
         >

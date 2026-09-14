@@ -28,6 +28,8 @@ import {
 export default function TrEncomiendaModalSections({
   draft,
   error,
+  esEdicion,
+  puedeEditarFecha,
   rutaSeleccionada,
   origenVisual,
   updateDraft,
@@ -45,13 +47,32 @@ export default function TrEncomiendaModalSections({
 }) {
   const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
   const mostrarDireccionRemitente = draft.remitente_entrega === "CLIENTE";
+  const rutaEdicion = draft.id_ruta ? {
+    id_ruta: draft.id_ruta,
+    nombre: draft.nombre_ruta || draft.rutaLabel || "",
+    id_punto_venta_dest: draft.id_punto_venta_dest,
+    punto_venta_dest_nombre: draft.punto_venta_dest_nombre,
+  } : null;
+  const rutaVisual = esEdicion ? (rutaEdicion || rutaSeleccionada) : (rutaSeleccionada || rutaEdicion);
 
   return (
     <Box sx={{ px: { xs: 0.8, md: 1 }, pb: 0.75, overflowY: "auto" }}>
       <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
       <Box sx={sectionSx}>
         <Grid container spacing={1}>
-          <Grid item xs={12} md={mostrarDireccionRemitente ? 4 : 9}>
+          {esEdicion && (
+            <Grid item xs={12} md={2.2}>
+              <Field label="Fecha">
+                <CaptureInput
+                  value={draft.r_fecemi}
+                  onChange={(value) => updateDraft("r_fecemi", value)}
+                  type="date"
+                  readOnly={!puedeEditarFecha}
+                />
+              </Field>
+            </Grid>
+          )}
+          <Grid item xs={12} md={esEdicion ? (mostrarDireccionRemitente ? 3.8 : 6.8) : (mostrarDireccionRemitente ? 4 : 9)}>
             {/* Origen automatico desde el punto de venta operativo seleccionado antes de nueva encomienda. */}
             <Field label="Origen" labelWidth={58}>
               <PuntoVentaField value={origenVisual} />
@@ -172,11 +193,7 @@ export default function TrEncomiendaModalSections({
             {/* Destino se escoge desde rutas; se conserva id_ruta para guardar la operacion. */}
             <Field label="Destino" labelWidth={58}>
               <RutaField
-                ruta={rutaSeleccionada || (draft.id_ruta ? {
-                  id_ruta: draft.id_ruta,
-                  id_punto_venta_dest: draft.id_punto_venta_dest,
-                  punto_venta_dest_nombre: draft.punto_venta_dest_nombre,
-                } : null)}
+                ruta={rutaVisual}
                 onChange={limpiarRuta}
                 onOpen={() => setRutaPickerOpen(true)}
                 inputRef={refs.rutaRef}

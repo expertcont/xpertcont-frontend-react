@@ -22,7 +22,7 @@ export default function TrEncomiendaList() {
       modalNuevoTitulo="Nueva encomienda"
       modalEditarTitulo="Editar encomienda"
       sinDatosTexto="Sin encomiendas para el filtro actual"
-      footerTexto="Envio de encomiendas registrado en mve_transventa."
+      footerTexto=""
       basePath="/ad_transportesencomienda"
     />
   );

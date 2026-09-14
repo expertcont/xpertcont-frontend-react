@@ -379,6 +379,7 @@ export default function AdminPuntoVentaUsuarioForm() {
       const payload = limpiarVacios({
         ...draft,
         id_anfitrion: params.id_anfitrion,
+        ...(esEdicion ? { id_punto_venta_anterior: puntoParam } : {}),
       });
 
       const response = await fetch(`${back_host}/mad_punto_venta_usuario`, {

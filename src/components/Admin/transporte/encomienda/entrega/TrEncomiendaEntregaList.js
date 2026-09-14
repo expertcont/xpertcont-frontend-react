@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, Mic, Package, ReceiptText, Search, Truck, UserRound, X } from "lucide-react";
+import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, Mic, Package, ReceiptText, Search, UserRound, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -161,7 +161,7 @@ const selectSx = {
   minWidth: 0,
   color: palette.text,
   backgroundColor: palette.bg,
-  borderRadius: 2,
+  borderRadius: palette.radius.control,
   fontSize: "12.5px",
   "& .MuiOutlinedInput-notchedOutline": { borderColor: palette.border },
   "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: palette.accent },
@@ -508,7 +508,7 @@ export default function TrEncomiendaEntregaList() {
     const monto = formatMoney(item.r_monto_total || item.precio_neto);
 
     if (porCobrar && navigator.vibrate) {
-      navigator.vibrate([160, 80, 160]);
+      navigator.vibrate([180, 90, 180, 90, 180]);
     }
 
     const result = await swal2.fire({
@@ -611,7 +611,7 @@ export default function TrEncomiendaEntregaList() {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: palette.bg, p: { xs: 1, md: 4 } }}>
+    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
       <Box sx={{ maxWidth: 980, mx: "auto" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: { xs: "flex-start", md: "center" }, flexDirection: { xs: "column", md: "row" }, mb: 2 }}>
           <Box>
@@ -664,13 +664,13 @@ export default function TrEncomiendaEntregaList() {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "280px minmax(260px, 1fr) 240px" }, gap: 1.25, mb: 2, p: 1.2, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: 2, alignItems: "end" }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "280px minmax(260px, 1fr) 240px" }, gap: 1.25, mb: 2, p: 1.2, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard, alignItems: "end" }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
               Periodo busqueda
             </Typography>
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 0.7, alignItems: "center" }}>
-              <Box sx={{ height: 40, px: 1.15, display: "flex", alignItems: "center", borderRadius: 2, backgroundColor: palette.bg, border: `1px solid ${palette.border}`, color: palette.muted, fontSize: "12.5px", fontWeight: 700, whiteSpace: "nowrap" }}>
+              <Box sx={{ height: 40, px: 1.15, display: "flex", alignItems: "center", borderRadius: palette.radius.control, backgroundColor: palette.bg, border: `1px solid ${palette.border}`, color: palette.muted, fontSize: "12.5px", fontWeight: 700, whiteSpace: "nowrap" }}>
                 {periodoLimiteBusqueda ? `${periodoLimiteBusqueda} -> Hasta Hoy` : "-"}
               </Box>
               <Tooltip title="Ampliar periodo" arrow>
@@ -700,28 +700,29 @@ export default function TrEncomiendaEntregaList() {
 
         <Box sx={{ display: "grid", gap: 1 }}>
           {loading && (
-            <Box sx={{ p: 3, color: palette.muted, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: 2 }}>
+            <Box sx={{ p: 3, color: palette.muted, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard }}>
               Cargando encomiendas...
             </Box>
           )}
 
           {!loading && registros.length === 0 && (
-            <Box sx={{ p: 3, color: palette.muted, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: 2, display: "flex", gap: 1, alignItems: "center" }}>
+            <Box sx={{ p: 3, color: palette.muted, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard, display: "flex", gap: 1, alignItems: "center" }}>
               <Search size={16} />
               Sin encomiendas pendientes para este destino.
             </Box>
           )}
 
           {!loading && registros.map((item) => (
-            <Box key={`${item.r_cod}-${item.r_serie}-${item.r_numero}-${item.elemento || 1}`} sx={{ p: 1.4, backgroundColor: palette.surface, border: `1px solid ${palette.borderSoft}`, borderRadius: 2 }}>
+            <Box key={`${item.r_cod}-${item.r_serie}-${item.r_numero}-${item.elemento || 1}`} sx={{ p: 1.4, backgroundColor: palette.surface, border: `1px solid ${palette.borderSoft}`, borderRadius: palette.radius.listCard }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-                  <Box sx={{ width: 32, height: 32, borderRadius: 1.5, backgroundColor: palette.accentSoft, color: palette.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: palette.radius.control, backgroundColor: palette.accentSoft, color: palette.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Package size={16} />
                   </Box>
                   <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "15px" }}>
                     {numeroOperacion(item)}
                   </Typography>
+                  {item.placa && <AppChip>{item.placa}</AppChip>}
                   <AppChip>{item.condicion_pago || "PAGADO"}</AppChip>
                 </Box>
                 <AppButton icon={<BadgeCheck size={16} />} onClick={() => marcarEntregado(item)} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
@@ -746,26 +747,21 @@ export default function TrEncomiendaEntregaList() {
                     {item.destinatario || "-"} {item.destinatario_documento ? `- ${item.destinatario_documento}` : ""}
                   </Typography>
                 </Box>
-                <Typography sx={{ color: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.accent : palette.text, fontSize: "16px", fontWeight: 800, whiteSpace: "nowrap" }}>
-                  {formatMoney(item.r_monto_total || item.precio_neto)}
-                </Typography>
+                <Box sx={{ display: "grid", gap: 0.35, justifyItems: { xs: "flex-start", md: "flex-end" }, alignSelf: "stretch" }}>
+                  <Typography sx={{ color: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.accent : palette.text, fontSize: "16px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                    {formatMoney(item.r_monto_total || item.precio_neto)}
+                  </Typography>
+                  <Typography sx={{ color: palette.muted, fontSize: "12px", display: "flex", alignItems: "center", gap: 0.45, whiteSpace: "nowrap" }}>
+                    <Calendar size={13} /> {formatFecha(item.r_fecemi)}
+                  </Typography>
+                </Box>
               </Box>
 
               <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap", color: palette.muted }}>
                 <Typography sx={{ fontSize: "12px", display: "flex", alignItems: "center", gap: 0.45 }}>
-                  <Calendar size={13} /> {formatFecha(item.r_fecemi)}
-                </Typography>
-                <Typography sx={{ fontSize: "12px", display: "flex", alignItems: "center", gap: 0.45 }}>
                   <MapPin size={13} /> {nombreOrigenRuta(item)}
                 </Typography>
-                <Typography sx={{ color: palette.text, fontSize: "12.5px", minWidth: 0 }}>
-                  {item.descripcion || "-"}
-                </Typography>
-                {(item.placa || item.licencia) && (
-                  <Typography sx={{ fontSize: "12px", display: "flex", alignItems: "center", gap: 0.45 }}>
-                    <Truck size={13} /> {[item.placa, item.licencia].filter(Boolean).join(" / ")}
-                  </Typography>
-                )}
+                {item.descripcion && <AppChip>{item.descripcion}</AppChip>}
               </Box>
             </Box>
           ))}
@@ -782,7 +778,7 @@ export default function TrEncomiendaEntregaList() {
             backgroundColor: palette.surface,
             color: palette.text,
             border: `1px solid ${palette.border}`,
-            borderRadius: 2,
+            borderRadius: palette.radius.modal,
             overflow: "hidden",
           },
         }}
@@ -796,14 +792,14 @@ export default function TrEncomiendaEntregaList() {
           </IconButton>
         </Box>
         <Box sx={{ p: 1.2, display: "grid", gap: 1 }}>
-          <Box sx={{ position: "relative", width: "100%", aspectRatio: "3 / 4", overflow: "hidden", borderRadius: 2, backgroundColor: "#05070a", border: `1px solid ${palette.border}` }}>
+          <Box sx={{ position: "relative", width: "100%", aspectRatio: "3 / 4", overflow: "hidden", borderRadius: palette.radius.control, backgroundColor: "#05070a", border: `1px solid ${palette.border}` }}>
             <video
               ref={scannerVideoRef}
               muted
               playsInline
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
-            <Box sx={{ position: "absolute", inset: "22% 12%", border: `2px solid ${palette.accent}`, borderRadius: 2, boxShadow: "0 0 0 999px rgba(0,0,0,.35)" }} />
+            <Box sx={{ position: "absolute", inset: "22% 12%", border: `2px solid ${palette.accent}`, borderRadius: palette.radius.control, boxShadow: "0 0 0 999px rgba(0,0,0,.35)" }} />
           </Box>
           {scannerError && (
             <Typography sx={{ color: palette.warning || palette.accent, fontSize: "12.5px", lineHeight: 1.35 }}>

@@ -21,7 +21,8 @@ export default function AppChip({
         border: `1px solid ${palette.border}`,
         color: palette.text,
         fontSize: "12px",
-        fontWeight: 600,
+        fontWeight: 360,
+        fontVariationSettings: '"wght" 360',
         cursor: "pointer",
         transition: "all .18s ease",
         "&:hover": {
