@@ -793,7 +793,7 @@ function RecaudacionPanel({ data }) {
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr 1.05fr" }, gap: 0.75, alignItems: "stretch", minWidth: 0 }}>
                 <AgencyAmountPill label="Emitido" value={montoEmitido} color={pillColors.emitido} />
                 <AgencyAmountPill label="POR_COBRAR" value={montoPorPagar} color={pillColors.porPagar} />
-                <AgencyAmountPill label="Cobrado destino" value={montoCobradoDestino} color={pillColors.recaudado} muted={montoCobradoDestino === 0} />
+                <AgencyAmountPill label="Cobrado en destino" value={montoCobradoDestino} color={pillColors.recaudado} muted={montoCobradoDestino === 0} />
                 <AgencyAmountPill label="CAJA" value={montoCaja > 0 ? -montoCaja : 0} color={pillColors.salidas} muted={montoCaja === 0} />
                 <AgencyAmountPill label="Recaudado" value={montoRecaudado} color={pillColors.recaudado} />
               </Box>

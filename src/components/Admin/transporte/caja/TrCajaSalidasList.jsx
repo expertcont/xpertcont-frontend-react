@@ -87,15 +87,170 @@ function FieldLabel({ children }) {
   );
 }
 
-function ResumenCard({ label, value, tone }) {
+function ResumenCard({ label, value, tone, onClick }) {
   const color = tone === "danger" ? palette.danger : tone === "success" ? palette.success : palette.accent;
+  const clickable = Boolean(onClick);
   return (
-    <Box sx={{ p: 1.5, minHeight: 78, borderRadius: palette.radius.listCard, border: `1px solid ${palette.border}`, backgroundColor: palette.surface }}>
-      <Typography sx={{ color: palette.muted, fontSize: "11px", fontWeight: 800 }}>{label}</Typography>
-      <Typography sx={{ color, fontWeight: 900, fontSize: "21px", lineHeight: 1.25, mt: 0.8 }}>
+    <Box
+      onClick={onClick}
+      sx={{
+        p: 1.5,
+        minHeight: 78,
+        borderRadius: palette.radius.listCard,
+        border: `1px solid ${palette.border}`,
+        backgroundColor: palette.surface,
+        cursor: clickable ? "pointer" : "default",
+        transition: "border-color .18s ease, background-color .18s ease",
+        "&:hover": clickable ? {
+          borderColor: "rgba(77,163,255,0.46)",
+          backgroundColor: palette.overlaySoft,
+        } : undefined,
+        "@keyframes ingreso-detail-vibe": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "20%": { transform: "translateX(-1px)" },
+          "40%": { transform: "translateX(1px)" },
+          "60%": { transform: "translateX(-1px)" },
+          "80%": { transform: "translateX(1px)" },
+        },
+      }}
+    >
+      <Typography sx={{ color, fontWeight: 900, fontSize: "21px", lineHeight: 1.2 }}>
         {value}
       </Typography>
+      <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, color: palette.muted, mt: 0.75 }}>
+        {clickable && (
+          <Box
+            component="span"
+            sx={{
+              display: "inline-flex",
+              color: palette.accent,
+              animation: "ingreso-detail-vibe 1.8s ease-in-out infinite",
+            }}
+          >
+            <Search size={14} />
+          </Box>
+        )}
+        <Typography sx={{ fontSize: "11px", fontWeight: 800 }}>{label}</Typography>
+      </Box>
     </Box>
+  );
+}
+
+function IngresosModal({ open, ingresos, loading, onClose }) {
+  const tipoLabel = (row) => row.tipo_ingreso === "ORIGEN" ? "Origen" : "Cobrado en destino";
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ sx: { width: { xs: "calc(100% - 24px)", sm: 560 }, borderRadius: palette.radius.modal, backgroundColor: palette.surface, border: `1px solid ${palette.border}` } }}>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: palette.text, fontSize: "15px", fontWeight: 500, pb: 1 }}>
+        Ingresos por encomiendas
+        <IconButton onClick={onClose} size="small" sx={{ color: palette.muted }}>
+          <X size={18} />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 1 }}>
+        <Box
+          sx={{
+            maxHeight: { xs: "64vh", md: "68vh" },
+            overflow: "auto",
+            borderRadius: palette.radius.listCard,
+            border: `1px solid ${palette.borderSoft}`,
+            backgroundColor: palette.surface,
+            scrollbarWidth: "thin",
+            scrollbarColor: `${palette.border} transparent`,
+            "&::-webkit-scrollbar": {
+              width: 8,
+              height: 8,
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: palette.border,
+              borderRadius: 8,
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              backgroundColor: palette.accentSoft,
+            },
+          }}
+        >
+          {loading && (
+            <Typography sx={{ color: palette.muted, fontSize: "11px", px: 1.2, py: 2 }}>
+              Cargando ingresos...
+            </Typography>
+          )}
+
+          {!loading && ingresos.length === 0 && (
+            <Box sx={{ py: 4, px: 1.2, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
+              <Search size={16} />
+              Sin ingresos por encomiendas para el filtro actual
+            </Box>
+          )}
+
+          {!loading && ingresos.map((row) => (
+            <Box
+              key={`${row.tipo_ingreso}-${row.r_cod}-${row.r_serie}-${row.r_numero}-${row.elemento}`}
+              sx={{
+                p: { xs: 1, md: 1.15 },
+                borderBottom: `1px solid ${palette.borderSoft}`,
+                display: "grid",
+                gap: 0.85,
+                backgroundColor: "transparent",
+                "&:last-of-type": {
+                  borderBottom: 0,
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, minWidth: 0 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 600, lineHeight: 1.2 }} noWrap>
+                    {row.r_serie || ""}-{row.r_numero || ""}
+                  </Typography>
+                  <Typography sx={{ color: palette.muted, fontSize: "10.5px", mt: 0.2 }} noWrap>
+                    Grabacion: {String(row.fecha_caja || "").slice(0, 16).replace("T", " ")}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "grid", justifyItems: "end", gap: 0.35 }}>
+                  <Typography sx={{ color: palette.success, fontSize: "13px", fontWeight: 800, lineHeight: 1.1, whiteSpace: "nowrap" }}>
+                    {money(row.r_monto_total)}
+                  </Typography>
+                  <Box sx={{ px: 0.7, py: 0.25, borderRadius: palette.radius.control, color: row.tipo_ingreso === "ORIGEN" ? palette.success : palette.accent, backgroundColor: row.tipo_ingreso === "ORIGEN" ? palette.successSoft : palette.accentSoft, fontSize: "9.5px", fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                    {tipoLabel(row)}
+                  </Box>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.65, flexWrap: "wrap" }}>
+                <Typography sx={{ color: palette.muted, fontSize: "10.5px" }}>
+                  {row.punto_venta_origen_nombre || row.id_punto_venta_origen || "-"} -> {row.punto_venta_dest_nombre || row.id_punto_venta_dest || "-"}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 0.35 }}>
+                <Typography sx={{ color: palette.muted, fontSize: "10.8px" }} noWrap>
+                  Rem: {row.cliente || "-"}
+                </Typography>
+                <Typography sx={{ color: palette.muted, fontSize: "10.8px" }} noWrap>
+                  Dest: {row.destinatario || "-"}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1.5 }}>
+          <AppButton
+            onClick={onClose}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              minWidth: { sm: 120 },
+              justifyContent: "center",
+              fontWeight: 800,
+            }}
+          >
+            Cerrar
+          </AppButton>
+        </Box>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -220,6 +375,9 @@ export default function TrCajaSalidasList() {
   const [formaPagoFiltro, setFormaPagoFiltro] = useState("");
   const [resumen, setResumen] = useState({ total_ingresos: 0, total_salidas: 0, neto: 0 });
   const [modalOpen, setModalOpen] = useState(false);
+  const [ingresosModalOpen, setIngresosModalOpen] = useState(false);
+  const [ingresosDetalle, setIngresosDetalle] = useState([]);
+  const [loadingIngresos, setLoadingIngresos] = useState(false);
   const [editando, setEditando] = useState(null);
   const [draft, setDraft] = useState(emptyDraft);
   const [guardando, setGuardando] = useState(false);
@@ -319,6 +477,29 @@ export default function TrCajaSalidasList() {
       setLoading(false);
     }
   }, [armarQuery, back_host, contabilidadTrabajo, params.id_anfitrion, periodoTrabajo]);
+
+  const abrirDetalleIngresos = async () => {
+    if (!periodoTrabajo || !contabilidadTrabajo) {
+      return;
+    }
+
+    setIngresosModalOpen(true);
+    setLoadingIngresos(true);
+    try {
+      const query = armarQuery();
+      const response = await fetch(`${back_host}/mve_transcaja/ingresos/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?${query}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "No se pudo cargar el detalle de ingresos.");
+      }
+      setIngresosDetalle(Array.isArray(result.data) ? result.data : []);
+    } catch (error) {
+      setIngresosDetalle([]);
+      swal2.fire({ title: "No se pudo cargar", text: error.message || "Error interno.", icon: "error", confirmButtonText: "ACEPTAR" });
+    } finally {
+      setLoadingIngresos(false);
+    }
+  };
 
   useEffect(() => {
     const periodoHistorial = sessionStorage.getItem("periodo_trabajo") || params.periodo;
@@ -576,8 +757,8 @@ export default function TrCajaSalidasList() {
           onBuscar={(event) => setValorBusqueda(event.target.value)}
         />
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" }, gap: 1, mb: 1.5 }}>
-          <ResumenCard label="INGRESOS" value={money(resumen.total_ingresos)} tone="success" />
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(160px, 220px))" }, justifyContent: { md: "start" }, gap: 1, mb: 1.5 }}>
+          <ResumenCard label="INGRESOS" value={money(resumen.total_ingresos)} tone="success" onClick={abrirDetalleIngresos} />
           <ResumenCard label="SALIDAS" value={money(resumen.total_salidas)} tone="danger" />
           <ResumenCard label="NETO" value={money(resumen.neto)} tone={Number(resumen.neto) >= 0 ? "success" : "danger"} />
         </Box>
@@ -650,6 +831,13 @@ export default function TrCajaSalidasList() {
         esEdicion={Boolean(editando)}
         onClose={cerrarModal}
         onSubmit={guardarSalida}
+      />
+
+      <IngresosModal
+        open={ingresosModalOpen}
+        ingresos={ingresosDetalle}
+        loading={loadingIngresos}
+        onClose={() => setIngresosModalOpen(false)}
       />
     </Box>
   );
