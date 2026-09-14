@@ -59,7 +59,7 @@ import TrZonaList from "./components/Admin/transporte/TrZonaList";
 import AdminPuntoVentaList from "./components/Admin/AdminPuntoVentaList";
 import TrRutaList from "./components/Admin/transporte/TrRutaList";
 import TrEncomiendaDashboardMockup from "./components/Admin/transporte/dashboard/TrEncomiendaDashboardMockup";
-import TrCajaSalidasList from "./components/Admin/transporte/caja/TrCajaSalidasList";
+import TrCajaMovimientoList from "./components/Admin/transporte/caja/TrCajaMovimientoList";
 import palette from "./theme/palette";
 
 function App(props) {
@@ -147,7 +147,7 @@ function App(props) {
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />
               <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList />} />
-              <Route path="/ad_transportecaja/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrCajaSalidasList />} />
+              <Route path="/ad_transportecaja/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrCajaMovimientoList />} />
               <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
               <Route path="/ad_puntoventa/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
               <Route path="/ad_transportepuntos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
