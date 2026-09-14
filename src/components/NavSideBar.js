@@ -21,6 +21,7 @@ import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import BadgeIcon from '@mui/icons-material/Badge';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
@@ -271,8 +272,8 @@ export default function NavSideBar(props) {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 36,
-          paddingY: 0.25,
+          minHeight: isMobile ? 48 : 36,
+          paddingY: isMobile ? 0.9 : 0.25,
           paddingLeft: itemLabelVisible ? 1.1 : 0,
           paddingRight: itemLabelVisible ? 1 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
@@ -368,8 +369,8 @@ export default function NavSideBar(props) {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          minHeight: 30,
-          paddingY: 0.18,
+          minHeight: isMobile ? 42 : 30,
+          paddingY: isMobile ? 0.75 : 0.18,
           paddingLeft: itemLabelVisible ? 3.75 : 0,
           paddingRight: itemLabelVisible ? 1 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
@@ -682,6 +683,15 @@ export default function NavSideBar(props) {
                   onClick={() => {
                     navigate(`/ad_transporteentregas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-8');
+                  }}
+                />
+                <SubMenuItem
+                  icon={<AccountBalanceWalletIcon />}
+                  label="Caja"
+                  isActive={selectedButton === 'icono11-9'}
+                  onClick={() => {
+                    navigate(`/ad_transportecaja/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-9');
                   }}
                 />
                 <SubMenuItem

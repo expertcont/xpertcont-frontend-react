@@ -774,8 +774,9 @@ function RecaudacionPanel({ data }) {
       {data.length > 0 ? data.map((item) => {
         const montoEmitido = Number(item.monto_facturado || 0);
         const montoPorPagar = Number(item.monto_por_pagar || 0);
-        const montoSalidas = Number(item.monto_salidas_dinero || 0);
-        const montoRecaudado = Math.max(0, montoEmitido - montoPorPagar - montoSalidas);
+        const montoCobradoDestino = Number(item.monto_salidas_dinero || 0);
+        const montoCaja = Number(item.monto_caja_manual || 0);
+        const montoRecaudado = Number(item.monto_recaudado ?? item.monto_efectivo ?? 0);
         const avance = montoEmitido > 0 ? (montoRecaudado / montoEmitido) * 100 : 0;
 
         return (
@@ -789,10 +790,11 @@ function RecaudacionPanel({ data }) {
                   {item.encomiendas_facturadas} emitidas - {item.encomiendas_por_pagar || 0} por cobrar
                 </Typography>
               </Box>
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1.05fr" }, gap: 0.75, alignItems: "stretch", minWidth: 0 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr 1.05fr" }, gap: 0.75, alignItems: "stretch", minWidth: 0 }}>
                 <AgencyAmountPill label="Emitido" value={montoEmitido} color={pillColors.emitido} />
                 <AgencyAmountPill label="POR_COBRAR" value={montoPorPagar} color={pillColors.porPagar} />
-                <AgencyAmountPill label="Salidas dinero" value={montoSalidas} color={pillColors.salidas} muted={montoSalidas === 0} />
+                <AgencyAmountPill label="Cobrado destino" value={montoCobradoDestino} color={pillColors.recaudado} muted={montoCobradoDestino === 0} />
+                <AgencyAmountPill label="CAJA" value={montoCaja > 0 ? -montoCaja : 0} color={pillColors.salidas} muted={montoCaja === 0} />
                 <AgencyAmountPill label="Recaudado" value={montoRecaudado} color={pillColors.recaudado} />
               </Box>
             </Box>
@@ -1130,9 +1132,8 @@ export default function TrEncomiendaDashboardMockup() {
   const totalEncomiendasProductividad = productividad.reduce((total, item) => total + Number(item.encomiendas || 0), 0);
   const montoFacturadoEncomiendas = Number(resumen.monto_encomiendas_facturado ?? resumen.monto_encomiendas ?? 0);
   const montoPorCobrarPendiente = Number(resumen.monto_por_cobrar_pendiente_entrega || 0);
-  const montoEfectivoDashboard = montoPorCobrarPendiente > 0
-    ? Math.max(0, montoFacturadoEncomiendas - montoPorCobrarPendiente)
-    : Number(resumen.monto_efectivo_agencia || 0);
+  const montoCajaManual = Number(resumen.monto_caja_manual || 0);
+  const montoEfectivoDashboard = Number(resumen.monto_efectivo_agencia || 0);
   const bestFranjaEncomiendas = productividad.reduce((best, item) => (
     !best || Number(item.encomiendas || 0) > Number(best.encomiendas || 0) ? item : best
   ), null);
@@ -1142,7 +1143,7 @@ export default function TrEncomiendaDashboardMockup() {
 
   const kpis = [
     { label: "Total facturado", value: formatSoles(montoFacturadoEncomiendas), detail: `${formatCantidad(resumen.encomiendas)} encomiendas`, icon: Package, color: ui.cyan },
-    { label: "Total efectivo", value: formatSoles(montoEfectivoDashboard), detail: montoPorCobrarPendiente > 0 ? `Desc. ${formatSoles(montoPorCobrarPendiente)}` : "Sin POR_COBRAR pendiente", icon: Wallet, color: ui.green },
+    { label: "Total efectivo", value: formatSoles(montoEfectivoDashboard), detail: montoCajaManual > 0 ? `CAJA ${formatSoles(-montoCajaManual)}` : montoPorCobrarPendiente > 0 ? `Desc. ${formatSoles(montoPorCobrarPendiente)}` : "Sin POR_COBRAR pendiente", icon: Wallet, color: ui.green },
     { label: "Por entregar", value: formatCantidad(resumen.encomiendas_por_entregar), detail: "Pendientes de cierre", icon: Boxes, color: ui.yellow },
     { label: "SUNAT", value: formatCantidad(resumen.sunat_pendientes), detail: "pendientes resumen", icon: CloudUpload, color: ui.red },
   ];
