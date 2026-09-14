@@ -40,6 +40,7 @@ const fechaHoyLima = () => {
   }).formatToParts(new Date());
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
+  //new version
 };
 
 const money = (value) => Number(value || 0).toLocaleString("es-PE", {
