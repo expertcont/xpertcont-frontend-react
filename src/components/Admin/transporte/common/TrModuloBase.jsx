@@ -345,7 +345,7 @@ export default function TrModuloBase({
   };
 
   // Une datos del modal con datos de ruta/usuario/periodo antes de enviar POST o PUT.
-  const guardarOperacion = async (datosOperacion) => {
+  const guardarOperacion = async (datosOperacion, opciones = {}) => {
     if (guardandoOperacionRef.current) {
       return;
     }
@@ -396,9 +396,12 @@ export default function TrModuloBase({
         throw new Error(dataResponse.message || "No se pudo guardar la encomienda.");
       }
 
-      setModalOperacionOpen(false);
-      setOperacionEditando(null);
+      if (!opciones.mantenerModalAbierto) {
+        setModalOperacionOpen(false);
+        setOperacionEditando(null);
+      }
       setUpdateTrigger(Date.now());
+      return dataResponse.data;
     } catch (error) {
       swal2.fire({
         title: "No se pudo guardar",
@@ -406,6 +409,7 @@ export default function TrModuloBase({
         icon: "error",
         confirmButtonText: "ACEPTAR",
       });
+      return null;
     } finally {
       guardandoOperacionRef.current = false;
       setGuardandoOperacion(false);

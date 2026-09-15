@@ -2,8 +2,8 @@
 
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Dialog, IconButton, Typography } from "@mui/material";
-import { Package, Save, X } from "lucide-react";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Typography } from "@mui/material";
+import { MessageCircle, Package, Save, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -26,6 +26,8 @@ import {
   textoBusquedaClone,
   toTimePlusHours,
 } from "./trEncomiendaModalUtils";
+
+const DESCARGAS_TICKET_BASE_URL = "https://xpertcont-backend-js-production-50e6.up.railway.app/descargas/";
 
 export default function TrEncomiendaModal({
   open,
@@ -61,6 +63,10 @@ export default function TrEncomiendaModal({
   const [buscandoDestinatario, setBuscandoDestinatario] = useState(false);
   const [imprimiendoTicket, setImprimiendoTicket] = useState(false);
   const [imprimiendoTicketAdmin, setImprimiendoTicketAdmin] = useState(false);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
+  const [whatsappNumero, setWhatsappNumero] = useState("");
+  const [whatsappEncomienda, setWhatsappEncomienda] = useState(null);
+  const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
 
   const remitenteDocRef = useRef(null);
   const remitenteNombreRef = useRef(null);
@@ -399,7 +405,82 @@ export default function TrEncomiendaModal({
     });
   };
 
-  const handleSubmit = () => {
+  const normalizarTelefonoWhatsapp = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("51") && digits.length >= 11) return digits;
+    if (digits.length === 9) return `51${digits}`;
+    return digits;
+  };
+
+  const obtenerNombresPersona = (nombreCompleto) => {
+    const partes = String(nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
+    if (partes.length <= 1) return partes.join(" ");
+
+    // La consulta DNI suele devolver: Apellido paterno + apellido materno + nombres.
+    // Para saludar por WhatsApp usamos solo nombres y evitamos los apellidos.
+    if (partes.length >= 4) return partes.slice(2).join(" ");
+    return partes[0];
+  };
+
+  const obtenerNombreClienteWhatsapp = (encomienda) => {
+    const documento = String(encomienda?.cliente_documento || encomienda?.cliente_documento_id || draft.cliente_documento || "").replace(/\D/g, "");
+    const nombre = encomienda?.cliente || draft.cliente || "";
+    return documento.length === 8 ? obtenerNombresPersona(nombre) || "cliente" : nombre || "cliente";
+  };
+
+  const obtenerDestinoWhatsapp = (encomienda) => {
+    const rutaActual = rutasDisponibles.find((ruta) => String(ruta.id_ruta) === String(encomienda?.id_ruta || draft.id_ruta));
+    return (
+      encomienda?.punto_venta_dest_nombre ||
+      encomienda?.punto_venta_destino_nombre ||
+      encomienda?.destino_nombre ||
+      rutaActual?.punto_venta_dest_nombre ||
+      rutaActual?.punto_venta_destino_nombre ||
+      rutaActual?.destino_nombre ||
+      ""
+    );
+  };
+
+  const crearMensajeWhatsappTicket = (encomienda, ticketUrl) => {
+    const numero = [encomienda?.r_serie, encomienda?.r_numero].filter(Boolean).join("-");
+    const destino = obtenerDestinoWhatsapp(encomienda);
+    const cliente = obtenerNombreClienteWhatsapp(encomienda);
+
+    return [
+      `Hola ${cliente}, te enviamos el ticket de tu encomienda${numero ? ` ${numero}` : ""}.`,
+      destino ? `Destino: ${destino}.` : "",
+      `Ticket: ${ticketUrl}`,
+    ].filter(Boolean).join("\n");
+  };
+
+  const normalizarUrlDescargaTicket = (rutaPdf) => {
+    const rutaTexto = String(rutaPdf || "").trim();
+
+    if (!rutaTexto) return "";
+
+    if (rutaTexto.startsWith(DESCARGAS_TICKET_BASE_URL)) {
+      return rutaTexto;
+    }
+
+    const nombreArchivo = rutaTexto.split("/descargas/").pop()?.split("?")[0] || rutaTexto.split("/").pop();
+    return `${DESCARGAS_TICKET_BASE_URL}${nombreArchivo}`;
+  };
+
+  const cerrarFlujoWhatsapp = () => {
+    setWhatsappModalOpen(false);
+    setWhatsappEncomienda(null);
+    onClose();
+  };
+
+  const abrirEnvioWhatsapp = () => {
+    const encomiendaBase = { ...draft, ...(operacion || {}) };
+    setWhatsappEncomienda(encomiendaBase);
+    setWhatsappNumero(encomiendaBase.cliente_telefono || encomiendaBase.destinatario_telefono || "");
+    setWhatsappModalOpen(true);
+  };
+
+  const handleSubmit = async () => {
     if (guardando) {
       return;
     }
@@ -464,7 +545,7 @@ export default function TrEncomiendaModal({
     const clienteDireccionFinal = entregaRemitenteEnOficina ? "" : draft.remitente_direccion;
     const destinatarioDireccionFinal = entregaDestinatarioEnOficina ? "" : draft.destinatario_direccion;
 
-    onSubmit({
+    const operacionGuardada = await onSubmit({
       ...draft,
       tipo_operacion: "E",
       r_cod: comprobante.r_cod,
@@ -485,7 +566,50 @@ export default function TrEncomiendaModal({
       precio_neto: total,
       r_monto_total: total,
       asiento: null,
+    }, { mantenerModalAbierto: !esEdicion });
+
+    if (!operacionGuardada || esEdicion) {
+      return;
+    }
+
+    // Despues de grabar se confirma el telefono. Si ya vino digitado, aparece sugerido.
+    // Se usa el telefono del remitente como "cliente"; si falta, se toma el del destinatario.
+    setWhatsappEncomienda({ ...draft, ...operacionGuardada });
+    setWhatsappNumero(draft.cliente_telefono || draft.destinatario_telefono || "");
+    setWhatsappModalOpen(true);
+  };
+
+  const generarTicketPdfUrl = async ({ encomiendaBase = operacion || draft, admin = false, cacheBust = true } = {}) => {
+    const rCod = encomiendaBase?.r_cod || draft.r_cod;
+    const rSerie = encomiendaBase?.r_serie || draft.r_serie;
+    const rNumero = encomiendaBase?.r_numero || draft.r_numero;
+    const elemento = encomiendaBase?.elemento || draft.elemento || 1;
+
+    if (!rCod || !rSerie || !rNumero) {
+      throw new Error("El ticket necesita serie y numero real del comprobante.");
+    }
+
+    const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda${admin ? "/admin" : ""}`, {
+      periodo: periodoTrabajo,
+      id_anfitrion: idAnfitrion,
+      documento_id: documentoId,
+      r_cod: rCod,
+      r_serie: rSerie,
+      r_numero: rNumero,
+      elemento,
+      endpoint_pdf: admin ? "/cpesunatticketencomienda" : "/cpesunatticketencomienda/v2",
+      rubro: "TRANS_ENCOMIENDA",
     });
+    const rutaPdf = response.data?.ruta_pdf;
+
+    if (!rutaPdf || rutaPdf === "error") {
+      throw new Error(response.data?.message || response.data?.respuesta_sunat_descripcion || "No se pudo generar el ticket.");
+    }
+
+    // Para pantalla conviene cacheBust=true para forzar refresco del PDF recien generado.
+    // Para WhatsApp usamos cacheBust=false y enviamos el link limpio de /descargas.
+    const urlDescarga = normalizarUrlDescargaTicket(rutaPdf);
+    return cacheBust ? `${urlDescarga}${urlDescarga.includes("?") ? "&" : "?"}t=${Date.now()}` : urlDescarga;
   };
 
   const imprimirTicketModelo = async ({ admin = false } = {}) => {
@@ -495,12 +619,7 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    const rCod = operacion?.r_cod || draft.r_cod;
-    const rSerie = operacion?.r_serie || draft.r_serie;
-    const rNumero = operacion?.r_numero || draft.r_numero;
-    const elemento = operacion?.elemento || draft.elemento || 1;
-
-    if (!rCod || !rSerie || !rNumero) {
+    if (!(operacion?.r_cod || draft.r_cod) || !(operacion?.r_serie || draft.r_serie) || !(operacion?.r_numero || draft.r_numero)) {
       swal2.fire({
         title: "Primero graba la encomienda",
         text: "El ticket con logo y QR necesita serie y numero real del comprobante.",
@@ -522,24 +641,7 @@ export default function TrEncomiendaModal({
     try {
       ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Generando ticket...</p>`);
 
-      const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda${admin ? "/admin" : ""}`, {
-        periodo: periodoTrabajo,
-        id_anfitrion: idAnfitrion,
-        documento_id: documentoId,
-        r_cod: rCod,
-        r_serie: rSerie,
-        r_numero: rNumero,
-        elemento,
-        endpoint_pdf: admin ? "/cpesunatticketencomienda" : "/cpesunatticketencomienda/v2",
-        rubro: "TRANS_ENCOMIENDA",
-      });
-      const rutaPdf = response.data?.ruta_pdf;
-
-      if (!rutaPdf || rutaPdf === "error") {
-        throw new Error(response.data?.message || response.data?.respuesta_sunat_descripcion || "No se pudo generar el ticket.");
-      }
-
-      const urlConBypassCache = `${rutaPdf}?t=${Date.now()}`;
+      const urlConBypassCache = await generarTicketPdfUrl({ admin });
 
       if (ticketWindow) {
         ticketWindow.location.href = urlConBypassCache;
@@ -562,6 +664,42 @@ export default function TrEncomiendaModal({
       } else {
         setImprimiendoTicket(false);
       }
+    }
+  };
+
+  const enviarTicketPorWhatsapp = async () => {
+    const telefono = normalizarTelefonoWhatsapp(whatsappNumero);
+
+    if (!telefono) {
+      swal2.fire({
+        title: "Indica celular",
+        text: "Necesitamos el numero para enviar el ticket por WhatsApp.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
+    setEnviandoWhatsapp(true);
+    try {
+      const ticketUrl = await generarTicketPdfUrl({ encomiendaBase: whatsappEncomienda, cacheBust: false });
+      const mensaje = crearMensajeWhatsappTicket(whatsappEncomienda, ticketUrl);
+      const whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      cerrarFlujoWhatsapp();
+    } catch (error) {
+      swal2.fire({
+        title: "No se pudo generar el ticket",
+        text: error.message || "Revisa los datos de la encomienda e intenta nuevamente.",
+        icon: "error",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+    } finally {
+      setEnviandoWhatsapp(false);
     }
   };
 
@@ -665,10 +803,85 @@ export default function TrEncomiendaModal({
           <AppButton onClick={() => imprimirTicketModelo({ admin: true })} disabled={guardando || imprimiendoTicketAdmin}>
             {imprimiendoTicketAdmin ? "Generando PDF..." : "Ticket Admin"}
           </AppButton>
-          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
+          {esEdicion && (
+            <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp}>
+              Enviar WhatsApp
+            </AppButton>
+          )}
+          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
             {guardando ? "Guardando..." : textoBotonGuardar}
           </AppButton>
         </Box>
+      <Dialog
+        open={whatsappModalOpen}
+        onClose={enviandoWhatsapp ? undefined : cerrarFlujoWhatsapp}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: palette.surface,
+            color: palette.text,
+            border: `1px solid ${palette.border}`,
+            borderRadius: palette.radius.modal,
+          },
+        }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, pb: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <AppIconBox>
+              <MessageCircle size={16} />
+            </AppIconBox>
+            <Box>
+              <Typography sx={{ fontSize: "15px", fontWeight: 800, lineHeight: 1.15 }}>
+                Enviar ticket
+              </Typography>
+              <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }}>
+                WhatsApp del cliente
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton disabled={enviandoWhatsapp} onClick={cerrarFlujoWhatsapp} size="small" sx={{ color: palette.muted }}>
+            <X size={17} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.1 }}>
+          <InputBase
+            autoFocus
+            value={whatsappNumero}
+            onChange={(event) => setWhatsappNumero(event.target.value)}
+            placeholder="Celular del cliente"
+            inputMode="numeric"
+            disabled={enviandoWhatsapp}
+            sx={{
+              width: "100%",
+              height: 40,
+              px: 1.2,
+              borderRadius: palette.radius.control,
+              border: `1px solid ${palette.border}`,
+              backgroundColor: palette.overlaySoft,
+              color: palette.text,
+              fontSize: "13px",
+              "& input": { p: 0, color: palette.text },
+            }}
+          />
+          <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.8 }}>
+            Si no tiene codigo de pais, se asumira Peru (+51).
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.8, mt: 1.6, flexWrap: "wrap" }}>
+            <AppButton disabled={enviandoWhatsapp} onClick={cerrarFlujoWhatsapp}>
+              Omitir
+            </AppButton>
+            <AppButton
+              icon={<MessageCircle size={15} />}
+              disabled={enviandoWhatsapp}
+              onClick={enviarTicketPorWhatsapp}
+              sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 800 }}
+            >
+              {enviandoWhatsapp ? "Generando..." : "Enviar WhatsApp"}
+            </AppButton>
+          </Box>
+        </DialogContent>
+      </Dialog>
       <RutaPickerModal
         open={rutaPickerOpen}
         rutas={rutasDisponibles}

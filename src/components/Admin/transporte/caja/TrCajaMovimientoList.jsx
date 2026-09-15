@@ -283,7 +283,7 @@ function IngresosModal({ open, ingresos, loading, onClose }) {
                   </Box>
                 )}
                 <Typography sx={{ color: palette.muted, fontSize: "10.5px" }}>
-                  {row.punto_venta_origen_nombre || row.id_punto_venta_origen || "-"} -> {row.punto_venta_dest_nombre || row.id_punto_venta_dest || "-"}
+                  {row.punto_venta_origen_nombre || row.id_punto_venta_origen || "-"} - {row.punto_venta_dest_nombre || row.id_punto_venta_dest || "-"}
                 </Typography>
               </Box>
 
