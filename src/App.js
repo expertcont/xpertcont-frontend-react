@@ -51,6 +51,7 @@ import AdminVentaPresupuestoNuevoForm from "./components/Admin/presupuestos/Admi
 import AdminCorrentistaHabitualList from "./components/Admin/venta/habituales/AdminCorrentistaHabitualList";
 import AdminVentaResumenSunatList from "./components/Admin/venta/list/AdminVentaResumenSunatList";
 import TrEncomiendaList from "./components/Admin/transporte/encomienda/TrEncomiendaList";
+import TrGremEncomiendaList from "./components/Admin/transporte/encomienda/TrGremEncomiendaList";
 import TrEncomiendaEntregaList from "./components/Admin/transporte/encomienda/entrega/TrEncomiendaEntregaList";
 import TrBoletosList from "./components/Admin/transporte/TrBoletosList";
 import TrPlacaList from "./components/Admin/transporte/TrPlacaList";
@@ -144,6 +145,7 @@ function App(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
+              <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList />} />
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList />} />
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />
               <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList />} />

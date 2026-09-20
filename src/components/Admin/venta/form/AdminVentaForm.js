@@ -1835,13 +1835,29 @@ export default function AdminVentaForm() {
         })
         .then((response) => {
             console.log(response.data);
-            const { nombre_o_razon_social,r_id_doc,direccion_completa } = response.data;
+            const {
+              nombre_o_razon_social,
+              r_id_doc,
+              direccion_completa,
+              direccion,
+              domicilio_fiscal,
+              data,
+            } = response.data;
+            const direccionFacturacion = (
+              direccion_completa ||
+              direccion ||
+              domicilio_fiscal ||
+              data?.direccion_completa ||
+              data?.direccion ||
+              data?.domicilio_fiscal ||
+              "-"
+            );
             setRazonSocialBusca(nombre_o_razon_social);
             setIdDocBusca(r_id_doc);
             
             setDatosEmitir(prevState => ({ ...prevState, r_id_doc: r_id_doc }));
             setDatosEmitir(prevState => ({ ...prevState, r_razon_social: nombre_o_razon_social }));
-            setDatosEmitir(prevState => ({ ...prevState, r_direccion: direccion_completa? direccion_completa:'-' }));
+            setDatosEmitir(prevState => ({ ...prevState, r_direccion: direccionFacturacion }));
             console.log(datosEmitir);
         })
         .catch((error) => {

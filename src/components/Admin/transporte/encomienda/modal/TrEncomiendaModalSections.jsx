@@ -43,6 +43,7 @@ export default function TrEncomiendaModalSections({
   setLicenciaPickerOpen,
   buscandoRemitente,
   buscandoDestinatario,
+  soloLectura = false,
   refs,
 }) {
   const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
@@ -57,6 +58,24 @@ export default function TrEncomiendaModalSections({
 
   return (
     <Box sx={{ px: { xs: 0.8, md: 1 }, pb: 0.75, overflowY: "auto" }}>
+      {soloLectura && (
+        <Typography
+          sx={{
+            color: palette.success,
+            backgroundColor: "rgba(66,160,104,0.10)",
+            border: "1px solid rgba(146,214,173,0.28)",
+            borderRadius: palette.radius.control,
+            px: 1,
+            py: 0.7,
+            mb: 0.75,
+            fontSize: "12px",
+            fontWeight: 700,
+          }}
+        >
+          Encomienda protegida: puedes visualizar e imprimir, pero no modificar los datos.
+        </Typography>
+      )}
+      <Box sx={soloLectura ? { pointerEvents: "none", opacity: 0.82 } : undefined}>
       <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
       <Box sx={sectionSx}>
         <Grid container spacing={1}>
@@ -67,7 +86,7 @@ export default function TrEncomiendaModalSections({
                   value={draft.r_fecemi}
                   onChange={(value) => updateDraft("r_fecemi", value)}
                   type="date"
-                  readOnly={!puedeEditarFecha}
+                  readOnly={soloLectura || !puedeEditarFecha}
                 />
               </Field>
             </Grid>
@@ -373,6 +392,7 @@ export default function TrEncomiendaModalSections({
           {error}
         </Typography>
       )}
+      </Box>
     </Box>
   );
 }

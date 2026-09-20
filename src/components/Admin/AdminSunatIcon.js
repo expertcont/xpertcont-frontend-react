@@ -166,6 +166,8 @@ const AdminSunatIcon = ({
   backHost,               // ej. "https://tu-backend.com"
   cpeEndpoint = "/ad_ventacpe",
   cpeRequestExtra = {},
+  pdfEndpoint,
+  pdfRequestExtra = {},
   size = 24,              // tamaño del ícono
   cdr_nivel,                //ACEPTADO,RECHAZADO,PENDIENTE
   cdr_descripcion,
@@ -177,6 +179,7 @@ const AdminSunatIcon = ({
   const [rutaXml, setRutaXml] = useState("");
   const [rutaCdr, setRutaCdr] = useState("");
   const [rutaPdf, setRutaPdf] = useState("");
+  const [cargandoPdf, setCargandoPdf] = useState(false);
   const [modalResumenRdi, setModalResumenRdi] = useState(false);
   const { confirmDialog } = useDialog(); //unico dialogo
 
@@ -184,6 +187,31 @@ const AdminSunatIcon = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [phone, setPhone] = useState("");
   const firmaValor = String(firma || "").trim();
+
+  const generarRutaPdf = async ({ cod, serie, numero }) => {
+    if (!pdfEndpoint) {
+      const baseUrl = `${descargasHost}/descargas/${documentoId}`;
+      return `${baseUrl}/${documentoId}-${cod}-${serie}-${numero}.pdf`;
+    }
+
+    const response = await axios.post(`${backHost}${pdfEndpoint}`, {
+      periodo: periodoTrabajo,
+      id_anfitrion: idAnfitrion,
+      id_usuario: idAnfitrion,
+      documento_id: contabilidadTrabajo,
+      r_cod: cod,
+      r_serie: serie,
+      r_numero: numero,
+      elemento,
+      ...pdfRequestExtra,
+    });
+
+    if (!response.data?.ruta_pdf || response.data.ruta_pdf === "error") {
+      throw new Error(response.data?.message || response.data?.respuesta_sunat_descripcion || "No se pudo generar el PDF.");
+    }
+
+    return response.data.ruta_pdf;
+  };
 
   const obtenerErrorSunat = (errorOrData) => {
     const responseData = errorOrData?.response?.data || errorOrData?.data || errorOrData || {};
@@ -296,9 +324,19 @@ const AdminSunatIcon = ({
         if (response.data?.codigo_hash) {
           setRutaXml(response.data.ruta_xml);
           setRutaCdr(response.data.ruta_cdr);
-          setRutaPdf(response.data.ruta_pdf);
           setModalResumenRdi(false);
           setShowModal(true);
+          if (pdfEndpoint) {
+            setRutaPdf("");
+            setCargandoPdf(true);
+            try {
+              setRutaPdf(await generarRutaPdf({ cod: COD, serie: SERIE, numero: NUMERO }));
+            } finally {
+              setCargandoPdf(false);
+            }
+          } else {
+            setRutaPdf(response.data.ruta_pdf);
+          }
           return;
         }
 
@@ -368,6 +406,7 @@ const AdminSunatIcon = ({
   };
 
 const handleOpenLinkWhatsApp = async (sNumero) => {
+  if (cargandoPdf || !rutaPdf) return;
   // 📞 limpiar número
   let telefono = sNumero.replace(/\D/g, '');
   if (!telefono.startsWith('51')) {
@@ -438,6 +477,8 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
             return Sunat01Icon;
     }
 };
+  const whatsappListo = phone.length >= 9 && Boolean(rutaPdf) && !cargandoPdf;
+
   return (
     <>
       {/* Ícono */}
@@ -526,10 +567,11 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
         <Button
           variant="contained"
           onClick={() => handleOpenLink(rutaPdf)}
+          disabled={cargandoPdf || !rutaPdf}
           sx={{ ...pdfButtonSx, mt: modalResumenRdi ? 1.5 : 1 }}
           startIcon={<PdfFileIcon sx={{ fontSize: 34 }} />}
         >
-          Descargar PDF
+          {cargandoPdf ? "Generando PDF..." : "Descargar PDF"}
         </Button>
 
     <Box sx={{ position: "relative", width: 270, mt: 1 }}>
@@ -544,16 +586,16 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
           display: "flex",
           alignItems: "center",
           gap: 0.5,
-          color: phone.length >= 9 ? "#7ddbd3" : palette.muted,
+          color: whatsappListo ? "#7ddbd3" : palette.muted,
           px: 1.2,
           py: 0.4,
           borderRadius: 1,
           zIndex: 10,
-          cursor: phone.length >= 9 ? "pointer" : "default",
-          opacity: phone.length >= 9 ? 1 : 0.6,
+          cursor: whatsappListo ? "pointer" : "default",
+          opacity: whatsappListo ? 1 : 0.6,
           "&:hover": {
             backgroundColor:
-              phone.length >= 9 ? "rgba(42,161,152,0.14)" : "transparent"
+              whatsappListo ? "rgba(42,161,152,0.14)" : "transparent"
           }
         }}
       >

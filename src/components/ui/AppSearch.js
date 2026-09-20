@@ -8,7 +8,9 @@ export default function AppSearch({
   placeholder,
   value,
   onChange,
+  onKeyDown,
   width = { xs: "95%", sm: 260 },
+  inputRef,
 }) {
   return (
     <Box
@@ -35,8 +37,10 @@ export default function AppSearch({
       />
 
       <InputBase
+        inputRef={inputRef}
         value={value}
         onChange={onChange}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         sx={{
           color: palette.text,

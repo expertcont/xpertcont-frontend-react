@@ -327,9 +327,12 @@ export function PlacaPickerModal({ open, placas, onClose, onSelect }) {
 
 export function LicenciaPickerModal({ open, licencias, onClose, onSelect }) {
   const state = usePickerState(open, licencias.length);
+  const nombreLicencia = (item) => String(item?.nombre || `${item?.nombres || ""} ${item?.apellidos || ""}`.trim()).trim();
   const filtradas = licencias.filter((item) => [
     item.licencia,
-    item.nombre,
+    item.nombres,
+    item.apellidos,
+    nombreLicencia(item),
     item.dni,
     item.descripcion,
   ].some((field) => String(field || "").toLowerCase().includes(state.busqueda.toLowerCase())));
@@ -370,7 +373,7 @@ export function LicenciaPickerModal({ open, licencias, onClose, onSelect }) {
             <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "13px" }}>{item.licencia}</Typography>
             <Typography sx={{ color: palette.accent, fontWeight: 800, fontSize: "11px" }}>{item.dni || "Sin DNI"}</Typography>
           </Box>
-          <Typography sx={{ color: palette.text, fontSize: "12.5px", mt: 0.35 }}>{item.nombre || "Sin nombre"}</Typography>
+          <Typography sx={{ color: palette.text, fontSize: "12.5px", mt: 0.35 }}>{nombreLicencia(item) || "Sin nombre"}</Typography>
           <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.25 }}>
             {item.descripcion || "Sin descripcion"}
           </Typography>

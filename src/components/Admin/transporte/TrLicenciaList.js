@@ -114,7 +114,8 @@ function CaptureInput({ value, onChange, placeholder, readOnly = false }) {
 function LicenciaModal({ open, licencia, onClose, onSubmit }) {
   const [draft, setDraft] = useState({
     licencia: "",
-    nombre: "",
+    nombres: "",
+    apellidos: "",
     dni: "",
     descripcion: "",
   });
@@ -124,7 +125,8 @@ function LicenciaModal({ open, licencia, onClose, onSubmit }) {
     if (open) {
       setDraft({
         licencia: licencia?.licencia || "",
-        nombre: licencia?.nombre || "",
+        nombres: licencia?.nombres || "",
+        apellidos: licencia?.apellidos || "",
         dni: licencia?.dni || "",
         descripcion: licencia?.descripcion || "",
       });
@@ -142,7 +144,8 @@ function LicenciaModal({ open, licencia, onClose, onSubmit }) {
     onSubmit({
       ...draft,
       licencia: String(draft.licencia || "").trim().toUpperCase(),
-      nombre: String(draft.nombre || "").trim().toUpperCase(),
+      nombres: String(draft.nombres || "").trim().toUpperCase(),
+      apellidos: String(draft.apellidos || "").trim().toUpperCase(),
       dni: String(draft.dni || "").trim(),
       descripcion: String(draft.descripcion || "").trim(),
     });
@@ -174,12 +177,17 @@ function LicenciaModal({ open, licencia, onClose, onSubmit }) {
               <CaptureInput value={draft.licencia} onChange={(value) => updateDraft("licencia", value.toUpperCase())} placeholder="A12345678" readOnly={Boolean(licencia)} />
             </Field>
           </Grid>
-          <Grid item xs={12} md={5}>
-            <Field label="Nombre" icon={<UserRound size={15} />}>
-              <CaptureInput value={draft.nombre} onChange={(value) => updateDraft("nombre", value.toUpperCase())} placeholder="NOMBRES Y APELLIDOS" />
+          <Grid item xs={12} md={3}>
+            <Field label="Nombres" icon={<UserRound size={15} />}>
+              <CaptureInput value={draft.nombres} onChange={(value) => updateDraft("nombres", value.toUpperCase())} placeholder="NOMBRES" />
             </Field>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
+            <Field label="Apellidos" icon={<UserRound size={15} />}>
+              <CaptureInput value={draft.apellidos} onChange={(value) => updateDraft("apellidos", value.toUpperCase())} placeholder="APELLIDOS" />
+            </Field>
+          </Grid>
+          <Grid item xs={12} md={3}>
             <Field label="DNI" icon={<IdCard size={15} />}>
               <CaptureInput value={draft.dni} onChange={(value) => updateDraft("dni", value)} placeholder="Documento" />
             </Field>
@@ -240,6 +248,8 @@ export default function TrLicenciaList() {
     const value = texto.toLowerCase();
     setRows(baseRows.filter((item) => [
       item.licencia,
+      item.nombres,
+      item.apellidos,
       item.nombre,
       item.dni,
       item.descripcion,
@@ -270,7 +280,7 @@ export default function TrLicenciaList() {
     }
   };
 
-  const eliminar = async (row) => {
+  const eliminar = useCallback(async (row) => {
     const result = await confirmDialog({
       title: "Eliminar licencia?",
       message: `${row.licencia}${row.nombre ? ` - ${row.nombre}` : ""}`,
@@ -290,7 +300,7 @@ export default function TrLicenciaList() {
     } catch (error) {
       swal2.fire({ title: "No se pudo eliminar", text: error.message || "Error interno.", icon: "error", confirmButtonText: "ACEPTAR" });
     }
-  };
+  }, [back_host, cargarDatos, confirmDialog, params.documento_id, params.id_anfitrion]);
 
   const columns = useMemo(() => [
     {
@@ -304,7 +314,8 @@ export default function TrLicenciaList() {
         </Box>
       ),
     },
-    { name: "Nombre", selector: row => row.nombre || "-", grow: 1.2 },
+    { name: "Nombres", selector: row => row.nombres || "-", grow: 1 },
+    { name: "Apellidos", selector: row => row.apellidos || "-", grow: 1 },
     { name: "DNI", selector: row => row.dni || "-", width: "130px" },
     { name: "Descripcion", selector: row => row.descripcion || "-", grow: 1 },
     {
@@ -319,7 +330,7 @@ export default function TrLicenciaList() {
         </Box>
       ),
     },
-  ], []);
+  ], [eliminar]);
 
   return (
     <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 2, md: 4 } }}>

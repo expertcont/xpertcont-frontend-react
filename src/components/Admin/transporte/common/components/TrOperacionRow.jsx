@@ -5,6 +5,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock3,
+  Eye,
   MapPin,
   Package,
   Pencil,
@@ -79,6 +80,23 @@ const actionButtonSx = (danger = false) => ({
     color: palette.onAccent,
   },
 });
+
+const protectedActionButtonSx = {
+  ...actionButtonSx(false),
+  color: palette.success,
+  borderColor: "rgba(146,214,173,0.38)",
+  backgroundColor: "rgba(66,160,104,0.10)",
+  "&:hover": {
+    backgroundColor: "rgba(66,160,104,0.18)",
+    borderColor: "rgba(146,214,173,0.52)",
+    color: palette.success,
+  },
+};
+
+export const operacionProtegidaSunat = (row) => {
+  const operacion = row || {};
+  return Boolean(operacion.r_vfirmado || operacion.numero_rdi);
+};
 
 const sunatEstadoDocumento = (row) => {
   if (row.r_vfirmado) {
@@ -156,6 +174,11 @@ function SunatActionButton({ row, onEnviarSunat, sunatContext }) {
               backHost={sunatContext.backHost}
               cpeEndpoint="/mve_transventa/cpe"
               cpeRequestExtra={sunatContext.cpeRequestExtra}
+              pdfEndpoint="/mve_transventa/ticket/encomienda"
+              pdfRequestExtra={{
+                endpoint_pdf: "/cpesunatticketencomienda/v2",
+                rubro: "TRANS_ENCOMIENDA",
+              }}
               onRefresh={sunatContext.onRefresh}
               size={sunatContext.size || 18}
             />
@@ -240,6 +263,8 @@ const nombreDestinoRuta = (item) => {
 };
 
 function TrOperacionRow({ row, onEdit, onDelete, onEnviarSunat, sunatContext }) {
+  const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
+
   return (
     <Box sx={{ width: "100%", py: 2 }}>
       <Box
@@ -290,20 +315,24 @@ function TrOperacionRow({ row, onEdit, onDelete, onEnviarSunat, sunatContext }) 
           }}
         >
           {row.tipo_operacion === "E" && (
-            <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
+            <>
+              <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
+            </>
           )}
 
-          <Tooltip title="Editar operacion" arrow>
-            <Box onClick={() => onEdit(row)} sx={actionButtonSx(false)}>
-              <Pencil size={14} />
+          <Tooltip title={protegidaSunat ? "Ver encomienda protegida" : "Editar operacion"} arrow>
+            <Box onClick={() => onEdit(row)} sx={protegidaSunat ? protectedActionButtonSx : actionButtonSx(false)}>
+              {protegidaSunat ? <Eye size={14} /> : <Pencil size={14} />}
             </Box>
           </Tooltip>
 
-          <Tooltip title="Eliminar operacion" arrow>
-            <Box onClick={() => onDelete(row)} sx={actionButtonSx(true)}>
-              <Trash2 size={14} />
-            </Box>
-          </Tooltip>
+          {!protegidaSunat && (
+            <Tooltip title="Eliminar operacion" arrow>
+              <Box onClick={() => onDelete(row)} sx={actionButtonSx(true)}>
+                <Trash2 size={14} />
+              </Box>
+            </Tooltip>
+          )}
 
           <Box
             sx={{
@@ -412,7 +441,12 @@ function TrOperacionRow({ row, onEdit, onDelete, onEnviarSunat, sunatContext }) 
 }
 
 // react-data-table-component pide columnas. Usamos una sola columna que renderiza una tarjeta.
-export const createColumns = ({ onEdit, onDelete, onEnviarSunat, sunatContext }) => [
+export const createColumns = ({
+  onEdit,
+  onDelete,
+  onEnviarSunat,
+  sunatContext,
+}) => [
   {
     name: "",
     grow: 1,

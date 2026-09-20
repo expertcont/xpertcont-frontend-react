@@ -45,6 +45,7 @@ export default function TrEncomiendaModal({
   licenciasDisponibles = [],
   modalNuevoTitulo = "Nueva encomienda",
   modalEditarTitulo = "Editar encomienda",
+  soloLectura = false,
   onClose,
   onSubmit,
   guardando = false,
@@ -123,11 +124,13 @@ export default function TrEncomiendaModal({
       });
       setError("");
       window.setTimeout(() => {
-        remitenteDocRef.current?.focus();
-        remitenteDocRef.current?.select?.();
+        if (!soloLectura) {
+          remitenteDocRef.current?.focus();
+          remitenteDocRef.current?.select?.();
+        }
       }, 80);
     }
-  }, [open, operacion, periodoTrabajo, fechaOperacion, puntoVentaOrigen]);
+  }, [open, operacion, periodoTrabajo, fechaOperacion, puntoVentaOrigen, soloLectura]);
 
   const updateDraft = (name, value) => {
     setDraft((prev) => ({
@@ -169,7 +172,7 @@ export default function TrEncomiendaModal({
   };
 
   const abrirClonePicker = () => {
-    if (esEdicion) {
+    if (esEdicion || soloLectura) {
       return;
     }
 
@@ -307,6 +310,10 @@ export default function TrEncomiendaModal({
   };
 
   const buscarRemitente = async () => {
+    if (soloLectura) {
+      return;
+    }
+
     const documento = String(draft.cliente_documento || "").trim();
 
     if (!documento) {
@@ -327,14 +334,30 @@ export default function TrEncomiendaModal({
       const response = await axios.post(`${back_host}/correntistagenera`, {
         ruc: documento,
       });
-      const { nombre_o_razon_social, r_id_doc, direccion_completa } = response.data || {};
+      const {
+        nombre_o_razon_social,
+        r_id_doc,
+        direccion_completa,
+        direccion,
+        domicilio_fiscal,
+        data,
+      } = response.data || {};
+      const direccionFacturacion = (
+        direccion_completa ||
+        direccion ||
+        domicilio_fiscal ||
+        data?.direccion_completa ||
+        data?.direccion ||
+        data?.domicilio_fiscal ||
+        ""
+      );
 
       setDraft((prev) => ({
         ...prev,
         id_documento: r_id_doc || documentoTipoDesdeNumero(documento),
         r_cod: comprobanteDesdeDocumento(documento).r_cod,
         cliente: nombre_o_razon_social || prev.cliente,
-        cliente_direccion_fact: direccion_completa || "",
+        cliente_direccion_fact: direccionFacturacion,
       }));
       window.setTimeout(() => {
         const nextRef = nombre_o_razon_social ? remitenteTelefonoRef : remitenteNombreRef;
@@ -352,6 +375,10 @@ export default function TrEncomiendaModal({
   };
 
   const buscarDestinatario = async () => {
+    if (soloLectura) {
+      return;
+    }
+
     const documento = String(draft.destinatario_documento || "").trim();
 
     if (!documento) {
@@ -481,7 +508,7 @@ export default function TrEncomiendaModal({
   };
 
   const handleSubmit = async () => {
-    if (guardando) {
+    if (guardando || soloLectura) {
       return;
     }
 
@@ -727,10 +754,10 @@ export default function TrEncomiendaModal({
             </AppIconBox>
             <Box sx={{ minWidth: 0 }}>
               <Typography sx={{ fontWeight: 800, fontSize: "15px", lineHeight: 1.15 }}>
-                {esEdicion ? modalEditarTitulo : modalNuevoTitulo}
+                {soloLectura ? "Visualizar encomienda" : esEdicion ? modalEditarTitulo : modalNuevoTitulo}
               </Typography>
               <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }} noWrap>
-                Registro operativo de envio y recepcion
+                {soloLectura ? "Documento protegido por envio SUNAT/RDI" : "Registro operativo de envio y recepcion"}
               </Typography>
             </Box>
           </Box>
@@ -758,6 +785,7 @@ export default function TrEncomiendaModal({
         setLicenciaPickerOpen={setLicenciaPickerOpen}
         buscandoRemitente={buscandoRemitente}
         buscandoDestinatario={buscandoDestinatario}
+        soloLectura={soloLectura}
         refs={{
           remitenteDocRef,
           remitenteNombreRef,
@@ -808,9 +836,11 @@ export default function TrEncomiendaModal({
               Enviar WhatsApp
             </AppButton>
           )}
-          <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
-            {guardando ? "Guardando..." : textoBotonGuardar}
-          </AppButton>
+          {!soloLectura && (
+            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
+              {guardando ? "Guardando..." : textoBotonGuardar}
+            </AppButton>
+          )}
         </Box>
       <Dialog
         open={whatsappModalOpen}

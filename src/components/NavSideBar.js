@@ -677,6 +677,15 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
+                  icon={<SummarizeIcon />}
+                  label="GREM"
+                  isActive={selectedButton === 'icono11-grem'}
+                  onClick={() => {
+                    navigate(`/ad_transportegrem/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-grem');
+                  }}
+                />
+                <SubMenuItem
                   icon={<AssignmentTurnedInIcon />}
                   label="Encomiendas por Entregar"
                   isActive={selectedButton === 'icono11-8'}

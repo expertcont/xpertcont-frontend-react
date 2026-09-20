@@ -12,7 +12,7 @@ import TrBoletoModal from "../TrBoletoModal";
 import TrEncomiendaModal from "../encomienda/modal/TrEncomiendaModal";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
-import { createColumns, customStyles } from "./components/TrOperacionRow";
+import { createColumns, customStyles, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
@@ -355,6 +355,20 @@ export default function TrModuloBase({
 
     const esEdicion = Boolean(operacionEditando);
 
+    if (esEdicion && tipoOperacionFijo === "E" && operacionProtegidaSunat(operacionEditando)) {
+      guardandoOperacionRef.current = false;
+      setGuardandoOperacion(false);
+      swal2.fire({
+        title: "Encomienda protegida",
+        text: operacionEditando.numero_rdi
+          ? `Esta encomienda ya fue incluida en el RDI ${operacionEditando.numero_rdi}.`
+          : "Esta encomienda ya fue enviada a SUNAT.",
+        icon: "info",
+        confirmButtonText: "ACEPTAR",
+      });
+      return null;
+    }
+
     if (tipoOperacionFijo === "E" && !puntoVentaTrabajo) {
       guardandoOperacionRef.current = false;
       setGuardandoOperacion(false);
@@ -418,6 +432,18 @@ export default function TrModuloBase({
 
   // Elimina una operacion completa identificada por la llave de mve_transventa.
   const handleDelete = async (operacion) => {
+    if (tipoOperacionFijo === "E" && operacionProtegidaSunat(operacion)) {
+      await confirmDialog({
+        title: "Encomienda protegida",
+        message: operacion.numero_rdi
+          ? `Esta encomienda ya fue incluida en el RDI ${operacion.numero_rdi}. No se puede eliminar.`
+          : "Esta encomienda ya fue enviada a SUNAT. No se puede eliminar.",
+        icon: "info",
+        confirmText: "ACEPTAR",
+      });
+      return;
+    }
+
     const result = await confirmDialog({
       title: "Eliminar operacion?",
       message: `${operacion.numero} - ${operacion.clienteLabel}`,
@@ -728,6 +754,7 @@ export default function TrModuloBase({
             licenciasDisponibles={licenciasDisponibles}
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
+            soloLectura={operacionProtegidaSunat(operacionEditando)}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
             guardando={guardandoOperacion}
