@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, Mic, Package, ReceiptText, Search, UserRound, X } from "lucide-react";
+import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, MessageCircle, Mic, Package, ReceiptText, Search, UserRound, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -76,6 +76,309 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
   "'": "&#039;",
 }[char]));
 
+const resolveCssColor = (value, fallback) => {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return fallback;
+  }
+
+  const probe = document.createElement("span");
+  probe.style.color = value;
+  probe.style.display = "none";
+  document.body.appendChild(probe);
+  const color = window.getComputedStyle(probe).color;
+  probe.remove();
+  return color || fallback;
+};
+
+const roundedRect = (ctx, x, y, width, height, radius) => {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+};
+
+const drawWrappedText = (ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) => {
+  const words = String(text || "-").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+
+  words.forEach((word) => {
+    const candidate = current ? `${current} ${word}` : word;
+    if (ctx.measureText(candidate).width <= maxWidth || !current) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  });
+  if (current) {
+    lines.push(current);
+  }
+
+  const visibleLines = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visibleLines.length) {
+    let last = visibleLines[visibleLines.length - 1];
+    while (ctx.measureText(`${last}...`).width > maxWidth && last.length > 1) {
+      last = last.slice(0, -1);
+    }
+    visibleLines[visibleLines.length - 1] = `${last}...`;
+  }
+
+  visibleLines.forEach((line, index) => {
+    ctx.fillText(line, x, y + (index * lineHeight));
+  });
+
+  return y + (visibleLines.length * lineHeight);
+};
+
+const formatFechaHoraEntrega = (value) => {
+  const text = String(value || "").trim();
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]} ${[match[4], match[5], match[6] || "00"].filter(Boolean).join(":")}`.trim();
+  }
+
+  return text || "-";
+};
+
+const nombreDestinoRuta = (item) => {
+  const ruta = String(item.nombre_ruta || "").trim();
+  if (!ruta) {
+    return item.punto_venta_dest_nombre || item.id_punto_venta_dest || "-";
+  }
+
+  const partes = ruta
+    .split(/\s*(?:->|=>|â€”|â€“|-|\/)\s*/)
+    .map((parte) => parte.trim())
+    .filter(Boolean);
+
+  return partes[partes.length - 1] || item.punto_venta_dest_nombre || item.id_punto_venta_dest || "-";
+};
+
+const generarConstanciaEntregaPng = (encomienda) => new Promise((resolve, reject) => {
+  const canvas = document.createElement("canvas");
+  const scale = 1.5;
+  const logicalWidth = 720;
+  const logicalHeight = 940;
+  canvas.width = logicalWidth * scale;
+  canvas.height = logicalHeight * scale;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    reject(new Error("No se pudo preparar la constancia."));
+    return;
+  }
+
+  ctx.scale(scale, scale);
+
+  const colors = {
+    bg: "#eef2f6",
+    paper: "#ffffff",
+    paperSoft: "#f7f9fb",
+    border: "#d6dde5",
+    borderSoft: "#e7ecf1",
+    text: "#17212b",
+    muted: "#657485",
+    accent: resolveCssColor(palette.accent, "#2f83b7"),
+    success: "#167a4a",
+    successSoft: "#e7f6ee",
+  };
+
+  const drawPanel = (x, y, width, height, fill = colors.paper) => {
+    ctx.fillStyle = fill;
+    roundedRect(ctx, x, y, width, height, 18);
+    ctx.fill();
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  };
+  const drawDivider = (y) => {
+    ctx.strokeStyle = colors.borderSoft;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(70, y);
+    ctx.lineTo(650, y);
+    ctx.stroke();
+  };
+  const drawField = (label, value, x, y, width, maxLines = 1) => {
+    ctx.fillStyle = colors.muted;
+    ctx.font = "700 13px Arial";
+    ctx.fillText(label.toUpperCase(), x, y);
+    ctx.fillStyle = colors.text;
+    ctx.font = "700 18px Arial";
+    return drawWrappedText(ctx, value, x, y + 25, width, 25, maxLines);
+  };
+  const drawSubText = (value, x, y, width) => {
+    ctx.fillStyle = colors.muted;
+    ctx.font = "700 14px Arial";
+    return drawWrappedText(ctx, value || "-", x, y, width, 19, 1);
+  };
+  const textColumnX = 116;
+  const drawPackageIcon = (x, y, size = 30) => {
+    ctx.strokeStyle = colors.accent;
+    ctx.lineWidth = 2;
+    roundedRect(ctx, x, y, size, size, 7);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + size * 0.5, y);
+    ctx.lineTo(x + size * 0.5, y + size);
+    ctx.moveTo(x, y + size * 0.34);
+    ctx.lineTo(x + size, y + size * 0.34);
+    ctx.stroke();
+  };
+  const drawPinIcon = (x, y) => {
+    ctx.strokeStyle = colors.accent;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0.8 * Math.PI, 2.2 * Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y - 1, 2.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y + 6);
+    ctx.lineTo(x, y + 15);
+    ctx.lineTo(x + 5, y + 6);
+    ctx.stroke();
+  };
+
+  ctx.fillStyle = colors.bg;
+  ctx.fillRect(0, 0, logicalWidth, logicalHeight);
+  ctx.shadowColor = "rgba(15, 23, 42, 0.18)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 10;
+  drawPanel(34, 30, 652, 870);
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  ctx.save();
+  ctx.translate(360, 765);
+  ctx.rotate(-Math.PI / 12);
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = colors.success;
+  ctx.lineWidth = 5;
+  roundedRect(ctx, -225, -54, 450, 108, 22);
+  ctx.stroke();
+  ctx.fillStyle = colors.success;
+  ctx.font = "900 66px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("ENTREGADO", 0, 22);
+  ctx.restore();
+  ctx.globalAlpha = 1;
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = colors.accent;
+  roundedRect(ctx, 56, 52, 608, 8, 4);
+  ctx.fill();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = colors.text;
+  ctx.font = "900 18px Arial";
+  const empresaBottom = drawWrappedText(ctx, encomienda.empresa_razon_social || "EMPRESA", logicalWidth / 2, 86, 500, 22, 2);
+  ctx.fillStyle = colors.muted;
+  ctx.font = "800 15px Arial";
+  ctx.fillText(`RUC: ${encomienda.empresa_documento_id || "-"}`, logicalWidth / 2, Math.max(126, empresaBottom + 14));
+  ctx.font = "800 15px Arial";
+  ctx.fillText("CONSTANCIA DIGITAL", logicalWidth / 2, 166);
+  ctx.textAlign = "left";
+
+  drawDivider(178);
+
+  ctx.fillStyle = colors.muted;
+  ctx.font = "700 13px Arial";
+  drawPackageIcon(70, 205, 32);
+  ctx.fillText("COMPROBANTE", textColumnX, 210);
+  ctx.fillStyle = colors.text;
+  ctx.font = "900 32px Arial";
+  ctx.fillText(numeroOperacion(encomienda), textColumnX, 251);
+  ctx.fillStyle = colors.paperSoft;
+  roundedRect(ctx, 70, 280, 580, 92, 14);
+  ctx.fill();
+  ctx.strokeStyle = colors.borderSoft;
+  ctx.stroke();
+  drawField("Fecha y hora de entrega", formatFechaHoraEntrega(encomienda.entrega_fecha), textColumnX, 322, 510, 1);
+
+  drawDivider(406);
+
+  let y = 448;
+  y = drawField("Remitente", encomienda.cliente || "-", textColumnX, y, 510, 1) - 1;
+  y = drawSubText(encomienda.cliente_documento || encomienda.cliente_documento_id || "-", textColumnX, y, 510) + 17;
+
+  ctx.fillStyle = colors.paperSoft;
+  roundedRect(ctx, textColumnX - 14, y - 24, 534, 68, 12);
+  ctx.fill();
+  ctx.fillStyle = colors.accent;
+  roundedRect(ctx, textColumnX - 14, y - 24, 5, 68, 3);
+  ctx.fill();
+  y = drawField("Destinatario", encomienda.destinatario || "-", textColumnX, y, 510, 1) - 1;
+  y = drawSubText(encomienda.destinatario_documento || encomienda.destinatario_documento_id || "-", textColumnX, y, 510) + 24;
+
+  drawDivider(y);
+  y += 28;
+
+  drawPinIcon(78, y + 22);
+  drawField("Origen", nombreOrigenRuta(encomienda), textColumnX, y, 200, 1);
+  drawPinIcon(388, y + 22);
+  drawField("Destino", nombreDestinoRuta(encomienda), 426, y, 200, 1);
+  y += 66;
+  drawField("Contenido", encomienda.descripcion || "-", textColumnX, y, 510, 2);
+
+  const registradoTexto = `Registrado por: ${encomienda.entrega_ctrl_us || "-"}`;
+  ctx.fillStyle = colors.muted;
+  ctx.font = "700 13px Arial";
+  const registradoWidth = ctx.measureText(registradoTexto).width;
+  const registradoX = (logicalWidth - registradoWidth) / 2;
+  const iconX = registradoX - 24;
+  const iconY = 872;
+  ctx.strokeStyle = colors.success;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(iconX, iconY - 4, 8, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(iconX - 4, iconY - 4);
+  ctx.lineTo(iconX - 1, iconY);
+  ctx.lineTo(iconX + 5, iconY - 8);
+  ctx.stroke();
+  ctx.fillText(registradoTexto, registradoX, 872);
+
+  canvas.toBlob((blob) => {
+    if (blob) {
+      resolve(blob);
+    } else {
+      reject(new Error("No se pudo generar el PNG de constancia."));
+    }
+  }, "image/png");
+});
+
+const copiarPngAlPortapapeles = async (blob) => {
+  if (!navigator.clipboard?.write || typeof window.ClipboardItem === "undefined") {
+    throw new Error("Este navegador no permite copiar imagenes al portapapeles.");
+  }
+
+  await navigator.clipboard.write([
+    new window.ClipboardItem({ "image/png": blob }),
+  ]);
+};
+
+const normalizarTelefonoWhatsapp = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("51") && digits.length >= 11) return digits;
+  if (digits.length === 9) return `51${digits}`;
+  return digits;
+};
+
 const normalizarCodigoDictado = (value) => {
   const reemplazos = {
     cero: "0",
@@ -130,20 +433,6 @@ const valoresBusqueda = (item) => [
 const crearIndiceBusqueda = (item) => valoresBusqueda(item).map(normalizarTexto).join(" ");
 
 const crearIndiceBusquedaFonica = (item) => valoresBusqueda(item).map(normalizarTextoFonico).join(" ");
-
-const timestampLocal = () => {
-  const date = new Date();
-  const pad = (value) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-") + " " + [
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join(":");
-};
 
 const sumarMesesPeriodo = (periodo, offset) => {
   const match = String(periodo || "").match(/^(\d{4})-(\d{2})$/);
@@ -213,6 +502,7 @@ export default function TrEncomiendaEntregaList() {
   const [tablaBase, setTablaBase] = useState([]);
   const [valorBusqueda, setValorBusqueda] = useState("");
   const [periodosBusqueda, setPeriodosBusqueda] = useState(3);
+  const [mostrarEntregadas, setMostrarEntregadas] = useState(false);
   const [loading, setLoading] = useState(false);
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -314,6 +604,7 @@ export default function TrEncomiendaEntregaList() {
       const query = new URLSearchParams({
         limit: "200",
         periodos: String(periodosBusqueda),
+        estado: mostrarEntregadas ? "entregadas" : "pendientes",
       });
       const response = await fetch(`${back_host}/mve_transventa/encomienda/por-entregar/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${puntoVentaTrabajo}?${query.toString()}`);
       const result = await response.json();
@@ -329,7 +620,7 @@ export default function TrEncomiendaEntregaList() {
     } finally {
       setLoading(false);
     }
-  }, [back_host, contabilidadTrabajo, params.id_anfitrion, periodoTrabajo, puntoVentaTrabajo, periodosBusqueda]);
+  }, [back_host, contabilidadTrabajo, params.id_anfitrion, periodoTrabajo, puntoVentaTrabajo, periodosBusqueda, mostrarEntregadas]);
 
   useEffect(() => {
     const periodoHistorial = sessionStorage.getItem("periodo_trabajo") || params.periodo;
@@ -499,6 +790,177 @@ export default function TrEncomiendaEntregaList() {
     recognition.start();
   };
 
+  const mostrarEntregaRegistrada = async (encomiendaConfirmada) => {
+    let constanciaBlob = null;
+    let previewUrl = "";
+    const whatsappRemitente = encomiendaConfirmada.cliente_telefono || "";
+    const whatsappDestinatario = encomiendaConfirmada.destinatario_telefono || "";
+    const empresa = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo);
+    const razonSocialEmpresa = empresa?.razon_social || contabilidadTrabajo || "Empresa";
+    const encomiendaConstancia = {
+      ...encomiendaConfirmada,
+      empresa_razon_social: razonSocialEmpresa,
+      empresa_documento_id: empresa?.documento_id || contabilidadTrabajo,
+    };
+
+    try {
+      constanciaBlob = await generarConstanciaEntregaPng(encomiendaConstancia);
+      previewUrl = URL.createObjectURL(constanciaBlob);
+    } catch (error) {
+      console.log("No se pudo generar constancia PNG:", error);
+    }
+
+    await swal2.fire({
+      title: "",
+      html: `
+        <style>
+          .constancia-entrega-popup {
+            width: min(460px, calc(100vw - 28px)) !important;
+            padding: 0 !important;
+            border: 1px solid ${palette.border} !important;
+            border-radius: ${palette.radius.modal} !important;
+            overflow: hidden !important;
+          }
+          .constancia-entrega-html {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .constancia-entrega-action {
+            height: 34px;
+            min-width: 0;
+            padding: 0 12px !important;
+            border-radius: ${palette.radius.control} !important;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            box-shadow: none !important;
+          }
+          .constancia-entrega-select {
+            height: 34px;
+            padding: 0 8px;
+            border-radius: ${palette.radius.control};
+            border: 1px solid ${palette.border};
+            background: ${palette.bg};
+            color: ${palette.text};
+            font-size: 12px;
+            outline: none;
+          }
+        </style>
+        <div style="display:grid;gap:10px;text-align:left;font-family:Arial,sans-serif;padding:12px;background:${palette.surface}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="min-width:0">
+              <div style="font-size:14px;font-weight:900;line-height:1.15;color:${palette.text}">Entrega registrada</div>
+              <div style="font-size:11px;font-weight:700;color:${palette.muted};margin-top:2px">${escapeHtml(numeroOperacion(encomiendaConfirmada))}</div>
+            </div>
+            <div style="padding:5px 8px;border-radius:999px;background:${palette.successSoft};color:${palette.success};font-size:10px;font-weight:900;white-space:nowrap">
+              ENTREGADO
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:4px;padding:8px 10px;border:1px solid ${palette.borderSoft};border-radius:${palette.radius.control};background:${palette.bg};color:${palette.text};font-size:11.5px;line-height:1.35">
+            <div><span style="color:${palette.muted};font-weight:800">Fecha:</span> ${escapeHtml(formatFechaHoraEntrega(encomiendaConfirmada.entrega_fecha))}</div>
+            <div><span style="color:${palette.muted};font-weight:800">Usuario:</span> ${escapeHtml(encomiendaConfirmada.entrega_ctrl_us || "-")}</div>
+            <div><span style="color:${palette.muted};font-weight:800">Destinatario:</span> ${escapeHtml(encomiendaConfirmada.destinatario || "-")}</div>
+          </div>
+          ${previewUrl ? `
+            <div style="height:285px;display:flex;align-items:center;justify-content:center;border:1px solid ${palette.borderSoft};border-radius:${palette.radius.control};background:${palette.bg};overflow:hidden">
+              <img
+                src="${previewUrl}"
+                alt="Constancia de entrega"
+                style="max-width:100%;max-height:100%;object-fit:contain"
+              />
+            </div>
+          ` : `
+            <div style="padding:9px;border:1px solid ${palette.warning};border-radius:${palette.radius.control};color:${palette.warning};background:${palette.warningSoft};font-size:11.5px;font-weight:700">
+              Entrega registrada. No se pudo preparar el PNG en este navegador.
+            </div>
+          `}
+          <div style="display:grid;grid-template-columns:132px minmax(0,1fr);gap:8px;align-items:end">
+            <div style="display:grid;gap:4px;min-width:0">
+              <label for="whatsapp-tipo-entrega" style="font-size:10px;font-weight:900;letter-spacing:.45px;text-transform:uppercase;color:${palette.muted}">
+                Enviar a
+              </label>
+              <select id="whatsapp-tipo-entrega" class="constancia-entrega-select">
+                <option value="remitente">Remitente</option>
+                <option value="destinatario">Destinatario</option>
+              </select>
+            </div>
+            <div style="display:grid;gap:4px;min-width:0">
+              <label for="whatsapp-numero-entrega" style="font-size:10px;font-weight:900;letter-spacing:.45px;text-transform:uppercase;color:${palette.muted}">
+                WhatsApp
+              </label>
+              <input
+                id="whatsapp-numero-entrega"
+                value="${escapeHtml(whatsappRemitente)}"
+                data-remitente="${escapeHtml(whatsappRemitente)}"
+                data-destinatario="${escapeHtml(whatsappDestinatario)}"
+                placeholder="Celular"
+                inputmode="numeric"
+                style="height:34px;padding:0 9px;border-radius:${palette.radius.control};border:1px solid ${palette.border};background:${palette.bg};color:${palette.text};font-size:12px;outline:none;min-width:0"
+              />
+            </div>
+          </div>
+          <div style="color:${palette.muted};font-size:10.8px;line-height:1.35">
+            Se copiara el PNG y se abrira WhatsApp. En el chat, pega la constancia con Ctrl + V.
+          </div>
+          <div style="display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;padding-top:2px">
+            ${constanciaBlob ? `<button id="enviar-whatsapp-constancia-entrega" type="button" class="constancia-entrega-action" style="border:1px solid ${palette.accent};background:${palette.accent};color:${palette.onAccent};margin:0">Enviar WhatsApp</button>` : ""}
+            <button id="cerrar-constancia-entrega" type="button" class="constancia-entrega-action" style="border:1px solid ${palette.border};background:${palette.surfaceAlt};color:${palette.text};margin:0">Cerrar</button>
+          </div>
+        </div>
+      `,
+      showConfirmButton: false,
+      showCancelButton: false,
+      allowOutsideClick: true,
+      color: palette.text,
+      background: palette.surface,
+      customClass: {
+        popup: "constancia-entrega-popup",
+        htmlContainer: "constancia-entrega-html",
+      },
+      didOpen: () => {
+        const whatsappButton = document.getElementById("enviar-whatsapp-constancia-entrega");
+        const tipoSelect = document.getElementById("whatsapp-tipo-entrega");
+        const numeroInput = document.getElementById("whatsapp-numero-entrega");
+        const closeButton = document.getElementById("cerrar-constancia-entrega");
+
+        const mensaje = [
+          razonSocialEmpresa,
+          "Constancia de entrega",
+          numeroTicketAdmin(encomiendaConfirmada) || numeroOperacion(encomiendaConfirmada),
+        ].join("\n");
+        tipoSelect?.addEventListener("change", () => {
+          const key = tipoSelect.value === "destinatario" ? "destinatario" : "remitente";
+          numeroInput.value = numeroInput.dataset[key] || "";
+        });
+
+        whatsappButton?.addEventListener("click", async () => {
+          try {
+            const telefono = normalizarTelefonoWhatsapp(numeroInput?.value);
+
+            if (!telefono) {
+              numeroInput?.focus();
+              swal2.showValidationMessage("Indica el celular para abrir WhatsApp.");
+              return;
+            }
+
+            await copiarPngAlPortapapeles(constanciaBlob);
+            window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank", "noopener,noreferrer");
+          } catch (error) {
+            swal2.showValidationMessage(error.message || "No se pudo preparar WhatsApp.");
+          }
+        });
+
+        closeButton?.addEventListener("click", () => {
+          swal2.close();
+        });
+      },
+      willClose: () => {
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+      },
+    });
+  };
+
   const marcarEntregado = async (item) => {
     const operacion = numeroOperacion(item);
     const destinatario = item.destinatario || "Sin destinatario";
@@ -581,7 +1043,6 @@ export default function TrEncomiendaEntregaList() {
           r_serie: item.r_serie,
           r_numero: item.r_numero,
           elemento: item.elemento || 1,
-          entrega_fecha: timestampLocal(),
           entrega_ctrl_us: params.id_invitado,
         }),
       });
@@ -591,6 +1052,13 @@ export default function TrEncomiendaEntregaList() {
         throw new Error(dataResponse.message || "No se pudo registrar la entrega.");
       }
 
+      const encomiendaConfirmada = {
+        ...item,
+        ...(dataResponse.data || {}),
+        nombre_ruta: dataResponse.data?.nombre_ruta || item.nombre_ruta,
+        periodo_origen: dataResponse.data?.periodo_origen || item.periodo_origen,
+      };
+
       setTablaBase((prev) => prev.filter((row) => !(
         row.r_cod === item.r_cod &&
         row.r_serie === item.r_serie &&
@@ -598,6 +1066,7 @@ export default function TrEncomiendaEntregaList() {
         Number(row.elemento || 1) === Number(item.elemento || 1)
       )));
       setUpdateTrigger(Date.now());
+      await mostrarEntregaRegistrada(encomiendaConfirmada);
     } catch (error) {
       swal2.fire({
         title: "No se pudo registrar",
@@ -619,7 +1088,7 @@ export default function TrEncomiendaEntregaList() {
               Encomiendas por Entregar
             </Typography>
             <Typography sx={{ color: palette.muted, fontSize: "13px", mt: 0.35 }}>
-              {registros.length} pendientes en destino
+              {registros.length} {mostrarEntregadas ? "entregadas recientes" : "pendientes en destino"}
             </Typography>
           </Box>
           <Box sx={{
@@ -664,7 +1133,7 @@ export default function TrEncomiendaEntregaList() {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "280px minmax(260px, 1fr) 240px" }, gap: 1.25, mb: 2, p: 1.2, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard, alignItems: "end" }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "240px minmax(220px, 1fr) minmax(190px, 220px) 160px" }, gap: 1, mb: 2, p: 1.2, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard, alignItems: "end" }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
               Periodo busqueda
@@ -696,6 +1165,37 @@ export default function TrEncomiendaEntregaList() {
             options={puntosVentaAsignados.map((item) => ({ value: item.id_punto_venta, label: `${item.id_punto_venta} - ${item.nombre}` }))}
             onChange={handlePuntoVentaSelect}
           />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
+              Estado
+            </Typography>
+            <Box sx={{ height: 40, p: 0.25, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.25, borderRadius: palette.radius.control, border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.overlaySoft, minWidth: 0 }}>
+              {[
+                { value: false, label: "Pendientes" },
+                { value: true, label: "Entregadas" },
+              ].map((option) => (
+                <Box
+                  key={option.label}
+                  onClick={() => setMostrarEntregadas(option.value)}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: palette.radius.control,
+                    color: mostrarEntregadas === option.value ? palette.text : palette.muted,
+                    backgroundColor: mostrarEntregadas === option.value ? palette.chip : "transparent",
+                    border: mostrarEntregadas === option.value ? `1px solid ${palette.border}` : "1px solid transparent",
+                    fontSize: "10.5px",
+                    fontWeight: 900,
+                    cursor: "pointer",
+                    transition: "all .15s ease",
+                  }}
+                >
+                  {option.label}
+                </Box>
+              ))}
+            </Box>
+          </Box>
         </Box>
 
         <Box sx={{ display: "grid", gap: 1 }}>
@@ -708,7 +1208,7 @@ export default function TrEncomiendaEntregaList() {
           {!loading && registros.length === 0 && (
             <Box sx={{ p: 3, color: palette.muted, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard, display: "flex", gap: 1, alignItems: "center" }}>
               <Search size={16} />
-              Sin encomiendas pendientes para este destino.
+              {mostrarEntregadas ? "Sin encomiendas entregadas recientes para este destino." : "Sin encomiendas pendientes para este destino."}
             </Box>
           )}
 
@@ -725,9 +1225,15 @@ export default function TrEncomiendaEntregaList() {
                   {item.placa && <AppChip>{item.placa}</AppChip>}
                   <AppChip>{item.condicion_pago || "PAGADO"}</AppChip>
                 </Box>
-                <AppButton icon={<BadgeCheck size={16} />} onClick={() => marcarEntregado(item)} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
-                  Entregar
-                </AppButton>
+                {mostrarEntregadas ? (
+                  <AppButton icon={<MessageCircle size={16} />} onClick={() => mostrarEntregaRegistrada(item)} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
+                    Enviar WhatsApp
+                  </AppButton>
+                ) : (
+                  <AppButton icon={<BadgeCheck size={16} />} onClick={() => marcarEntregado(item)} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
+                    Entregar
+                  </AppButton>
+                )}
               </Box>
 
               <Box sx={{ mt: 1, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr auto" }, gap: 1.1, alignItems: "center" }}>
