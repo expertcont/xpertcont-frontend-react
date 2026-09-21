@@ -15,6 +15,7 @@ export default function useTrOperaciones({
   diaSel,
   puntoVentaTrabajo,
   tipoOperacionFijo,
+  mostrarAnuladas = false,
 }) {
   const [registros, setRegistros] = useState([]);
   const [tablaBase, setTablaBase] = useState([]);
@@ -53,10 +54,11 @@ export default function useTrOperaciones({
 
     setLoading(true);
     try {
+      const estadoQuery = mostrarAnuladas ? "?estado=anuladas" : "";
       const url = puntoVentaTrabajo
         ? `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}/${puntoVentaTrabajo}`
         : `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}`;
-      const response = await fetch(url);
+      const response = await fetch(`${url}${estadoQuery}`);
       const result = await response.json();
       const rows = (Array.isArray(result?.data) ? result.data : [])
         .filter((item) => item.tipo_operacion === tipoOperacionFijo);
@@ -74,7 +76,7 @@ export default function useTrOperaciones({
     } finally {
       setLoading(false);
     }
-  }, [back_host, contabilidadTrabajo, diaSel, filtrarPorPuntoVenta, params.id_anfitrion, periodoTrabajo, puntoVentaTrabajo, tipoOperacionFijo]);
+  }, [back_host, contabilidadTrabajo, diaSel, filtrarPorPuntoVenta, mostrarAnuladas, params.id_anfitrion, periodoTrabajo, puntoVentaTrabajo, tipoOperacionFijo]);
 
   const aplicarBusquedaLocal = useCallback(() => {
     setRegistros(filtrarPorTexto(tablaBase, valorBusqueda));

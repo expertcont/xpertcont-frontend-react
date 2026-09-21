@@ -43,6 +43,17 @@ const fechaHoyLima = () => {
   //new version
 };
 
+const resolverUsuarioTrabajo = ({ rows, usuarioActual, permiteTodos }) => {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+  const usuarioValido = rows.some((item) => item.id_usuario === usuarioActual);
+
+  if (permiteTodos) {
+    return usuarioValido ? usuarioActual : "";
+  }
+
+  return usuarioValido ? usuarioActual : rows[0]?.id_usuario || "";
+};
+
 const money = (value) => Number(value || 0).toLocaleString("es-PE", {
   style: "currency",
   currency: "PEN",
@@ -243,6 +254,7 @@ function IngresosModal({ open, ingresos, loading, onClose }) {
               const tipoTexto = anulado ? "Anulado" : tipoLabel(row);
               const estadoColor = anulado || noAplica ? palette.danger : contabiliza ? palette.success : palette.warning || palette.accent;
               const estadoBg = anulado || noAplica ? palette.dangerSoft : contabiliza ? palette.successSoft : palette.warningSoft || palette.accentSoft;
+              const operador = row.id_operador_caja || "-";
               return (
             <Box
               key={`${row.tipo_ingreso}-${row.r_cod}-${row.r_serie}-${row.r_numero}-${row.elemento}`}
@@ -264,6 +276,9 @@ function IngresosModal({ open, ingresos, loading, onClose }) {
                   </Typography>
                   <Typography sx={{ color: palette.muted, fontSize: "10.5px", mt: 0.2 }} noWrap>
                     Grabacion: {String(row.fecha_caja || "").slice(0, 16).replace("T", " ")}
+                  </Typography>
+                  <Typography sx={{ color: palette.accent, fontSize: "10.5px", mt: 0.2, fontWeight: 800 }} noWrap>
+                    Usuario: {operador}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "grid", justifyItems: "end", gap: 0.35 }}>
@@ -437,6 +452,8 @@ export default function TrCajaMovimientoList() {
   const [formasPago, setFormasPago] = useState([]);
   const [motivoFiltro, setMotivoFiltro] = useState("");
   const [formaPagoFiltro, setFormaPagoFiltro] = useState("");
+  const [usuariosTrabajo, setUsuariosTrabajo] = useState([]);
+  const [usuarioTrabajo, setUsuarioTrabajo] = useState("");
   const [resumen, setResumen] = useState({ total_ingresos: 0, total_salidas: 0, neto: 0 });
   const [modalOpen, setModalOpen] = useState(false);
   const [ingresosModalOpen, setIngresosModalOpen] = useState(false);
@@ -464,6 +481,11 @@ export default function TrCajaMovimientoList() {
     puntoVentaTrabajo,
     setPuntoVentaTrabajo,
   });
+
+  const superUsuario = sessionStorage.getItem("super") || "0";
+  const accesoTotalCaja = params.id_anfitrion === params.id_invitado || superUsuario === "1";
+  const usuarioTieneVariasAgencias = puntosVentaAsignados.length > 1;
+  const usuarioPuedeVerTodosCorreos = accesoTotalCaja && usuarioTieneVariasAgencias;
 
   const fechaFiltro = useMemo(() => (
     diaSel && diaSel !== "*" && periodoTrabajo ? `${periodoTrabajo}-${String(diaSel).padStart(2, "0")}` : ""
@@ -501,11 +523,47 @@ export default function TrCajaMovimientoList() {
     }
   }, [back_host]);
 
+  const cargarUsuariosTrabajo = useCallback(async () => {
+    if (!periodoTrabajo || !contabilidadTrabajo || !params.id_anfitrion || !params.id_invitado || !accesoTotalCaja) {
+      setUsuariosTrabajo([]);
+      setUsuarioTrabajo("");
+      return;
+    }
+
+    try {
+      const query = new URLSearchParams();
+      query.set("id_invitado", params.id_invitado || "");
+      query.set("super_usuario", superUsuario);
+      if (puntoVentaTrabajo) query.set("id_punto_venta", puntoVentaTrabajo);
+      if (fechaFiltro) query.set("fecha", fechaFiltro);
+
+      const response = await fetch(`${back_host}/mve_transventa/dashboard/usuarios/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?${query.toString()}`);
+      const result = await response.json();
+      const rows = Array.isArray(result?.data) ? result.data : [];
+      const sessionKey = `usuario_caja_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
+      const usuarioGuardado = sessionStorage.getItem(sessionKey) || "";
+      const usuarioFinal = resolverUsuarioTrabajo({
+        rows,
+        usuarioActual: usuarioGuardado,
+        permiteTodos: usuarioPuedeVerTodosCorreos,
+      });
+
+      setUsuariosTrabajo(rows);
+      setUsuarioTrabajo(usuarioFinal);
+    } catch (error) {
+      console.log("Error cargando usuarios de caja:", error);
+      setUsuariosTrabajo([]);
+      setUsuarioTrabajo("");
+    }
+  }, [accesoTotalCaja, back_host, contabilidadTrabajo, fechaFiltro, params.id_anfitrion, params.id_invitado, periodoTrabajo, puntoVentaTrabajo, superUsuario, usuarioPuedeVerTodosCorreos]);
+
   const armarQuery = useCallback(() => {
     const query = new URLSearchParams();
     query.set("tipo_movimiento", "S");
     query.set("id_invitado", params.id_invitado);
+    query.set("super_usuario", superUsuario);
     if (puntoVentaTrabajo) query.set("id_punto_venta", puntoVentaTrabajo);
+    if (usuarioTrabajo) query.set("id_usuario_trabajo", usuarioTrabajo);
     if (fechaFiltro) {
       query.set("fecha_desde", fechaFiltro);
       query.set("fecha_hasta", fechaFiltro);
@@ -513,7 +571,7 @@ export default function TrCajaMovimientoList() {
     if (motivoFiltro) query.set("id_motivo", motivoFiltro);
     if (formaPagoFiltro) query.set("id_forma_pago", formaPagoFiltro);
     return query.toString();
-  }, [fechaFiltro, formaPagoFiltro, motivoFiltro, params.id_invitado, puntoVentaTrabajo]);
+  }, [fechaFiltro, formaPagoFiltro, motivoFiltro, params.id_invitado, puntoVentaTrabajo, superUsuario, usuarioTrabajo]);
 
   const cargarCaja = useCallback(async () => {
     if (!periodoTrabajo || !contabilidadTrabajo) {
@@ -639,6 +697,10 @@ export default function TrCajaMovimientoList() {
   }, [cargarFormasPago]);
 
   useEffect(() => {
+    cargarUsuariosTrabajo();
+  }, [cargarUsuariosTrabajo]);
+
+  useEffect(() => {
     cargarCaja();
   }, [cargarCaja]);
 
@@ -652,6 +714,7 @@ export default function TrCajaMovimientoList() {
       item.forma_pago_nombre,
       item.nro_operacion,
       item.punto_venta_nombre,
+      item.id_invitado,
     ].some((value) => String(value || "").toLowerCase().includes(term)));
   }, [movimientos, valorBusqueda]);
 
@@ -659,6 +722,7 @@ export default function TrCajaMovimientoList() {
     setPeriodoTrabajo(periodo);
     sessionStorage.setItem("periodo_trabajo", periodo);
     setDiaSel("*");
+    setUsuarioTrabajo("");
   };
 
   const handleContabilidadSelect = (documentoId) => {
@@ -667,8 +731,24 @@ export default function TrCajaMovimientoList() {
     setPuntosVentaAsignados([]);
     setPuntoVentaTrabajo("");
     setMotivoFiltro("");
+    setUsuarioTrabajo("");
     sessionStorage.setItem("contabilidad_trabajo", documentoId);
     navigate(`/ad_transportecaja/${params.id_anfitrion}/${params.id_invitado}/${periodoTrabajo}/${documentoId}`);
+  };
+
+  const handlePuntoVentaSelect = (puntoVenta) => {
+    setPuntoVentaTrabajo(puntoVenta);
+    setUsuarioTrabajo("");
+  };
+
+  const handleUsuarioSelect = (usuario) => {
+    const sessionKey = `usuario_caja_${params.id_anfitrion}_${contabilidadTrabajo}_${params.id_invitado}`;
+    setUsuarioTrabajo(usuario);
+    if (usuario) {
+      sessionStorage.setItem(sessionKey, usuario);
+    } else {
+      sessionStorage.removeItem(sessionKey);
+    }
   };
 
   const abrirNuevo = () => {
@@ -785,6 +865,7 @@ export default function TrCajaMovimientoList() {
     }
   };
 
+  const mostrarUsuarioEnSalidas = usuarioPuedeVerTodosCorreos && !usuarioTrabajo;
   const columns = [
     {
       name: "Fecha",
@@ -803,21 +884,12 @@ export default function TrCajaMovimientoList() {
       selector: (row) => row.descripcion || "-",
       grow: 1.5,
     },
-    {
-      name: "Beneficiario",
-      selector: (row) => row.beneficiario || "-",
-      grow: 1,
-    },
-    {
-      name: "Forma pago",
-      selector: (row) => row.forma_pago_nombre || row.id_forma_pago,
-      grow: 0.9,
-    },
-    {
-      name: "Operacion",
-      selector: (row) => row.nro_operacion || "-",
-      grow: 0.8,
-    },
+    ...(mostrarUsuarioEnSalidas ? [{
+      name: "Usuario",
+      selector: (row) => row.id_invitado || "-",
+      sortable: true,
+      grow: 1.1,
+    }] : []),
     {
       name: "Importe",
       selector: (row) => money(row.importe),
@@ -876,7 +948,15 @@ export default function TrCajaMovimientoList() {
         />
 
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(160px, 220px))" }, justifyContent: { md: "start" }, gap: 1, mb: 1.5 }}>
-          <ResumenCard label="INGRESOS" value={money(resumen.total_ingresos)} tone="success" onClick={abrirDetalleIngresos} />
+          <ResumenCard
+            label="INGRESOS"
+            value={money(resumen.total_ingresos)}
+            tone="success"
+            onClick={abrirDetalleIngresos}
+            hideActionIcon
+            watermark="VER DETALLES"
+            watermarkIcon={<Search size={46} />}
+          />
           <ResumenCard label="SALIDAS" value={money(resumen.total_salidas)} tone="danger" />
           <ResumenCard
             label="NETO"
@@ -898,7 +978,26 @@ export default function TrCajaMovimientoList() {
           puntoVentaTrabajo={puntoVentaTrabajo}
           onPeriodoSelect={handlePeriodoSelect}
           onContabilidadSelect={handleContabilidadSelect}
-          onPuntoVentaSelect={setPuntoVentaTrabajo}
+          onPuntoVentaSelect={handlePuntoVentaSelect}
+          filtroDerechaPuntoVenta={usuarioPuedeVerTodosCorreos && usuariosTrabajo.length > 0 ? (
+            <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
+              <TrHeaderMenuPicker
+                label="Usuario"
+                value={usuarioTrabajo}
+                displayValue={
+                  usuarioTrabajo
+                    ? usuariosTrabajo.find((item) => item.id_usuario === usuarioTrabajo)?.nombre || usuarioTrabajo
+                    : "Todos"
+                }
+                minWidth="100%"
+                options={[
+                  { value: "", label: "Todos" },
+                  ...usuariosTrabajo.map((item) => ({ value: item.id_usuario, label: item.nombre || item.id_usuario })),
+                ]}
+                onSelect={handleUsuarioSelect}
+              />
+            </Box>
+          ) : null}
         />
 
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(220px, 260px) minmax(220px, 260px)" }, gap: 1, mb: 1.25 }}>
@@ -920,7 +1019,13 @@ export default function TrCajaMovimientoList() {
           />
         </Box>
 
-        <DaySelector period={periodoTrabajo || params.periodo} onDaySelect={(day) => setDiaSel(day === "*" ? "*" : String(day).padStart(2, "0"))} />
+        <DaySelector
+          period={periodoTrabajo || params.periodo}
+          onDaySelect={(day) => {
+            setDiaSel(day === "*" ? "*" : String(day).padStart(2, "0"));
+            setUsuarioTrabajo("");
+          }}
+        />
 
         <DataTable
           theme="transportesDark"

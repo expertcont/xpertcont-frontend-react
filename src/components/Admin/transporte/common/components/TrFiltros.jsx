@@ -15,15 +15,19 @@ export default function TrFiltros({
   onPeriodoSelect,
   onContabilidadSelect,
   onPuntoVentaSelect,
+  filtroDerechaPuntoVenta = null,
 }) {
+  const mostrarPuntoVenta = puntosVentaAsignados.length > 0;
+  const mostrarFiltroDerecha = Boolean(filtroDerechaPuntoVenta);
+
   return (
     <Box
       sx={{
         display: "grid",
         gridTemplateColumns: {
           xs: "minmax(0, 1fr)",
-          md: puntosVentaAsignados.length > 0
-            ? "180px minmax(280px, 420px) 260px"
+          md: mostrarPuntoVenta
+            ? `180px minmax(280px, 420px) 260px${mostrarFiltroDerecha ? " 260px" : ""}`
             : "180px minmax(280px, 460px)",
         },
         gap: { xs: 0.5, md: 2 },
@@ -70,7 +74,7 @@ export default function TrFiltros({
         />
       </Box>
 
-      {puntosVentaAsignados.length > 0 && (
+      {mostrarPuntoVenta && (
         <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
           <TrHeaderMenuPicker
             label="Punto venta"
@@ -85,6 +89,8 @@ export default function TrFiltros({
           />
         </Box>
       )}
+
+      {mostrarPuntoVenta && filtroDerechaPuntoVenta}
     </Box>
   );
 }

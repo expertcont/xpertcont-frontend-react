@@ -2,7 +2,7 @@ import React from "react";
 
 import TrModuloBase from "../common/TrModuloBase";
 
-export default function TrEncomiendaList() {
+export default function TrEncomiendaList(props) {
   /*
     Formulario: TrEncomiendaList
 
@@ -24,6 +24,7 @@ export default function TrEncomiendaList() {
       sinDatosTexto="Sin encomiendas para el filtro actual"
       footerTexto=""
       basePath="/ad_transportesencomienda"
+      superUsuario={props.super}
     />
   );
 }

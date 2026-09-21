@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { Plus } from "lucide-react";
+import { Ban, CheckCircle2, Plus } from "lucide-react";
 
 import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
@@ -15,6 +15,8 @@ export default function TrHeader({
   buscarTexto,
   valorBusqueda,
   nuevoDeshabilitado,
+  mostrarAnuladas,
+  onToggleAnuladas,
   onNuevo,
   onBuscar,
 }) {
@@ -53,6 +55,26 @@ export default function TrHeader({
           value={valorBusqueda}
           onChange={onBuscar}
         />
+
+        {onToggleAnuladas && (
+          <AppButton
+            icon={mostrarAnuladas ? <CheckCircle2 size={18} /> : <Ban size={18} />}
+            onClick={onToggleAnuladas}
+            sx={{
+              backgroundColor: mostrarAnuladas ? "rgba(245,158,11,0.18)" : palette.surface,
+              borderColor: mostrarAnuladas ? "rgba(245,158,11,0.45)" : palette.border,
+              color: mostrarAnuladas ? "#fbbf24" : palette.text,
+              fontWeight: 800,
+              "&:hover": {
+                backgroundColor: mostrarAnuladas ? "rgba(245,158,11,0.24)" : palette.chip,
+                borderColor: mostrarAnuladas ? "rgba(245,158,11,0.55)" : palette.border,
+                color: mostrarAnuladas ? "#fbbf24" : palette.text,
+              },
+            }}
+          >
+            {mostrarAnuladas ? "Ver activas" : "Anuladas"}
+          </AppButton>
+        )}
 
         <AppButton
           icon={<Plus size={18} />}

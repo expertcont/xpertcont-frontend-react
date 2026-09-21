@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock3,
   Eye,
+  Ban,
   MapPin,
   Package,
   Pencil,
@@ -262,8 +263,17 @@ const nombreDestinoRuta = (item) => {
     .trim() || "-";
 };
 
-function TrOperacionRow({ row, onEdit, onDelete, onEnviarSunat, sunatContext }) {
+function TrOperacionRow({
+  row,
+  onEdit,
+  onDelete,
+  onCancel,
+  onEnviarSunat,
+  sunatContext,
+  canDelete = false,
+}) {
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
+  const anulada = Number(row.registrado) === 0;
 
   return (
     <Box sx={{ width: "100%", py: 2 }}>
@@ -314,19 +324,27 @@ function TrOperacionRow({ row, onEdit, onDelete, onEnviarSunat, sunatContext }) 
             mt: { xs: 0.75, sm: 0 },
           }}
         >
-          {row.tipo_operacion === "E" && (
+          {row.tipo_operacion === "E" && !anulada && (
             <>
               <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
             </>
           )}
 
-          <Tooltip title={protegidaSunat ? "Ver encomienda protegida" : "Editar operacion"} arrow>
-            <Box onClick={() => onEdit(row)} sx={protegidaSunat ? protectedActionButtonSx : actionButtonSx(false)}>
-              {protegidaSunat ? <Eye size={14} /> : <Pencil size={14} />}
+          <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
+            <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
+              {protegidaSunat || anulada ? <Eye size={14} /> : <Pencil size={14} />}
             </Box>
           </Tooltip>
 
-          {!protegidaSunat && (
+          {!protegidaSunat && !anulada && (
+            <Tooltip title="Anular operacion" arrow>
+              <Box onClick={() => onCancel(row)} sx={actionButtonSx(true)}>
+                <Ban size={14} />
+              </Box>
+            </Tooltip>
+          )}
+
+          {!protegidaSunat && !anulada && canDelete && (
             <Tooltip title="Eliminar operacion" arrow>
               <Box onClick={() => onDelete(row)} sx={actionButtonSx(true)}>
                 <Trash2 size={14} />
@@ -444,8 +462,10 @@ function TrOperacionRow({ row, onEdit, onDelete, onEnviarSunat, sunatContext }) 
 export const createColumns = ({
   onEdit,
   onDelete,
+  onCancel,
   onEnviarSunat,
   sunatContext,
+  canDelete,
 }) => [
   {
     name: "",
@@ -455,8 +475,10 @@ export const createColumns = ({
         row={row}
         onEdit={onEdit}
         onDelete={onDelete}
+        onCancel={onCancel}
         onEnviarSunat={onEnviarSunat}
         sunatContext={sunatContext}
+        canDelete={canDelete}
       />
     ),
   },

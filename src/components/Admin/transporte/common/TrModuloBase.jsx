@@ -83,6 +83,7 @@ export default function TrModuloBase({
   sinDatosTexto = "Sin encomiendas para el filtro actual",
   footerTexto = "Encomiendas de transporte registradas en mve_transventa.",
   basePath = "/ad_transportesencomienda",
+  superUsuario = "0",
 }) {
   /*
     Componente base del modulo.
@@ -111,6 +112,7 @@ export default function TrModuloBase({
   const [contabilidadTrabajo, setContabilidadTrabajo] = useState("");
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
   const [colaResumenEncomiendas, setColaResumenEncomiendas] = useState([]);
+  const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
 
   // updateTrigger fuerza recarga luego de guardar, eliminar o enviar a SUNAT.
   const [updateTrigger, setUpdateTrigger] = useState(0);
@@ -166,6 +168,7 @@ export default function TrModuloBase({
     diaSel,
     puntoVentaTrabajo,
     tipoOperacionFijo,
+    mostrarAnuladas,
   });
 
   // Fecha enviada al modal. Si el filtro esta en "todos", usa hoy cuando pertenece al periodo.
@@ -202,6 +205,8 @@ export default function TrModuloBase({
   ), [colaResumenEncomiendas, estadosRdiAbiertos]);
   const totalPendienteResumenEncomiendas = encomiendasPendientesResumen + resumenesEncomiendaAbiertos.length;
   const resumenEncomiendasDiaOk = tipoOperacionFijo === "E" && Boolean(diaSel && diaSel !== "*") && totalPendienteResumenEncomiendas === 0;
+  const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
+  const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
 
   const cargarColaResumenEncomiendas = useCallback(async () => {
     if (tipoOperacionFijo !== "E" || !periodoTrabajo || !contabilidadTrabajo || !diaSel || diaSel === "*") {
@@ -283,6 +288,10 @@ export default function TrModuloBase({
   const handleDayFilter = (selectedDay) => {
     const dia = selectedDay === "*" ? "*" : selectedDay.toString().padStart(2, "0");
     setDiaSel(dia);
+  };
+
+  const handleToggleAnuladas = () => {
+    setMostrarAnuladas((prev) => !prev);
   };
 
   const handlePeriodoSelect = (periodo) => {
@@ -470,6 +479,54 @@ export default function TrModuloBase({
     } catch (error) {
       swal2.fire({
         title: "No se pudo eliminar",
+        text: error.message || "Error interno.",
+        icon: "error",
+        confirmButtonText: "ACEPTAR",
+      });
+    }
+  };
+
+  const handleCancel = async (operacion) => {
+    if (tipoOperacionFijo === "E" && operacionProtegidaSunat(operacion)) {
+      await confirmDialog({
+        title: "Encomienda protegida",
+        message: operacion.numero_rdi
+          ? `Esta encomienda ya fue incluida en el RDI ${operacion.numero_rdi}. No se puede anular.`
+          : "Esta encomienda ya fue enviada a SUNAT. No se puede anular.",
+        icon: "info",
+        confirmText: "ACEPTAR",
+      });
+      return;
+    }
+
+    const result = await confirmDialog({
+      title: "Anular operacion?",
+      message: `${operacion.numero} - ${operacion.clienteLabel}`,
+      icon: "warning",
+      confirmText: "ANULAR",
+      cancelText: "Cancelar",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${operacion.r_cod}/${operacion.r_serie}/${operacion.r_numero}/${operacion.elemento || 1}/anular`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ctrl_mod_us: params.id_invitado }),
+      });
+      const dataResponse = await response.json();
+
+      if (!response.ok || !dataResponse.success) {
+        throw new Error(dataResponse.message || "No se pudo anular la operacion.");
+      }
+
+      quitarOperacionLocal(operacion);
+    } catch (error) {
+      swal2.fire({
+        title: "No se pudo anular",
         text: error.message || "Error interno.",
         icon: "error",
         confirmButtonText: "ACEPTAR",
@@ -667,6 +724,8 @@ export default function TrModuloBase({
           buscarTexto={buscarTexto}
           valorBusqueda={valorBusqueda}
           nuevoDeshabilitado={tipoOperacionFijo === "E" && !puntoVentaTrabajo}
+          mostrarAnuladas={mostrarAnuladas}
+          onToggleAnuladas={tipoOperacionFijo === "E" ? handleToggleAnuladas : undefined}
           onNuevo={() => solicitarOperacion()}
           onBuscar={actualizaValorFiltro}
         />
@@ -708,7 +767,9 @@ export default function TrModuloBase({
           columns={createColumns({
             onEdit: solicitarOperacion,
             onDelete: handleDelete,
+            onCancel: handleCancel,
             onEnviarSunat: handleEnviarSunat,
+            canDelete: puedeEliminarOperacion,
             sunatContext: {
               backHost: back_host,
               documentoId: contabilidadTrabajo,
@@ -754,7 +815,7 @@ export default function TrModuloBase({
             licenciasDisponibles={licenciasDisponibles}
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
-            soloLectura={operacionProtegidaSunat(operacionEditando)}
+            soloLectura={operacionProtegidaSunat(operacionEditando) || Number(operacionEditando?.registrado) === 0}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
             guardando={guardandoOperacion}
