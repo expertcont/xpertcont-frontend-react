@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
 import { BadgeCheck, Calendar, CalendarPlus, Camera, MapPin, MessageCircle, Mic, Package, ReceiptText, Search, UserRound, X } from "lucide-react";
+import { PDFDocument } from "pdf-lib";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -369,6 +370,27 @@ const copiarPngAlPortapapeles = async (blob) => {
   await navigator.clipboard.write([
     new window.ClipboardItem({ "image/png": blob }),
   ]);
+};
+
+const generarConstanciaEntregaPdfUrl = async (pngBlob) => {
+  const pdfDoc = await PDFDocument.create();
+  const pngBytes = await pngBlob.arrayBuffer();
+  const pngImage = await pdfDoc.embedPng(pngBytes);
+  const mmToPt = (mm) => (mm * 72) / 25.4;
+  const pageWidth = mmToPt(80);
+  const pageHeight = pageWidth * (pngImage.height / pngImage.width);
+  const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+  page.drawImage(pngImage, {
+    x: 0,
+    y: 0,
+    width: pageWidth,
+    height: pageHeight,
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+  return URL.createObjectURL(pdfBlob);
 };
 
 const normalizarTelefonoWhatsapp = (value) => {
@@ -793,6 +815,7 @@ export default function TrEncomiendaEntregaList() {
   const mostrarEntregaRegistrada = async (encomiendaConfirmada) => {
     let constanciaBlob = null;
     let previewUrl = "";
+    let pdfUrl = "";
     const whatsappRemitente = encomiendaConfirmada.cliente_telefono || "";
     const whatsappDestinatario = encomiendaConfirmada.destinatario_telefono || "";
     const empresa = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo);
@@ -806,8 +829,9 @@ export default function TrEncomiendaEntregaList() {
     try {
       constanciaBlob = await generarConstanciaEntregaPng(encomiendaConstancia);
       previewUrl = URL.createObjectURL(constanciaBlob);
+      pdfUrl = await generarConstanciaEntregaPdfUrl(constanciaBlob);
     } catch (error) {
-      console.log("No se pudo generar constancia PNG:", error);
+      console.log("No se pudo generar constancia:", error);
     }
 
     await swal2.fire({
@@ -899,9 +923,10 @@ export default function TrEncomiendaEntregaList() {
             </div>
           </div>
           <div style="color:${palette.muted};font-size:10.8px;line-height:1.35">
-            Se copiara el PNG y se abrira WhatsApp. En el chat, pega la constancia con Ctrl + V.
+            Puedes imprimir el PDF o enviar el PNG por WhatsApp. En el chat, pega la constancia con Ctrl + V.
           </div>
           <div style="display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;padding-top:2px">
+            ${pdfUrl ? `<button id="imprimir-pdf-constancia-entrega" type="button" class="constancia-entrega-action" style="border:1px solid ${palette.border};background:${palette.bg};color:${palette.text};margin:0">PDF imprimir</button>` : ""}
             ${constanciaBlob ? `<button id="enviar-whatsapp-constancia-entrega" type="button" class="constancia-entrega-action" style="border:1px solid ${palette.accent};background:${palette.accent};color:${palette.onAccent};margin:0">Enviar WhatsApp</button>` : ""}
             <button id="cerrar-constancia-entrega" type="button" class="constancia-entrega-action" style="border:1px solid ${palette.border};background:${palette.surfaceAlt};color:${palette.text};margin:0">Cerrar</button>
           </div>
@@ -917,6 +942,7 @@ export default function TrEncomiendaEntregaList() {
         htmlContainer: "constancia-entrega-html",
       },
       didOpen: () => {
+        const pdfButton = document.getElementById("imprimir-pdf-constancia-entrega");
         const whatsappButton = document.getElementById("enviar-whatsapp-constancia-entrega");
         const tipoSelect = document.getElementById("whatsapp-tipo-entrega");
         const numeroInput = document.getElementById("whatsapp-numero-entrega");
@@ -930,6 +956,10 @@ export default function TrEncomiendaEntregaList() {
         tipoSelect?.addEventListener("change", () => {
           const key = tipoSelect.value === "destinatario" ? "destinatario" : "remitente";
           numeroInput.value = numeroInput.dataset[key] || "";
+        });
+
+        pdfButton?.addEventListener("click", () => {
+          window.open(pdfUrl, "_blank", "noopener,noreferrer");
         });
 
         whatsappButton?.addEventListener("click", async () => {
@@ -956,6 +986,9 @@ export default function TrEncomiendaEntregaList() {
       willClose: () => {
         if (previewUrl) {
           URL.revokeObjectURL(previewUrl);
+        }
+        if (pdfUrl) {
+          URL.revokeObjectURL(pdfUrl);
         }
       },
     });

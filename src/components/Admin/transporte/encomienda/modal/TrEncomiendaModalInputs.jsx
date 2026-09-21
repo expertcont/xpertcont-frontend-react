@@ -341,6 +341,155 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef }) {
   );
 }
 
+const parseArrivalTime = (value) => {
+  const match = String(value || "").match(/(\d{1,2}):(\d{2})/);
+  const now = new Date();
+  const fallbackTotal = Math.round((now.getHours() * 60 + now.getMinutes()) / 30) * 30;
+
+  if (!match) {
+    return {
+      hours: Math.floor((fallbackTotal % 1440) / 60),
+      minutes: fallbackTotal % 60,
+    };
+  }
+
+  return {
+    hours: Math.min(23, Math.max(0, Number(match[1]) || 0)),
+    minutes: Math.min(59, Math.max(0, Number(match[2]) || 0)),
+  };
+};
+
+const arrivalTimeValue = (hours, minutes) => [
+  String((hours + 24) % 24).padStart(2, "0"),
+  String(minutes).padStart(2, "0"),
+  "00",
+].join(":");
+
+export function ArrivalTimePicker({ value, onChange, inputRef, nextRef }) {
+  const { hours, minutes } = parseArrivalTime(value);
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHour = hours % 12 || 12;
+  const safeMinute = Math.round(minutes / 15) * 15;
+  const minuteValue = safeMinute === 60 ? 0 : safeMinute;
+  const selectSx = {
+    minWidth: 0,
+    height: 26,
+    px: 0.55,
+    color: palette.text,
+    backgroundColor: palette.bg,
+    border: `1px solid ${palette.border}`,
+    borderRadius: palette.radius.control,
+    fontSize: "11px",
+    fontWeight: 900,
+    outline: "none",
+    cursor: "pointer",
+    "&:focus": {
+      borderColor: palette.accent,
+      boxShadow: `0 0 0 1px ${palette.accent}`,
+    },
+  };
+
+  const updateHour = (nextDisplayHour) => {
+    const normalizedHour = Number(nextDisplayHour) % 12;
+    onChange(arrivalTimeValue(period === "PM" ? normalizedHour + 12 : normalizedHour, minuteValue));
+  };
+
+  const updateMinute = (nextMinute) => {
+    onChange(arrivalTimeValue(hours, Number(nextMinute)));
+  };
+
+  const updatePeriod = (nextPeriod) => {
+    const baseHour = hours % 12;
+    onChange(arrivalTimeValue(nextPeriod === "PM" ? baseHour + 12 : baseHour, minuteValue));
+  };
+
+  return (
+    <Box
+      ref={inputRef}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key.toLowerCase() === "p") {
+          event.preventDefault();
+          updatePeriod("PM");
+          return;
+        }
+        if (event.key.toLowerCase() === "a") {
+          event.preventDefault();
+          updatePeriod("AM");
+          return;
+        }
+        if (event.key === "ArrowDown" && nextRef?.current) {
+          event.preventDefault();
+          focusControl(nextRef);
+          return;
+        }
+        if (event.key === "ArrowUp" && focusByArrow(event, inputRef)) {
+          return;
+        }
+        if (event.key === "Enter" && nextRef?.current) {
+          event.preventDefault();
+          focusControl(nextRef);
+        }
+      }}
+      sx={{
+        width: "100%",
+        minWidth: 0,
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr 1.1fr",
+        gap: 0.45,
+        alignItems: "center",
+        outline: "none",
+        "&:focus-visible": {
+          boxShadow: `0 0 0 2px ${palette.accent}`,
+          borderRadius: palette.radius.control,
+        },
+      }}
+    >
+      <Box
+        component="select"
+        value={displayHour}
+        onChange={(event) => updateHour(event.target.value)}
+        title="Hora"
+        sx={selectSx}
+      >
+        {Array.from({ length: 12 }, (_, index) => index + 1).map((hourOption) => (
+          <option key={hourOption} value={hourOption}>
+            {hourOption}
+          </option>
+        ))}
+      </Box>
+      <Box
+        component="select"
+        value={minuteValue}
+        onChange={(event) => updateMinute(event.target.value)}
+        title="Minutos"
+        sx={selectSx}
+      >
+        {[0, 15, 30, 45].map((minuteOption) => (
+          <option key={minuteOption} value={minuteOption}>
+            {String(minuteOption).padStart(2, "0")}
+          </option>
+        ))}
+      </Box>
+      <Box
+        component="select"
+        value={period}
+        onChange={(event) => updatePeriod(event.target.value)}
+        title="AM o PM"
+        sx={{
+          ...selectSx,
+          color: period === "PM" ? palette.onAccent : palette.text,
+          backgroundColor: period === "PM" ? palette.accent : palette.bg,
+          borderColor: period === "PM" ? palette.accent : palette.border,
+        }}
+      >
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </Box>
+    </Box>
+  );
+}
+
 export function SectionHeader({ icon, title }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.55, mb: 0.32 }}>

@@ -12,6 +12,7 @@ import {
 } from "./TrEncomiendaModalFields";
 import {
   CaptureInput,
+  ArrivalTimePicker,
   ChoiceGroup,
   Field,
   MoneyStepper,
@@ -355,7 +356,12 @@ export default function TrEncomiendaModalSections({
               </Grid>
               <Grid item xs={12}>
                 <Field label="Llegada aprox." tall>
-                  <CaptureInput value={draft.llegada_aprox} onChange={(value) => updateDraft("llegada_aprox", value)} inputRef={refs.llegadaRef} nextRef={refs.placaRef} align="center" />
+                  <ArrivalTimePicker
+                    value={draft.llegada_aprox}
+                    onChange={(value) => updateDraft("llegada_aprox", value)}
+                    inputRef={refs.llegadaRef}
+                    nextRef={refs.placaRef}
+                  />
                 </Field>
               </Grid>
               <Grid item xs={12}>
