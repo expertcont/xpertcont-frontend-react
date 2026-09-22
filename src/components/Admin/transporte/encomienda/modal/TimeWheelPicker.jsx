@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Box, Popover, Typography } from "@mui/material";
-import { Timer } from "lucide-react";
+import { CornerDownLeft, Timer } from "lucide-react";
 
 import palette from "../../../../../theme/palette";
 import { focusByArrow } from "./TrEncomiendaModalInputs";
@@ -601,7 +601,7 @@ export default function TimeWheelPicker({
               justifySelf: "end",
               mr: 0.55,
               color: palette.muted,
-              fontSize: "10px",
+              fontSize: "11.5px",
               fontWeight: 800,
               letterSpacing: 0,
               opacity: 0.95,
@@ -645,18 +645,43 @@ export default function TimeWheelPicker({
           },
         }}
       >
-        <Typography
+        <Box
           sx={{
-            color: palette.muted,
-            fontSize: "10px",
-            fontWeight: 800,
-            textTransform: "uppercase",
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 1,
             mb: 0.45,
-            ml: 0.2,
           }}
         >
-          Editando hora
-        </Typography>
+          <Typography
+            sx={{
+              color: palette.muted,
+              fontSize: "10px",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              ml: 0.2,
+            }}
+          >
+            Editando hora
+          </Typography>
+          <Typography
+            sx={{
+              color: palette.muted,
+              fontSize: "10px",
+              lineHeight: 1.2,
+              textAlign: "right",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: 0.35,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <CornerDownLeft size={13} />
+            Enter / Doble Click
+          </Typography>
+        </Box>
         {renderWheel()}
       </Popover>
     </Box>

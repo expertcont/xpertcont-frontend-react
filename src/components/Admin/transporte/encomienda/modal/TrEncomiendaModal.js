@@ -11,6 +11,7 @@ import AppIconBox from "../../../../ui/AppIconBox";
 import palette from "../../../../../theme/palette";
 import TrEncomiendaModalClone from "./TrEncomiendaModalClone";
 import TrEncomiendaModalSections from "./TrEncomiendaModalSections";
+import crearTicketEncomiendaPdf from "./TrEncomiendaTicketPdf";
 import {
   LicenciaPickerModal,
   PlacaPickerModal,
@@ -43,6 +44,7 @@ export default function TrEncomiendaModal({
   zonasDisponibles = [],
   placasDisponibles = [],
   licenciasDisponibles = [],
+  empresa = {},
   modalNuevoTitulo = "Nueva encomienda",
   modalEditarTitulo = "Editar encomienda",
   soloLectura = false,
@@ -91,6 +93,7 @@ export default function TrEncomiendaModal({
   const condicionPagoRef = useRef(null);
   const llegadaRef = useRef(null);
   const grabarRef = useRef(null);
+  const ticketAdminRef = useRef(null);
   const whatsappNumeroRef = useRef(null);
   const whatsappEnviarRef = useRef(null);
   const whatsappNumeroInicialRef = useRef("");
@@ -234,6 +237,9 @@ export default function TrEncomiendaModal({
   const puedeEditarFecha = esEdicion && !encomiendaEnviadaSunat;
   const tipoComprobanteTexto = esFactura ? "Factura" : "Boleta";
   const encomiendaGrabada = !esEdicion && Boolean(operacionGuardada);
+  const encomiendaTicketBase = operacion || operacionGuardada || draft;
+  const tieneComprobanteReal = (encomienda) => Boolean(encomienda?.r_cod && encomienda?.r_serie && encomienda?.r_numero);
+  const puedeGenerarTicket = tieneComprobanteReal(encomiendaTicketBase);
   const comprobanteGrabado = [draft.r_serie, draft.r_numero].filter(Boolean).join("-");
   const textoBotonGuardar = esEdicion
     ? `Actualizar ${tipoComprobanteTexto}`
@@ -598,6 +604,9 @@ export default function TrEncomiendaModal({
     const clienteDireccionFinal = entregaRemitenteEnOficina ? "" : draft.remitente_direccion;
     const destinatarioDireccionFinal = entregaDestinatarioEnOficina ? "" : draft.destinatario_direccion;
 
+    const ticketAdminWindow = !esEdicion ? window.open("about:blank", "_blank") : null;
+    ticketAdminWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Grabando encomienda...</p>`);
+
     const operacionGuardadaResponse = await onSubmit({
       ...draft,
       tipo_operacion: "E",
@@ -622,6 +631,7 @@ export default function TrEncomiendaModal({
     }, { mantenerModalAbierto: true });
 
     if (!operacionGuardadaResponse || esEdicion) {
+      ticketAdminWindow?.close();
       return;
     }
 
@@ -635,22 +645,59 @@ export default function TrEncomiendaModal({
       remitente_direccion: operacionGuardadaResponse.remitente_direccion || operacionGuardadaResponse.cliente_direccion || prev.remitente_direccion,
     }));
 
-    // Despues de grabar se confirma el telefono del remitente para enviar el ticket.
+    // Despues de grabar queda listo el ticket administrativo como siguiente paso.
     const numeroRemitente = draft.cliente_telefono || "";
     setWhatsappEncomienda({ ...draft, ...operacionGuardadaResponse });
     whatsappNumeroInicialRef.current = numeroRemitente;
     setWhatsappNumero(numeroRemitente);
-    setWhatsappModalOpen(true);
+    await imprimirTicketModelo({
+      admin: true,
+      encomiendaBase: { ...draft, ...operacionGuardadaResponse },
+      ticketWindow: ticketAdminWindow,
+    });
   };
 
-  const generarTicketPdfUrl = async ({ encomiendaBase = operacion || draft, admin = false, cacheBust = true } = {}) => {
+  const generarTicketPdfUrl = async ({ encomiendaBase = operacion || operacionGuardada || draft, admin = false, cacheBust = true } = {}) => {
     const rCod = encomiendaBase?.r_cod || draft.r_cod;
     const rSerie = encomiendaBase?.r_serie || draft.r_serie;
     const rNumero = encomiendaBase?.r_numero || draft.r_numero;
     const elemento = encomiendaBase?.elemento || draft.elemento || 1;
+    const rutaTicket = rutasDisponibles.find((ruta) => String(ruta.id_ruta) === String(encomiendaBase?.id_ruta || draft.id_ruta));
+    const encomiendaTicket = {
+      ...draft,
+      ...encomiendaBase,
+      r_cod: rCod,
+      r_serie: rSerie,
+      r_numero: rNumero,
+      elemento,
+      punto_venta_nombre: (
+        encomiendaBase?.punto_venta_nombre ||
+        rutaTicket?.punto_venta_nombre ||
+        puntoVentaOrigenNombre ||
+        encomiendaBase?.id_punto_venta ||
+        draft.id_punto_venta
+      ),
+      punto_venta_dest_nombre: (
+        encomiendaBase?.punto_venta_dest_nombre ||
+        encomiendaBase?.punto_venta_destino_nombre ||
+        encomiendaBase?.destino_nombre ||
+        rutaTicket?.punto_venta_dest_nombre ||
+        rutaTicket?.punto_venta_destino_nombre ||
+        rutaTicket?.destino_nombre ||
+        encomiendaBase?.id_punto_venta_dest ||
+        draft.id_punto_venta_dest
+      ),
+    };
 
     if (!rCod || !rSerie || !rNumero) {
       throw new Error("El ticket necesita serie y numero real del comprobante.");
+    }
+
+    if (admin) {
+      return crearTicketEncomiendaPdf({
+        encomienda: encomiendaTicket,
+        empresa,
+      });
     }
 
     const response = await axios.post(`${back_host}/mve_transventa/ticket/encomienda${admin ? "/admin" : ""}`, {
@@ -676,14 +723,15 @@ export default function TrEncomiendaModal({
     return cacheBust ? `${urlDescarga}${urlDescarga.includes("?") ? "&" : "?"}t=${Date.now()}` : urlDescarga;
   };
 
-  const imprimirTicketModelo = async ({ admin = false } = {}) => {
+  const imprimirTicketModelo = async ({ admin = false, encomiendaBase, ticketWindow: ticketWindowParam } = {}) => {
     const estaImprimiendo = admin ? imprimiendoTicketAdmin : imprimiendoTicket;
+    const ticketBase = encomiendaBase || encomiendaTicketBase;
 
     if (guardando || estaImprimiendo) {
       return;
     }
 
-    if (!(operacion?.r_cod || draft.r_cod) || !(operacion?.r_serie || draft.r_serie) || !(operacion?.r_numero || draft.r_numero)) {
+    if (!tieneComprobanteReal(ticketBase)) {
       swal2.fire({
         title: "Primero graba la encomienda",
         text: "El ticket con logo y QR necesita serie y numero real del comprobante.",
@@ -695,7 +743,7 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    const ticketWindow = window.open("about:blank", "_blank");
+    const ticketWindow = ticketWindowParam || window.open("about:blank", "_blank");
     if (admin) {
       setImprimiendoTicketAdmin(true);
     } else {
@@ -705,7 +753,7 @@ export default function TrEncomiendaModal({
     try {
       ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Generando ticket...</p>`);
 
-      const urlConBypassCache = await generarTicketPdfUrl({ admin });
+      const urlConBypassCache = await generarTicketPdfUrl({ admin, encomiendaBase: ticketBase });
 
       if (ticketWindow) {
         ticketWindow.location.href = urlConBypassCache;
@@ -890,14 +938,14 @@ export default function TrEncomiendaModal({
           zIndex: 1,
         }}>
           <AppButton onClick={onClose} disabled={guardando}>Salir [Esc]</AppButton>
-          <AppButton onClick={() => imprimirTicketModelo()} disabled={guardando || imprimiendoTicket}>
+          <AppButton onClick={() => imprimirTicketModelo()} disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}>
             {imprimiendoTicket ? "Generando PDF..." : "Imprimir encomienda"}
           </AppButton>
-          <AppButton onClick={() => imprimirTicketModelo({ admin: true })} disabled={guardando || imprimiendoTicketAdmin}>
+          <AppButton buttonRef={ticketAdminRef} onClick={() => imprimirTicketModelo({ admin: true })} disabled={guardando || imprimiendoTicketAdmin || !puedeGenerarTicket}>
             {imprimiendoTicketAdmin ? "Generando PDF..." : "Ticket Admin"}
           </AppButton>
           {(esEdicion || encomiendaGrabada) && (
-            <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp}>
+            <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp || !puedeGenerarTicket}>
               Enviar WhatsApp
             </AppButton>
           )}

@@ -813,6 +813,10 @@ export default function TrModuloBase({
             zonasDisponibles={zonasDisponibles}
             placasDisponibles={placasDisponibles}
             licenciasDisponibles={licenciasDisponibles}
+            empresa={{
+              nombre: contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo)?.razon_social,
+              documento_id: contabilidadTrabajo,
+            }}
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
             soloLectura={operacionProtegidaSunat(operacionEditando) || Number(operacionEditando?.registrado) === 0}
