@@ -2,11 +2,24 @@ export const focusableRefs = [];
 
 export const toTimePlusHours = (hours = 2) => {
   const date = new Date();
+  const currentMinutes = date.getMinutes();
+
   date.setHours(date.getHours() + hours);
+  date.setSeconds(0, 0);
+
+  if (currentMinutes === 0) {
+    date.setMinutes(0);
+  } else if (currentMinutes <= 15) {
+    date.setMinutes(30);
+  } else {
+    date.setHours(date.getHours() + 1);
+    date.setMinutes(0);
+  }
+
   return [
     String(date.getHours()).padStart(2, "0"),
     String(date.getMinutes()).padStart(2, "0"),
-    String(date.getSeconds()).padStart(2, "0"),
+    "00",
   ].join(":");
 };
 

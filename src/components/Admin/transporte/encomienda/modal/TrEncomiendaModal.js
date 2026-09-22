@@ -90,6 +90,9 @@ export default function TrEncomiendaModal({
   const condicionPagoRef = useRef(null);
   const llegadaRef = useRef(null);
   const grabarRef = useRef(null);
+  const whatsappNumeroRef = useRef(null);
+  const whatsappEnviarRef = useRef(null);
+  const whatsappNumeroInicialRef = useRef("");
 
   focusableRefs.length = 0;
   focusableRefs.push(
@@ -497,15 +500,32 @@ export default function TrEncomiendaModal({
   const cerrarFlujoWhatsapp = () => {
     setWhatsappModalOpen(false);
     setWhatsappEncomienda(null);
-    onClose();
   };
 
   const abrirEnvioWhatsapp = () => {
     const encomiendaBase = { ...draft, ...(operacion || {}) };
+    const numeroRemitente = encomiendaBase.cliente_telefono || "";
     setWhatsappEncomienda(encomiendaBase);
-    setWhatsappNumero(encomiendaBase.cliente_telefono || encomiendaBase.destinatario_telefono || "");
+    whatsappNumeroInicialRef.current = numeroRemitente;
+    setWhatsappNumero(numeroRemitente);
     setWhatsappModalOpen(true);
   };
+
+  useEffect(() => {
+    if (!whatsappModalOpen || enviandoWhatsapp) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (!String(whatsappNumeroInicialRef.current || "").trim()) {
+        whatsappNumeroRef.current?.focus();
+        whatsappNumeroRef.current?.select?.();
+        return;
+      }
+
+      whatsappEnviarRef.current?.focus();
+    }, 80);
+  }, [whatsappModalOpen, enviandoWhatsapp]);
 
   const handleSubmit = async () => {
     if (guardando || soloLectura) {
@@ -593,16 +613,17 @@ export default function TrEncomiendaModal({
       precio_neto: total,
       r_monto_total: total,
       asiento: null,
-    }, { mantenerModalAbierto: !esEdicion });
+    }, { mantenerModalAbierto: true });
 
     if (!operacionGuardada || esEdicion) {
       return;
     }
 
-    // Despues de grabar se confirma el telefono. Si ya vino digitado, aparece sugerido.
-    // Se usa el telefono del remitente como "cliente"; si falta, se toma el del destinatario.
+    // Despues de grabar se confirma el telefono del remitente para enviar el ticket.
+    const numeroRemitente = draft.cliente_telefono || "";
     setWhatsappEncomienda({ ...draft, ...operacionGuardada });
-    setWhatsappNumero(draft.cliente_telefono || draft.destinatario_telefono || "");
+    whatsappNumeroInicialRef.current = numeroRemitente;
+    setWhatsappNumero(numeroRemitente);
     setWhatsappModalOpen(true);
   };
 
@@ -877,8 +898,15 @@ export default function TrEncomiendaModal({
         <DialogContent sx={{ pt: 1.1 }}>
           <InputBase
             autoFocus
+            inputRef={whatsappNumeroRef}
             value={whatsappNumero}
             onChange={(event) => setWhatsappNumero(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !enviandoWhatsapp) {
+                event.preventDefault();
+                whatsappEnviarRef.current?.focus();
+              }
+            }}
             placeholder="Celular del cliente"
             inputMode="numeric"
             disabled={enviandoWhatsapp}
@@ -902,6 +930,7 @@ export default function TrEncomiendaModal({
               Omitir
             </AppButton>
             <AppButton
+              buttonRef={whatsappEnviarRef}
               icon={<MessageCircle size={15} />}
               disabled={enviandoWhatsapp}
               onClick={enviarTicketPorWhatsapp}

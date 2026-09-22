@@ -78,9 +78,9 @@ const focusControl = (ref) => {
   }
 };
 
-export function Field({ label, icon, children, labelWidth = "auto", tall = false }) {
+export function Field({ label, icon, children, labelWidth = "auto", tall = false, controlHeight }) {
   return (
-    <Box sx={{ ...fieldSx, minHeight: tall ? 35 : fieldSx.minHeight }}>
+    <Box sx={{ ...fieldSx, minHeight: controlHeight || (tall ? 35 : fieldSx.minHeight) }}>
       {icon && (
         <Box sx={{ color: palette.muted, display: "flex", alignItems: "center", mr: 0.55 }}>
           {icon}
@@ -242,7 +242,7 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
   );
 }
 
-export function MoneyStepper({ value, onChange, inputRef, nextRef }) {
+export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = false }) {
   const updateValue = (delta) => {
     const current = Number(value || 0);
     const next = Math.max(0, current + delta);
@@ -308,9 +308,12 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef }) {
           minWidth: 0,
           px: 1,
           backgroundColor: palette.bg,
+          color: prominent ? palette.accent : palette.text,
           "& input": {
             textAlign: "right",
-            fontWeight: 800,
+            fontSize: prominent ? "20px" : undefined,
+            fontWeight: prominent ? 950 : 800,
+            color: prominent ? palette.accent : undefined,
             MozAppearance: "textfield",
           },
           "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
@@ -366,36 +369,94 @@ const arrivalTimeValue = (hours, minutes) => [
 ].join(":");
 
 export function ArrivalTimePicker({ value, onChange, inputRef, nextRef }) {
+  const hourRef = React.useRef(null);
+  const minuteRef = React.useRef(null);
+  const periodRef = React.useRef(null);
   const { hours, minutes } = parseArrivalTime(value);
   const period = hours >= 12 ? "PM" : "AM";
   const displayHour = hours % 12 || 12;
-  const safeMinute = Math.round(minutes / 15) * 15;
-  const minuteValue = safeMinute === 60 ? 0 : safeMinute;
-  const selectSx = {
+  const minuteValue = minutes;
+  const [hourDraft, setHourDraft] = React.useState("");
+  const [minuteDraft, setMinuteDraft] = React.useState("");
+
+  React.useEffect(() => {
+    if (document.activeElement !== hourRef.current) {
+      setHourDraft("");
+    }
+
+    if (document.activeElement !== minuteRef.current) {
+      setMinuteDraft("");
+    }
+  }, [displayHour, minuteValue]);
+
+  React.useEffect(() => {
+    if (!inputRef) {
+      return undefined;
+    }
+
+    inputRef.current = {
+      focus: () => hourRef.current?.focus(),
+      select: () => hourRef.current?.focus(),
+    };
+
+    return () => {
+      inputRef.current = null;
+    };
+  }, [inputRef]);
+
+  const partInputSx = {
     minWidth: 0,
-    height: 26,
-    px: 0.55,
+    height: "100%",
+    px: 0.35,
     color: palette.text,
-    backgroundColor: palette.bg,
-    border: `1px solid ${palette.border}`,
-    borderRadius: palette.radius.control,
-    fontSize: "11px",
+    backgroundColor: "transparent",
+    border: 0,
+    borderRadius: 0,
+    fontSize: "14px",
     fontWeight: 900,
     outline: "none",
+    lineHeight: 1,
+    "& input": {
+      p: 0,
+      height: 34,
+      textAlign: "center",
+      fontSize: "14px",
+      fontWeight: 900,
+      color: "inherit",
+    },
+    "&:focus-within": {
+      backgroundColor: "transparent",
+      boxShadow: "none",
+    },
+  };
+  const stepButtonSx = {
+    minHeight: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: palette.muted,
     cursor: "pointer",
-    "&:focus": {
-      borderColor: palette.accent,
-      boxShadow: `0 0 0 1px ${palette.accent}`,
+    transition: "all .16s ease",
+    userSelect: "none",
+    "&:hover": {
+      backgroundColor: palette.accentSoft,
+      color: palette.accent,
+    },
+    "&:active": {
+      backgroundColor: palette.accent,
+      color: palette.onAccent,
     },
   };
 
   const updateHour = (nextDisplayHour) => {
-    const normalizedHour = Number(nextDisplayHour) % 12;
+    const safeDisplayHour = Math.min(12, Math.max(1, Number(nextDisplayHour) || 12));
+    const normalizedHour = safeDisplayHour % 12;
     onChange(arrivalTimeValue(period === "PM" ? normalizedHour + 12 : normalizedHour, minuteValue));
   };
 
   const updateMinute = (nextMinute) => {
-    onChange(arrivalTimeValue(hours, Number(nextMinute)));
+    const safeMinute = Math.min(59, Math.max(0, Number(nextMinute) || 0));
+    onChange(arrivalTimeValue(hours, safeMinute));
   };
 
   const updatePeriod = (nextPeriod) => {
@@ -403,11 +464,247 @@ export function ArrivalTimePicker({ value, onChange, inputRef, nextRef }) {
     onChange(arrivalTimeValue(nextPeriod === "PM" ? baseHour + 12 : baseHour, minuteValue));
   };
 
+  const handlePartKeyDown = (event, part) => {
+    if (event.key === "+" || event.key === "=" || event.key === "-") {
+      event.preventDefault();
+      event.stopPropagation();
+      const direction = event.key === "-" ? -1 : 1;
+
+      if (part === "hour") {
+        if (direction > 0) {
+          updateHour(displayHour === 12 ? 1 : displayHour + 1);
+        } else {
+          updateHour(displayHour === 1 ? 12 : displayHour - 1);
+        }
+        window.setTimeout(() => {
+          hourRef.current?.focus();
+          hourRef.current?.select?.();
+        }, 0);
+        return;
+      }
+
+      if (part === "minute") {
+        updateMinute((minuteValue + (direction * 15) + 60) % 60);
+        window.setTimeout(() => {
+          minuteRef.current?.focus();
+          minuteRef.current?.select?.();
+        }, 0);
+        return;
+      }
+
+      updatePeriod(period === "AM" ? "PM" : "AM");
+      window.setTimeout(() => {
+        periodRef.current?.focus();
+        periodRef.current?.select?.();
+      }, 0);
+      return;
+    }
+
+    if (event.key.toLowerCase() === "p") {
+      event.preventDefault();
+      updatePeriod("PM");
+      return;
+    }
+
+    if (event.key.toLowerCase() === "a") {
+      event.preventDefault();
+      updatePeriod("AM");
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+
+      if (part === "hour") {
+        commitHourDraft();
+        minuteRef.current?.focus();
+        return;
+      }
+
+      if (part === "minute") {
+        commitMinuteDraft();
+        periodRef.current?.focus();
+        return;
+      }
+
+      focusControl(nextRef);
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+
+      if (part === "hour") {
+        commitHourDraft();
+        minuteRef.current?.focus();
+        minuteRef.current?.select?.();
+        return;
+      }
+
+      if (part === "minute") {
+        commitMinuteDraft();
+        periodRef.current?.focus();
+        periodRef.current?.select?.();
+        return;
+      }
+
+      focusControl(nextRef);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      if (part === "minute") {
+        event.preventDefault();
+        commitMinuteDraft();
+        hourRef.current?.focus();
+        hourRef.current?.select?.();
+        return;
+      }
+
+      if (part === "period") {
+        event.preventDefault();
+        minuteRef.current?.focus();
+        minuteRef.current?.select?.();
+        return;
+      }
+
+      if (focusByArrow(event, inputRef)) {
+        commitHourDraft();
+      }
+      return;
+    }
+  };
+
+  const handleHourChange = (event) => {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 2);
+    setHourDraft(digits);
+
+    if (!digits) {
+      return;
+    }
+
+    if (digits.length === 2) {
+      updateHour(digits);
+      setHourDraft("");
+    }
+  };
+
+  const handleMinuteChange = (event) => {
+    const digits = event.target.value.replace(/\D/g, "").slice(0, 2);
+    setMinuteDraft(digits);
+
+    if (!digits) {
+      return;
+    }
+
+    if (digits.length === 2) {
+      updateMinute(digits);
+      setMinuteDraft("");
+    }
+  };
+
+  const commitHourDraft = () => {
+    if (hourDraft) {
+      updateHour(hourDraft);
+      setHourDraft("");
+    }
+  };
+
+  const commitMinuteDraft = () => {
+    if (minuteDraft) {
+      updateMinute(minuteDraft);
+      setMinuteDraft("");
+    }
+  };
+
+  const handlePeriodChange = (event) => {
+    const nextValue = event.target.value.toUpperCase();
+    const lastChar = nextValue.slice(-1);
+
+    if (lastChar === "A") {
+      updatePeriod("AM");
+      return;
+    }
+
+    if (lastChar === "P") {
+      updatePeriod("PM");
+    }
+  };
+
+  const stepHour = (direction) => {
+    updateHour(direction > 0
+      ? displayHour === 12 ? 1 : displayHour + 1
+      : displayHour === 1 ? 12 : displayHour - 1);
+    hourRef.current?.focus();
+    hourRef.current?.select?.();
+  };
+
+  const stepMinute = (direction) => {
+    updateMinute((minuteValue + (direction * 15) + 60) % 60);
+    minuteRef.current?.focus();
+    minuteRef.current?.select?.();
+  };
+
+  const renderTimeInputPart = (children, onStep) => (
+    <Box
+      sx={{
+        minWidth: 0,
+        height: "100%",
+        display: "grid",
+        gridTemplateRows: onStep ? "1fr 28px" : "1fr",
+        alignItems: "stretch",
+      }}
+    >
+      {children}
+      {onStep && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            borderTop: `1px solid ${palette.borderSoft}`,
+            "& > div + div": {
+              borderLeft: `1px solid ${palette.borderSoft}`,
+            },
+          }}
+        >
+          <StepButton onClick={() => onStep(-1)}>-</StepButton>
+          <StepButton onClick={() => onStep(1)}>+</StepButton>
+        </Box>
+      )}
+    </Box>
+  );
+
+  const StepButton = ({ children, onClick }) => (
+    <Box
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      sx={{
+        ...stepButtonSx,
+        minHeight: 28,
+        borderRadius: 0,
+        backgroundColor: palette.bg,
+        color: palette.muted,
+        fontSize: "15px",
+        fontWeight: 950,
+        lineHeight: 1,
+        "&:hover": {
+          backgroundColor: palette.accentSoft,
+          color: palette.accent,
+        },
+      }}
+    >
+      {children}
+    </Box>
+  );
+
   return (
     <Box
-      ref={inputRef}
-      tabIndex={0}
+      tabIndex={-1}
       onKeyDown={(event) => {
+        if (event.defaultPrevented) {
+          return;
+        }
+
         if (event.key.toLowerCase() === "p") {
           event.preventDefault();
           updatePeriod("PM");
@@ -433,59 +730,95 @@ export function ArrivalTimePicker({ value, onChange, inputRef, nextRef }) {
       }}
       sx={{
         width: "100%",
+        height: "100%",
         minWidth: 0,
         display: "grid",
-        gridTemplateColumns: "1fr 1fr 1.1fr",
-        gap: 0.45,
-        alignItems: "center",
+        gridTemplateColumns: "1.35fr 14px 1.35fr 0.9fr",
+        gap: 0,
+        alignItems: "stretch",
+        overflow: "hidden",
+        backgroundColor: palette.bg,
+        border: `1px solid ${palette.border}`,
+        borderRadius: palette.radius.control,
         outline: "none",
-        "&:focus-visible": {
-          boxShadow: `0 0 0 2px ${palette.accent}`,
-          borderRadius: palette.radius.control,
+        transition: "border-color .18s ease, background-color .18s ease",
+        "&:focus-within": {
+          borderColor: palette.border,
+          backgroundColor: palette.bg,
         },
       }}
     >
+      {renderTimeInputPart(
+        <InputBase
+          inputRef={hourRef}
+          value={hourDraft || String(displayHour).padStart(2, "0")}
+          onChange={handleHourChange}
+          onKeyDown={(event) => handlePartKeyDown(event, "hour")}
+          onFocus={(event) => event.target.select()}
+          onBlur={commitHourDraft}
+          title="Hora"
+          inputProps={{ inputMode: "numeric", maxLength: 2, "aria-label": "Hora" }}
+          sx={partInputSx}
+        />,
+        stepHour,
+      )}
       <Box
-        component="select"
-        value={displayHour}
-        onChange={(event) => updateHour(event.target.value)}
-        title="Hora"
-        sx={selectSx}
-      >
-        {Array.from({ length: 12 }, (_, index) => index + 1).map((hourOption) => (
-          <option key={hourOption} value={hourOption}>
-            {hourOption}
-          </option>
-        ))}
-      </Box>
-      <Box
-        component="select"
-        value={minuteValue}
-        onChange={(event) => updateMinute(event.target.value)}
-        title="Minutos"
-        sx={selectSx}
-      >
-        {[0, 15, 30, 45].map((minuteOption) => (
-          <option key={minuteOption} value={minuteOption}>
-            {String(minuteOption).padStart(2, "0")}
-          </option>
-        ))}
-      </Box>
-      <Box
-        component="select"
-        value={period}
-        onChange={(event) => updatePeriod(event.target.value)}
-        title="AM o PM"
+        className="time-separator"
+        aria-hidden="true"
         sx={{
-          ...selectSx,
-          color: period === "PM" ? palette.onAccent : palette.text,
-          backgroundColor: period === "PM" ? palette.accent : palette.bg,
-          borderColor: period === "PM" ? palette.accent : palette.border,
+          height: "100%",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          color: palette.muted,
+          fontSize: "20px",
+          fontWeight: 900,
+          lineHeight: 1,
+          pt: "8px",
+          backgroundColor: palette.bg,
         }}
       >
-        <option value="AM">AM</option>
-        <option value="PM">PM</option>
+        :
       </Box>
+      {renderTimeInputPart(
+        <InputBase
+          inputRef={minuteRef}
+          value={minuteDraft || String(minuteValue).padStart(2, "0")}
+          onChange={handleMinuteChange}
+          onKeyDown={(event) => handlePartKeyDown(event, "minute")}
+          onFocus={(event) => event.target.select()}
+          onBlur={commitMinuteDraft}
+          title="Minutos"
+          inputProps={{ inputMode: "numeric", maxLength: 2, "aria-label": "Minutos" }}
+          sx={partInputSx}
+        />,
+        stepMinute,
+      )}
+      {renderTimeInputPart(
+        <InputBase
+          inputRef={periodRef}
+          value={period}
+          onChange={handlePeriodChange}
+          onKeyDown={(event) => handlePartKeyDown(event, "period")}
+          onFocus={(event) => event.target.select()}
+          onClick={() => updatePeriod(period === "AM" ? "PM" : "AM")}
+          title="AM o PM"
+          inputProps={{ maxLength: 2, "aria-label": "AM o PM" }}
+          sx={{
+            ...partInputSx,
+            color: period === "PM" ? palette.onAccent : palette.text,
+            backgroundColor: period === "PM" ? palette.accent : palette.bg,
+            "& input": {
+              ...partInputSx["& input"],
+              letterSpacing: 0,
+            },
+            "&:focus-within": {
+              backgroundColor: period === "PM" ? palette.accent : palette.accentSoft,
+              boxShadow: `inset 0 0 0 1px ${palette.accent}`,
+            },
+          }}
+        />,
+      )}
     </Box>
   );
 }

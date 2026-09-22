@@ -146,8 +146,19 @@ export default function TrEncomiendaModalSections({
             </>
           )}
           <Grid item xs={12} md={3}>
-            <Field label="DNI / RUC">
+            <Field label="DNI / RUC" labelWidth={58}>
               <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
+                <IconButton
+                  size="small"
+                  onClick={buscarRemitente}
+                  disabled={buscandoRemitente}
+                  sx={{
+                    ...searchIconButtonSx,
+                    color: buscandoRemitente ? palette.muted : palette.accent,
+                  }}
+                >
+                  <Search />
+                </IconButton>
                 <CaptureInput
                   value={draft.cliente_documento}
                   onChange={(value) => {
@@ -164,19 +175,6 @@ export default function TrEncomiendaModalSections({
                   onPlus={buscarRemitente}
                   onF3={abrirClonePicker}
                 />
-                <IconButton
-                  size="small"
-                  onClick={buscarRemitente}
-                  disabled={buscandoRemitente}
-                  sx={{
-                    ...searchIconButtonSx,
-                    mr: 0,
-                    ml: 0.45,
-                    color: buscandoRemitente ? palette.muted : palette.accent,
-                  }}
-                >
-                  <Search />
-                </IconButton>
               </Box>
             </Field>
           </Grid>
@@ -269,8 +267,19 @@ export default function TrEncomiendaModalSections({
             </>
           )}
           <Grid item xs={12} md={3}>
-            <Field label="DNI">
+            <Field label="DNI" labelWidth={58}>
               <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
+                <IconButton
+                  size="small"
+                  onClick={buscarDestinatario}
+                  disabled={buscandoDestinatario}
+                  sx={{
+                    ...searchIconButtonSx,
+                    color: buscandoDestinatario ? palette.muted : palette.accent,
+                  }}
+                >
+                  <Search />
+                </IconButton>
                 <CaptureInput
                   value={draft.destinatario_documento}
                   onChange={(value) => updateDraft("destinatario_documento", value)}
@@ -282,19 +291,6 @@ export default function TrEncomiendaModalSections({
                   align="right"
                   onPlus={buscarDestinatario}
                 />
-                <IconButton
-                  size="small"
-                  onClick={buscarDestinatario}
-                  disabled={buscandoDestinatario}
-                  sx={{
-                    ...searchIconButtonSx,
-                    mr: 0,
-                    ml: 0.45,
-                    color: buscandoDestinatario ? palette.muted : palette.accent,
-                  }}
-                >
-                  <Search />
-                </IconButton>
               </Box>
             </Field>
           </Grid>
@@ -345,17 +341,18 @@ export default function TrEncomiendaModalSections({
                 </Field>
               </Grid>
               <Grid item xs={12}>
-                <Field label="Total S/" tall>
+                <Field label="Total S/" controlHeight={56}>
                   <MoneyStepper
                     value={draft.r_monto_total}
                     onChange={(value) => updateDraft("r_monto_total", value)}
                     inputRef={refs.totalRef}
                     nextRef={refs.llegadaRef}
+                    prominent
                   />
                 </Field>
               </Grid>
               <Grid item xs={12}>
-                <Field label="Llegada aprox." tall>
+                <Field label="Hora llegada" controlHeight={70}>
                   <ArrivalTimePicker
                     value={draft.llegada_aprox}
                     onChange={(value) => updateDraft("llegada_aprox", value)}
@@ -364,7 +361,7 @@ export default function TrEncomiendaModalSections({
                   />
                 </Field>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={6}>
                 <Field label="" labelWidth={0}>
                   {/* Placa admite escritura manual; + o camion abren el catalogo mve_transplaca. */}
                   <PlacaField
@@ -376,7 +373,7 @@ export default function TrEncomiendaModalSections({
                   />
                 </Field>
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={6}>
                 <Field label="" labelWidth={0}>
                   {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
                   <LicenciaField
