@@ -8,8 +8,8 @@ const CW = W - (M * 2);
 
 const LAYOUT = {
   logo: {
-    maxWidth: 190,
-    maxHeight: 65,
+    maxWidth: 170,
+    maxHeight: 56,
     topMargin: 12,
     issuerGap: 8,
   },
@@ -21,8 +21,8 @@ const LAYOUT = {
     rucGap: 12,
     rucSize: 9.2,
     addressGap: 18,
-    addressSize: 7.4,
-    addressLineHeight: 8.2,
+    addressSize: 6.5,
+    addressLineHeight: 7.2,
     cpeGap: 32,
   },
   cpe: {
@@ -81,6 +81,7 @@ const ticketPayloadDesdeFormulario = ({ encomienda = {}, empresa = {} }) => ({
     razon_social: empresa.razon_social || empresa.nombre || empresa.nombre_comercial || "TRANSPORTE DE ENCOMIENDAS",
     nombre_comercial: empresa.nombre_comercial || empresa.razon_social || empresa.nombre || "TRANSPORTE DE ENCOMIENDAS",
     domicilio_fiscal: empresa.domicilio_fiscal || empresa.direccion || "",
+    direccion: empresa.direccion || empresa.domicilio_fiscal || "",
   },
   venta: {
     codigo: encomienda.r_cod || "03",
@@ -270,11 +271,12 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   }
 
   const cpeTopY = issuerTopY - LAYOUT.issuer.cpeGap;
+  const issuerAddress = empresa.domicilio_fiscal || empresa.direccion || empresa.direccion_fiscal || empresa.domicilio || empresa.direccion_completa || "";
 
   wrap(empresa.razon_social || empresa.nombre_comercial || "TRANSPORTE DE ENCOMIENDAS", regular, 7.8, CW, 2)
     .forEach((item, index) => centered(page, item, issuerTopY - (index * LAYOUT.issuer.razonLineHeight), LAYOUT.issuer.razonSize, regular));
   centered(page, `RUC ${empresa.ruc || ""}`, issuerTopY - LAYOUT.issuer.rucGap, LAYOUT.issuer.rucSize, regular);
-  wrap(empresa.domicilio_fiscal || "", regular, LAYOUT.issuer.addressSize, CW, 2)
+  wrap(issuerAddress, regular, LAYOUT.issuer.addressSize, CW, 2)
     .forEach((item, index) => centered(page, item, issuerTopY - LAYOUT.issuer.addressGap - (index * LAYOUT.issuer.addressLineHeight), LAYOUT.issuer.addressSize, regular, MUTED));
 
   dotted(page, cpeTopY + 5);

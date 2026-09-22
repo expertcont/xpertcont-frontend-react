@@ -168,6 +168,7 @@ const AdminSunatIcon = ({
   cpeRequestExtra = {},
   pdfEndpoint,
   pdfRequestExtra = {},
+  generarPdfLocal,
   size = 24,              // tamaño del ícono
   cdr_nivel,                //ACEPTADO,RECHAZADO,PENDIENTE
   cdr_descripcion,
@@ -187,8 +188,13 @@ const AdminSunatIcon = ({
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [phone, setPhone] = useState("");
   const firmaValor = String(firma || "").trim();
+  const esPdfLocal = typeof generarPdfLocal === "function";
 
   const generarRutaPdf = async ({ cod, serie, numero }) => {
+    if (esPdfLocal) {
+      return generarPdfLocal({ cod, serie, numero, elemento });
+    }
+
     if (!pdfEndpoint) {
       const baseUrl = `${descargasHost}/descargas/${documentoId}`;
       return `${baseUrl}/${documentoId}-${cod}-${serie}-${numero}.pdf`;
@@ -267,9 +273,17 @@ const AdminSunatIcon = ({
         const baseUrl = `${descargasHost}/descargas/${documentoId}`;
         setRutaXml("");
         setRutaCdr("");
-        setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        setRutaPdf("");
+        setCargandoPdf(true);
         setModalResumenRdi(true);
         setShowModal(true);
+        try {
+          setRutaPdf(esPdfLocal
+            ? await generarRutaPdf({ cod: COD0, serie: SERIE0, numero: NUMERO0 })
+            : `${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        } finally {
+          setCargandoPdf(false);
+        }
         return;
       }
 
@@ -277,9 +291,17 @@ const AdminSunatIcon = ({
         const baseUrl = `${descargasHost}/descargas/${documentoId}`;
         setRutaXml(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
         setRutaCdr(`${baseUrl}/R-${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.xml`);
-        setRutaPdf(`${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        setRutaPdf("");
+        setCargandoPdf(true);
         setModalResumenRdi(false);
         setShowModal(true);
+        try {
+          setRutaPdf(esPdfLocal
+            ? await generarRutaPdf({ cod: COD0, serie: SERIE0, numero: NUMERO0 })
+            : `${baseUrl}/${documentoId}-${COD0}-${SERIE0}-${NUMERO0}.pdf`);
+        } finally {
+          setCargandoPdf(false);
+        }
         return;
       }
 
@@ -326,7 +348,7 @@ const AdminSunatIcon = ({
           setRutaCdr(response.data.ruta_cdr);
           setModalResumenRdi(false);
           setShowModal(true);
-          if (pdfEndpoint) {
+          if (pdfEndpoint || esPdfLocal) {
             setRutaPdf("");
             setCargandoPdf(true);
             try {
@@ -399,8 +421,9 @@ const AdminSunatIcon = ({
     }
     if (!url) return;
 
-    // 👇 Agregamos un parámetro temporal para evitar que el navegador use la versión en caché
-    const urlConBypassCache = `${url}?t=${Date.now()}`;
+    const urlConBypassCache = url.startsWith("blob:")
+      ? url
+      : `${url}?t=${Date.now()}`;
 
     window.open(urlConBypassCache, "_blank", "noopener,noreferrer");
   };
@@ -477,7 +500,7 @@ const handleOpenLinkWhatsApp = async (sNumero) => {
             return Sunat01Icon;
     }
 };
-  const whatsappListo = phone.length >= 9 && Boolean(rutaPdf) && !cargandoPdf;
+  const whatsappListo = phone.length >= 9 && Boolean(rutaPdf) && !rutaPdf.startsWith("blob:") && !cargandoPdf;
 
   return (
     <>

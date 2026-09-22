@@ -207,6 +207,18 @@ export default function TrModuloBase({
   const resumenEncomiendasDiaOk = tipoOperacionFijo === "E" && Boolean(diaSel && diaSel !== "*") && totalPendienteResumenEncomiendas === 0;
   const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
   const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
+  const empresaTrabajo = useMemo(() => {
+    const seleccionada = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo) || {};
+
+    return {
+      ...seleccionada,
+      ruc: seleccionada.documento_id || contabilidadTrabajo,
+      documento_id: seleccionada.documento_id || contabilidadTrabajo,
+      nombre: seleccionada.razon_social || seleccionada.nombre,
+      domicilio_fiscal: seleccionada.domicilio_fiscal || seleccionada.direccion || "",
+      direccion: seleccionada.direccion || seleccionada.domicilio_fiscal || "",
+    };
+  }, [contabilidadSelect, contabilidadTrabajo]);
 
   const cargarColaResumenEncomiendas = useCallback(async () => {
     if (tipoOperacionFijo !== "E" || !periodoTrabajo || !contabilidadTrabajo || !diaSel || diaSel === "*") {
@@ -780,6 +792,7 @@ export default function TrModuloBase({
                 id_invitado: params.id_invitado,
                 ctrl_mod_us: params.id_invitado,
               },
+              empresa: empresaTrabajo,
               onRefresh: () => setUpdateTrigger(Date.now()),
             },
           })}
@@ -814,7 +827,8 @@ export default function TrModuloBase({
             placasDisponibles={placasDisponibles}
             licenciasDisponibles={licenciasDisponibles}
             empresa={{
-              nombre: contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo)?.razon_social,
+              ...empresaTrabajo,
+              nombre: empresaTrabajo.nombre,
               documento_id: contabilidadTrabajo,
             }}
             modalNuevoTitulo={modalNuevoTitulo}

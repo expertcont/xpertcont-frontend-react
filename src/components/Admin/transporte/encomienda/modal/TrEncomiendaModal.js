@@ -3,7 +3,8 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Typography } from "@mui/material";
-import { CheckCircle, MessageCircle, Package, Save, X } from "lucide-react";
+import { CheckCircle, ClipboardCopy, MessageCircle, Package, Save, X } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist/build/pdf";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -12,6 +13,7 @@ import palette from "../../../../../theme/palette";
 import TrEncomiendaModalClone from "./TrEncomiendaModalClone";
 import TrEncomiendaModalSections from "./TrEncomiendaModalSections";
 import crearTicketEncomiendaPdf from "./TrEncomiendaTicketPdf";
+import crearTicketEncomiendaTributarioPdf from "./TrEncomiendaTicketTributarioPdf";
 import {
   LicenciaPickerModal,
   PlacaPickerModal,
@@ -29,6 +31,54 @@ import {
 } from "./trEncomiendaModalUtils";
 
 const DESCARGAS_TICKET_BASE_URL = "https://xpertcont-backend-js-production-50e6.up.railway.app/descargas/";
+
+const direccionEmpresa = (datos = {}) => (
+  datos.direccion ||
+  datos.domicilio_fiscal ||
+  datos.direccion_fiscal ||
+  datos.domicilio ||
+  datos.direccion_completa ||
+  ""
+);
+
+const withTimeout = (promise, timeoutMs, message) => new Promise((resolve, reject) => {
+  const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  promise
+    .then(resolve)
+    .catch(reject)
+    .finally(() => window.clearTimeout(timer));
+});
+
+const pdfBlobToPngBlob = async (pdfBlob) => {
+  const pdfData = await pdfBlob.arrayBuffer();
+  const pdf = await withTimeout(
+    pdfjsLib.getDocument({ data: pdfData, disableWorker: true }).promise,
+    8000,
+    "No se pudo leer el PDF del ticket."
+  );
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 2.5 });
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  await withTimeout(
+    page.render({ canvasContext: context, viewport }).promise,
+    8000,
+    "No se pudo convertir el ticket a imagen."
+  );
+
+  return withTimeout(new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+      reject(new Error("No se pudo convertir el ticket a imagen."));
+    }, "image/png");
+  }), 8000, "No se pudo preparar la imagen del ticket.");
+};
 
 export default function TrEncomiendaModal({
   open,
@@ -70,7 +120,10 @@ export default function TrEncomiendaModal({
   const [whatsappNumero, setWhatsappNumero] = useState("");
   const [whatsappEncomienda, setWhatsappEncomienda] = useState(null);
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
+  const [copiandoEnvioRapido, setCopiandoEnvioRapido] = useState(false);
+  const [envioRapidoEstado, setEnvioRapidoEstado] = useState("");
   const [operacionGuardada, setOperacionGuardada] = useState(null);
+  const [empresaCompleta, setEmpresaCompleta] = useState(empresa);
 
   const remitenteDocRef = useRef(null);
   const remitenteNombreRef = useRef(null);
@@ -97,6 +150,47 @@ export default function TrEncomiendaModal({
   const whatsappNumeroRef = useRef(null);
   const whatsappEnviarRef = useRef(null);
   const whatsappNumeroInicialRef = useRef("");
+
+  useEffect(() => {
+    let activo = true;
+    const direccionBase = direccionEmpresa(empresa);
+    const empresaBase = {
+      ...empresa,
+      domicilio_fiscal: direccionBase,
+      direccion: direccionBase,
+    };
+
+    setEmpresaCompleta(empresaBase);
+
+    if (!open || direccionBase || !back_host || !idAnfitrion || !documentoId) {
+      return () => {
+        activo = false;
+      };
+    }
+
+    axios.get(`${back_host}/contabilidad/${idAnfitrion}/${documentoId}/ADMIN`)
+      .then((response) => {
+        if (!activo) return;
+        const datos = response.data || {};
+        const direccion = direccionEmpresa(datos);
+        setEmpresaCompleta((prev) => ({
+          ...prev,
+          ...datos,
+          ruc: datos.documento_id || prev.ruc || prev.documento_id || documentoId,
+          documento_id: datos.documento_id || prev.documento_id || documentoId,
+          nombre: datos.razon_social || prev.nombre,
+          domicilio_fiscal: direccion,
+          direccion,
+        }));
+      })
+      .catch((error) => {
+        console.log("Error cargando direccion de empresa para ticket:", error);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [back_host, documentoId, empresa, idAnfitrion, open]);
 
   focusableRefs.length = 0;
   focusableRefs.push(
@@ -657,7 +751,7 @@ export default function TrEncomiendaModal({
     });
   };
 
-  const generarTicketPdfUrl = async ({ encomiendaBase = operacion || operacionGuardada || draft, admin = false, cacheBust = true } = {}) => {
+  const generarTicketPdfUrl = async ({ encomiendaBase = operacion || operacionGuardada || draft, admin = false, cacheBust = true, local = true } = {}) => {
     const rCod = encomiendaBase?.r_cod || draft.r_cod;
     const rSerie = encomiendaBase?.r_serie || draft.r_serie;
     const rNumero = encomiendaBase?.r_numero || draft.r_numero;
@@ -693,10 +787,12 @@ export default function TrEncomiendaModal({
       throw new Error("El ticket necesita serie y numero real del comprobante.");
     }
 
-    if (admin) {
-      return crearTicketEncomiendaPdf({
+    if (local) {
+      const crearTicketLocal = admin ? crearTicketEncomiendaPdf : crearTicketEncomiendaTributarioPdf;
+
+      return crearTicketLocal({
         encomienda: encomiendaTicket,
-        empresa,
+        empresa: empresaCompleta,
       });
     }
 
@@ -796,7 +892,7 @@ export default function TrEncomiendaModal({
 
     setEnviandoWhatsapp(true);
     try {
-      const ticketUrl = await generarTicketPdfUrl({ encomiendaBase: whatsappEncomienda, cacheBust: false });
+      const ticketUrl = await generarTicketPdfUrl({ encomiendaBase: whatsappEncomienda, cacheBust: false, local: false });
       const mensaje = crearMensajeWhatsappTicket(whatsappEncomienda, ticketUrl);
       const whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
       window.open(whatsappUrl, "_blank", "noopener,noreferrer");
@@ -812,6 +908,84 @@ export default function TrEncomiendaModal({
       });
     } finally {
       setEnviandoWhatsapp(false);
+    }
+  };
+
+  const copiarTicketPngEnvioRapido = async () => {
+    if (guardando || copiandoEnvioRapido || !puedeGenerarTicket) {
+      return;
+    }
+
+    const telefono = normalizarTelefonoWhatsapp(whatsappNumero);
+
+    if (!telefono) {
+      swal2.fire({
+        title: "Indica celular",
+        text: "Necesitamos el numero para abrir WhatsApp con el mensaje del ticket.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
+    if (!navigator.clipboard?.write || typeof window.ClipboardItem === "undefined") {
+      swal2.fire({
+        title: "Portapapeles no disponible",
+        text: "Tu navegador no permite copiar imagenes al portapapeles. Prueba en Chrome o Edge con HTTPS/localhost.",
+        icon: "warning",
+        confirmButtonColor: palette.accent,
+      });
+      return;
+    }
+
+    const encomiendaBase = { ...draft, ...(operacion || operacionGuardada || {}) };
+    let ticketUrl = "";
+
+    setCopiandoEnvioRapido(true);
+    setEnvioRapidoEstado("Generando...");
+    try {
+      ticketUrl = await generarTicketPdfUrl({
+        encomiendaBase,
+        local: true,
+        cacheBust: false,
+      });
+      setEnvioRapidoEstado("Convirtiendo...");
+      const response = await fetch(ticketUrl);
+      const pdfBlob = await response.blob();
+      const pngBlob = await pdfBlobToPngBlob(pdfBlob);
+
+      setEnvioRapidoEstado("Copiando...");
+      await navigator.clipboard.write([
+        new window.ClipboardItem({ "image/png": pngBlob }),
+      ]);
+
+      const numero = [encomiendaBase?.r_serie, encomiendaBase?.r_numero].filter(Boolean).join("-");
+      const destino = obtenerDestinoWhatsapp(encomiendaBase);
+      const mensaje = [
+        `Hola, te comparto el ticket de tu encomienda${numero ? ` ${numero}` : ""}.`,
+        destino ? `Destino: ${destino}.` : "",
+        "Imagen del ticket."
+      ].filter(Boolean).join("\n");
+
+      window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank", "noopener,noreferrer");
+      cerrarFlujoWhatsapp();
+    } catch (error) {
+      swal2.fire({
+        title: "No se pudo copiar",
+        text: error.message || "No se pudo convertir el ticket a imagen.",
+        icon: "error",
+        confirmButtonColor: palette.accent,
+        background: palette.surface,
+        color: palette.text,
+      });
+    } finally {
+      if (ticketUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(ticketUrl);
+      }
+      setCopiandoEnvioRapido(false);
+      setEnvioRapidoEstado("");
     }
   };
 
@@ -946,18 +1120,18 @@ export default function TrEncomiendaModal({
           </AppButton>
           {(esEdicion || encomiendaGrabada) && (
             <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp || !puedeGenerarTicket}>
-              Enviar WhatsApp
+              WhatsApp
             </AppButton>
           )}
           {!soloLectura && (
-            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || encomiendaGrabada} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
+            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
               {guardando ? "Guardando..." : textoBotonGuardar}
             </AppButton>
           )}
         </Box>
       <Dialog
         open={whatsappModalOpen}
-        onClose={enviandoWhatsapp ? undefined : cerrarFlujoWhatsapp}
+        onClose={(enviandoWhatsapp || copiandoEnvioRapido) ? undefined : cerrarFlujoWhatsapp}
         maxWidth="xs"
         fullWidth
         PaperProps={{
@@ -983,7 +1157,7 @@ export default function TrEncomiendaModal({
               </Typography>
             </Box>
           </Box>
-          <IconButton disabled={enviandoWhatsapp} onClick={cerrarFlujoWhatsapp} size="small" sx={{ color: palette.muted }}>
+          <IconButton disabled={enviandoWhatsapp || copiandoEnvioRapido} onClick={cerrarFlujoWhatsapp} size="small" sx={{ color: palette.muted }}>
             <X size={17} />
           </IconButton>
         </DialogTitle>
@@ -1017,18 +1191,39 @@ export default function TrEncomiendaModal({
           <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.8 }}>
             Si no tiene codigo de pais, se asumira Peru (+51).
           </Typography>
+          <Box sx={{ mt: 1.4, display: "grid", gap: 0.9 }}>
+            <Box sx={{ p: 1, border: `1px solid ${palette.border}`, borderRadius: "8px", backgroundColor: palette.surfaceAlt }}>
+              <Typography sx={{ fontSize: "12px", fontWeight: 800, color: palette.text }}>Enviar link</Typography>
+              <Typography sx={{ fontSize: "11px", color: palette.muted, lineHeight: 1.35 }}>
+                Genera el PDF en servidor y abre WhatsApp con el enlace. Puede demorar unos segundos.
+              </Typography>
+            </Box>
+            <Box sx={{ p: 1, border: `1px solid ${palette.border}`, borderRadius: "8px", backgroundColor: palette.surfaceAlt }}>
+              <Typography sx={{ fontSize: "12px", fontWeight: 800, color: palette.text }}>Enviar imagen</Typography>
+              <Typography sx={{ fontSize: "11px", color: palette.muted, lineHeight: 1.35 }}>
+                Abre WhatsApp. Pega la imagen con Ctrl+V.
+              </Typography>
+            </Box>
+          </Box>
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.8, mt: 1.6, flexWrap: "wrap" }}>
-            <AppButton disabled={enviandoWhatsapp} onClick={cerrarFlujoWhatsapp}>
+            <AppButton disabled={enviandoWhatsapp || copiandoEnvioRapido} onClick={cerrarFlujoWhatsapp}>
               Omitir
+            </AppButton>
+            <AppButton
+              icon={<ClipboardCopy size={15} />}
+              disabled={enviandoWhatsapp || copiandoEnvioRapido}
+              onClick={copiarTicketPngEnvioRapido}
+            >
+              {copiandoEnvioRapido ? envioRapidoEstado || "Copiando..." : "Enviar imagen"}
             </AppButton>
             <AppButton
               buttonRef={whatsappEnviarRef}
               icon={<MessageCircle size={15} />}
-              disabled={enviandoWhatsapp}
+              disabled={enviandoWhatsapp || copiandoEnvioRapido}
               onClick={enviarTicketPorWhatsapp}
               sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 800 }}
             >
-              {enviandoWhatsapp ? "Generando..." : "Enviar WhatsApp"}
+              {enviandoWhatsapp ? "Generando link..." : "Enviar link"}
             </AppButton>
           </Box>
         </DialogContent>

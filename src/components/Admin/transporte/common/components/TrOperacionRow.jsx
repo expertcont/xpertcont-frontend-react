@@ -136,7 +136,6 @@ function SunatActionButton({ row, onEnviarSunat, sunatContext }) {
     sunatContext?.idAnfitrion &&
     sunatContext?.contabilidadTrabajo
   );
-
   return (
     <Tooltip title={estado.title} arrow>
       <Box
