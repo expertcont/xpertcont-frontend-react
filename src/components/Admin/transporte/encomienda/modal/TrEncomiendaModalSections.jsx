@@ -12,7 +12,6 @@ import {
 } from "./TrEncomiendaModalFields";
 import {
   CaptureInput,
-  ArrivalTimePicker,
   ChoiceGroup,
   Field,
   MoneyStepper,
@@ -25,6 +24,7 @@ import {
   comprobanteDesdeDocumento,
   documentoTipoDesdeNumero,
 } from "./trEncomiendaModalUtils";
+import TimeWheelPicker from "./TimeWheelPicker";
 
 export default function TrEncomiendaModalSections({
   draft,
@@ -341,7 +341,7 @@ export default function TrEncomiendaModalSections({
                 </Field>
               </Grid>
               <Grid item xs={12}>
-                <Field label="Total S/" controlHeight={56}>
+                <Field label="Total S/" controlHeight={40}>
                   <MoneyStepper
                     value={draft.r_monto_total}
                     onChange={(value) => updateDraft("r_monto_total", value)}
@@ -352,16 +352,18 @@ export default function TrEncomiendaModalSections({
                 </Field>
               </Grid>
               <Grid item xs={12}>
-                <Field label="Hora llegada" controlHeight={70}>
-                  <ArrivalTimePicker
+                <Field label="" labelWidth={0} plain>
+                  <TimeWheelPicker
                     value={draft.llegada_aprox}
                     onChange={(value) => updateDraft("llegada_aprox", value)}
                     inputRef={refs.llegadaRef}
                     nextRef={refs.placaRef}
+                    minuteStep={5}
+                    label=""
                   />
                 </Field>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12}>
                 <Field label="" labelWidth={0}>
                   {/* Placa admite escritura manual; + o camion abren el catalogo mve_transplaca. */}
                   <PlacaField
@@ -373,7 +375,7 @@ export default function TrEncomiendaModalSections({
                   />
                 </Field>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12}>
                 <Field label="" labelWidth={0}>
                   {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
                   <LicenciaField

@@ -3,7 +3,7 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Typography } from "@mui/material";
-import { MessageCircle, Package, Save, X } from "lucide-react";
+import { CheckCircle, MessageCircle, Package, Save, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -68,6 +68,7 @@ export default function TrEncomiendaModal({
   const [whatsappNumero, setWhatsappNumero] = useState("");
   const [whatsappEncomienda, setWhatsappEncomienda] = useState(null);
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
+  const [operacionGuardada, setOperacionGuardada] = useState(null);
 
   const remitenteDocRef = useRef(null);
   const remitenteNombreRef = useRef(null);
@@ -125,6 +126,7 @@ export default function TrEncomiendaModal({
         ...crearDraft(operacion, periodoTrabajo, fechaOperacion),
         id_punto_venta: operacion?.id_punto_venta || puntoVentaOrigen || "",
       });
+      setOperacionGuardada(null);
       setError("");
       window.setTimeout(() => {
         if (!soloLectura) {
@@ -231,9 +233,13 @@ export default function TrEncomiendaModal({
   const encomiendaEnviadaSunat = Boolean(operacion?.numero_rdi || operacion?.r_vfirmado);
   const puedeEditarFecha = esEdicion && !encomiendaEnviadaSunat;
   const tipoComprobanteTexto = esFactura ? "Factura" : "Boleta";
+  const encomiendaGrabada = !esEdicion && Boolean(operacionGuardada);
+  const comprobanteGrabado = [draft.r_serie, draft.r_numero].filter(Boolean).join("-");
   const textoBotonGuardar = esEdicion
     ? `Actualizar ${tipoComprobanteTexto}`
-    : `${esFactura ? "Grabar" : "Guardar"} ${tipoComprobanteTexto}`;
+    : encomiendaGrabada
+      ? `${tipoComprobanteTexto} grabada`
+      : `${esFactura ? "Grabar" : "Guardar"} ${tipoComprobanteTexto}`;
   const zonasOrigen = zonasDisponibles.filter((zona) => zona.id_punto_venta === draft.id_punto_venta);
   const zonasDestino = zonasDisponibles.filter((zona) => zona.id_punto_venta === draft.id_punto_venta_dest);
 
@@ -503,7 +509,7 @@ export default function TrEncomiendaModal({
   };
 
   const abrirEnvioWhatsapp = () => {
-    const encomiendaBase = { ...draft, ...(operacion || {}) };
+    const encomiendaBase = { ...draft, ...(operacion || operacionGuardada || {}) };
     const numeroRemitente = encomiendaBase.cliente_telefono || "";
     setWhatsappEncomienda(encomiendaBase);
     whatsappNumeroInicialRef.current = numeroRemitente;
@@ -528,7 +534,7 @@ export default function TrEncomiendaModal({
   }, [whatsappModalOpen, enviandoWhatsapp]);
 
   const handleSubmit = async () => {
-    if (guardando || soloLectura) {
+    if (guardando || soloLectura || encomiendaGrabada) {
       return;
     }
 
@@ -592,7 +598,7 @@ export default function TrEncomiendaModal({
     const clienteDireccionFinal = entregaRemitenteEnOficina ? "" : draft.remitente_direccion;
     const destinatarioDireccionFinal = entregaDestinatarioEnOficina ? "" : draft.destinatario_direccion;
 
-    const operacionGuardada = await onSubmit({
+    const operacionGuardadaResponse = await onSubmit({
       ...draft,
       tipo_operacion: "E",
       r_cod: comprobante.r_cod,
@@ -615,13 +621,23 @@ export default function TrEncomiendaModal({
       asiento: null,
     }, { mantenerModalAbierto: true });
 
-    if (!operacionGuardada || esEdicion) {
+    if (!operacionGuardadaResponse || esEdicion) {
       return;
     }
 
+    setOperacionGuardada(operacionGuardadaResponse);
+    setDraft((prev) => ({
+      ...prev,
+      ...operacionGuardadaResponse,
+      cliente_documento: operacionGuardadaResponse.cliente_documento || operacionGuardadaResponse.cliente_documento_id || prev.cliente_documento,
+      destinatario_documento: operacionGuardadaResponse.destinatario_documento || operacionGuardadaResponse.destinatario_documento_id || prev.destinatario_documento,
+      remitente_zona: operacionGuardadaResponse.remitente_zona || operacionGuardadaResponse.cliente_zona || prev.remitente_zona,
+      remitente_direccion: operacionGuardadaResponse.remitente_direccion || operacionGuardadaResponse.cliente_direccion || prev.remitente_direccion,
+    }));
+
     // Despues de grabar se confirma el telefono del remitente para enviar el ticket.
     const numeroRemitente = draft.cliente_telefono || "";
-    setWhatsappEncomienda({ ...draft, ...operacionGuardada });
+    setWhatsappEncomienda({ ...draft, ...operacionGuardadaResponse });
     whatsappNumeroInicialRef.current = numeroRemitente;
     setWhatsappNumero(numeroRemitente);
     setWhatsappModalOpen(true);
@@ -788,6 +804,34 @@ export default function TrEncomiendaModal({
         </Box>
       </Box>
 
+      {encomiendaGrabada && (
+        <Box
+          sx={{
+            mx: { xs: 0.8, md: 1 },
+            mb: 0.8,
+            px: 1.2,
+            py: 0.9,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            border: `1px solid ${palette.success}`,
+            borderRadius: palette.radius.control,
+            backgroundColor: "rgba(66,160,104,0.12)",
+            color: palette.text,
+          }}
+        >
+          <CheckCircle size={17} color={palette.success} />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontSize: "12px", fontWeight: 800, lineHeight: 1.2 }}>
+              Encomienda grabada correctamente
+            </Typography>
+            <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }} noWrap>
+              Comprobante: {comprobanteGrabado || "generado"}
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       <TrEncomiendaModalSections
         draft={draft}
         error={error}
@@ -852,13 +896,13 @@ export default function TrEncomiendaModal({
           <AppButton onClick={() => imprimirTicketModelo({ admin: true })} disabled={guardando || imprimiendoTicketAdmin}>
             {imprimiendoTicketAdmin ? "Generando PDF..." : "Ticket Admin"}
           </AppButton>
-          {esEdicion && (
+          {(esEdicion || encomiendaGrabada) && (
             <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp}>
               Enviar WhatsApp
             </AppButton>
           )}
           {!soloLectura && (
-            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
+            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || encomiendaGrabada} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
               {guardando ? "Guardando..." : textoBotonGuardar}
             </AppButton>
           )}
