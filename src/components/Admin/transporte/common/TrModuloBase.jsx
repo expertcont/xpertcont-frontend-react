@@ -72,6 +72,11 @@ const fechaHoyLima = () => {
   return `${values.year}-${values.month}-${values.day}`;
 };
 
+const TICKET_ENCOMIENDA_MODO_KEY = "xpertcont.transporte.encomienda.ticketPredeterminado";
+const normalizarModoTicketEncomienda = (value) => (
+  ["completo", "admin", "cliente"].includes(value) ? value : "completo"
+);
+
 export default function TrModuloBase({
   tipoOperacionFijo = "E",
   titulo = "Control de Encomiendas",
@@ -113,6 +118,10 @@ export default function TrModuloBase({
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
   const [colaResumenEncomiendas, setColaResumenEncomiendas] = useState([]);
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
+  const [ticketEncomiendaModo, setTicketEncomiendaModo] = useState(() => {
+    if (typeof window === "undefined") return "completo";
+    return normalizarModoTicketEncomienda(window.localStorage.getItem(TICKET_ENCOMIENDA_MODO_KEY));
+  });
 
   // updateTrigger fuerza recarga luego de guardar, eliminar o enviar a SUNAT.
   const [updateTrigger, setUpdateTrigger] = useState(0);
@@ -721,6 +730,12 @@ export default function TrModuloBase({
     }
   };
 
+  const handleTicketEncomiendaModoChange = (modo) => {
+    const modoNormalizado = normalizarModoTicketEncomienda(modo);
+    setTicketEncomiendaModo(modoNormalizado);
+    window.localStorage.setItem(TICKET_ENCOMIENDA_MODO_KEY, modoNormalizado);
+  };
+
   // -----------------------------
   // Renderizado del formulario
   // -----------------------------
@@ -738,6 +753,8 @@ export default function TrModuloBase({
           nuevoDeshabilitado={tipoOperacionFijo === "E" && !puntoVentaTrabajo}
           mostrarAnuladas={mostrarAnuladas}
           onToggleAnuladas={tipoOperacionFijo === "E" ? handleToggleAnuladas : undefined}
+          ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : undefined}
+          onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : undefined}
           onNuevo={() => solicitarOperacion()}
           onBuscar={actualizaValorFiltro}
         />
@@ -837,6 +854,7 @@ export default function TrModuloBase({
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
             guardando={guardandoOperacion}
+            ticketPredeterminado={ticketEncomiendaModo}
           />
         )}
 

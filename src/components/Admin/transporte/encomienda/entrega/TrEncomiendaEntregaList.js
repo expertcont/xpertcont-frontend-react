@@ -262,22 +262,6 @@ const generarConstanciaEntregaPng = (encomienda) => new Promise((resolve, reject
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 
-  ctx.save();
-  ctx.translate(360, 765);
-  ctx.rotate(-Math.PI / 12);
-  ctx.globalAlpha = 0.16;
-  ctx.strokeStyle = colors.success;
-  ctx.lineWidth = 5;
-  roundedRect(ctx, -225, -54, 450, 108, 22);
-  ctx.stroke();
-  ctx.fillStyle = colors.success;
-  ctx.font = "900 66px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText("ENTREGADO", 0, 22);
-  ctx.restore();
-  ctx.globalAlpha = 1;
-  ctx.textAlign = "left";
-
   ctx.fillStyle = colors.accent;
   roundedRect(ctx, 56, 52, 608, 8, 4);
   ctx.fill();
@@ -307,7 +291,25 @@ const generarConstanciaEntregaPng = (encomienda) => new Promise((resolve, reject
   ctx.fill();
   ctx.strokeStyle = colors.borderSoft;
   ctx.stroke();
-  drawField("Fecha y hora de entrega", formatFechaHoraEntrega(encomienda.entrega_fecha), textColumnX, 322, 510, 1);
+  drawField("Fecha y hora de entrega", formatFechaHoraEntrega(encomienda.entrega_fecha), textColumnX, 322, 270, 1);
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = colors.success;
+  roundedRect(ctx, 356, 292, 282, 66, 18);
+  ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = 0.58;
+  ctx.strokeStyle = colors.success;
+  ctx.lineWidth = 2.4;
+  roundedRect(ctx, 356, 292, 282, 66, 18);
+  ctx.stroke();
+  ctx.fillStyle = colors.success;
+  ctx.font = "900 38px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("ENTREGADO", 497, 337);
+  ctx.restore();
+  ctx.textAlign = "left";
 
   drawDivider(406);
 
@@ -333,6 +335,19 @@ const generarConstanciaEntregaPng = (encomienda) => new Promise((resolve, reject
   drawField("Destino", nombreDestinoRuta(encomienda), 426, y, 200, 1);
   y += 66;
   drawField("Contenido", encomienda.descripcion || "-", textColumnX, y, 510, 2);
+
+  const firmaY = 820;
+  ctx.strokeStyle = colors.border;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(170, firmaY);
+  ctx.lineTo(550, firmaY);
+  ctx.stroke();
+  ctx.fillStyle = colors.muted;
+  ctx.font = "800 12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("FIRMA / CONFORMIDAD DE ENTREGA", logicalWidth / 2, firmaY + 20);
+  ctx.textAlign = "left";
 
   const registradoTexto = `Registrado por: ${encomienda.entrega_ctrl_us || "-"}`;
   ctx.fillStyle = colors.muted;

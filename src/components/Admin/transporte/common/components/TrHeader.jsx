@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { Ban, CheckCircle2, Plus } from "lucide-react";
+import { Ban, CheckCircle2, Layers, Plus, ReceiptText, ShieldCheck } from "lucide-react";
 
 import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
@@ -16,10 +16,18 @@ export default function TrHeader({
   valorBusqueda,
   nuevoDeshabilitado,
   mostrarAnuladas,
+  ticketModo,
+  onTicketModoChange,
   onToggleAnuladas,
   onNuevo,
   onBuscar,
 }) {
+  const ticketOptions = [
+    { value: "completo", label: "Completo", icon: Layers },
+    { value: "admin", label: "Admin", icon: ShieldCheck },
+    { value: "cliente", label: "Cliente", icon: ReceiptText },
+  ];
+
   return (
     <Box
       sx={{
@@ -38,6 +46,51 @@ export default function TrHeader({
         <Typography sx={{ color: palette.muted, fontSize: "13px", mt: 0.5 }}>
           {contador} {contadorTexto}
         </Typography>
+        {onTicketModoChange && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.55, mt: 0.85, flexWrap: "wrap" }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.35 }}>
+              Ticket pred.
+            </Typography>
+            {ticketOptions.map(({ value, label, icon: Icon }) => {
+              const active = ticketModo === value;
+
+              return (
+                <Box
+                  key={value}
+                  component="button"
+                  type="button"
+                  onClick={() => onTicketModoChange(value)}
+                  title={`Imprimir por defecto: Ticket ${label}`}
+                  sx={{
+                    height: 25,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.35,
+                    px: 0.75,
+                    borderRadius: "6px",
+                    border: `1px solid ${active ? palette.accent : palette.borderSoft}`,
+                    backgroundColor: active ? palette.accentSoft : "rgba(255,255,255,0.025)",
+                    color: active ? palette.accent : palette.muted,
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    lineHeight: 1,
+                    boxShadow: active ? "inset 0 0 0 1px rgba(255,255,255,0.03)" : "none",
+                    transition: "all .16s ease",
+                    "&:hover": {
+                      borderColor: palette.accent,
+                      color: palette.accent,
+                      backgroundColor: palette.accentSoft,
+                    },
+                  }}
+                >
+                  <Icon size={12} />
+                  {label}
+                </Box>
+              );
+            })}
+          </Box>
+        )}
       </Box>
 
       <Box

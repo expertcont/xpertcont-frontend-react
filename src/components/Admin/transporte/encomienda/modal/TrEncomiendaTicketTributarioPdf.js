@@ -8,7 +8,7 @@ import barlowBoldUrl from "../../../../../assets/fonts/cpe/BarlowCondensed-Bold.
 const logoEmisorContext = require.context("../../../../../assets/images", false, /-logo\.(png|jpe?g)$/i);
 
 const W = 226.77;
-const H = 650;
+const H = 610;
 const M = 12;
 const CW = W - (M * 2);
 
@@ -248,6 +248,16 @@ const centeredIn = (page, value, x, y, width, size, font, color = INK) => {
   page.drawText(label, { x: x + ((width - textWidth) / 2), y, size, font, color });
 };
 
+const drawPaymentStatusLarge = (page, { isPending, label, x, y, width, bold, semibold, scale = 1 }) => {
+  if (isPending) {
+    centeredIn(page, "POR", x, y, width, 19.2 * scale, bold, ALERT);
+    centeredIn(page, "PAGAR", x, y - (22 * scale), width, 19.2 * scale, bold, ALERT);
+    return;
+  }
+
+  centeredIn(page, label, x, y - (11 * scale), width, 18.5 * scale, semibold, INK);
+};
+
 const fetchFontBytes = async (url) => {
   const response = await fetch(url);
   return response.arrayBuffer();
@@ -306,8 +316,17 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const receiverAddress = clean(encomienda.destinatario_direccion);
   const unit = `${clean(encomienda.placa)} ${clean(encomienda.licencia)}`.trim() || "-";
   const payment = clean(encomienda.condicion_pago || venta.forma_pago_id || "PAGADO").toUpperCase();
-  const paymentLabel = payment.includes("COBRAR") ? "POR PAGAR" : payment;
+  const paymentNormalized = payment.replace(/[^A-Z]/g, "");
+  const isPaymentPending = paymentNormalized.includes("PORCOBRAR") || paymentNormalized.includes("PORPAGAR");
+  const paymentLabel = isPaymentPending ? "POR PAGAR" : "PAGADO";
   const arrivalApprox = timePe(encomienda.llegada_aprox || venta.llegada_aprox || jsonTicket.llegada_aprox);
+  const registeredBy = clean(
+    encomienda.registrado_por_correo ||
+    encomienda.ctrl_crea_us ||
+    jsonTicket.ticket?.registrado_por_correo ||
+    venta.registrado_por_correo ||
+    "-"
+  );
   const content = encomienda.descripcion || jsonTicket.items?.[0]?.producto || "SERVICIO DE TRANSPORTE DE ENCOMIENDA";
 
   const originOptionalLineHeight = 6.6;
@@ -349,7 +368,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
     centered(page, "TRANSPORTE DE ENCOMIENDAS", 616, 10.5, bold);
   }
 
-  const BODY_Y_OFFSET = -14;
+  const BODY_Y_OFFSET = -54;
   const bodyY = (value) => value + BODY_Y_OFFSET;
   const HEADER_HEIGHT_REDUCTION = 10;
   const afterHeaderY = (value) => bodyY(value + HEADER_HEIGHT_REDUCTION);
@@ -433,26 +452,29 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   page.drawImage(qrImage, { x: M + 8, y: summaryY(119), width: 53, height: 53 });
   page.drawLine({ start: { x: 75, y: summaryY(118) }, end: { x: 75, y: summaryY(173) }, thickness: 0.45, color: LIGHT_LINE, dashArray: [2, 3] });
   page.drawLine({ start: { x: 136, y: summaryY(118) }, end: { x: 136, y: summaryY(173) }, thickness: 0.45, color: LIGHT_LINE, dashArray: [2, 3] });
-  if (payment.includes("COBRAR")) {
-    centeredIn(page, "POR", 77, summaryY(150), 58, 19.2, bold, ALERT);
-    centeredIn(page, "PAGAR", 77, summaryY(128), 58, 19.2, bold, ALERT);
-  } else {
-    centeredIn(page, paymentLabel, 77, summaryY(140), 58, 14.8, semibold, INK);
-  }
+  drawPaymentStatusLarge(page, {
+    isPending: isPaymentPending,
+    label: paymentLabel,
+    x: 77,
+    y: summaryY(150),
+    width: 58,
+    bold,
+    semibold,
+  });
   centeredIn(page, "TOTAL", W - M - 7 - 67, summaryY(164), 67, 8, regular);
   centeredIn(page, "S/", W - M - 7 - 67, summaryY(149), 67, 9.8, regular);
   right(page, money(total), summaryY(127), 21, regular, INK, W - M - 7, 67);
 
-  text(page, "LLEGADA APROX.", M + 8, summaryY(99.6), 8, regular, MUTED, 72);
-  right(page, arrivalApprox, summaryY(99), 10.5, regular, INK, W - M - 8, 82);
-
-  text(page, "TERMINOS Y CONDICIONES", M, summaryY(88), 6.5, regular);
+  text(page, "TERMINOS Y CONDICIONES", M, summaryY(99), 6.5, regular);
   wrap("Conserva este ticket para seguimiento y entrega. No se aceptan reclamos por articulos no declarados o embalaje inadecuado.", regular, 6.1, 138, 3)
-    .forEach((item, index) => text(page, item, M, summaryY(78 - (index * 6.8)), 6.1, regular, MUTED, 138));
-  page.drawLine({ start: { x: 160, y: summaryY(61) }, end: { x: 160, y: summaryY(91) }, thickness: 0.45, color: LINE, dashArray: [2, 3] });
-  text(page, "GRACIAS", 176, summaryY(85), 7, semibold, INK, 42);
-  text(page, "POR CONFIAR", 176, summaryY(74), 6, regular, INK, 42);
-  text(page, "EN NOSOTROS", 176, summaryY(66), 6, regular, INK, 42);
+    .forEach((item, index) => text(page, item, M, summaryY(89 - (index * 6.8)), 6.1, regular, MUTED, 138));
+  page.drawLine({ start: { x: 160, y: summaryY(72) }, end: { x: 160, y: summaryY(102) }, thickness: 0.45, color: LINE, dashArray: [2, 3] });
+  text(page, "GRACIAS", 176, summaryY(96), 7, semibold, INK, 42);
+  text(page, "POR CONFIAR", 176, summaryY(85), 6, regular, INK, 42);
+  text(page, "EN NOSOTROS", 176, summaryY(77), 6, regular, INK, 42);
+
+  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, summaryY(68), 8.8, semibold, INK, CW);
+  centered(page, `REGISTRADO POR: ${registeredBy || "-"}`, summaryY(55), 6.8, regular, MUTED, CW);
 
   return pdfDoc.save();
 };

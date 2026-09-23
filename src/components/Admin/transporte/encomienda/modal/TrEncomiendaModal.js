@@ -4,7 +4,9 @@ import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Typography } from "@mui/material";
 import { CheckCircle, ClipboardCopy, MessageCircle, Package, Save, X } from "lucide-react";
-import * as pdfjsLib from "pdfjs-dist/build/pdf";
+import { PDFDocument, rgb } from "pdf-lib";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
+import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -32,6 +34,8 @@ import {
 
 const DESCARGAS_TICKET_BASE_URL = "https://xpertcont-backend-js-production-50e6.up.railway.app/descargas/";
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
 const direccionEmpresa = (datos = {}) => (
   datos.direccion ||
   datos.domicilio_fiscal ||
@@ -52,7 +56,7 @@ const withTimeout = (promise, timeoutMs, message) => new Promise((resolve, rejec
 const pdfBlobToPngBlob = async (pdfBlob) => {
   const pdfData = await pdfBlob.arrayBuffer();
   const pdf = await withTimeout(
-    pdfjsLib.getDocument({ data: pdfData, disableWorker: true }).promise,
+    pdfjsLib.getDocument({ data: pdfData }).promise,
     8000,
     "No se pudo leer el PDF del ticket."
   );
@@ -80,6 +84,61 @@ const pdfBlobToPngBlob = async (pdfBlob) => {
   }), 8000, "No se pudo preparar la imagen del ticket.");
 };
 
+const combinarTicketsParaCorte = async (ticketUrl, ticketAdminUrl) => {
+  const [ticketBytes, adminBytes] = await Promise.all([
+    fetch(ticketUrl).then((response) => response.arrayBuffer()),
+    fetch(ticketAdminUrl).then((response) => response.arrayBuffer()),
+  ]);
+  const [ticketDoc, adminDoc] = await Promise.all([
+    PDFDocument.load(ticketBytes),
+    PDFDocument.load(adminBytes),
+  ]);
+  const [ticketSize, adminSize] = [
+    ticketDoc.getPage(0).getSize(),
+    adminDoc.getPage(0).getSize(),
+  ];
+  const separatorHeight = 6;
+  const ticketBottomCrop = 160;
+  const ticketVisibleHeight = ticketSize.height - ticketBottomCrop;
+  const width = Math.max(ticketSize.width, adminSize.width);
+  const height = ticketVisibleHeight + adminSize.height + separatorHeight;
+  const pdfDoc = await PDFDocument.create();
+  const ticketPage = await pdfDoc.embedPage(ticketDoc.getPage(0), {
+    left: 0,
+    bottom: ticketBottomCrop,
+    right: ticketSize.width,
+    top: ticketSize.height,
+  });
+  const [adminPage] = await pdfDoc.embedPdf(adminBytes, [0]);
+  const page = pdfDoc.addPage([width, height]);
+  const ticketX = (width - ticketSize.width) / 2;
+  const adminX = (width - adminSize.width) / 2;
+
+  page.drawPage(adminPage, {
+    x: adminX,
+    y: 0,
+    width: adminSize.width,
+    height: adminSize.height,
+  });
+  page.drawLine({
+    start: { x: 12, y: adminSize.height + 3 },
+    end: { x: width - 12, y: adminSize.height + 3 },
+    thickness: 0.6,
+    color: rgb(0.7, 0.72, 0.75),
+    dashArray: [4, 4],
+  });
+  page.drawPage(ticketPage, {
+    x: ticketX,
+    y: adminSize.height + separatorHeight,
+    width: ticketSize.width,
+    height: ticketVisibleHeight,
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  return URL.createObjectURL(blob);
+};
+
 export default function TrEncomiendaModal({
   open,
   back_host,
@@ -98,6 +157,7 @@ export default function TrEncomiendaModal({
   modalNuevoTitulo = "Nueva encomienda",
   modalEditarTitulo = "Editar encomienda",
   soloLectura = false,
+  ticketPredeterminado = "completo",
   onClose,
   onSubmit,
   guardando = false,
@@ -148,6 +208,7 @@ export default function TrEncomiendaModal({
   const grabarRef = useRef(null);
   const ticketAdminRef = useRef(null);
   const whatsappNumeroRef = useRef(null);
+  const whatsappImagenRef = useRef(null);
   const whatsappEnviarRef = useRef(null);
   const whatsappNumeroInicialRef = useRef("");
 
@@ -629,7 +690,7 @@ export default function TrEncomiendaModal({
         return;
       }
 
-      whatsappEnviarRef.current?.focus();
+      whatsappImagenRef.current?.focus();
     }, 80);
   }, [whatsappModalOpen, enviandoWhatsapp]);
 
@@ -739,13 +800,14 @@ export default function TrEncomiendaModal({
       remitente_direccion: operacionGuardadaResponse.remitente_direccion || operacionGuardadaResponse.cliente_direccion || prev.remitente_direccion,
     }));
 
-    // Despues de grabar queda listo el ticket administrativo como siguiente paso.
+    // Despues de grabar queda listo el ticket; por defecto imprime el formato completo.
     const numeroRemitente = draft.cliente_telefono || "";
     setWhatsappEncomienda({ ...draft, ...operacionGuardadaResponse });
     whatsappNumeroInicialRef.current = numeroRemitente;
     setWhatsappNumero(numeroRemitente);
+
     await imprimirTicketModelo({
-      admin: true,
+      modo: ticketPredeterminado,
       encomiendaBase: { ...draft, ...operacionGuardadaResponse },
       ticketWindow: ticketAdminWindow,
     });
@@ -819,8 +881,25 @@ export default function TrEncomiendaModal({
     return cacheBust ? `${urlDescarga}${urlDescarga.includes("?") ? "&" : "?"}t=${Date.now()}` : urlDescarga;
   };
 
-  const imprimirTicketModelo = async ({ admin = false, encomiendaBase, ticketWindow: ticketWindowParam } = {}) => {
-    const estaImprimiendo = admin ? imprimiendoTicketAdmin : imprimiendoTicket;
+  const generarTicketImpresionConAdminUrl = async (ticketBase) => {
+    const [ticketUrl, ticketAdminUrl] = await Promise.all([
+      generarTicketPdfUrl({ admin: false, encomiendaBase: ticketBase, cacheBust: false, local: true }),
+      generarTicketPdfUrl({ admin: true, encomiendaBase: ticketBase, cacheBust: false, local: true }),
+    ]);
+
+    try {
+      return await combinarTicketsParaCorte(ticketUrl, ticketAdminUrl);
+    } finally {
+      if (ticketUrl.startsWith("blob:")) URL.revokeObjectURL(ticketUrl);
+      if (ticketAdminUrl.startsWith("blob:")) URL.revokeObjectURL(ticketAdminUrl);
+    }
+  };
+
+  const imprimirTicketModelo = async ({ admin = false, modo = null, encomiendaBase, ticketWindow: ticketWindowParam } = {}) => {
+    const modoImpresion = modo || (admin ? "admin" : "completo");
+    const esAdmin = modoImpresion === "admin";
+    const esCliente = modoImpresion === "cliente";
+    const estaImprimiendo = esAdmin ? imprimiendoTicketAdmin : imprimiendoTicket;
     const ticketBase = encomiendaBase || encomiendaTicketBase;
 
     if (guardando || estaImprimiendo) {
@@ -840,7 +919,7 @@ export default function TrEncomiendaModal({
     }
 
     const ticketWindow = ticketWindowParam || window.open("about:blank", "_blank");
-    if (admin) {
+    if (esAdmin) {
       setImprimiendoTicketAdmin(true);
     } else {
       setImprimiendoTicket(true);
@@ -849,7 +928,11 @@ export default function TrEncomiendaModal({
     try {
       ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Generando ticket...</p>`);
 
-      const urlConBypassCache = await generarTicketPdfUrl({ admin, encomiendaBase: ticketBase });
+      const urlConBypassCache = esAdmin
+        ? await generarTicketPdfUrl({ admin: true, encomiendaBase: ticketBase })
+        : esCliente
+          ? await generarTicketPdfUrl({ admin: false, encomiendaBase: ticketBase })
+          : await generarTicketImpresionConAdminUrl(ticketBase);
 
       if (ticketWindow) {
         ticketWindow.location.href = urlConBypassCache;
@@ -867,7 +950,7 @@ export default function TrEncomiendaModal({
         background: palette.surface,
       });
     } finally {
-      if (admin) {
+      if (esAdmin) {
         setImprimiendoTicketAdmin(false);
       } else {
         setImprimiendoTicket(false);
@@ -948,6 +1031,7 @@ export default function TrEncomiendaModal({
     try {
       ticketUrl = await generarTicketPdfUrl({
         encomiendaBase,
+        admin: false,
         local: true,
         cacheBust: false,
       });
@@ -1112,11 +1196,14 @@ export default function TrEncomiendaModal({
           zIndex: 1,
         }}>
           <AppButton onClick={onClose} disabled={guardando}>Salir [Esc]</AppButton>
-          <AppButton onClick={() => imprimirTicketModelo()} disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}>
-            {imprimiendoTicket ? "Generando PDF..." : "Imprimir encomienda"}
+          <AppButton onClick={() => imprimirTicketModelo({ modo: "completo" })} disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}>
+            {imprimiendoTicket ? "Generando PDF..." : "Ticket Completo"}
           </AppButton>
-          <AppButton buttonRef={ticketAdminRef} onClick={() => imprimirTicketModelo({ admin: true })} disabled={guardando || imprimiendoTicketAdmin || !puedeGenerarTicket}>
+          <AppButton buttonRef={ticketAdminRef} onClick={() => imprimirTicketModelo({ modo: "admin" })} disabled={guardando || imprimiendoTicketAdmin || !puedeGenerarTicket}>
             {imprimiendoTicketAdmin ? "Generando PDF..." : "Ticket Admin"}
+          </AppButton>
+          <AppButton onClick={() => imprimirTicketModelo({ modo: "cliente" })} disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}>
+            {imprimiendoTicket ? "Generando PDF..." : "Ticket Cliente"}
           </AppButton>
           {(esEdicion || encomiendaGrabada) && (
             <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp || !puedeGenerarTicket}>
@@ -1170,7 +1257,7 @@ export default function TrEncomiendaModal({
             onKeyDown={(event) => {
               if (event.key === "Enter" && !enviandoWhatsapp) {
                 event.preventDefault();
-                whatsappEnviarRef.current?.focus();
+                whatsappImagenRef.current?.focus();
               }
             }}
             placeholder="Celular del cliente"
@@ -1191,28 +1278,19 @@ export default function TrEncomiendaModal({
           <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.8 }}>
             Si no tiene codigo de pais, se asumira Peru (+51).
           </Typography>
-          <Box sx={{ mt: 1.4, display: "grid", gap: 0.9 }}>
-            <Box sx={{ p: 1, border: `1px solid ${palette.border}`, borderRadius: "8px", backgroundColor: palette.surfaceAlt }}>
-              <Typography sx={{ fontSize: "12px", fontWeight: 800, color: palette.text }}>Enviar link</Typography>
-              <Typography sx={{ fontSize: "11px", color: palette.muted, lineHeight: 1.35 }}>
-                Genera el PDF en servidor y abre WhatsApp con el enlace. Puede demorar unos segundos.
-              </Typography>
-            </Box>
-            <Box sx={{ p: 1, border: `1px solid ${palette.border}`, borderRadius: "8px", backgroundColor: palette.surfaceAlt }}>
-              <Typography sx={{ fontSize: "12px", fontWeight: 800, color: palette.text }}>Enviar imagen</Typography>
-              <Typography sx={{ fontSize: "11px", color: palette.muted, lineHeight: 1.35 }}>
-                Abre WhatsApp. Pega la imagen con Ctrl+V.
-              </Typography>
-            </Box>
-          </Box>
+          <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.8 }}>
+            Enviar imagen copia el ticket; en WhatsApp pega con Ctrl+V o Pegar.
+          </Typography>
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.8, mt: 1.6, flexWrap: "wrap" }}>
             <AppButton disabled={enviandoWhatsapp || copiandoEnvioRapido} onClick={cerrarFlujoWhatsapp}>
               Omitir
             </AppButton>
             <AppButton
+              buttonRef={whatsappImagenRef}
               icon={<ClipboardCopy size={15} />}
               disabled={enviandoWhatsapp || copiandoEnvioRapido}
               onClick={copiarTicketPngEnvioRapido}
+              sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 800 }}
             >
               {copiandoEnvioRapido ? envioRapidoEstado || "Copiando..." : "Enviar imagen"}
             </AppButton>
@@ -1221,7 +1299,6 @@ export default function TrEncomiendaModal({
               icon={<MessageCircle size={15} />}
               disabled={enviandoWhatsapp || copiandoEnvioRapido}
               onClick={enviarTicketPorWhatsapp}
-              sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 800 }}
             >
               {enviandoWhatsapp ? "Generando link..." : "Enviar link"}
             </AppButton>

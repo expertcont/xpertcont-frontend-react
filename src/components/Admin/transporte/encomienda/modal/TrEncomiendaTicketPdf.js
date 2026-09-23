@@ -2,7 +2,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 
 const W = 226.77;
-const H = 340;
+const H = 360;
 const M = 12;
 const CW = W - (M * 2);
 
@@ -60,8 +60,8 @@ const LAYOUT = {
   },
   qr: {
     size: 111,
-    minBottom: 23,
-    preferredY: 105,
+    minBottom: 74,
+    preferredY: 108,
     gapAbove: 5,
     emailGap: 9,
     emailSize: 6.8,
@@ -72,6 +72,7 @@ const INK = rgb(0.03, 0.035, 0.045);
 const MUTED = rgb(0.34, 0.35, 0.37);
 const LINE = rgb(0.7, 0.71, 0.73);
 const ICON_MUTED = rgb(0.48, 0.5, 0.53);
+const ALERT = rgb(0.82, 0.12, 0.12);
 
 const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
@@ -89,6 +90,8 @@ const ticketPayloadDesdeFormulario = ({ encomienda = {}, empresa = {} }) => ({
     numero: encomienda.r_numero || "",
     fecha_emision: encomienda.r_fecemi || "",
     hora_emision: encomienda.ctrl_crea || encomienda.hora_grabacion || encomienda.llegada_aprox || "",
+    llegada_aprox: encomienda.llegada_aprox || "",
+    forma_pago_id: encomienda.condicion_pago || "PAGADO",
     total: encomienda.r_monto_total || encomienda.precio_neto || 0,
   },
   cliente: {
@@ -229,6 +232,11 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   const displayNumber = [serie, number].filter(Boolean).join("-") || fullNumber;
   const issueDate = venta.fecha_emision || encomienda.r_fecemi;
   const issueTime = venta.hora_emision || encomienda.ctrl_crea || encomienda.hora_grabacion;
+  const arrivalApprox = timePe(encomienda.llegada_aprox || venta.llegada_aprox);
+  const payment = clean(encomienda.condicion_pago || venta.forma_pago_id || "PAGADO").toUpperCase();
+  const paymentNormalized = payment.replace(/[^A-Z]/g, "");
+  const isPaymentPending = paymentNormalized.includes("PORCOBRAR") || paymentNormalized.includes("PORPAGAR");
+  const paymentLabel = isPaymentPending ? "POR PAGAR" : "PAGADO";
   const destination = (
     encomienda.punto_venta_dest_nombre ||
     encomienda.punto_venta_destino_nombre ||
@@ -318,8 +326,10 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
     Math.min(LAYOUT.qr.preferredY, cursorY - LAYOUT.qr.gapAbove - LAYOUT.qr.size)
   );
   page.drawImage(qrImage, { x: (W - LAYOUT.qr.size) / 2, y: qrY, width: LAYOUT.qr.size, height: LAYOUT.qr.size });
+  centered(page, paymentLabel, 54, 16.5, semibold, isPaymentPending ? ALERT : INK, CW);
+  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, 36, 8.8, semibold, INK, CW);
   if (registeredByEmail) {
-    centered(page, `Registrado por: ${registeredByEmail}`, qrY - LAYOUT.qr.emailGap, LAYOUT.qr.emailSize, regular, MUTED);
+    centered(page, `REGISTRADO POR: ${registeredByEmail}`, 24, 6.8, regular, MUTED, CW);
   }
 
   return pdfDoc.save();
