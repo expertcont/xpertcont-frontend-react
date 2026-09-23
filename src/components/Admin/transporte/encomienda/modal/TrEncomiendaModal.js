@@ -2,8 +2,8 @@
 
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Typography } from "@mui/material";
-import { CheckCircle, ClipboardCopy, MessageCircle, Package, Save, X } from "lucide-react";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Popover, Typography } from "@mui/material";
+import { CalendarDays, CheckCircle, ClipboardCopy, MessageCircle, Package, Save, Ticket, X } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
@@ -179,6 +179,7 @@ export default function TrEncomiendaModal({
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [whatsappNumero, setWhatsappNumero] = useState("");
   const [whatsappEncomienda, setWhatsappEncomienda] = useState(null);
+  const [ticketPickerOpen, setTicketPickerOpen] = useState(false);
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
   const [copiandoEnvioRapido, setCopiandoEnvioRapido] = useState(false);
   const [envioRapidoEstado, setEnvioRapidoEstado] = useState("");
@@ -203,9 +204,11 @@ export default function TrEncomiendaModal({
   const choferRef = useRef(null);
   const descripcionRef = useRef(null);
   const totalRef = useRef(null);
+  const precioChoferRef = useRef(null);
   const condicionPagoRef = useRef(null);
   const llegadaRef = useRef(null);
   const grabarRef = useRef(null);
+  const ticketButtonRef = useRef(null);
   const ticketAdminRef = useRef(null);
   const whatsappNumeroRef = useRef(null);
   const whatsappImagenRef = useRef(null);
@@ -270,11 +273,12 @@ export default function TrEncomiendaModal({
     destinatarioNombreRef,
     destinatarioTelefonoRef,
     descripcionRef,
-    condicionPagoRef,
     totalRef,
-    llegadaRef,
+    condicionPagoRef,
     placaRef,
     choferRef,
+    llegadaRef,
+    precioChoferRef,
     grabarRef,
   );
 
@@ -390,17 +394,42 @@ export default function TrEncomiendaModal({
   const esFactura = (operacion?.r_cod || draft.r_cod) === "01";
   const encomiendaEnviadaSunat = Boolean(operacion?.numero_rdi || operacion?.r_vfirmado);
   const puedeEditarFecha = esEdicion && !encomiendaEnviadaSunat;
-  const tipoComprobanteTexto = esFactura ? "Factura" : "Boleta";
   const encomiendaGrabada = !esEdicion && Boolean(operacionGuardada);
   const encomiendaTicketBase = operacion || operacionGuardada || draft;
   const tieneComprobanteReal = (encomienda) => Boolean(encomienda?.r_cod && encomienda?.r_serie && encomienda?.r_numero);
   const puedeGenerarTicket = tieneComprobanteReal(encomiendaTicketBase);
   const comprobanteGrabado = [draft.r_serie, draft.r_numero].filter(Boolean).join("-");
-  const textoBotonGuardar = esEdicion
-    ? `Actualizar ${tipoComprobanteTexto}`
-    : encomiendaGrabada
-      ? `${tipoComprobanteTexto} grabada`
-      : `${esFactura ? "Grabar" : "Guardar"} ${tipoComprobanteTexto}`;
+  const numeroEncomiendaCabecera = [draft.r_serie || operacion?.r_serie, draft.r_numero || operacion?.r_numero]
+    .filter(Boolean)
+    .join("-") || "Sin numero";
+  const textoBotonGuardarCorto = esEdicion ? "Guardar" : encomiendaGrabada ? "Grabada" : esFactura ? "Grabar" : "Guardar";
+  const accionSecundariaSx = {
+    height: 42,
+    minWidth: 44,
+    px: 1,
+    borderRadius: palette.radius.control,
+    color: palette.muted,
+    backgroundColor: palette.overlaySoft,
+    borderColor: palette.borderSoft,
+    fontSize: "12px",
+    fontWeight: 800,
+    "& svg": {
+      width: 18,
+      height: 18,
+    },
+  };
+  const accionPrincipalSx = {
+    height: 42,
+    minWidth: 132,
+    px: 1.4,
+    borderRadius: palette.radius.control,
+    backgroundColor: palette.accent,
+    borderColor: palette.accent,
+    color: palette.onAccent,
+    fontSize: "13px",
+    fontWeight: 800,
+    boxShadow: "0 10px 24px rgba(0,0,0,0.22)",
+  };
   const zonasOrigen = zonasDisponibles.filter((zona) => zona.id_punto_venta === draft.id_punto_venta);
   const zonasDestino = zonasDisponibles.filter((zona) => zona.id_punto_venta === draft.id_punto_venta_dest);
 
@@ -752,6 +781,7 @@ export default function TrEncomiendaModal({
     }
 
     const total = Math.round(Number(draft.r_monto_total || 0));
+    const precioChofer = Number(draft.precio_chofer || 0);
     const entregaRemitenteEnOficina = draft.remitente_entrega === "OFICINA";
     const entregaDestinatarioEnOficina = draft.destinatario_entrega === "OFICINA";
     const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
@@ -782,6 +812,7 @@ export default function TrEncomiendaModal({
       precio_unitario: total,
       precio_neto: total,
       r_monto_total: total,
+      precio_chofer: precioChofer,
       asiento: null,
     }, { mantenerModalAbierto: true });
 
@@ -1077,20 +1108,44 @@ export default function TrEncomiendaModal({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
-      fullWidth
+      maxWidth={false}
       PaperProps={{
         sx: {
+          position: "relative",
+          width: { xs: "calc(100vw - 12px)", sm: 430 },
+          maxWidth: "calc(100vw - 12px)",
           backgroundColor: palette.surface,
           color: palette.text,
           border: `1px solid ${palette.border}`,
           borderRadius: palette.radius.modal,
-          maxHeight: "calc(100vh - 48px)",
+          maxHeight: "calc(100vh - 16px)",
+          scrollbarWidth: "thin",
+          scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
+          "&::-webkit-scrollbar": {
+            width: 8,
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: palette.overlaySoft,
+            borderRadius: palette.radius.control,
+            border: `1px solid ${palette.borderSoft}`,
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: palette.border,
+            borderRadius: palette.radius.control,
+            border: `2px solid ${palette.surface}`,
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: palette.accent,
+          },
+          "& > *": {
+            position: "relative",
+            zIndex: 1,
+          },
         },
       }}
     >
       <Box sx={{ p: { xs: 0.8, md: 1 }, pb: 0 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 0.7 }}>
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 0.75, mb: 0.7, flexWrap: "wrap" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
             <AppIconBox>
               <Package size={16} />
@@ -1100,11 +1155,64 @@ export default function TrEncomiendaModal({
                 {soloLectura ? "Visualizar encomienda" : esEdicion ? modalEditarTitulo : modalNuevoTitulo}
               </Typography>
               <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }} noWrap>
-                {soloLectura ? "Documento protegido por envio SUNAT/RDI" : "Registro operativo de envio y recepcion"}
+                Comprobante: {numeroEncomiendaCabecera}
               </Typography>
             </Box>
           </Box>
-          <IconButton disabled={guardando} onClick={onClose} sx={{ color: palette.muted }}>
+          {esEdicion && (
+            <Box
+              sx={{
+                order: { xs: 3, sm: 2 },
+                ml: { xs: 0, sm: "auto" },
+                width: { xs: "100%", sm: "auto" },
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 0.75,
+                flexWrap: "nowrap",
+                minWidth: 0,
+              }}
+            >
+              <Box
+                sx={{
+                  height: 32,
+                  px: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.65,
+                  borderRadius: palette.radius.control,
+                  border: `1px solid ${palette.border}`,
+                  backgroundColor: palette.overlaySoft,
+                  color: palette.text,
+                  minWidth: 0,
+                  flex: "1 1 auto",
+                }}
+              >
+                <CalendarDays size={14} color={palette.muted} />
+                <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase" }}>
+                  Fecha
+                </Typography>
+                <InputBase
+                  value={draft.r_fecemi}
+                  onChange={(event) => updateDraft("r_fecemi", event.target.value)}
+                  type="date"
+                  readOnly={soloLectura || !puedeEditarFecha}
+                  sx={{
+                    width: 118,
+                    color: palette.text,
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    "& input": {
+                      p: 0,
+                      color: palette.text,
+                      fontWeight: 800,
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
+          <IconButton disabled={guardando} onClick={onClose} sx={{ color: palette.muted, order: { xs: 2, sm: 3 }, ml: "auto" }}>
             <X size={18} />
           </IconButton>
         </Box>
@@ -1138,84 +1246,169 @@ export default function TrEncomiendaModal({
         </Box>
       )}
 
-      <TrEncomiendaModalSections
-        draft={draft}
-        error={error}
-        esEdicion={esEdicion}
-        puedeEditarFecha={puedeEditarFecha}
-        rutaSeleccionada={rutaSeleccionada}
-        origenVisual={origenVisual}
-        updateDraft={updateDraft}
-        limpiarRuta={limpiarRuta}
-        buscarRemitente={buscarRemitente}
-        buscarDestinatario={buscarDestinatario}
-        abrirClonePicker={abrirClonePicker}
-        setRutaPickerOpen={setRutaPickerOpen}
-        setZonaPickerOpen={setZonaPickerOpen}
-        setPlacaPickerOpen={setPlacaPickerOpen}
-        setLicenciaPickerOpen={setLicenciaPickerOpen}
-        buscandoRemitente={buscandoRemitente}
-        buscandoDestinatario={buscandoDestinatario}
-        soloLectura={soloLectura}
-        refs={{
-          remitenteDocRef,
-          remitenteNombreRef,
-          remitenteTelefonoRef,
-          clienteDireccionFactRef,
-          remitenteEntregaRef,
-          remitenteZonaRef,
-          remitenteDireccionRef,
-          destinatarioDocRef,
-          destinatarioNombreRef,
-          destinatarioTelefonoRef,
-          destinatarioEntregaRef,
-          destinatarioZonaRef,
-          destinatarioDireccionRef,
-          rutaRef,
-          placaRef,
-          choferRef,
-          descripcionRef,
-          totalRef,
-          condicionPagoRef,
-          llegadaRef,
-          grabarRef,
-        }}
-      />
+      <Box sx={{ position: "relative", pb: 0.8 }}>
+        <TrEncomiendaModalSections
+          draft={draft}
+          error={error}
+          esEdicion={esEdicion}
+          rutaSeleccionada={rutaSeleccionada}
+          origenVisual={origenVisual}
+          updateDraft={updateDraft}
+          limpiarRuta={limpiarRuta}
+          buscarRemitente={buscarRemitente}
+          buscarDestinatario={buscarDestinatario}
+          abrirClonePicker={abrirClonePicker}
+          setRutaPickerOpen={setRutaPickerOpen}
+          setZonaPickerOpen={setZonaPickerOpen}
+          setPlacaPickerOpen={setPlacaPickerOpen}
+          setLicenciaPickerOpen={setLicenciaPickerOpen}
+          buscandoRemitente={buscandoRemitente}
+          buscandoDestinatario={buscandoDestinatario}
+          soloLectura={soloLectura}
+          refs={{
+            remitenteDocRef,
+            remitenteNombreRef,
+            remitenteTelefonoRef,
+            clienteDireccionFactRef,
+            remitenteEntregaRef,
+            remitenteZonaRef,
+            remitenteDireccionRef,
+            destinatarioDocRef,
+            destinatarioNombreRef,
+            destinatarioTelefonoRef,
+            destinatarioEntregaRef,
+            destinatarioZonaRef,
+            destinatarioDireccionRef,
+            rutaRef,
+            placaRef,
+            choferRef,
+            descripcionRef,
+            totalRef,
+            precioChoferRef,
+            condicionPagoRef,
+            llegadaRef,
+            grabarRef,
+          }}
+        />
 
         <Box sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 0.75,
-          p: { xs: 0.8, md: 0.95 },
+          mx: { xs: 0.7, md: 0.85 },
+          mt: 0.25,
           pt: 0.7,
-          flexWrap: "wrap",
+          display: "grid",
+          gridTemplateColumns: "auto auto 1fr auto auto",
+          gap: 0.65,
+          alignItems: "center",
           borderTop: `1px solid ${palette.borderSoft}`,
-          backgroundColor: palette.surface,
-          position: "sticky",
-          bottom: 0,
-          zIndex: 1,
         }}>
-          <AppButton onClick={onClose} disabled={guardando}>Salir [Esc]</AppButton>
-          <AppButton onClick={() => imprimirTicketModelo({ modo: "completo" })} disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}>
-            {imprimiendoTicket ? "Generando PDF..." : "Ticket Completo"}
-          </AppButton>
-          <AppButton buttonRef={ticketAdminRef} onClick={() => imprimirTicketModelo({ modo: "admin" })} disabled={guardando || imprimiendoTicketAdmin || !puedeGenerarTicket}>
-            {imprimiendoTicketAdmin ? "Generando PDF..." : "Ticket Admin"}
-          </AppButton>
-          <AppButton onClick={() => imprimirTicketModelo({ modo: "cliente" })} disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}>
-            {imprimiendoTicket ? "Generando PDF..." : "Ticket Cliente"}
-          </AppButton>
           {(esEdicion || encomiendaGrabada) && (
-            <AppButton icon={<MessageCircle size={15} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp || !puedeGenerarTicket}>
+            <AppButton icon={<MessageCircle size={18} />} onClick={abrirEnvioWhatsapp} disabled={guardando || imprimiendoTicket || enviandoWhatsapp || !puedeGenerarTicket} sx={accionSecundariaSx}>
               WhatsApp
             </AppButton>
           )}
+          {!(esEdicion || encomiendaGrabada) && <Box />}
+          <AppButton icon={<X size={18} />} onClick={onClose} disabled={guardando} sx={accionSecundariaSx}>
+            Cerrar
+          </AppButton>
+          <Box />
+          <AppButton buttonRef={ticketButtonRef} icon={<Ticket size={18} />} onClick={() => setTicketPickerOpen(true)} disabled={guardando || imprimiendoTicket || imprimiendoTicketAdmin || !puedeGenerarTicket} sx={accionSecundariaSx}>
+            Ticket
+          </AppButton>
           {!soloLectura && (
-            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 700, fontSize: "13px" }}>
-              {guardando ? "Guardando..." : textoBotonGuardar}
+            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ ...accionPrincipalSx, justifySelf: "end" }}>
+              {guardando ? "Guardando..." : textoBotonGuardarCorto}
             </AppButton>
           )}
         </Box>
+      </Box>
+      <Popover
+        open={ticketPickerOpen}
+        onClose={() => setTicketPickerOpen(false)}
+        anchorEl={ticketButtonRef.current}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            width: { xs: 300, sm: 320 },
+            mb: 0.75,
+            backgroundColor: palette.surface,
+            color: palette.text,
+            border: `1px solid ${palette.border}`,
+            borderRadius: palette.radius.modal,
+            boxShadow: "0 18px 40px rgba(0,0,0,0.28)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, px: 1.4, pt: 1.15, pb: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <AppIconBox>
+              <Ticket size={16} />
+            </AppIconBox>
+            <Box>
+              <Typography sx={{ fontSize: "15px", fontWeight: 800, lineHeight: 1.15 }}>
+                Imprimir ticket
+              </Typography>
+              <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }}>
+                Escoge el formato
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={() => setTicketPickerOpen(false)} size="small" sx={{ color: palette.muted }}>
+            <X size={17} />
+          </IconButton>
+        </Box>
+        <Box sx={{ px: 1.4, pt: 0.75, pb: 1.2 }}>
+          <Box sx={{ display: "grid", gap: 0.75 }}>
+            <AppButton
+              icon={<Ticket size={18} />}
+              onClick={() => {
+                setTicketPickerOpen(false);
+                imprimirTicketModelo({ modo: "completo" });
+              }}
+              disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}
+              sx={{ justifyContent: "flex-start" }}
+            >
+              Ticket completo
+            </AppButton>
+            <AppButton
+              buttonRef={ticketAdminRef}
+              icon={<Ticket size={18} />}
+              onClick={() => {
+                setTicketPickerOpen(false);
+                imprimirTicketModelo({ modo: "admin" });
+              }}
+              disabled={guardando || imprimiendoTicketAdmin || !puedeGenerarTicket}
+              sx={{ justifyContent: "flex-start" }}
+            >
+              Ticket admin
+            </AppButton>
+            <AppButton
+              icon={<Ticket size={18} />}
+              onClick={() => {
+                setTicketPickerOpen(false);
+                imprimirTicketModelo({ modo: "cliente" });
+              }}
+              disabled={guardando || imprimiendoTicket || !puedeGenerarTicket}
+              sx={{ justifyContent: "flex-start" }}
+            >
+              Ticket cliente
+            </AppButton>
+            <AppButton
+              icon={<X size={16} />}
+              onClick={() => setTicketPickerOpen(false)}
+              sx={{
+                mt: 0.25,
+                backgroundColor: palette.overlaySoft,
+                borderColor: palette.borderSoft,
+                color: palette.muted,
+                fontWeight: 800,
+              }}
+            >
+              Cerrar
+            </AppButton>
+          </Box>
+        </Box>
+      </Popover>
       <Dialog
         open={whatsappModalOpen}
         onClose={(enviandoWhatsapp || copiandoEnvioRapido) ? undefined : cerrarFlujoWhatsapp}

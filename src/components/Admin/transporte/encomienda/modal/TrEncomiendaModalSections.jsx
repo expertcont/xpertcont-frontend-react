@@ -15,7 +15,6 @@ import {
   ChoiceGroup,
   Field,
   MoneyStepper,
-  MultilineCapture,
   SectionHeader,
   searchIconButtonSx,
   sectionSx,
@@ -26,11 +25,15 @@ import {
 } from "./trEncomiendaModalUtils";
 import TimeWheelPicker from "./TimeWheelPicker";
 
+const compactSectionSx = {
+  ...sectionSx,
+  p: { xs: 0.35, md: 0.4 },
+};
+
 export default function TrEncomiendaModalSections({
   draft,
   error,
   esEdicion,
-  puedeEditarFecha,
   rutaSeleccionada,
   origenVisual,
   updateDraft,
@@ -58,7 +61,31 @@ export default function TrEncomiendaModalSections({
   const rutaVisual = esEdicion ? (rutaEdicion || rutaSeleccionada) : (rutaSeleccionada || rutaEdicion);
 
   return (
-    <Box sx={{ px: { xs: 0.8, md: 1 }, pb: 0.75, overflowY: "auto" }}>
+    <Box
+      sx={{
+        px: { xs: 0.7, md: 0.85 },
+        pb: 0.75,
+        overflowY: "auto",
+        scrollbarWidth: "thin",
+        scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
+        "&::-webkit-scrollbar": {
+          width: 8,
+        },
+        "&::-webkit-scrollbar-track": {
+          backgroundColor: palette.overlaySoft,
+          borderRadius: palette.radius.control,
+          border: `1px solid ${palette.borderSoft}`,
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: palette.border,
+          borderRadius: palette.radius.control,
+          border: `2px solid ${palette.surface}`,
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          backgroundColor: palette.accent,
+        },
+      }}
+    >
       {soloLectura && (
         <Typography
           sx={{
@@ -78,31 +105,18 @@ export default function TrEncomiendaModalSections({
       )}
       <Box sx={soloLectura ? { pointerEvents: "none", opacity: 0.82 } : undefined}>
       <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
-      <Box sx={sectionSx}>
-        <Grid container spacing={1}>
-          {esEdicion && (
-            <Grid item xs={12} md={2.2}>
-              <Field label="Fecha">
-                <CaptureInput
-                  value={draft.r_fecemi}
-                  onChange={(value) => updateDraft("r_fecemi", value)}
-                  type="date"
-                  readOnly={soloLectura || !puedeEditarFecha}
-                />
-              </Field>
-            </Grid>
-          )}
-          <Grid item xs={12} md={esEdicion ? (mostrarDireccionRemitente ? 3.8 : 6.8) : (mostrarDireccionRemitente ? 4 : 9)}>
+      <Box sx={compactSectionSx}>
+        <Grid container columnSpacing={0.65} rowSpacing={0.35}>
+          <Grid item xs={12}>
             {/* Origen automatico desde el punto de venta operativo seleccionado antes de nueva encomienda. */}
             <Field label="Origen" labelWidth={58}>
               <PuntoVentaField value={origenVisual} />
             </Field>
           </Grid>
-          <Grid item xs={12} md={mostrarDireccionRemitente ? 2 : 3}>
+          <Grid item xs={12}>
             <Field label="" labelWidth={0}>
-              <Box sx={{ width: 142, maxWidth: "100%", display: "flex" }}>
+              <Box sx={{ width: "100%", display: "flex" }}>
                 <ChoiceGroup
-                  compact
                   value={draft.remitente_entrega}
                   inputRef={refs.remitenteEntregaRef}
                   nextRef={mostrarDireccionRemitente ? refs.remitenteZonaRef : refs.remitenteDocRef}
@@ -119,7 +133,7 @@ export default function TrEncomiendaModalSections({
           </Grid>
           {mostrarDireccionRemitente && (
             <>
-              <Grid item xs={12} md={2.4}>
+              <Grid item xs={12}>
                 <Field label="Zona">
                   {/* Zonas filtradas por id_punto_venta de origen; se guarda nombre de zona. */}
                   <ZonaField
@@ -132,7 +146,7 @@ export default function TrEncomiendaModalSections({
                   />
                 </Field>
               </Grid>
-              <Grid item xs={12} md={3.2}>
+              <Grid item xs={12}>
                 <Field label="Direccion">
                   <CaptureInput
                     value={draft.remitente_direccion}
@@ -145,8 +159,8 @@ export default function TrEncomiendaModalSections({
               </Grid>
             </>
           )}
-          <Grid item xs={12} md={3}>
-            <Field label="DNI / RUC" labelWidth={58}>
+          <Grid item xs={12}>
+            <Field label="DNI / RUC" labelWidth={58} controlHeight={40}>
               <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
                 <IconButton
                   size="small"
@@ -154,6 +168,8 @@ export default function TrEncomiendaModalSections({
                   disabled={buscandoRemitente}
                   sx={{
                     ...searchIconButtonSx,
+                    width: 34,
+                    height: 34,
                     color: buscandoRemitente ? palette.muted : palette.accent,
                   }}
                 >
@@ -172,19 +188,20 @@ export default function TrEncomiendaModalSections({
                   inputMode="numeric"
                   pattern="[0-9]*"
                   align="right"
+                  prominent
                   onPlus={buscarRemitente}
                   onF3={abrirClonePicker}
                 />
               </Box>
             </Field>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Field label="Nombres / R.Social">
               <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
             </Field>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Field label="Telefono">
+          <Grid item xs={12}>
+            <Field label="Telefono" labelWidth={53}>
               <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.rutaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
             </Field>
           </Grid>
@@ -205,9 +222,9 @@ export default function TrEncomiendaModalSections({
       </Box>
 
       <SectionHeader icon={<UserRound size={15} />} title="2. Destino" />
-      <Box sx={sectionSx}>
-        <Grid container spacing={1}>
-          <Grid item xs={12} md={draft.destinatario_entrega === "CLIENTE" ? 4 : 9}>
+      <Box sx={compactSectionSx}>
+        <Grid container columnSpacing={0.65} rowSpacing={0.35}>
+          <Grid item xs={12}>
             {/* Destino se escoge desde rutas; se conserva id_ruta para guardar la operacion. */}
             <Field label="Destino" labelWidth={58}>
               <RutaField
@@ -219,11 +236,10 @@ export default function TrEncomiendaModalSections({
               />
             </Field>
           </Grid>
-          <Grid item xs={12} md={draft.destinatario_entrega === "CLIENTE" ? 2 : 3}>
+          <Grid item xs={12}>
             <Field label="" labelWidth={0}>
-              <Box sx={{ width: 142, maxWidth: "100%", display: "flex" }}>
+              <Box sx={{ width: "100%", display: "flex" }}>
                 <ChoiceGroup
-                  compact
                   value={draft.destinatario_entrega}
                   inputRef={refs.destinatarioEntregaRef}
                   nextRef={draft.destinatario_entrega === "CLIENTE" ? refs.destinatarioZonaRef : refs.destinatarioDocRef}
@@ -240,7 +256,7 @@ export default function TrEncomiendaModalSections({
           </Grid>
           {draft.destinatario_entrega === "CLIENTE" && (
             <>
-              <Grid item xs={12} md={2.4}>
+              <Grid item xs={12}>
                 <Field label="Zona">
                   {/* Zonas filtradas por id_punto_venta_dest de la ruta elegida; se guarda nombre de zona. */}
                   <ZonaField
@@ -253,7 +269,7 @@ export default function TrEncomiendaModalSections({
                   />
                 </Field>
               </Grid>
-              <Grid item xs={12} md={3.2}>
+              <Grid item xs={12}>
                 <Field label="Direccion">
                   <CaptureInput
                     value={draft.destinatario_direccion}
@@ -266,8 +282,8 @@ export default function TrEncomiendaModalSections({
               </Grid>
             </>
           )}
-          <Grid item xs={12} md={3}>
-            <Field label="DNI" labelWidth={58}>
+          <Grid item xs={12}>
+            <Field label="DNI" labelWidth={58} controlHeight={40}>
               <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
                 <IconButton
                   size="small"
@@ -275,6 +291,8 @@ export default function TrEncomiendaModalSections({
                   disabled={buscandoDestinatario}
                   sx={{
                     ...searchIconButtonSx,
+                    width: 34,
+                    height: 34,
                     color: buscandoDestinatario ? palette.muted : palette.accent,
                   }}
                 >
@@ -289,105 +307,119 @@ export default function TrEncomiendaModalSections({
                   inputMode="numeric"
                   pattern="[0-9]*"
                   align="right"
+                  prominent
                   onPlus={buscarDestinatario}
                 />
               </Box>
             </Field>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Field label="NOMBRES APELLIDOS">
               <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
             </Field>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Field label="Telefono">
-              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.descripcionRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
+          <Grid item xs={12}>
+            <Field label="Telefono" labelWidth={53}>
+              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.placaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
             </Field>
           </Grid>
         </Grid>
       </Box>
 
-      <SectionHeader icon={<Package size={15} />} title="3. Encomienda, pago y unidad" />
-      <Box sx={sectionSx}>
-        <Grid container spacing={1}>
-          <Grid item xs={12} md={8}>
-            <Typography sx={{ color: palette.muted, fontSize: "9px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
-              Descripcion encomienda
-            </Typography>
-            <MultilineCapture
-              value={draft.descripcion}
-              onChange={(value) => updateDraft("descripcion", String(value || "").toUpperCase())}
-              inputRef={refs.descripcionRef}
-              nextRef={refs.condicionPagoRef}
-              placeholder="Paquete, sobre, caja..."
-              minRows={5}
-              minHeight={207}
-            />
+      <SectionHeader icon={<Package size={15} />} title="3. Encomienda" />
+      <Box sx={compactSectionSx}>
+        <Grid container columnSpacing={0.65} rowSpacing={0.35}>
+          <Grid item xs={12}>
+            <Field label="Descripcion" labelWidth={82}>
+              <CaptureInput
+                value={draft.descripcion}
+                onChange={(value) => updateDraft("descripcion", String(value || "").toUpperCase())}
+                inputRef={refs.descripcionRef}
+                nextRef={refs.condicionPagoRef}
+                placeholder="Paquete, sobre, caja..."
+              />
+            </Field>
           </Grid>
-          <Grid item xs={12} md={4} sx={{ mt: { md: "17px" } }}>
-            <Grid container spacing={1}>
-              <Grid item xs={12}>
-                <Field label="" tall labelWidth={0}>
-                  <ChoiceGroup
-                    value={draft.condicion_pago}
-                    inputRef={refs.condicionPagoRef}
-                    nextRef={refs.totalRef}
-                    onChange={(value) => updateDraft("condicion_pago", value)}
-                    options={[
-                      { value: "PAGADO", label: "PAGADO" },
-                      { value: "POR_COBRAR", label: "POR COBRAR" },
-                    ]}
-                  />
-                </Field>
-              </Grid>
-              <Grid item xs={12}>
-                <Field label="Total S/" controlHeight={40}>
-                  <MoneyStepper
-                    value={draft.r_monto_total}
-                    onChange={(value) => updateDraft("r_monto_total", value)}
-                    inputRef={refs.totalRef}
-                    nextRef={refs.llegadaRef}
-                    prominent
-                  />
-                </Field>
-              </Grid>
-              <Grid item xs={12}>
-                <Field label="" labelWidth={0} plain>
-                  <TimeWheelPicker
-                    value={draft.llegada_aprox}
-                    onChange={(value) => updateDraft("llegada_aprox", value)}
-                    inputRef={refs.llegadaRef}
-                    nextRef={refs.placaRef}
-                    minuteStep={5}
-                    label=""
-                  />
-                </Field>
-              </Grid>
-              <Grid item xs={12}>
-                <Field label="" labelWidth={0}>
-                  {/* Placa admite escritura manual; + o camion abren el catalogo mve_transplaca. */}
-                  <PlacaField
-                    value={draft.placa}
-                    onChange={(value) => updateDraft("placa", value)}
-                    onOpen={() => setPlacaPickerOpen(true)}
-                    inputRef={refs.placaRef}
-                    nextRef={refs.choferRef}
-                  />
-                </Field>
-              </Grid>
-              <Grid item xs={12}>
-                <Field label="" labelWidth={0}>
-                  {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
-                  <LicenciaField
-                    value={draft.licencia}
-                    onChange={(value) => updateDraft("licencia", value)}
-                    onOpen={() => setLicenciaPickerOpen(true)}
-                    inputRef={refs.choferRef}
-                    nextRef={refs.grabarRef}
-                  />
-                </Field>
-              </Grid>
-            </Grid>
+          <Grid item xs={12}>
+            <Field label="Total S/" controlHeight={40}>
+              <MoneyStepper
+                value={draft.r_monto_total}
+                onChange={(value) => updateDraft("r_monto_total", value)}
+                inputRef={refs.totalRef}
+                nextRef={refs.condicionPagoRef}
+                prominent
+                align="center"
+                tone={draft.condicion_pago === "POR_COBRAR" ? "warning" : "default"}
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="" tall labelWidth={0}>
+              <ChoiceGroup
+                value={draft.condicion_pago}
+                inputRef={refs.condicionPagoRef}
+                nextRef={refs.placaRef}
+                onChange={(value) => updateDraft("condicion_pago", value)}
+                options={[
+                  { value: "PAGADO", label: "PAGADO" },
+                  { value: "POR_COBRAR", label: "POR COBRAR" },
+                ]}
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={6}>
+            <Field label="" labelWidth={0}>
+              {/* Placa admite escritura manual; + o camion abren el catalogo mve_transplaca. */}
+              <PlacaField
+                value={draft.placa}
+                onChange={(value) => updateDraft("placa", value)}
+                onOpen={() => setPlacaPickerOpen(true)}
+                inputRef={refs.placaRef}
+                nextRef={refs.choferRef}
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={6}>
+            <Field label="" labelWidth={0}>
+              {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
+              <LicenciaField
+                value={draft.licencia}
+                onChange={(value) => updateDraft("licencia", value)}
+                onOpen={() => setLicenciaPickerOpen(true)}
+                inputRef={refs.choferRef}
+                nextRef={refs.llegadaRef}
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={6}>
+            <Field label="" labelWidth={0} plain>
+              <TimeWheelPicker
+                value={draft.llegada_aprox}
+                onChange={(value) => updateDraft("llegada_aprox", value)}
+                inputRef={refs.llegadaRef}
+                nextRef={refs.precioChoferRef}
+                minuteStep={5}
+                label=""
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={6}>
+            <Field icon={(
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+                <UserRound size={15} />
+                <Typography component="span" sx={{ fontSize: "10px", fontWeight: 800, lineHeight: 1 }}>
+                  S/
+                </Typography>
+              </Box>
+            )} label="" labelWidth={0} controlHeight={36}>
+              <MoneyStepper
+                value={draft.precio_chofer}
+                onChange={(value) => updateDraft("precio_chofer", value)}
+                inputRef={refs.precioChoferRef}
+                nextRef={refs.grabarRef}
+                align="center"
+              />
+            </Field>
           </Grid>
         </Grid>
       </Box>

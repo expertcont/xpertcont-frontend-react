@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, MenuItem, Select, Typography } from "@mui/material";
-import { Edit3, Printer, Search, Trash2, WalletCards, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit3, Printer, Search, Trash2, WalletCards, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import DaySelector from "../../AdminDias";
@@ -80,7 +80,60 @@ const selectSx = {
 
 const menuItemSx = { fontSize: "13px" };
 
+const pickerFieldSx = {
+  minHeight: 33,
+  px: 0.9,
+  display: "flex",
+  alignItems: "center",
+  backgroundColor: palette.bg,
+  border: `1px solid ${palette.border}`,
+  borderRadius: palette.radius.control,
+  color: palette.text,
+  fontSize: "13px",
+  transition: "border-color .18s ease, background-color .18s ease",
+  "&:focus-within": {
+    borderColor: palette.accent,
+    backgroundColor: palette.surfaceAlt,
+  },
+};
+
+const pickerInputSx = {
+  color: palette.text,
+  fontSize: "12.5px",
+  width: "100%",
+  "& input::placeholder, & textarea::placeholder": {
+    color: palette.muted,
+    opacity: 1,
+  },
+};
+
+const pickerIconButtonSx = {
+  width: { xs: 34, md: 28 },
+  height: { xs: 34, md: 28 },
+  mr: 0.45,
+  borderRadius: palette.radius.control,
+  color: palette.accent,
+  backgroundColor: palette.accentSoft,
+  border: `1px solid ${palette.border}`,
+  flexShrink: 0,
+  transition: "all .16s ease",
+  "& svg": {
+    width: { xs: 18, md: 16 },
+    height: { xs: 18, md: 16 },
+  },
+  "&:hover": {
+    backgroundColor: palette.accent,
+    borderColor: palette.accent,
+    color: palette.onAccent,
+    transform: "translateY(-1px)",
+  },
+  "&:active": {
+    transform: "translateY(0)",
+  },
+};
+
 const emptyDraft = {
+  tipo_movimiento: "S",
   fecha: "",
   id_punto_venta: "",
   id_motivo: "",
@@ -333,12 +386,247 @@ function IngresosModal({ open, ingresos, loading, onClose }) {
   );
 }
 
+function MotivoPickerModal({ open, motivos, onClose, onSelect }) {
+  const [busqueda, setBusqueda] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const busquedaRef = useRef(null);
+  const selectedOptionRef = useRef(null);
+  const filtrados = useMemo(() => motivos.filter((item) => [
+    item.id_motivo,
+    item.nombre,
+  ].some((field) => String(field || "").toLowerCase().includes(busqueda.toLowerCase()))), [busqueda, motivos]);
+  const indexFinal = Math.min(selectedIndex, Math.max(0, filtrados.length - 1));
+
+  useEffect(() => {
+    if (!open) return;
+    setBusqueda("");
+    setSelectedIndex(0);
+    window.setTimeout(() => {
+      busquedaRef.current?.focus?.();
+      busquedaRef.current?.select?.();
+    }, 80);
+  }, [open]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [busqueda]);
+
+  useEffect(() => {
+    if (selectedIndex >= filtrados.length) {
+      setSelectedIndex(Math.max(0, filtrados.length - 1));
+    }
+  }, [filtrados.length, selectedIndex]);
+
+  useEffect(() => {
+    selectedOptionRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [indexFinal]);
+
+  const handleKeyDown = (event) => {
+    if (event.key === "ArrowDown" && filtrados.length > 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      setSelectedIndex((prev) => Math.min(prev + 1, filtrados.length - 1));
+      return;
+    }
+    if (event.key === "ArrowUp" && filtrados.length > 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      return;
+    }
+    if (event.key === "Enter" && filtrados[indexFinal]) {
+      event.preventDefault();
+      event.stopPropagation();
+      onSelect(filtrados[indexFinal]);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} onKeyDown={handleKeyDown} maxWidth={false} PaperProps={{ sx: { width: { xs: "calc(100% - 24px)", sm: 360 }, maxWidth: "calc(100% - 24px)", backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: palette.radius.modal } }}>
+      <Box sx={{ p: 0.9 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
+          <Box>
+            <Typography sx={{ fontWeight: 800, fontSize: "15px" }}>Escoger motivo</Typography>
+            <Typography sx={{ color: palette.muted, fontSize: "11px" }}>Busca por codigo o nombre</Typography>
+          </Box>
+          <IconButton onClick={onClose} sx={{ color: palette.muted }}>
+            <X size={18} />
+          </IconButton>
+        </Box>
+
+        <Box sx={{ ...pickerFieldSx, mb: 0.9 }}>
+          <Box sx={{ color: palette.muted, display: "flex", mr: 0.6 }}>
+            <Search size={15} />
+          </Box>
+          <InputBase
+            inputRef={busquedaRef}
+            value={busqueda}
+            onChange={(event) => setBusqueda(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Buscar motivo..."
+            sx={pickerInputSx}
+            autoFocus
+          />
+        </Box>
+
+        <Box sx={{ maxHeight: 300, overflowY: "auto", display: "grid", gap: 0.25 }}>
+          {filtrados.map((item, index) => {
+            const selected = index === indexFinal;
+            return (
+              <Box
+                key={item.id_motivo}
+                ref={selected ? selectedOptionRef : null}
+                onMouseEnter={() => setSelectedIndex(index)}
+                onClick={() => onSelect(item)}
+                sx={{
+                  px: 0.85,
+                  py: 0.55,
+                  borderRadius: palette.radius.control,
+                  border: `1px solid ${selected ? palette.accent : "transparent"}`,
+                  backgroundColor: selected ? palette.accentSoft : "transparent",
+                  cursor: "pointer",
+                  transition: "background-color .16s ease, border-color .16s ease",
+                  "&:hover": {
+                    backgroundColor: palette.surfaceAlt,
+                  },
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, alignItems: "center" }}>
+                  <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "13px" }}>{item.nombre}</Typography>
+                  <Typography sx={{ color: palette.accent, fontWeight: 800, fontSize: "11px" }}>{item.id_motivo}</Typography>
+                </Box>
+              </Box>
+            );
+          })}
+
+          {filtrados.length === 0 && (
+            <Typography sx={{ color: palette.muted, fontSize: "12px", py: 3, textAlign: "center" }}>
+              Sin motivos disponibles
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </Dialog>
+  );
+}
+
+function CajaMoneyStepper({ value, onChange, inputRef, onKeyDown }) {
+  const formatMoneyValue = () => {
+    if (value === "" || value === null || value === undefined) return;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    onChange(numeric.toFixed(2));
+  };
+  const updateValue = (delta) => {
+    const current = Number(value || 0);
+    const next = Math.max(0, current + delta);
+    onChange(next.toFixed(2));
+  };
+
+  const buttonSx = {
+    minHeight: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: palette.muted,
+    cursor: "pointer",
+    transition: "all .16s ease",
+    "&:hover": {
+      backgroundColor: palette.accentSoft,
+      color: palette.accent,
+    },
+  };
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "stretch",
+        width: "100%",
+        minHeight: 52,
+        overflow: "hidden",
+        borderRadius: palette.radius.control,
+        border: `1px solid ${palette.border}`,
+        backgroundColor: palette.bg,
+        "&:focus-within": {
+          borderColor: palette.accent,
+          backgroundColor: palette.surfaceAlt,
+        },
+      }}
+    >
+      <InputBase
+        inputRef={inputRef}
+        type="number"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onBlur={formatMoneyValue}
+        onKeyDown={(event) => {
+          if (event.key === "+" || event.key === "=") {
+            event.preventDefault();
+            updateValue(1);
+            return;
+          }
+          if (event.key === "-") {
+            event.preventDefault();
+            updateValue(-1);
+            return;
+          }
+          onKeyDown?.(event);
+        }}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          px: 1,
+          color: palette.accent,
+          "&::before": {
+            content: '"S/"',
+            color: palette.muted,
+            fontSize: "14px",
+            fontWeight: 900,
+            mr: 0.75,
+            alignSelf: "center",
+          },
+          "& input": {
+            textAlign: "center",
+            fontSize: "24px",
+            fontWeight: 950,
+            color: palette.accent,
+            p: 0,
+            MozAppearance: "textfield",
+          },
+          "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
+            WebkitAppearance: "none",
+            margin: 0,
+          },
+        }}
+      />
+      <Box
+        sx={{
+          width: 32,
+          alignSelf: "stretch",
+          display: "grid",
+          gridTemplateRows: "1fr 1fr",
+          borderLeft: `1px solid ${palette.border}`,
+          backgroundColor: palette.bg,
+          flexShrink: 0,
+        }}
+      >
+        <Box onClick={() => updateValue(1)} sx={{ ...buttonSx, borderBottom: `1px solid ${palette.borderSoft}` }}>
+          <ChevronUp size={15} />
+        </Box>
+        <Box onClick={() => updateValue(-1)} sx={buttonSx}>
+          <ChevronDown size={15} />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 function TrCajaMovimientoModal({
   open,
   draft,
   setDraft,
   motivos,
-  formasPago,
   puntosVenta,
   guardando,
   esEdicion,
@@ -346,17 +634,119 @@ function TrCajaMovimientoModal({
   onSubmit,
 }) {
   const update = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
+  const [motivoPickerOpen, setMotivoPickerOpen] = useState(false);
+  const ingresoRef = useRef(null);
+  const salidaRef = useRef(null);
+  const motivoRef = useRef(null);
+  const importeRef = useRef(null);
+  const nroOperacionRef = useRef(null);
+  const descripcionRef = useRef(null);
+  const guardarRef = useRef(null);
+  const tipoMovimiento = draft.tipo_movimiento || "S";
+  const esIngreso = tipoMovimiento === "I";
+  const nombreMovimiento = esIngreso ? "ingreso" : "salida";
+  const motivosMovimiento = useMemo(
+    () => motivos.filter((item) => String(item.tipo_movimiento || "").trim() === tipoMovimiento),
+    [motivos, tipoMovimiento],
+  );
+  const motivoSeleccionado = motivosMovimiento.find((item) => item.id_motivo === draft.id_motivo);
+  const enfocar = (ref) => {
+    window.setTimeout(() => {
+      ref.current?.focus?.();
+      ref.current?.select?.();
+    }, 0);
+  };
+  const moverVertical = (event, anteriorRef, siguienteRef) => {
+    if (event.key === "ArrowUp" && anteriorRef?.current) {
+      event.preventDefault();
+      enfocar(anteriorRef);
+      return true;
+    }
+    if (event.key === "ArrowDown" && siguienteRef?.current) {
+      event.preventDefault();
+      enfocar(siguienteRef);
+      return true;
+    }
+    return false;
+  };
+  const avanzarConEnter = (event, siguienteRef) => {
+    if (event.key === "Enter" && siguienteRef?.current) {
+      event.preventDefault();
+      enfocar(siguienteRef);
+    }
+  };
+  const switchOptionSx = (activo, color) => ({
+    flex: 1,
+    minHeight: 42,
+    borderRadius: palette.radius.control,
+    border: `1px solid ${activo ? color : palette.border}`,
+    backgroundColor: activo ? `${color}22` : palette.overlaySoft,
+    color: activo ? color : palette.muted,
+    fontSize: "12px",
+    fontWeight: 900,
+    cursor: esEdicion ? "default" : "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "border-color .18s ease, background-color .18s ease, color .18s ease",
+    opacity: esEdicion && !activo ? 0.55 : 1,
+  });
+  const cambiarTipoMovimiento = (tipo) => {
+    if (esEdicion || tipo === tipoMovimiento) return;
+    setDraft((prev) => ({ ...prev, tipo_movimiento: tipo, id_motivo: "" }));
+  };
+  const seleccionarMotivo = (motivo, avanzar = true) => {
+    if (!motivo) return;
+    update("id_motivo", motivo.id_motivo);
+    setMotivoPickerOpen(false);
+    if (avanzar) enfocar(importeRef);
+  };
+  const limpiarMotivo = () => {
+    update("id_motivo", "");
+  };
+  const handleChipKeyDown = (event) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const siguienteTipo = tipoMovimiento === "I" ? "S" : "I";
+      cambiarTipoMovimiento(siguienteTipo);
+      enfocar(siguienteTipo === "I" ? ingresoRef : salidaRef);
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "Enter") {
+      event.preventDefault();
+      enfocar(motivoRef);
+    }
+  };
+  useEffect(() => {
+    if (!open) return;
+    window.setTimeout(() => {
+      (tipoMovimiento === "I" ? ingresoRef : salidaRef).current?.focus?.();
+    }, 90);
+  }, [open, tipoMovimiento]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: palette.radius.modal, backgroundColor: palette.surface, border: `1px solid ${palette.border}` } }}>
+    <Dialog open={open} onClose={onClose} maxWidth={false} PaperProps={{ sx: { width: { xs: "calc(100% - 24px)", sm: 420 }, maxWidth: "calc(100% - 24px)", borderRadius: palette.radius.modal, backgroundColor: palette.surface, border: `1px solid ${palette.border}` } }}>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: palette.text, fontWeight: 800, pb: 1 }}>
-        {esEdicion ? "Editar salida de dinero" : "Registrar salida de dinero"}
+        {esEdicion ? `Editar ${nombreMovimiento} manual` : `Registrar ${nombreMovimiento} manual`}
         <IconButton onClick={onClose} size="small" sx={{ color: palette.muted }}>
           <X size={18} />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" }, gap: 1.4 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.05 }}>
+          <Box>
+            <FieldLabel>Tipo de movimiento</FieldLabel>
+            <Box sx={{ display: "flex", gap: 0.8, p: 0.45, borderRadius: palette.radius.control, border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.surface }}>
+              <Box ref={ingresoRef} role="button" tabIndex={0} onClick={() => cambiarTipoMovimiento("I")} onKeyDown={handleChipKeyDown} sx={switchOptionSx(esIngreso, palette.success)}>
+                Ingreso
+              </Box>
+              <Box ref={salidaRef} role="button" tabIndex={0} onClick={() => cambiarTipoMovimiento("S")} onKeyDown={handleChipKeyDown} sx={switchOptionSx(!esIngreso, palette.danger)}>
+                Salida
+              </Box>
+            </Box>
+          </Box>
+
           <Box>
             <FieldLabel>Fecha</FieldLabel>
             <InputBase type="datetime-local" value={draft.fecha} onChange={(event) => update("fecha", event.target.value)} sx={fieldSx} />
@@ -376,61 +766,116 @@ function TrCajaMovimientoModal({
 
           <Box>
             <FieldLabel>Motivo</FieldLabel>
-            <Select value={draft.id_motivo} onChange={(event) => update("id_motivo", event.target.value)} sx={selectSx} fullWidth displayEmpty>
-              <MenuItem value="" sx={menuItemSx}>Selecciona</MenuItem>
-              {motivos.map((item) => (
-                <MenuItem key={item.id_motivo} value={item.id_motivo} sx={menuItemSx}>
-                  {item.nombre}
-                </MenuItem>
-              ))}
-            </Select>
+            <Box sx={{ ...pickerFieldSx, width: "100%", minWidth: 0, cursor: "text" }}>
+              <IconButton size="small" onClick={() => setMotivoPickerOpen(true)} sx={pickerIconButtonSx}>
+                <Search size={18} />
+              </IconButton>
+              <InputBase
+                inputRef={motivoRef}
+                value={motivoSeleccionado?.nombre || ""}
+                placeholder="Motivo"
+                readOnly
+                onPaste={(event) => event.preventDefault()}
+                onKeyDown={(event) => {
+                  if (event.key === "Backspace" || event.key === "Delete") {
+                    event.preventDefault();
+                    limpiarMotivo();
+                    return;
+                  }
+                  if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    enfocar(tipoMovimiento === "I" ? ingresoRef : salidaRef);
+                    return;
+                  }
+                  if (event.key === "ArrowDown" || event.key === "+" || (event.key === "Enter" && !motivoSeleccionado)) {
+                    event.preventDefault();
+                    setMotivoPickerOpen(true);
+                    return;
+                  }
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    enfocar(importeRef);
+                  }
+                }}
+                sx={{
+                  ...pickerInputSx,
+                  cursor: "text",
+                  "& input": {
+                    cursor: "text",
+                    caretColor: palette.text,
+                  },
+                }}
+              />
+            </Box>
           </Box>
 
           <Box>
             <FieldLabel>Importe</FieldLabel>
-            <InputBase type="number" inputProps={{ min: 0, step: "0.01" }} value={draft.importe} onChange={(event) => update("importe", event.target.value)} sx={fieldSx} />
-          </Box>
-
-          <Box>
-            <FieldLabel>Forma de pago</FieldLabel>
-            <Select value={draft.id_forma_pago} onChange={(event) => update("id_forma_pago", event.target.value)} sx={selectSx} fullWidth displayEmpty>
-              <MenuItem value="" sx={menuItemSx}>Selecciona</MenuItem>
-              {formasPago.map((item) => (
-                <MenuItem key={item.id_forma_pago} value={item.id_forma_pago} sx={menuItemSx}>
-                  {item.id_forma_pago} - {item.nombre}
-                </MenuItem>
-              ))}
-            </Select>
+            <CajaMoneyStepper
+              inputRef={importeRef}
+              value={draft.importe}
+              onChange={(value) => update("importe", value)}
+              onKeyDown={(event) => {
+                if (moverVertical(event, motivoRef, nroOperacionRef)) return;
+                avanzarConEnter(event, nroOperacionRef);
+              }}
+            />
           </Box>
 
           <Box>
             <FieldLabel>Nro. operacion</FieldLabel>
-            <InputBase value={draft.nro_operacion} onChange={(event) => update("nro_operacion", event.target.value)} sx={fieldSx} />
+            <InputBase
+              inputRef={nroOperacionRef}
+              value={draft.nro_operacion}
+              onChange={(event) => update("nro_operacion", event.target.value)}
+              onKeyDown={(event) => {
+                if (moverVertical(event, importeRef, descripcionRef)) return;
+                avanzarConEnter(event, descripcionRef);
+              }}
+              sx={fieldSx}
+            />
           </Box>
 
-          <Box sx={{ gridColumn: { xs: "auto", md: "span 3" } }}>
+          <Box>
             <FieldLabel>Descripcion</FieldLabel>
-            <InputBase value={draft.descripcion} onChange={(event) => update("descripcion", event.target.value)} sx={{ ...fieldSx, minHeight: 66, alignItems: "flex-start", py: 1 }} multiline rows={2} />
-          </Box>
-
-          <Box>
-            <FieldLabel>Beneficiario</FieldLabel>
-            <InputBase value={draft.beneficiario} onChange={(event) => update("beneficiario", event.target.value)} sx={fieldSx} />
-          </Box>
-
-          <Box>
-            <FieldLabel>Documento beneficiario</FieldLabel>
-            <InputBase value={draft.documento_beneficiario} onChange={(event) => update("documento_beneficiario", event.target.value)} sx={fieldSx} />
+            <InputBase
+              inputRef={descripcionRef}
+              value={draft.descripcion}
+              onChange={(event) => update("descripcion", event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  enfocar(nroOperacionRef);
+                  return;
+                }
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  enfocar(guardarRef);
+                }
+              }}
+              sx={{ ...fieldSx, minHeight: 66, alignItems: "flex-start", py: 1 }}
+              multiline
+              rows={2}
+            />
           </Box>
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
           <AppButton onClick={onClose}>Cancelar</AppButton>
-          <AppButton onClick={onSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 900 }}>
-            {guardando ? "Guardando..." : "Guardar salida"}
+          <AppButton buttonRef={guardarRef} onClick={onSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 900 }}>
+            {guardando ? "Guardando..." : `Guardar ${nombreMovimiento}`}
           </AppButton>
         </Box>
       </DialogContent>
+      <MotivoPickerModal
+        open={motivoPickerOpen}
+        motivos={motivosMovimiento}
+        onClose={() => {
+          setMotivoPickerOpen(false);
+          enfocar(motivoRef);
+        }}
+        onSelect={seleccionarMotivo}
+      />
     </Dialog>
   );
 }
@@ -451,7 +896,6 @@ export default function TrCajaMovimientoList() {
   const [motivos, setMotivos] = useState([]);
   const [formasPago, setFormasPago] = useState([]);
   const [motivoFiltro, setMotivoFiltro] = useState("");
-  const [formaPagoFiltro, setFormaPagoFiltro] = useState("");
   const [usuariosTrabajo, setUsuariosTrabajo] = useState([]);
   const [usuarioTrabajo, setUsuarioTrabajo] = useState("");
   const [resumen, setResumen] = useState({ total_ingresos: 0, total_salidas: 0, neto: 0 });
@@ -503,7 +947,7 @@ export default function TrCajaMovimientoList() {
     }
 
     try {
-      const response = await fetch(`${back_host}/mve_transmotivo/${params.id_anfitrion}/${contabilidadTrabajo}?tipo_movimiento=S&activo=1`);
+      const response = await fetch(`${back_host}/mve_transmotivo/${params.id_anfitrion}/${contabilidadTrabajo}?activo=1`);
       const result = await response.json();
       setMotivos(Array.isArray(result?.data) ? result.data : []);
     } catch (error) {
@@ -557,9 +1001,10 @@ export default function TrCajaMovimientoList() {
     }
   }, [accesoTotalCaja, back_host, contabilidadTrabajo, fechaFiltro, params.id_anfitrion, params.id_invitado, periodoTrabajo, puntoVentaTrabajo, superUsuario, usuarioPuedeVerTodosCorreos]);
 
-  const armarQuery = useCallback(() => {
+  const armarQuery = useCallback((options = {}) => {
+    const { tipoMovimiento = "", incluirMotivo = true } = options;
     const query = new URLSearchParams();
-    query.set("tipo_movimiento", "S");
+    if (tipoMovimiento) query.set("tipo_movimiento", tipoMovimiento);
     query.set("id_invitado", params.id_invitado);
     query.set("super_usuario", superUsuario);
     if (puntoVentaTrabajo) query.set("id_punto_venta", puntoVentaTrabajo);
@@ -568,10 +1013,9 @@ export default function TrCajaMovimientoList() {
       query.set("fecha_desde", fechaFiltro);
       query.set("fecha_hasta", fechaFiltro);
     }
-    if (motivoFiltro) query.set("id_motivo", motivoFiltro);
-    if (formaPagoFiltro) query.set("id_forma_pago", formaPagoFiltro);
+    if (incluirMotivo && motivoFiltro) query.set("id_motivo", motivoFiltro);
     return query.toString();
-  }, [fechaFiltro, formaPagoFiltro, motivoFiltro, params.id_invitado, puntoVentaTrabajo, superUsuario, usuarioTrabajo]);
+  }, [fechaFiltro, motivoFiltro, params.id_invitado, puntoVentaTrabajo, superUsuario, usuarioTrabajo]);
 
   const cargarCaja = useCallback(async () => {
     if (!periodoTrabajo || !contabilidadTrabajo) {
@@ -645,12 +1089,25 @@ export default function TrCajaMovimientoList() {
     try {
       cierreWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:#111827">Generando cierre de caja...</p>`);
       const ingresos = await obtenerIngresosCaja();
+      const ingresosManualesQuery = armarQuery({ tipoMovimiento: "I", incluirMotivo: false });
+      const ingresosManualesResponse = await fetch(`${back_host}/mve_transcaja/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?${ingresosManualesQuery}`);
+      const ingresosManualesResult = await ingresosManualesResponse.json();
+      if (!ingresosManualesResponse.ok || !ingresosManualesResult.success) {
+        throw new Error(ingresosManualesResult.message || "No se pudo cargar los ingresos manuales para el cierre.");
+      }
+      const salidasQuery = armarQuery({ tipoMovimiento: "S", incluirMotivo: false });
+      const salidasResponse = await fetch(`${back_host}/mve_transcaja/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?${salidasQuery}`);
+      const salidasResult = await salidasResponse.json();
+      if (!salidasResponse.ok || !salidasResult.success) {
+        throw new Error(salidasResult.message || "No se pudo cargar las salidas para el cierre.");
+      }
       const agencia = puntoVentaTrabajo
         ? puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo)?.nombre || puntoVentaTrabajo
         : "Todas";
       const pdfUrl = await crearCierreCajaMovimientoPdf({
         ingresos,
-        salidas: movimientos,
+        ingresosManuales: Array.isArray(ingresosManualesResult.data) ? ingresosManualesResult.data : [],
+        salidas: Array.isArray(salidasResult.data) ? salidasResult.data : [],
         generadoPor: params.id_invitado,
         filtros: {
           periodo: periodoTrabajo,
@@ -766,6 +1223,7 @@ export default function TrCajaMovimientoList() {
     if (Number(row.registrado) !== 1) return;
     setEditando(row);
     setDraft({
+      tipo_movimiento: String(row.tipo_movimiento || "S").trim(),
       fecha: String(row.fecha || "").slice(0, 16),
       id_punto_venta: row.id_punto_venta || "",
       id_motivo: row.id_motivo || "",
@@ -786,8 +1244,8 @@ export default function TrCajaMovimientoList() {
   };
 
   const validarDraft = () => {
-    if (!draft.fecha || !draft.id_punto_venta || !draft.id_motivo || !draft.id_forma_pago) {
-      return "Completa fecha, punto, motivo y forma de pago.";
+    if (!draft.fecha || !draft.id_punto_venta || !draft.id_motivo) {
+      return "Completa fecha, punto y motivo.";
     }
     if (Number(draft.importe) <= 0) {
       return "El importe debe ser mayor a cero.";
@@ -797,9 +1255,11 @@ export default function TrCajaMovimientoList() {
 
   const guardarCajaMovimiento = async () => {
     if (guardandoRef.current) return;
+    const tipoMovimiento = draft.tipo_movimiento || "S";
+    const nombreMovimiento = tipoMovimiento === "I" ? "ingreso" : "salida";
     const error = validarDraft();
     if (error) {
-      swal2.fire({ title: "Revisa la salida", text: error, icon: "warning", confirmButtonText: "ACEPTAR" });
+      swal2.fire({ title: `Revisa el ${nombreMovimiento}`, text: error, icon: "warning", confirmButtonText: "ACEPTAR" });
       return;
     }
 
@@ -807,7 +1267,8 @@ export default function TrCajaMovimientoList() {
     setGuardando(true);
     const payload = {
       ...draft,
-      tipo_movimiento: "S",
+      tipo_movimiento: tipoMovimiento,
+      id_forma_pago: draft.id_forma_pago || formasPago[0]?.id_forma_pago || "01",
       id_usuario: params.id_anfitrion,
       id_anfitrion: params.id_anfitrion,
       id_invitado: params.id_invitado,
@@ -828,7 +1289,7 @@ export default function TrCajaMovimientoList() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.message || "No se pudo guardar la salida.");
+        throw new Error(result.message || `No se pudo guardar el ${nombreMovimiento}.`);
       }
 
       setModalOpen(false);
@@ -843,9 +1304,10 @@ export default function TrCajaMovimientoList() {
   };
 
   const anularCajaMovimiento = async (row) => {
+    const nombreMovimiento = String(row.tipo_movimiento || "").trim() === "I" ? "ingreso" : "salida";
     const result = await confirmDialog({
-      title: "Anular salida?",
-      message: "Desea anular esta salida de dinero?",
+      title: `Anular ${nombreMovimiento}?`,
+      message: `Desea anular este ${nombreMovimiento} manual?`,
       icon: "warning",
       confirmText: "ANULAR",
       cancelText: "Cancelar",
@@ -858,14 +1320,14 @@ export default function TrCajaMovimientoList() {
         method: "PATCH",
       });
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "No se pudo anular la salida.");
+      if (!response.ok || !data.success) throw new Error(data.message || `No se pudo anular el ${nombreMovimiento}.`);
       cargarCaja();
     } catch (err) {
       swal2.fire({ title: "No se pudo anular", text: err.message || "Error interno.", icon: "error", confirmButtonText: "ACEPTAR" });
     }
   };
 
-  const mostrarUsuarioEnSalidas = usuarioPuedeVerTodosCorreos && !usuarioTrabajo;
+  const mostrarUsuarioEnMovimientos = usuarioPuedeVerTodosCorreos && !usuarioTrabajo;
   const columns = [
     {
       name: "Fecha",
@@ -874,21 +1336,34 @@ export default function TrCajaMovimientoList() {
       width: "142px",
     },
     {
+      name: "Tipo",
+      cell: (row) => {
+        const esIngreso = String(row.tipo_movimiento || "").trim() === "I";
+        return (
+          <Box sx={{ px: 0.9, py: 0.35, borderRadius: palette.radius.control, color: esIngreso ? palette.success : palette.danger, backgroundColor: esIngreso ? palette.successSoft : palette.dangerSoft, fontSize: "11px", fontWeight: 900 }}>
+            {esIngreso ? "INGRESO" : "SALIDA"}
+          </Box>
+        );
+      },
+      sortable: true,
+      width: "104px",
+    },
+    {
       name: "Motivo",
       selector: (row) => row.motivo_nombre || row.id_motivo,
       sortable: true,
-      grow: 1.1,
+      width: "150px",
     },
     {
       name: "Descripcion",
       selector: (row) => row.descripcion || "-",
-      grow: 1.5,
+      width: "210px",
     },
-    ...(mostrarUsuarioEnSalidas ? [{
+    ...(mostrarUsuarioEnMovimientos ? [{
       name: "Usuario",
       selector: (row) => row.id_invitado || "-",
       sortable: true,
-      grow: 1.1,
+      width: "150px",
     }] : []),
     {
       name: "Importe",
@@ -936,11 +1411,11 @@ export default function TrCajaMovimientoList() {
     <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
       <Box sx={{ maxWidth: 1100, mx: "auto" }}>
         <TrHeader
-          titulo="Salidas de dinero"
+          titulo="Movimientos de caja"
           contador={dataFiltrada.length}
-          contadorTexto="salidas registradas"
-          nuevoTexto="Nueva salida"
-          buscarTexto="Buscar salida..."
+          contadorTexto="movimientos registrados"
+          nuevoTexto="Nuevo movimiento"
+          buscarTexto="Buscar movimiento..."
           valorBusqueda={valorBusqueda}
           nuevoDeshabilitado={!puntoVentaTrabajo && puntosVentaAsignados.length === 0}
           onNuevo={abrirNuevo}
@@ -1000,7 +1475,7 @@ export default function TrCajaMovimientoList() {
           ) : null}
         />
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(220px, 260px) minmax(220px, 260px)" }, gap: 1, mb: 1.25 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(220px, 260px)" }, gap: 1, mb: 1.25 }}>
           <TrHeaderMenuPicker
             label="Motivo"
             value={motivoFiltro}
@@ -1008,14 +1483,6 @@ export default function TrCajaMovimientoList() {
             minWidth="100%"
             options={[{ value: "", label: "Todos" }, ...motivos.map((item) => ({ value: item.id_motivo, label: item.nombre }))]}
             onSelect={setMotivoFiltro}
-          />
-          <TrHeaderMenuPicker
-            label="Forma de pago"
-            value={formaPagoFiltro}
-            displayValue={formasPago.find((item) => item.id_forma_pago === formaPagoFiltro)?.nombre || "Todas"}
-            minWidth="100%"
-            options={[{ value: "", label: "Todas" }, ...formasPago.map((item) => ({ value: item.id_forma_pago, label: item.nombre }))]}
-            onSelect={setFormaPagoFiltro}
           />
         </Box>
 
@@ -1040,14 +1507,14 @@ export default function TrCajaMovimientoList() {
           noDataComponent={
             <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
               <Search size={16} />
-              Sin salidas para el filtro actual
+              Sin movimientos para el filtro actual
             </Box>
           }
         />
 
         <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1, color: palette.muted, fontSize: "12px" }}>
           <WalletCards size={14} />
-          Salidas manuales registradas en mve_transcaja.
+          Movimientos manuales registrados en mve_transcaja.
         </Box>
       </Box>
 
@@ -1056,7 +1523,6 @@ export default function TrCajaMovimientoList() {
         draft={draft}
         setDraft={setDraft}
         motivos={motivos}
-        formasPago={formasPago}
         puntosVenta={puntosVentaAsignados}
         guardando={guardando}
         esEdicion={Boolean(editando)}

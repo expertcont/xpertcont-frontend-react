@@ -6,7 +6,7 @@ import palette from "../../../../../theme/palette";
 import { focusableRefs } from "./trEncomiendaModalUtils";
 
 export const fieldSx = {
-  minHeight: 33,
+  minHeight: 30,
   px: 0.9,
   display: "flex",
   alignItems: "center",
@@ -153,7 +153,7 @@ export const focusByArrow = (event, inputRef) => {
   return false;
 };
 
-export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
+export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
   return (
     <InputBase
       inputRef={inputRef}
@@ -199,8 +199,10 @@ export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, 
       }}
       sx={{
         ...inputSx,
+        fontSize: prominent ? "18px" : inputSx.fontSize,
         "& input": {
           textAlign: align,
+          fontSize: prominent ? "18px" : undefined,
         },
         "& textarea": {
           textAlign: align,
@@ -251,11 +253,19 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
   );
 }
 
-export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = false }) {
+export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = false, align = "right", tone = "default" }) {
+  const toneColor = tone === "warning" ? palette.warning : palette.text;
+  const formatMoneyValue = (rawValue) => {
+    const numericValue = Number(String(rawValue || "0").replace(",", "."));
+    return Number.isFinite(numericValue) ? Math.max(0, numericValue).toFixed(2) : "0.00";
+  };
+  const commitMoneyValue = () => {
+    onChange(formatMoneyValue(value));
+  };
   const updateValue = (delta) => {
     const current = Number(value || 0);
     const next = Math.max(0, current + delta);
-    onChange(String(Math.round(next)));
+    onChange(next.toFixed(2));
   };
 
   const buttonSx = {
@@ -290,6 +300,7 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
         type="number"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={commitMoneyValue}
         onKeyDown={(event) => {
           if (event.key === "+" || event.key === "=") {
             event.preventDefault();
@@ -308,6 +319,7 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
           }
           if (event.key === "Enter" && nextRef?.current) {
             event.preventDefault();
+            commitMoneyValue();
             focusControl(nextRef);
           }
         }}
@@ -317,12 +329,12 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
           minWidth: 0,
           px: 1,
           backgroundColor: palette.bg,
-          color: prominent ? palette.accent : palette.text,
+          color: tone === "warning" ? palette.warning : prominent ? palette.accent : palette.text,
           "& input": {
-            textAlign: "right",
+            textAlign: align,
             fontSize: prominent ? "20px" : undefined,
             fontWeight: prominent ? 950 : 800,
-            color: prominent ? palette.accent : undefined,
+            color: tone === "warning" ? palette.warning : prominent ? palette.accent : toneColor,
             MozAppearance: "textfield",
           },
           "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
@@ -905,44 +917,49 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
         },
       }}
     >
-      {normalizedOptions.map((option, index) => (
-        <Box
-          key={option.value}
-          role="radio"
-          aria-checked={value === option.value}
-          onClick={() => onChange(option.value)}
-          sx={{
-            height: 26,
-            px: 0.95,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: index === 0
-              ? `${palette.radius.control} 0 0 ${palette.radius.control}`
-              : index === normalizedOptions.length - 1
-                ? `0 ${palette.radius.control} ${palette.radius.control} 0`
-                : 0,
-            backgroundColor: value === option.value ? palette.accent : "transparent",
-            border: "1px solid transparent",
-            color: value === option.value ? palette.onAccent : palette.muted,
-            fontSize: "10px",
-            fontWeight: 800,
-            cursor: "pointer",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-            flex: compact ? "0 0 auto" : 1,
-            minWidth: 0,
-            boxShadow: value === option.value ? palette.shadowSoft : "none",
-            transition: "all .16s ease",
-            "&:hover": {
-              color: value === option.value ? palette.onAccent : palette.text,
-              backgroundColor: value === option.value ? palette.accent : palette.chip,
-            },
-          }}
-        >
-          {option.label}
-        </Box>
-      ))}
+      {normalizedOptions.map((option, index) => {
+        const selected = value === option.value;
+        const warningSelected = selected && option.value === "POR_COBRAR";
+
+        return (
+          <Box
+            key={option.value}
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(option.value)}
+            sx={{
+              height: 26,
+              px: 0.95,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: index === 0
+                ? `${palette.radius.control} 0 0 ${palette.radius.control}`
+                : index === normalizedOptions.length - 1
+                  ? `0 ${palette.radius.control} ${palette.radius.control} 0`
+                  : 0,
+              backgroundColor: warningSelected ? palette.warningSoft : selected ? palette.accent : "transparent",
+              border: warningSelected ? `1px solid ${palette.warning}` : "1px solid transparent",
+              color: warningSelected ? palette.warning : selected ? palette.onAccent : palette.muted,
+              fontSize: "10px",
+              fontWeight: 800,
+              cursor: "pointer",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+              flex: compact ? "0 0 auto" : 1,
+              minWidth: 0,
+              boxShadow: selected ? palette.shadowSoft : "none",
+              transition: "all .16s ease",
+              "&:hover": {
+                color: warningSelected ? palette.warning : selected ? palette.onAccent : palette.text,
+                backgroundColor: warningSelected ? palette.warningSoft : selected ? palette.accent : palette.chip,
+              },
+            }}
+          >
+            {option.label}
+          </Box>
+        );
+      })}
     </Box>
   );
 }

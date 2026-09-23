@@ -23,6 +23,7 @@ DECLARE
   v_id_punto_venta_dest     varchar(10);
 
   v_total                   numeric(14,2);
+  v_precio_chofer           numeric(14,2);
   v_porc_igv                numeric(5,2);
   v_r_gravado               numeric(14,2);
   v_r_exonerado             numeric(14,2);
@@ -132,6 +133,7 @@ BEGIN
   );
 
   v_porc_igv := COALESCE(NULLIF(p_data->>'porc_igv', '')::numeric, 18);
+  v_precio_chofer := COALESCE(NULLIF(p_data->>'precio_chofer', '')::numeric, 0);
 
   IF jsonb_exists(p_data, 'r_gravado') OR jsonb_exists(p_data, 'r_exonerado') OR jsonb_exists(p_data, 'r_igv') THEN
     v_r_gravado := COALESCE(NULLIF(p_data->>'r_gravado', '')::numeric, 0);
@@ -166,7 +168,7 @@ BEGIN
     destinatario_id_doc, destinatario_documento_id,
     destinatario, destinatario_telefono, destinatario_direccion,
     precio_neto,
-    r_gravado, r_exonerado, r_igv, r_monto_total, porc_igv,
+    r_gravado, r_exonerado, r_igv, r_monto_total, precio_chofer, porc_igv,
     condicion_pago, llegada_aprox,
     numero_rdi, estado_sunat,
     ctrl_crea, ctrl_crea_us
@@ -189,7 +191,7 @@ BEGIN
     NULLIF(p_data->>'destinatario', ''), NULLIF(p_data->>'destinatario_telefono', ''),
     NULLIF(p_data->>'destinatario_direccion', ''),
     v_total,
-    v_r_gravado, v_r_exonerado, v_r_igv, v_total, v_porc_igv,
+    v_r_gravado, v_r_exonerado, v_r_igv, v_total, v_precio_chofer, v_porc_igv,
     NULLIF(p_data->>'condicion_pago', ''), NULLIF(p_data->>'llegada_aprox', '')::time,
     NULLIF(p_data->>'numero_rdi', ''), NULLIF(p_data->>'estado_sunat', '')::char(1),
     CURRENT_TIMESTAMP, COALESCE(NULLIF(p_data->>'id_invitado', ''), NULLIF(p_data->>'ctrl_crea_us', ''))

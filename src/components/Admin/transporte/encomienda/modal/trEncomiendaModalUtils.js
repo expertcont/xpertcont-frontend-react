@@ -41,13 +41,14 @@ export const comprobanteDesdeDocumento = (documento) => {
 };
 
 export const normalizarCondicionPago = (value) => {
-  if (value === "CANCELADO") {
+  const normalized = String(value || "").trim().toUpperCase().replace(/\s+/g, "_");
+  if (normalized === "CANCELADO") {
     return "PAGADO";
   }
-  if (value === "POR_PAGAR") {
+  if (normalized === "POR_PAGAR" || normalized === "POR_COBRAR") {
     return "POR_COBRAR";
   }
-  return value || "PAGADO";
+  return normalized || "PAGADO";
 };
 
 export const destinoDesdeRuta = (ruta = {}) => {
@@ -95,6 +96,7 @@ export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => {
     licencia: operacion?.licencia || "",
     descripcion: operacion?.descripcion || "",
     r_monto_total: operacion?.r_monto_total || operacion?.precio_neto || "",
+    precio_chofer: operacion?.precio_chofer || "",
     condicion_pago: normalizarCondicionPago(operacion?.condicion_pago || operacion?.numero_rdi),
     celulares: false,
     clave: "",

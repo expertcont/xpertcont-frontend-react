@@ -1029,11 +1029,11 @@ export default function TrEncomiendaEntregaList() {
             @keyframes alerta-cobro-pulse {
               0%, 100% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 ${palette.accentSoft};
+                box-shadow: 0 0 0 0 ${palette.warningSoft};
               }
               50% {
                 transform: scale(1.015);
-                box-shadow: 0 0 0 5px ${palette.accentSoft};
+                box-shadow: 0 0 0 5px ${palette.warningSoft};
               }
             }
             @keyframes alerta-cobro-text {
@@ -1047,8 +1047,8 @@ export default function TrEncomiendaEntregaList() {
             ${escapeHtml(operacion)}
           </div>
           ${porCobrar ? `
-            <div style="padding:12px;border:1px solid ${palette.accent};border-radius:8px;background:${palette.accentSoft};text-align:center;animation:alerta-cobro-pulse 1.05s ease-in-out infinite">
-              <div style="color:${palette.accent};font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;animation:alerta-cobro-text .8s ease-in-out infinite">Por cobrar</div>
+            <div style="padding:12px;border:1px solid ${palette.warning};border-radius:8px;background:${palette.warningSoft};text-align:center;animation:alerta-cobro-pulse 1.05s ease-in-out infinite">
+              <div style="color:${palette.warning};font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;animation:alerta-cobro-text .8s ease-in-out infinite">Por cobrar</div>
               <div style="color:${palette.text};font-size:26px;font-weight:900;line-height:1.15;margin-top:2px">${escapeHtml(monto)}</div>
               <div style="color:${palette.muted};font-size:12px;font-weight:700;margin-top:4px">Cobrar antes de registrar la entrega.</div>
             </div>
@@ -1271,7 +1271,6 @@ export default function TrEncomiendaEntregaList() {
                     {numeroOperacion(item)}
                   </Typography>
                   {item.placa && <AppChip>{item.placa}</AppChip>}
-                  <AppChip>{item.condicion_pago || "PAGADO"}</AppChip>
                 </Box>
                 {mostrarEntregadas ? (
                   <AppButton icon={<MessageCircle size={16} />} onClick={() => mostrarEntregaRegistrada(item)} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
@@ -1302,9 +1301,28 @@ export default function TrEncomiendaEntregaList() {
                   </Typography>
                 </Box>
                 <Box sx={{ display: "grid", gap: 0.35, justifyItems: { xs: "flex-start", md: "flex-end" }, alignSelf: "stretch" }}>
-                  <Typography sx={{ color: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.accent : palette.text, fontSize: "16px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                  <Typography sx={{ color: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.warning : palette.text, fontSize: "16px", fontWeight: 800, whiteSpace: "nowrap" }}>
                     {formatMoney(item.r_monto_total || item.precio_neto)}
                   </Typography>
+                  <Box
+                    sx={{
+                      minHeight: 24,
+                      px: 1,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: palette.radius.control,
+                      backgroundColor: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.warningSoft : palette.chip,
+                      border: `1px solid ${esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.warning : palette.border}`,
+                      color: esPorCobrar(item.condicion_pago || item.numero_rdi) ? palette.warning : palette.text,
+                      fontSize: "10.5px",
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {item.condicion_pago || "PAGADO"}
+                  </Box>
                   <Typography sx={{ color: palette.muted, fontSize: "12px", display: "flex", alignItems: "center", gap: 0.45, whiteSpace: "nowrap" }}>
                     <Calendar size={13} /> {formatFecha(item.r_fecemi)}
                   </Typography>

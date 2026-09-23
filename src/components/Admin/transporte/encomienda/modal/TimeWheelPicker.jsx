@@ -595,22 +595,24 @@ export default function TimeWheelPicker({
           >
             {displayValue}
           </Typography>
-          <Typography
-            aria-hidden="true"
-            sx={{
-              justifySelf: "end",
-              mr: 0.55,
-              color: palette.muted,
-              fontSize: "11.5px",
-              fontWeight: 800,
-              letterSpacing: 0,
-              opacity: 0.95,
-              textTransform: "none",
-              lineHeight: 1,
-            }}
-          >
-            Llegada
-          </Typography>
+          {label && (
+            <Typography
+              aria-hidden="true"
+              sx={{
+                justifySelf: "end",
+                mr: 0.55,
+                color: palette.muted,
+                fontSize: "11.5px",
+                fontWeight: 800,
+                letterSpacing: 0,
+                opacity: 0.95,
+                textTransform: "none",
+                lineHeight: 1,
+              }}
+            >
+              {label}
+            </Typography>
+          )}
         </Box>
       </Box>
       <Popover

@@ -206,6 +206,30 @@ const normalizarIngreso = (row) => {
   };
 };
 
+const normalizarPagoChofer = (row) => {
+  const contabiliza = row.contabiliza !== false && Number(row.registrado ?? 1) === 1;
+  const precioChofer = Number(row.precio_chofer || 0);
+  if (precioChofer <= 0 || !contabiliza) return null;
+
+  const numeroEncomienda = `${row.r_serie || ""}-${row.r_numero || ""}`.replace(/^-|-$/g, "");
+  const destino = row.punto_venta_dest_nombre || row.id_punto_venta_dest;
+  const detalle = [
+    "Pago chofer",
+    numeroEncomienda,
+    destino ? `Dst.: ${destino}` : "",
+    row.descripcion,
+  ].filter(Boolean).join(" | ");
+
+  return {
+    fecha: row.fecha_caja,
+    tipo: "Pago chofer",
+    detalle,
+    ingreso: 0,
+    salida: precioChofer,
+    informativo: false,
+  };
+};
+
 const normalizarSalida = (row) => {
   const contabiliza = Number(row.registrado ?? 1) === 1;
   return {
@@ -225,8 +249,26 @@ const normalizarSalida = (row) => {
   };
 };
 
+const normalizarIngresoManual = (row) => {
+  const contabiliza = Number(row.registrado ?? 1) === 1;
+  return {
+    fecha: fechaTexto(row.fecha),
+    tipo: "Ingreso manual",
+    detalle: [
+      row.motivo_nombre || row.id_motivo,
+      contabiliza ? "" : "Obs: Anulado - no contabiliza",
+      row.descripcion,
+      row.nro_operacion ? `Op: ${row.nro_operacion}` : "",
+    ].filter(Boolean).join(" | "),
+    ingreso: contabiliza ? Number(row.importe || 0) : 0,
+    salida: 0,
+    informativo: !contabiliza,
+  };
+};
+
 export default async function crearCierreCajaMovimientoPdf({
   ingresos = [],
+  ingresosManuales = [],
   salidas = [],
   filtros = {},
   generadoPor = "",
@@ -240,6 +282,8 @@ export default async function crearCierreCajaMovimientoPdf({
 
   const movimientos = [
     ...ingresos.map(normalizarIngreso),
+    ...ingresos.map(normalizarPagoChofer).filter(Boolean),
+    ...ingresosManuales.map(normalizarIngresoManual),
     ...salidas.map(normalizarSalida),
   ].sort((a, b) => String(a.fecha || "").localeCompare(String(b.fecha || "")));
 
