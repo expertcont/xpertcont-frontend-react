@@ -1114,11 +1114,14 @@ export default function TrEncomiendaModal({
           position: "relative",
           width: { xs: "calc(100vw - 12px)", sm: 430 },
           maxWidth: "calc(100vw - 12px)",
+          display: "flex",
+          flexDirection: "column",
           backgroundColor: palette.surface,
           color: palette.text,
           border: `1px solid ${palette.border}`,
           borderRadius: palette.radius.modal,
           maxHeight: "calc(100vh - 16px)",
+          overflow: "hidden",
           scrollbarWidth: "thin",
           scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
           "&::-webkit-scrollbar": {
@@ -1144,7 +1147,7 @@ export default function TrEncomiendaModal({
         },
       }}
     >
-      <Box sx={{ p: { xs: 0.8, md: 1 }, pb: 0 }}>
+      <Box sx={{ p: { xs: 0.8, md: 1 }, pb: 0, flexShrink: 0 }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 0.75, mb: 0.7, flexWrap: "wrap" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
             <AppIconBox>
@@ -1232,6 +1235,7 @@ export default function TrEncomiendaModal({
             borderRadius: palette.radius.control,
             backgroundColor: "rgba(66,160,104,0.12)",
             color: palette.text,
+            flexShrink: 0,
           }}
         >
           <CheckCircle size={17} color={palette.success} />
@@ -1246,7 +1250,7 @@ export default function TrEncomiendaModal({
         </Box>
       )}
 
-      <Box sx={{ position: "relative", pb: 0.8 }}>
+      <Box sx={{ position: "relative", pb: 0.8, minHeight: 0, flex: 1, display: "flex", flexDirection: "column" }}>
         <TrEncomiendaModalSections
           draft={draft}
           error={error}
@@ -1295,6 +1299,7 @@ export default function TrEncomiendaModal({
           mx: { xs: 0.7, md: 0.85 },
           mt: 0.25,
           pt: 0.7,
+          flexShrink: 0,
           display: "grid",
           gridTemplateColumns: "auto auto 1fr auto auto",
           gap: 0.65,

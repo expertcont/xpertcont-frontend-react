@@ -345,20 +345,20 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
       />
       <Box
         sx={{
-          width: 30,
+          width: 58,
           alignSelf: "stretch",
           display: "grid",
-          gridTemplateRows: "1fr 1fr",
+          gridTemplateColumns: "1fr 1fr",
           borderLeft: `1px solid ${palette.border}`,
           backgroundColor: palette.bg,
           flexShrink: 0,
         }}
       >
-        <Box onClick={() => updateValue(1)} sx={{ ...buttonSx, borderBottom: `1px solid ${palette.borderSoft}` }}>
-          <ChevronUp size={15} />
-        </Box>
-        <Box onClick={() => updateValue(-1)} sx={buttonSx}>
+        <Box onClick={() => updateValue(-1)} sx={{ ...buttonSx, borderRight: `1px solid ${palette.borderSoft}` }}>
           <ChevronDown size={15} />
+        </Box>
+        <Box onClick={() => updateValue(1)} sx={buttonSx}>
+          <ChevronUp size={15} />
         </Box>
       </Box>
     </Box>

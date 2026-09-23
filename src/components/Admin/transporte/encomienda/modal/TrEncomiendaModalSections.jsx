@@ -65,6 +65,8 @@ export default function TrEncomiendaModalSections({
       sx={{
         px: { xs: 0.7, md: 0.85 },
         pb: 0.75,
+        flex: 1,
+        minHeight: 0,
         overflowY: "auto",
         scrollbarWidth: "thin",
         scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
@@ -320,7 +322,7 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12}>
             <Field label="Telefono" labelWidth={53}>
-              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.placaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
+              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.descripcionRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
             </Field>
           </Grid>
         </Grid>
@@ -335,7 +337,7 @@ export default function TrEncomiendaModalSections({
                 value={draft.descripcion}
                 onChange={(value) => updateDraft("descripcion", String(value || "").toUpperCase())}
                 inputRef={refs.descripcionRef}
-                nextRef={refs.condicionPagoRef}
+                nextRef={refs.totalRef}
                 placeholder="Paquete, sobre, caja..."
               />
             </Field>
