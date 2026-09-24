@@ -5,7 +5,6 @@ import { Package, Search, UserRound } from "lucide-react";
 import palette from "../../../../../theme/palette";
 import {
   PlacaField,
-  PuntoVentaField,
   RutaField,
   ZonaField,
 } from "./TrEncomiendaModalFields";
@@ -34,7 +33,6 @@ export default function TrEncomiendaModalSections({
   error,
   esEdicion,
   rutaSeleccionada,
-  origenVisual,
   updateDraft,
   limpiarRuta,
   buscarRemitente,
@@ -107,12 +105,6 @@ export default function TrEncomiendaModalSections({
       <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
       <Box sx={compactSectionSx}>
         <Grid container columnSpacing={0.65} rowSpacing={0.35}>
-          <Grid item xs={12}>
-            {/* Origen automatico desde el punto de venta operativo seleccionado antes de nueva encomienda. */}
-            <Field label="Origen" labelWidth={58}>
-              <PuntoVentaField value={origenVisual} />
-            </Field>
-          </Grid>
           <Grid item xs={12}>
             <Field label="" labelWidth={0}>
               <Box sx={{ width: "100%", display: "flex" }}>

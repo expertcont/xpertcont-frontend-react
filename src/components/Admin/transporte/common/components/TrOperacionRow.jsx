@@ -10,10 +10,11 @@ import {
   MapPin,
   Package,
   Pencil,
-  ReceiptText,
   Trash2,
+  ArrowRight,
   UserPen,
   UserRound,
+  User,
 } from "lucide-react";
 
 import AppChip from "../../../../ui/AppChip";
@@ -60,6 +61,27 @@ export const customStyles = {
       fill: palette.muted,
       "&:hover:not(:disabled)": { backgroundColor: palette.accentSoft },
       "&:disabled": { color: palette.border, fill: palette.border },
+    },
+  },
+};
+
+export const customStylesEncomienda = {
+  ...customStyles,
+  rows: {
+    ...customStyles.rows,
+    style: {
+      ...customStyles.rows.style,
+      minHeight: "70px",
+      marginBottom: "3px",
+      paddingLeft: "8px",
+      paddingRight: "8px",
+    },
+  },
+  pagination: {
+    ...customStyles.pagination,
+    style: {
+      ...customStyles.pagination.style,
+      marginTop: "5px",
     },
   },
 };
@@ -155,7 +177,8 @@ function SunatActionButton({ row, onEnviarSunat, sunatContext }) {
           backgroundColor: estado.background,
           borderColor: estado.border,
           cursor: bloqueadoPorRdi ? "default" : "pointer",
-          p: 0.45,
+          boxSizing: "border-box",
+          p: 0,
           "&:hover": {
             backgroundColor: bloqueadoPorRdi ? estado.background : palette.accentSoft,
             borderColor: bloqueadoPorRdi ? estado.border : palette.accent,
@@ -283,7 +306,7 @@ function TrOperacionRow({
   const fechaHoraOperacion = [row.fecha, row.horaGrabacion].filter(Boolean).join(" ");
   const TotalOperacion = (
     <Box sx={{ display: "grid", gap: 0.2, justifyItems: { xs: "flex-start", sm: "flex-end" } }}>
-      <Typography sx={{ color: row.condicionPagoLabel ? palette.accent : palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap" }}>
+      <Typography sx={{ color: row.condicionPagoLabel ? palette.accent : palette.text, fontSize: "15px", fontWeight: "1000 !important", WebkitTextStroke: "0.25px currentColor", whiteSpace: "nowrap" }}>
         {formatMoney(row.total)}
       </Typography>
       {row.condicionPagoLabel && (
@@ -295,14 +318,14 @@ function TrOperacionRow({
   );
 
   return (
-    <Box sx={{ width: "100%", py: 1.2 }}>
+    <Box sx={{ width: "100%", py: esEncomienda ? 0.45 : 1.2 }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: { xs: "wrap", sm: "nowrap" },
-          gap: 1,
+          gap: esEncomienda ? 0.45 : 1,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexWrap: "wrap" }}>
@@ -324,11 +347,7 @@ function TrOperacionRow({
             </Box>
           )}
 
-          {esEncomienda && !anulada && (
-            <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
-          )}
-
-          <Typography sx={{ color: palette.text, fontWeight: 700, fontSize: "15px" }}>
+          <Typography sx={{ color: palette.text, fontWeight: "1000 !important", WebkitTextStroke: "0.25px currentColor", fontSize: "16px" }}>
             {row.numero}
           </Typography>
 
@@ -336,7 +355,33 @@ function TrOperacionRow({
 
           {row.tipo_operacion !== "E" && <AppChip>{row.tipoLabel}</AppChip>}
 
-          {row.tipo_operacion === "E" && <DeliveryStatusBadge entregada={row.entregada} />}
+          {esEncomienda && (
+            <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.85, minWidth: 0, flex: "1 1 360px" }}>
+              <Box sx={{ minWidth: 0, flex: "1 1 180px" }}>
+                <PersonaOperacionLine
+                  icon={<User size={13} style={{ flexShrink: 0, color: palette.accent }} />}
+                  label={row.clienteLabel}
+                  documento={row.cliente_documento || row.cliente_documento_id}
+                />
+              </Box>
+              {row.destinatario && (
+                <>
+                  <ArrowRight
+                    size={15}
+                    strokeWidth={2.2}
+                    style={{ color: palette.accent, flexShrink: 0 }}
+                  />
+                  <Box sx={{ minWidth: 0, flex: "1 1 180px" }}>
+                    <PersonaOperacionLine
+                      icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
+                      label={row.destinatario}
+                      documento={row.destinatario_documento || row.destinatario_documento_id}
+                    />
+                  </Box>
+                </>
+              )}
+            </Box>
+          )}
         </Box>
 
         <Box
@@ -349,6 +394,7 @@ function TrOperacionRow({
             mt: { xs: 0.75, sm: 0 },
           }}
         >
+          {esEncomienda && <DeliveryStatusBadge entregada={row.entregada} />}
           {esEncomienda && (
             <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
               <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
@@ -411,22 +457,23 @@ function TrOperacionRow({
         </Box>
       </Box>
 
+      {!esEncomienda && (
       <Box
         sx={{
-          mt: 0.65,
+          mt: esEncomienda ? 0.35 : 0.65,
           display: esEncomienda ? "grid" : "flex",
           gridTemplateColumns: esEncomienda ? { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr)" } : undefined,
           alignItems: { xs: "flex-start", sm: "center" },
           justifyContent: "space-between",
           flexDirection: { xs: "column", sm: "row" },
-          gap: 0.75,
+          gap: esEncomienda ? 0.45 : 0.75,
           color: palette.muted,
         }}
       >
         {esEncomienda ? (
           <>
             <PersonaOperacionLine
-              icon={<ReceiptText size={13} style={{ flexShrink: 0, color: palette.accent }} />}
+              icon={<User size={13} style={{ flexShrink: 0, color: palette.accent }} />}
               label={row.clienteLabel}
               documento={row.cliente_documento || row.cliente_documento_id}
             />
@@ -445,7 +492,7 @@ function TrOperacionRow({
         ) : (
           <Box sx={{ display: "grid", gap: 0.45, minWidth: 0, width: { xs: "100%", sm: "auto" } }}>
             <PersonaOperacionLine
-              icon={<ReceiptText size={13} style={{ flexShrink: 0, color: palette.accent }} />}
+              icon={<User size={13} style={{ flexShrink: 0, color: palette.accent }} />}
               label={row.clienteLabel}
               documento={row.cliente_documento || row.cliente_documento_id}
             />
@@ -464,14 +511,15 @@ function TrOperacionRow({
           </Box>
         )}
       </Box>
+      )}
 
       <Box
         sx={{
-          mt: 1,
+          mt: esEncomienda ? 0.35 : 1,
           display: "flex",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: 0.75,
+          gap: esEncomienda ? 0.35 : 0.75,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, minWidth: 0, flex: "1 1 260px" }}>
@@ -482,12 +530,12 @@ function TrOperacionRow({
             nombreDestinoRuta(row)
             }
           </Box>
-          <AppChip>
-            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
-              {esEncomienda && <Package size={13} />}
+          <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, minWidth: 0, color: palette.muted, fontSize: "12px" }}>
+            {esEncomienda && <Package size={13} style={{ color: palette.accent, flexShrink: 0 }} />}
+            <Typography component="span" sx={{ color: "inherit", fontSize: "inherit", minWidth: 0 }} noWrap>
               {row.servicioLabel}
-            </Box>
-          </AppChip>
+            </Typography>
+          </Box>
           {row.tipo_operacion === "B" && row.asiento && <AppChip>Asiento {row.asiento}</AppChip>}
         </Box>
 
@@ -496,6 +544,8 @@ function TrOperacionRow({
             ml: { xs: 0, sm: "auto" },
             display: "flex",
             alignItems: "center",
+            justifyContent: "flex-end",
+            flexWrap: "wrap",
             gap: 0.65,
             minWidth: 0,
             width: { xs: "100%", sm: "auto" },
@@ -513,6 +563,9 @@ function TrOperacionRow({
           <Typography sx={{ color: palette.muted, fontSize: "12.5px", minWidth: 0 }} noWrap>
             {row.autor}
           </Typography>
+          {esEncomienda && !anulada && (
+            <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
+          )}
         </Box>
       </Box>
     </Box>

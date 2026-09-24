@@ -384,7 +384,8 @@ export default function TrEncomiendaModal({
   };
 
   const rutaSeleccionada = rutasDisponibles.find((ruta) => String(ruta.id_ruta) === String(draft.id_ruta));
-  const origenVisual = puntoVentaOrigenNombre || draft.id_punto_venta || puntoVentaOrigen;
+  const origenVisual = operacion?.punto_venta_nombre || puntoVentaOrigenNombre || draft.id_punto_venta || puntoVentaOrigen || "ORIGEN";
+  const idPuntoVentaOrigen = draft.id_punto_venta || puntoVentaOrigen || operacion?.id_punto_venta || "";
   const esFactura = (operacion?.r_cod || draft.r_cod) === "01";
   const encomiendaEnviadaSunat = Boolean(operacion?.numero_rdi || operacion?.r_vfirmado);
   const puedeEditarFecha = esEdicion && !encomiendaEnviadaSunat;
@@ -723,7 +724,7 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    if (puntoVentaOrigen && draft.id_punto_venta !== puntoVentaOrigen) {
+    if (puntoVentaOrigen && idPuntoVentaOrigen !== puntoVentaOrigen) {
       mostrarValidacion("La ruta debe iniciar en el punto de venta operativo.", rutaRef);
       return;
     }
@@ -784,7 +785,7 @@ export default function TrEncomiendaModal({
       cliente_direccion: clienteDireccionFinal,
       destinatario_id_doc: documentoTipoDesdeNumero(draft.destinatario_documento),
       destinatario_documento_id: draft.destinatario_documento,
-      id_punto_venta: draft.id_punto_venta,
+      id_punto_venta: idPuntoVentaOrigen,
       id_punto_venta_dest: draft.id_punto_venta_dest,
       remitente_zona: clienteZonaFinal,
       remitente_direccion: clienteDireccionFinal,
@@ -1139,7 +1140,7 @@ export default function TrEncomiendaModal({
                 {soloLectura ? "Visualizar encomienda" : esEdicion ? modalEditarTitulo : modalNuevoTitulo}
               </Typography>
               <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }} noWrap>
-                Comprobante: {numeroEncomiendaCabecera}
+                {origenVisual} · {numeroEncomiendaCabecera}
               </Typography>
             </Box>
           </Box>
@@ -1237,7 +1238,7 @@ export default function TrEncomiendaModal({
           error={error}
           esEdicion={esEdicion}
           rutaSeleccionada={rutaSeleccionada}
-          origenVisual={origenVisual}
+          
           updateDraft={updateDraft}
           limpiarRuta={limpiarRuta}
           buscarRemitente={buscarRemitente}

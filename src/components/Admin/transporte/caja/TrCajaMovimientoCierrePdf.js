@@ -64,6 +64,7 @@ const getPdfPalette = () => {
     muted: hexToPdfRgb(theme.muted, rgb(0.38, 0.42, 0.48)),
     accent: hexToPdfRgb(theme.accent, rgb(0.56, 0.85, 1)),
     danger: hexToPdfRgb(theme.danger, rgb(1, 0.54, 0.44)),
+    warning: hexToPdfRgb(theme.warning, rgb(0.91, 0.78, 0.36)),
     border: hexToPdfRgb(theme.border, rgb(0.23, 0.27, 0.31)),
     line: hexToPdfRgb(theme.borderSoft || theme.border, rgb(0.18, 0.22, 0.25)),
     soft: rgb(0.96, 0.98, 0.99),
@@ -138,6 +139,14 @@ const getMovementKind = (item) => {
   return "ingreso";
 };
 
+const esIngresoPorCobrar = (item) => (
+  String(item?.ingresoTexto || "").trim().toLowerCase() === "por cobrar"
+);
+
+const esIngresoAnulado = (item) => (
+  String(item?.ingresoTexto || "").trim().toLowerCase() === "anulado"
+);
+
 const drawMovementIcon = (page, { centerX, centerY, kind, fonts, pdfColors }) => {
   const size = LAYOUT.movementIconSize;
   const radius = size / 2;
@@ -162,7 +171,7 @@ const drawMovementIcon = (page, { centerX, centerY, kind, fonts, pdfColors }) =>
 
 const tipoIngresoTexto = (row) => {
   if (row.tipo_ingreso === "ORIGEN") return "Ingreso origen";
-  if (row.tipo_ingreso === "ORIGEN_POR_COBRAR_REFERENCIA") return "Por Cobrar";
+  if (row.tipo_ingreso === "ORIGEN_POR_COBRAR_REFERENCIA") return "Por cobrar";
   if (row.tipo_ingreso === "DESTINO_POR_COBRAR_PENDIENTE") return "Por cobrar destino";
   return "Cobrado en destino";
 };
@@ -174,7 +183,7 @@ const ingresoReferenciaTexto = (row, contabiliza) => {
     row.tipo_ingreso === "ORIGEN_POR_COBRAR_REFERENCIA" ||
     row.tipo_ingreso === "DESTINO_POR_COBRAR_PENDIENTE"
   ) {
-    return "Por Cobrar";
+    return "Por cobrar";
   }
   return "";
 };
@@ -278,7 +287,7 @@ export default async function crearCierreCajaMovimientoPdf({
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fonts = { regular, bold };
   const pdfColors = getPdfPalette();
-  const { ink: INK, muted: MUTED, accent: ACCENT, danger: DANGER, line: LINE, soft: SOFT } = pdfColors;
+  const { ink: INK, muted: MUTED, accent: ACCENT, danger: DANGER, warning: WARNING, line: LINE, soft: SOFT } = pdfColors;
 
   const movimientos = [
     ...ingresos.map(normalizarIngreso),
@@ -359,6 +368,9 @@ export default async function crearCierreCajaMovimientoPdf({
 
     saldo += item.ingreso - item.salida;
     const movementKind = getMovementKind(item);
+    const ingresoPorCobrar = esIngresoPorCobrar(item);
+    const ingresoAnulado = esIngresoAnulado(item);
+    const ingresoTexto = item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-");
 
     page.drawLine({ start: { x: MARGIN, y: y + 5 }, end: { x: PAGE_WIDTH - MARGIN, y: y + 5 }, thickness: 0.4, color: LINE });
     page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - 8, size: 7.1, font: regular, color: INK });
@@ -366,7 +378,7 @@ export default async function crearCierreCajaMovimientoPdf({
     detailLines.forEach((line, index) => {
       page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: INK });
     });
-    drawRight(page, item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-"), COLUMNS.ingresoRight, y - 8, 7.1, regular, item.ingreso ? INK : MUTED);
+    drawRight(page, ingresoTexto, COLUMNS.ingresoRight, y - 8, 7.1, ingresoPorCobrar || ingresoAnulado ? bold : regular, ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : item.ingreso ? INK : MUTED);
     drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, regular, item.salida ? INK : MUTED);
     drawRight(page, money(saldo), COLUMNS.saldoRight, y - 8, 7.1, bold, saldo >= 0 ? INK : DANGER);
     y -= rowHeight;

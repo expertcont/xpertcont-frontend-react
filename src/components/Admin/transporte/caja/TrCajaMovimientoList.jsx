@@ -153,94 +153,127 @@ function FieldLabel({ children }) {
   );
 }
 
-function ResumenCard({ label, value, tone, onClick, actionIcon, hideActionIcon = false, watermark, watermarkIcon }) {
-  const color = tone === "danger" ? palette.danger : tone === "success" ? palette.success : palette.accent;
-  const clickable = Boolean(onClick);
+function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
+  const items = [
+    {
+      key: "ingresos",
+      label: "INGRESOS",
+      value: money(resumen.total_ingresos),
+      tone: "success",
+      icon: <Search size={14} />,
+      ariaLabel: "Ver detalle de ingresos",
+      onClick: onDetalleIngresos,
+    },
+    {
+      key: "salidas",
+      label: "SALIDAS",
+      value: money(resumen.total_salidas),
+      tone: "danger",
+    },
+    {
+      key: "neto",
+      label: "NETO",
+      value: money(resumen.neto),
+      tone: Number(resumen.neto) >= 0 ? "success" : "danger",
+      icon: <Printer size={14} />,
+      ariaLabel: "Imprimir cierre de caja",
+      onClick: onImprimirCierre,
+    },
+  ];
+
   return (
     <Box
-      onClick={onClick}
       sx={{
-        p: 1.5,
-        minHeight: 78,
-        borderRadius: palette.radius.listCard,
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+        mb: 1.5,
         border: `1px solid ${palette.border}`,
+        borderRadius: palette.radius.listCard,
         backgroundColor: palette.surface,
-        cursor: clickable ? "pointer" : "default",
-        position: "relative",
+        boxShadow: palette.shadowSoft,
         overflow: "hidden",
-        transition: "border-color .18s ease, background-color .18s ease",
-        "&:hover": clickable ? {
-          borderColor: "rgba(77,163,255,0.46)",
-          backgroundColor: palette.overlaySoft,
-        } : undefined,
-        "@keyframes ingreso-detail-vibe": {
-          "0%, 100%": { transform: "translateX(0)" },
-          "20%": { transform: "translateX(-1px)" },
-          "40%": { transform: "translateX(1px)" },
-          "60%": { transform: "translateX(-1px)" },
-          "80%": { transform: "translateX(1px)" },
-        },
       }}
     >
-      {watermark && (
-        <Box
-          sx={{
-            position: "absolute",
-            right: 9,
-            bottom: 7,
-            color: palette.accent,
-            fontSize: "12px",
-            fontWeight: 900,
-            letterSpacing: 0.8,
-            lineHeight: 0.95,
-            opacity: 0.22,
-            textAlign: "right",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          {String(watermark).split(" ").map((line) => (
-            <Box key={line}>{line}</Box>
-          ))}
-        </Box>
-      )}
-      {watermarkIcon && (
-        <Box
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 10,
-            color: palette.accent,
-            opacity: 0.09,
-            transform: "rotate(-12deg)",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          {watermarkIcon}
-        </Box>
-      )}
-      <Typography sx={{ color, fontWeight: 900, fontSize: "21px", lineHeight: 1.2 }}>
-        {value}
-      </Typography>
-      <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, color: palette.muted, mt: 0.75 }}>
-        {clickable && !hideActionIcon && (
+      {items.map((item, index) => {
+        const color = item.tone === "danger" ? palette.danger : palette.success;
+        const clickable = Boolean(item.onClick);
+
+        return (
           <Box
-            component="span"
+            key={item.key}
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onClick={item.onClick}
+            onKeyDown={(event) => {
+              if (clickable && (event.key === "Enter" || event.key === " ")) {
+                event.preventDefault();
+                item.onClick();
+              }
+            }}
             sx={{
-              display: "inline-flex",
-              color: palette.accent,
-              animation: "ingreso-detail-vibe 1.8s ease-in-out infinite",
+              minHeight: 68,
+              p: { xs: 1, md: 1.15 },
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              backgroundColor: item.key === "neto" ? palette.overlaySoft : "transparent",
+              borderTop: { xs: index ? `1px solid ${palette.borderSoft}` : "none", sm: "none" },
+              borderLeft: { xs: "none", sm: index ? `1px solid ${palette.borderSoft}` : "none" },
+              cursor: clickable ? "pointer" : "default",
+              transition: "background-color .16s ease",
+              "&:hover": clickable ? { backgroundColor: palette.accentSoft } : undefined,
+              "&:focus-visible": {
+                outline: `2px solid ${palette.accent}`,
+                outlineOffset: -2,
+              },
             }}
           >
-            {actionIcon || <Search size={14} />}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.55 }}>
+              <Box sx={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+              <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, letterSpacing: "0.7px" }}>
+                {item.label}
+              </Typography>
+              {clickable && (
+                <Box
+                  title={item.ariaLabel}
+                  aria-label={item.ariaLabel}
+                  sx={{
+                    ml: "auto",
+                    width: 26,
+                    height: 26,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: palette.radius.control,
+                    color: palette.accent,
+                    backgroundColor: palette.accentSoft,
+                    border: `1px solid ${palette.border}`,
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.icon}
+                </Box>
+              )}
+            </Box>
+            <Typography
+              sx={{
+                mt: 0.35,
+                color,
+                fontSize: "20px",
+                fontWeight: "1000 !important",
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {item.value}
+            </Typography>
           </Box>
-        )}
-        <Typography sx={{ fontSize: "11px", fontWeight: 800 }}>{label}</Typography>
-      </Box>
+        );
+      })}
     </Box>
   );
 }
+
 
 function IngresosModal({ open, ingresos, loading, onClose }) {
   const tipoLabel = (row) => {
@@ -841,7 +874,7 @@ function TrCajaMovimientoModal({
             <InputBase
               inputRef={descripcionRef}
               value={draft.descripcion}
-              onChange={(event) => update("descripcion", event.target.value)}
+              onChange={(event) => update("descripcion", String(event.target.value || "").toUpperCase())}
               onKeyDown={(event) => {
                 if (event.key === "ArrowUp") {
                   event.preventDefault();
@@ -1227,7 +1260,7 @@ export default function TrCajaMovimientoList() {
       fecha: String(row.fecha || "").slice(0, 16),
       id_punto_venta: row.id_punto_venta || "",
       id_motivo: row.id_motivo || "",
-      descripcion: row.descripcion || "",
+      descripcion: String(row.descripcion || "").toUpperCase(),
       importe: row.importe || "",
       id_forma_pago: row.id_forma_pago || "",
       nro_operacion: row.nro_operacion || "",
@@ -1267,6 +1300,7 @@ export default function TrCajaMovimientoList() {
     setGuardando(true);
     const payload = {
       ...draft,
+      descripcion: String(draft.descripcion || "").toUpperCase(),
       tipo_movimiento: tipoMovimiento,
       id_forma_pago: draft.id_forma_pago || formasPago[0]?.id_forma_pago || "01",
       id_usuario: params.id_anfitrion,
@@ -1357,7 +1391,7 @@ export default function TrCajaMovimientoList() {
     {
       name: "Descripcion",
       selector: (row) => row.descripcion || "-",
-      width: "210px",
+      width: "260px",
     },
     ...(mostrarUsuarioEnMovimientos ? [{
       name: "Usuario",
@@ -1399,17 +1433,90 @@ export default function TrCajaMovimientoList() {
   ];
 
   const customStyles = {
-    table: { style: { backgroundColor: "transparent" } },
-    headRow: { style: { backgroundColor: palette.surface, borderBottomColor: palette.border, minHeight: "42px" } },
-    headCells: { style: { color: palette.muted, fontSize: "11px", fontWeight: 800, textTransform: "uppercase" } },
-    rows: { style: { backgroundColor: "transparent", borderBottomColor: palette.borderSoft, minHeight: "52px" } },
-    cells: { style: { color: palette.text, fontSize: "12.5px" } },
-    pagination: { style: { backgroundColor: "transparent", color: palette.muted, borderTopColor: palette.border } },
+    table: {
+      style: {
+        width: "100%",
+        minWidth: "100%",
+        tableLayout: "auto",
+        backgroundColor: palette.surface,
+        borderCollapse: "separate",
+        borderSpacing: 0,
+      },
+    },
+    tableWrapper: {
+      style: {
+        width: "100%",
+        overflowX: "auto",
+        backgroundColor: palette.surface,
+        border: `1px solid ${palette.border}`,
+        borderRadius: palette.radius.listCard,
+        overflowY: "hidden",
+        boxShadow: palette.shadowSoft,
+      },
+    },
+    responsiveWrapper: {
+      style: {
+        width: "100%",
+        overflowX: "auto",
+        backgroundColor: palette.surface,
+        border: `1px solid ${palette.border}`,
+        borderRadius: palette.radius.listCard,
+        overflowY: "hidden",
+        boxShadow: palette.shadowSoft,
+      },
+    },
+    headRow: {
+      style: {
+        backgroundColor: palette.surfaceAlt,
+        borderBottom: `1px solid ${palette.border}`,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
+        minHeight: "44px",
+      },
+    },
+    headCells: {
+      style: {
+        backgroundColor: palette.surfaceAlt,
+        color: palette.text,
+        fontSize: "11px",
+        fontWeight: 800,
+        textTransform: "uppercase",
+      },
+    },
+    rows: {
+      style: {
+        backgroundColor: palette.surface,
+        color: palette.text,
+        borderBottom: `1px solid ${palette.borderSoft}`,
+        minHeight: "52px",
+        transition: "background-color .16s ease, border-color .16s ease",
+      },
+      highlightOnHoverStyle: {
+        backgroundColor: palette.accentSoft,
+        color: palette.text,
+        borderBottomColor: palette.border,
+        outline: "none",
+      },
+    },
+    cells: {
+      style: {
+        backgroundColor: "transparent",
+        color: palette.text,
+        fontSize: "12.5px",
+      },
+    },
+    pagination: {
+      style: {
+        backgroundColor: palette.surface,
+        color: palette.muted,
+        borderTop: `1px solid ${palette.border}`,
+        boxShadow: "0 -3px 10px rgba(0,0,0,0.08)",
+      },
+    },
   };
 
   return (
     <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
-      <Box sx={{ maxWidth: 1100, mx: "auto" }}>
+      <Box sx={{ width: "100%", maxWidth: { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto" }}>
         <TrHeader
           titulo="Movimientos de caja"
           contador={dataFiltrada.length}
@@ -1422,77 +1529,88 @@ export default function TrCajaMovimientoList() {
           onBuscar={(event) => setValorBusqueda(event.target.value)}
         />
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(160px, 220px))" }, justifyContent: { md: "start" }, gap: 1, mb: 1.5 }}>
-          <ResumenCard
-            label="INGRESOS"
-            value={money(resumen.total_ingresos)}
-            tone="success"
-            onClick={abrirDetalleIngresos}
-            hideActionIcon
-            watermark="VER DETALLES"
-            watermarkIcon={<Search size={46} />}
+        <Box sx={{ mb: 1.5 }}>
+          <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.65 }}>
+            Contexto de caja
+          </Typography>
+          <TrFiltros
+            periodoTrabajo={periodoTrabajo}
+            periodoSelect={periodoSelect}
+            contabilidadTrabajo={contabilidadTrabajo}
+            contabilidadSelect={contabilidadSelect}
+            puntosVentaAsignados={puntosVentaAsignados}
+            puntoVentaTrabajo={puntoVentaTrabajo}
+            onPeriodoSelect={handlePeriodoSelect}
+            onContabilidadSelect={handleContabilidadSelect}
+            onPuntoVentaSelect={handlePuntoVentaSelect}
+            filtroDerechaPuntoVenta={usuarioPuedeVerTodosCorreos && usuariosTrabajo.length > 0 ? (
+              <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
+                <TrHeaderMenuPicker
+                  label="Usuario"
+                  value={usuarioTrabajo}
+                  displayValue={
+                    usuarioTrabajo
+                      ? usuariosTrabajo.find((item) => item.id_usuario === usuarioTrabajo)?.nombre || usuarioTrabajo
+                      : "Todos"
+                  }
+                  minWidth="100%"
+                  options={[
+                    { value: "", label: "Todos" },
+                    ...usuariosTrabajo.map((item) => ({ value: item.id_usuario, label: item.nombre || item.id_usuario })),
+                  ]}
+                  onSelect={handleUsuarioSelect}
+                />
+              </Box>
+            ) : null}
           />
-          <ResumenCard label="SALIDAS" value={money(resumen.total_salidas)} tone="danger" />
-          <ResumenCard
-            label="NETO"
-            value={money(resumen.neto)}
-            tone={Number(resumen.neto) >= 0 ? "success" : "danger"}
-            onClick={imprimirCierreCaja}
-            hideActionIcon
-            watermark="IMPRIMIR CIERRE"
-            watermarkIcon={<Printer size={46} />}
-          />
-        </Box>
 
-        <TrFiltros
-          periodoTrabajo={periodoTrabajo}
-          periodoSelect={periodoSelect}
-          contabilidadTrabajo={contabilidadTrabajo}
-          contabilidadSelect={contabilidadSelect}
-          puntosVentaAsignados={puntosVentaAsignados}
-          puntoVentaTrabajo={puntoVentaTrabajo}
-          onPeriodoSelect={handlePeriodoSelect}
-          onContabilidadSelect={handleContabilidadSelect}
-          onPuntoVentaSelect={handlePuntoVentaSelect}
-          filtroDerechaPuntoVenta={usuarioPuedeVerTodosCorreos && usuariosTrabajo.length > 0 ? (
-            <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
-              <TrHeaderMenuPicker
-                label="Usuario"
-                value={usuarioTrabajo}
-                displayValue={
-                  usuarioTrabajo
-                    ? usuariosTrabajo.find((item) => item.id_usuario === usuarioTrabajo)?.nombre || usuarioTrabajo
-                    : "Todos"
-                }
-                minWidth="100%"
-                options={[
-                  { value: "", label: "Todos" },
-                  ...usuariosTrabajo.map((item) => ({ value: item.id_usuario, label: item.nombre || item.id_usuario })),
-                ]}
-                onSelect={handleUsuarioSelect}
+          <Box sx={{ mt: 1, p: 1, border: `1px solid ${palette.borderSoft}`, borderRadius: palette.radius.listCard, backgroundColor: palette.surface }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.55 }}>
+              Día
+            </Typography>
+            <Box sx={{ overflowX: "auto", pb: 0.15 }}>
+              <DaySelector
+                period={periodoTrabajo || params.periodo}
+                onDaySelect={(day) => {
+                  setDiaSel(day === "*" ? "*" : String(day).padStart(2, "0"));
+                  setUsuarioTrabajo("");
+                }}
               />
             </Box>
-          ) : null}
-        />
-
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "minmax(220px, 260px)" }, gap: 1, mb: 1.25 }}>
-          <TrHeaderMenuPicker
-            label="Motivo"
-            value={motivoFiltro}
-            displayValue={motivos.find((item) => item.id_motivo === motivoFiltro)?.nombre || "Todos"}
-            minWidth="100%"
-            options={[{ value: "", label: "Todos" }, ...motivos.map((item) => ({ value: item.id_motivo, label: item.nombre }))]}
-            onSelect={setMotivoFiltro}
-          />
+          </Box>
         </Box>
 
-        <DaySelector
-          period={periodoTrabajo || params.periodo}
-          onDaySelect={(day) => {
-            setDiaSel(day === "*" ? "*" : String(day).padStart(2, "0"));
-            setUsuarioTrabajo("");
-          }}
+        <ResumenCajaStrip
+          resumen={resumen}
+          onDetalleIngresos={abrirDetalleIngresos}
+          onImprimirCierre={imprimirCierreCaja}
         />
+
+        <Box sx={{ mb: 1.25, p: 1, border: `1px solid ${palette.borderSoft}`, borderRadius: palette.radius.listCard, backgroundColor: palette.surface, display: "flex", alignItems: "flex-end", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ flex: "1 1 260px", maxWidth: "360px" }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.55 }}>
+              Filtro específico
+            </Typography>
+            <TrHeaderMenuPicker
+              label="Motivo"
+              value={motivoFiltro}
+              displayValue={motivos.find((item) => item.id_motivo === motivoFiltro)?.nombre || "Todos"}
+              minWidth="100%"
+              options={[{ value: "", label: "Todos" }, ...motivos.map((item) => ({ value: item.id_motivo, label: item.nombre }))]}
+              onSelect={setMotivoFiltro}
+            />
+          </Box>
+          {motivoFiltro && (
+            <Box
+              component="button"
+              type="button"
+              onClick={() => setMotivoFiltro("")}
+              sx={{ height: 42, px: 1.2, border: `1px solid ${palette.border}`, borderRadius: palette.radius.control, backgroundColor: "transparent", color: palette.muted, fontSize: "12px", fontWeight: 800, cursor: "pointer", "&:hover": { color: palette.accent, borderColor: palette.accent } }}
+            >
+              Limpiar
+            </Box>
+          )}
+        </Box>
 
         <DataTable
           theme="transportesDark"

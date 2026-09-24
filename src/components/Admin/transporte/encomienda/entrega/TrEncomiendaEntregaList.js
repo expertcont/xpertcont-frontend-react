@@ -157,7 +157,8 @@ const formatMoney = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", 
   maximumFractionDigits: 2,
 })}`;
 
-const rowsPerPage = 12;
+const rowsPerPage = 50;
+const rowsPerPageOptions = [50, 100, 150, 200];
 
 const esPorCobrar = (value) => normalizarTexto(value)
   .replace(/[^a-z]/g, "") === "porcobrar";
@@ -1255,14 +1256,14 @@ export default function TrEncomiendaEntregaList() {
     }
 
     const result = await swal2.fire({
-      title: "Marcar llegada real",
+      title: 'Marcar "Llegada de Chofer"',
       html: `
         <div style="text-align:left;display:grid;gap:10px;font-family:Arial,sans-serif">
           <div style="padding:10px 12px;border:1px solid ${palette.border};border-radius:8px;background:${palette.bg};color:${palette.text};font-weight:800;text-align:center">
             ${escapeHtml(numeroOperacion(item))}
           </div>
           <div style="color:${palette.muted};font-size:13px;line-height:1.35">
-            Se registrara la hora actual del servidor como llegada real de esta encomienda.
+            Se registrara la hora actual del servidor como llegada de chofer de esta encomienda.
           </div>
         </div>
       `,
@@ -1448,9 +1449,9 @@ export default function TrEncomiendaEntregaList() {
                 )}
               </Box>
             </Box>
-            <Tooltip title={row.llegada_real ? `Llegada real: ${formatFechaHoraMinuto(row.llegada_real)}` : "Marcar llegada real"} arrow>
+            <Tooltip title={row.llegada_real ? `Llegada de Chofer: ${formatFechaHoraMinuto(row.llegada_real)}` : 'Marcar "Llegada de Chofer"'} arrow>
               <IconButton
-                aria-label={row.llegada_real ? "Llegada real registrada" : "Marcar llegada real"}
+                aria-label={row.llegada_real ? "Llegada de Chofer registrada" : 'Marcar "Llegada de Chofer"'}
                 onClick={(event) => {
                   event.stopPropagation();
                   marcarLlegadaReal(row);
@@ -1508,7 +1509,7 @@ export default function TrEncomiendaEntregaList() {
                 gap: 0.45,
                 minWidth: 0,
                 mt: 0.2,
-                color: "#fff",
+                color: palette.text,
                 fontSize: "12px",
                 fontWeight: 800,
                 lineHeight: 1.15,
@@ -1524,7 +1525,7 @@ export default function TrEncomiendaEntregaList() {
       ),
     },
     {
-      name: "Llegada real",
+      name: "LLEGADA CHOFER",
       width: "154px",
       selector: (row) => row.llegada_real || "",
       cell: (row) => {
@@ -1728,6 +1729,7 @@ export default function TrEncomiendaEntregaList() {
             onRowDoubleClicked={(row) => (mostrarEntregadas ? mostrarEntregaRegistrada(row) : marcarEntregado(row))}
             pagination
             paginationPerPage={rowsPerPage}
+            paginationRowsPerPageOptions={rowsPerPageOptions}
             customStyles={customTableStyles}
             noDataComponent={(
               <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>

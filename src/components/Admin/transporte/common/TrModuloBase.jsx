@@ -12,7 +12,7 @@ import TrBoletoModal from "../TrBoletoModal";
 import TrEncomiendaModal from "../encomienda/modal/TrEncomiendaModal";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
-import { createColumns, customStyles, operacionProtegidaSunat } from "./components/TrOperacionRow";
+import { createColumns, customStyles, customStylesEncomienda, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
@@ -819,10 +819,11 @@ export default function TrModuloBase({
           data={data}
           progressPending={loading}
           pagination
-          paginationPerPage={10}
+          paginationPerPage={tipoOperacionFijo === "E" ? 50 : 10}
+          paginationRowsPerPageOptions={tipoOperacionFijo === "E" ? [10, 25, 50, 100] : undefined}
           highlightOnHover
           responsive
-          customStyles={customStyles}
+          customStyles={tipoOperacionFijo === "E" ? customStylesEncomienda : customStyles}
           noDataComponent={
             <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
               <Search size={16} />
