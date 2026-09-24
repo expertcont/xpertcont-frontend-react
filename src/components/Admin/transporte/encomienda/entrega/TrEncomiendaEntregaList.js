@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, Camera, Check, MapPin, MessageCircle, Mic, Package, Phone, Search, X } from "lucide-react";
+import { BadgeCheck, Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Search, X } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import swal2 from "sweetalert2";
 
@@ -1230,6 +1230,102 @@ export default function TrEncomiendaEntregaList() {
     }
   };
 
+  const marcarLlegadaReal = async (item) => {
+    if (item.llegada_real) {
+      return;
+    }
+
+    const result = await swal2.fire({
+      title: "Marcar llegada real",
+      html: `
+        <div style="text-align:left;display:grid;gap:10px;font-family:Arial,sans-serif">
+          <div style="padding:10px 12px;border:1px solid ${palette.border};border-radius:8px;background:${palette.bg};color:${palette.text};font-weight:800;text-align:center">
+            ${escapeHtml(numeroOperacion(item))}
+          </div>
+          <div style="color:${palette.muted};font-size:13px;line-height:1.35">
+            Se registrara la hora actual del servidor como llegada real de esta encomienda.
+          </div>
+        </div>
+      `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Marcar llegada",
+      cancelButtonText: "Cancelar",
+      color: palette.text,
+      background: palette.surface,
+      confirmButtonColor: palette.success,
+      cancelButtonColor: palette.border,
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${back_host}/mve_transventa/encomienda/llegada-real`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodo: item.periodo_origen || periodoTrabajo,
+          id_usuario: params.id_anfitrion,
+          id_anfitrion: params.id_anfitrion,
+          id_invitado: params.id_invitado,
+          documento_id: contabilidadTrabajo,
+          r_cod: item.r_cod,
+          r_serie: item.r_serie,
+          r_numero: item.r_numero,
+          elemento: item.elemento || 1,
+          ctrl_mod_us: params.id_invitado,
+        }),
+      });
+      const dataResponse = await response.json();
+
+      if (!response.ok || !dataResponse.success) {
+        throw new Error(dataResponse.message || "No se pudo registrar la llegada real.");
+      }
+
+      setTablaBase((prev) => prev.map((row) => {
+        const mismaEncomienda = (
+          row.r_cod === item.r_cod &&
+          row.r_serie === item.r_serie &&
+          row.r_numero === item.r_numero &&
+          Number(row.elemento || 1) === Number(item.elemento || 1)
+        );
+
+        return mismaEncomienda
+          ? {
+            ...row,
+            ...(dataResponse.data || {}),
+            periodo_origen: row.periodo_origen || item.periodo_origen,
+            nombre_ruta: dataResponse.data?.nombre_ruta || row.nombre_ruta,
+            _textoBusqueda: crearIndiceBusqueda({ ...row, ...(dataResponse.data || {}) }),
+            _textoBusquedaFonica: crearIndiceBusquedaFonica({ ...row, ...(dataResponse.data || {}) }),
+          }
+          : row;
+      }));
+      setUpdateTrigger(Date.now());
+
+      swal2.fire({
+        title: "Llegada marcada",
+        text: formatFechaHoraEntrega(dataResponse.data?.llegada_real),
+        icon: "success",
+        timer: 1400,
+        showConfirmButton: false,
+        color: palette.text,
+        background: palette.surface,
+      });
+    } catch (error) {
+      swal2.fire({
+        title: "No se pudo registrar",
+        text: error.message || "Error interno.",
+        icon: "error",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+    }
+  };
+
   const columns = [
     {
       name: "Encomienda",
@@ -1239,11 +1335,51 @@ export default function TrEncomiendaEntregaList() {
         const porCobrar = esPorCobrar(row.condicion_pago || row.numero_rdi);
 
         return (
-          <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "38px minmax(0, 1fr)", columnGap: 0.85, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
+          <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "32px 38px minmax(0, 1fr)", columnGap: 0.7, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
+            <Tooltip title={row.llegada_real ? `Llegada real: ${formatFechaHoraEntrega(row.llegada_real)}` : "Marcar llegada real"} arrow>
+              <span>
+                <IconButton
+                  aria-label={row.llegada_real ? "Llegada real registrada" : "Marcar llegada real"}
+                  disabled={Boolean(row.llegada_real)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    marcarLlegadaReal(row);
+                  }}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: palette.radius.control,
+                    backgroundColor: row.llegada_real ? palette.successSoft : "transparent",
+                    border: "none",
+                    color: row.llegada_real ? palette.success : palette.muted,
+                    gridRow: "1 / span 3",
+                    opacity: 1,
+                    transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
+                    "&.Mui-disabled": {
+                      color: row.llegada_real ? palette.success : palette.muted,
+                      opacity: 1,
+                    },
+                    "&:hover": {
+                      backgroundColor: row.llegada_real ? palette.successSoft : palette.surfaceAlt,
+                      color: row.llegada_real ? palette.success : palette.accent,
+                      transform: "scale(1.32)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.86)",
+                    },
+                  }}
+                >
+                  <MapPinCheck size={16} />
+                </IconButton>
+              </span>
+            </Tooltip>
             <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"} arrow>
               <IconButton
                 aria-label={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"}
-                onClick={() => (mostrarEntregadas ? mostrarEntregaRegistrada(row) : marcarEntregado(row))}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  mostrarEntregadas ? mostrarEntregaRegistrada(row) : marcarEntregado(row);
+                }}
                 sx={{
                   position: "relative",
                   width: 38,
@@ -1253,9 +1389,13 @@ export default function TrEncomiendaEntregaList() {
                   border: `1px solid ${mostrarEntregadas ? palette.successSoft : palette.accentSoft}`,
                   color: mostrarEntregadas ? palette.success : palette.accent,
                   gridRow: "1 / span 3",
+                  transition: "background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease",
                   "&:hover": {
                     backgroundColor: mostrarEntregadas ? palette.successSoft : palette.accentSoft,
-                    transform: "translateY(-1px)",
+                    transform: "scale(1.22)",
+                  },
+                  "&:active": {
+                    transform: "scale(0.88)",
                   },
                 }}
               >
@@ -1292,7 +1432,7 @@ export default function TrEncomiendaEntregaList() {
                 </Box>
               </IconButton>
             </Tooltip>
-            <Box data-tag="allowRowEvents" sx={{ minWidth: 0 }}>
+            <Box data-tag="allowRowEvents" sx={{ minWidth: 0, gridColumn: 3 }}>
               <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900, fontSize: "13px", lineHeight: 1.12 }} noWrap>
                 {numeroOperacion(row)}
               </Typography>

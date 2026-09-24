@@ -17,7 +17,6 @@ import TrEncomiendaModalSections from "./TrEncomiendaModalSections";
 import crearTicketEncomiendaPdf from "./TrEncomiendaTicketPdf";
 import crearTicketEncomiendaTributarioPdf from "./TrEncomiendaTicketTributarioPdf";
 import {
-  LicenciaPickerModal,
   PlacaPickerModal,
   RutaPickerModal,
   ZonaPickerModal,
@@ -152,7 +151,6 @@ export default function TrEncomiendaModal({
   puntoVentaOrigenNombre = "",
   zonasDisponibles = [],
   placasDisponibles = [],
-  licenciasDisponibles = [],
   empresa = {},
   modalNuevoTitulo = "Nueva encomienda",
   modalEditarTitulo = "Editar encomienda",
@@ -168,7 +166,6 @@ export default function TrEncomiendaModal({
   const [rutaPickerOpen, setRutaPickerOpen] = useState(false);
   const [zonaPickerOpen, setZonaPickerOpen] = useState("");
   const [placaPickerOpen, setPlacaPickerOpen] = useState(false);
-  const [licenciaPickerOpen, setLicenciaPickerOpen] = useState(false);
   const [clonePickerOpen, setClonePickerOpen] = useState(false);
   const [cloneLoading, setCloneLoading] = useState(false);
   const [cloneRows, setCloneRows] = useState([]);
@@ -201,7 +198,6 @@ export default function TrEncomiendaModal({
   const destinatarioDireccionRef = useRef(null);
   const rutaRef = useRef(null);
   const placaRef = useRef(null);
-  const choferRef = useRef(null);
   const descripcionRef = useRef(null);
   const totalRef = useRef(null);
   const precioChoferRef = useRef(null);
@@ -275,9 +271,8 @@ export default function TrEncomiendaModal({
     descripcionRef,
     totalRef,
     condicionPagoRef,
-    placaRef,
-    choferRef,
     llegadaRef,
+    placaRef,
     precioChoferRef,
     grabarRef,
   );
@@ -377,7 +372,6 @@ export default function TrEncomiendaModal({
       id_punto_venta_dest: item.id_punto_venta_dest || "",
       punto_venta_dest_nombre: item.punto_venta_dest_nombre || item.punto_venta_destino_nombre || item.destino_nombre || "",
       placa: item.placa || "",
-      licencia: item.licencia || "",
       descripcion: String(item.descripcion || "").toUpperCase(),
       r_monto_total: item.r_monto_total || item.precio_neto || "",
       condicion_pago: normalizarCondicionPago(item.condicion_pago || item.numero_rdi),
@@ -494,18 +488,9 @@ export default function TrEncomiendaModal({
     }));
     setPlacaPickerOpen(false);
     window.setTimeout(() => {
-      choferRef.current?.focus();
-      choferRef.current?.select?.();
+      precioChoferRef.current?.focus();
+      precioChoferRef.current?.select?.();
     }, 60);
-  };
-
-  // Al escoger una licencia solo se graba la PK textual en mve_transventa.licencia.
-  const seleccionarLicencia = (item) => {
-    setDraft((prev) => ({
-      ...prev,
-      licencia: item.licencia || "",
-    }));
-    setLicenciaPickerOpen(false);
   };
 
   const buscarRemitente = async () => {
@@ -775,11 +760,6 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    if (!draft.licencia) {
-      mostrarValidacion("Indica chofer/licencia.", choferRef);
-      return;
-    }
-
     const total = Math.round(Number(draft.r_monto_total || 0));
     const precioChofer = Number(draft.precio_chofer || 0);
     const entregaRemitenteEnOficina = draft.remitente_entrega === "OFICINA";
@@ -794,6 +774,7 @@ export default function TrEncomiendaModal({
 
     const operacionGuardadaResponse = await onSubmit({
       ...draft,
+      licencia: "-",
       tipo_operacion: "E",
       r_cod: comprobante.r_cod,
       cliente_id_doc: documentoTipoDesdeNumero(draft.cliente_documento),
@@ -1265,7 +1246,6 @@ export default function TrEncomiendaModal({
           setRutaPickerOpen={setRutaPickerOpen}
           setZonaPickerOpen={setZonaPickerOpen}
           setPlacaPickerOpen={setPlacaPickerOpen}
-          setLicenciaPickerOpen={setLicenciaPickerOpen}
           buscandoRemitente={buscandoRemitente}
           buscandoDestinatario={buscandoDestinatario}
           soloLectura={soloLectura}
@@ -1285,7 +1265,6 @@ export default function TrEncomiendaModal({
             destinatarioDireccionRef,
             rutaRef,
             placaRef,
-            choferRef,
             descripcionRef,
             totalRef,
             precioChoferRef,
@@ -1529,13 +1508,6 @@ export default function TrEncomiendaModal({
         placas={placasDisponibles}
         onClose={() => setPlacaPickerOpen(false)}
         onSelect={seleccionarPlaca}
-      />
-      {/* Modal de busqueda del catalogo mve_translicencia. */}
-      <LicenciaPickerModal
-        open={licenciaPickerOpen}
-        licencias={licenciasDisponibles}
-        onClose={() => setLicenciaPickerOpen(false)}
-        onSelect={seleccionarLicencia}
       />
       <TrEncomiendaModalClone
         open={clonePickerOpen}

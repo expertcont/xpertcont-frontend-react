@@ -4,7 +4,6 @@ import { Package, Search, UserRound } from "lucide-react";
 
 import palette from "../../../../../theme/palette";
 import {
-  LicenciaField,
   PlacaField,
   PuntoVentaField,
   RutaField,
@@ -44,7 +43,6 @@ export default function TrEncomiendaModalSections({
   setRutaPickerOpen,
   setZonaPickerOpen,
   setPlacaPickerOpen,
-  setLicenciaPickerOpen,
   buscandoRemitente,
   buscandoDestinatario,
   soloLectura = false,
@@ -364,12 +362,24 @@ export default function TrEncomiendaModalSections({
               <ChoiceGroup
                 value={draft.condicion_pago}
                 inputRef={refs.condicionPagoRef}
-                nextRef={refs.placaRef}
+                nextRef={refs.llegadaRef}
                 onChange={(value) => updateDraft("condicion_pago", value)}
                 options={[
                   { value: "PAGADO", label: "PAGADO" },
                   { value: "POR_COBRAR", label: "POR COBRAR" },
                 ]}
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="" labelWidth={0} plain>
+              <TimeWheelPicker
+                value={draft.llegada_aprox}
+                onChange={(value) => updateDraft("llegada_aprox", value)}
+                inputRef={refs.llegadaRef}
+                nextRef={refs.placaRef}
+                minuteStep={5}
+                label="Hora de llegada"
               />
             </Field>
           </Grid>
@@ -381,31 +391,7 @@ export default function TrEncomiendaModalSections({
                 onChange={(value) => updateDraft("placa", value)}
                 onOpen={() => setPlacaPickerOpen(true)}
                 inputRef={refs.placaRef}
-                nextRef={refs.choferRef}
-              />
-            </Field>
-          </Grid>
-          <Grid item xs={6}>
-            <Field label="" labelWidth={0}>
-              {/* Licencia admite escritura manual; + o usuario abren el catalogo mve_translicencia. */}
-              <LicenciaField
-                value={draft.licencia}
-                onChange={(value) => updateDraft("licencia", value)}
-                onOpen={() => setLicenciaPickerOpen(true)}
-                inputRef={refs.choferRef}
-                nextRef={refs.llegadaRef}
-              />
-            </Field>
-          </Grid>
-          <Grid item xs={6}>
-            <Field label="" labelWidth={0} plain>
-              <TimeWheelPicker
-                value={draft.llegada_aprox}
-                onChange={(value) => updateDraft("llegada_aprox", value)}
-                inputRef={refs.llegadaRef}
                 nextRef={refs.precioChoferRef}
-                minuteStep={5}
-                label=""
               />
             </Field>
           </Grid>
@@ -417,7 +403,7 @@ export default function TrEncomiendaModalSections({
                   S/
                 </Typography>
               </Box>
-            )} label="" labelWidth={0} controlHeight={36}>
+            )} label="" labelWidth={0}>
               <MoneyStepper
                 value={draft.precio_chofer}
                 onChange={(value) => updateDraft("precio_chofer", value)}

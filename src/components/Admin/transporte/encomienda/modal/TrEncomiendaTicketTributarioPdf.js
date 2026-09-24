@@ -314,7 +314,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const receiverDoc = encomienda.destinatario_documento || encomienda.destinatario_documento_id || "-";
   const receiverArrivalZone = clean(encomienda.destinatario_zona);
   const receiverAddress = clean(encomienda.destinatario_direccion);
-  const unit = `${clean(encomienda.placa)} ${clean(encomienda.licencia)}`.trim() || "-";
+  const unit = clean(encomienda.placa) || "-";
   const payment = clean(encomienda.condicion_pago || venta.forma_pago_id || "PAGADO").toUpperCase();
   const paymentNormalized = payment.replace(/[^A-Z]/g, "");
   const isPaymentPending = paymentNormalized.includes("PORCOBRAR") || paymentNormalized.includes("PORPAGAR");

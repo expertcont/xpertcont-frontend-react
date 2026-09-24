@@ -93,7 +93,6 @@ export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => {
     id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
     punto_venta_dest_nombre: operacion?.punto_venta_dest_nombre || operacion?.punto_venta_destino_nombre || operacion?.destino_nombre || "",
     placa: operacion?.placa || "",
-    licencia: operacion?.licencia || "",
     descripcion: operacion?.descripcion || "",
     r_monto_total: operacion?.r_monto_total || operacion?.precio_neto || "",
     precio_chofer: operacion?.precio_chofer || "",
@@ -117,7 +116,6 @@ export const textoBusquedaClone = (item) => [
   item.destinatario_documento_id,
   item.descripcion,
   item.placa,
-  item.licencia,
   item.id_ruta,
 ].map((value) => String(value || "").toLowerCase()).join(" ");
 
