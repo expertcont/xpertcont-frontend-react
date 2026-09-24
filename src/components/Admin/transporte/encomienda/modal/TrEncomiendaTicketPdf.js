@@ -57,12 +57,17 @@ const LAYOUT = {
     nameGap: 24,
     nameSize: 12.4,
     nameLineHeight: 11.8,
+    phoneGap: 1.8,
+    phoneSize: 9.2,
+    phoneLineHeight: 10,
   },
   qr: {
     size: 111,
-    minBottom: 74,
-    preferredY: 108,
-    gapAbove: 5,
+    minBottom: 58,
+    preferredBottom: 74,
+    minSize: 86,
+    preferredY: 118,
+    gapAbove: -4,
     emailGap: 9,
     emailSize: 6.8,
   },
@@ -236,7 +241,7 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   const payment = clean(encomienda.condicion_pago || venta.forma_pago_id || "PAGADO").toUpperCase();
   const paymentNormalized = payment.replace(/[^A-Z]/g, "");
   const isPaymentPending = paymentNormalized.includes("PORCOBRAR") || paymentNormalized.includes("PORPAGAR");
-  const paymentLabel = isPaymentPending ? "POR PAGAR" : "PAGADO";
+  const paymentLabel = isPaymentPending ? "POR PAGAR" : "CANCELADO";
   const destination = (
     encomienda.punto_venta_dest_nombre ||
     encomienda.punto_venta_destino_nombre ||
@@ -244,7 +249,10 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
     encomienda.id_punto_venta_dest ||
     "DESTINO"
   );
+  const senderName = encomienda.cliente || jsonTicket.cliente?.razon_social_nombres || "-";
+  const senderPhone = clean(encomienda.cliente_telefono);
   const receiverName = encomienda.destinatario || "-";
+  const receiverPhone = clean(encomienda.destinatario_telefono);
   const receiverArrivalZone = clean(encomienda.destinatario_zona);
   const receiverAddress = clean(encomienda.destinatario_direccion);
   const registeredByEmail = clean(
@@ -320,16 +328,25 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
     centered(page, item, cursorY, LAYOUT.recipient.nameSize, regular, INK, CW - 16);
     cursorY -= LAYOUT.recipient.nameLineHeight;
   });
+  if (receiverPhone) {
+    cursorY -= LAYOUT.recipient.phoneGap;
+    centered(page, `TEL: ${receiverPhone}`, cursorY, LAYOUT.recipient.phoneSize, semibold, INK, CW - 16);
+    cursorY -= LAYOUT.recipient.phoneLineHeight;
+  }
 
+  const qrAvailableHeight = cursorY - LAYOUT.qr.gapAbove - LAYOUT.qr.preferredBottom;
+  const qrSize = Math.max(LAYOUT.qr.minSize, Math.min(LAYOUT.qr.size, qrAvailableHeight));
   const qrY = Math.max(
     LAYOUT.qr.minBottom,
-    Math.min(LAYOUT.qr.preferredY, cursorY - LAYOUT.qr.gapAbove - LAYOUT.qr.size)
+    Math.min(LAYOUT.qr.preferredY, cursorY - LAYOUT.qr.gapAbove - qrSize)
   );
-  page.drawImage(qrImage, { x: (W - LAYOUT.qr.size) / 2, y: qrY, width: LAYOUT.qr.size, height: LAYOUT.qr.size });
-  centered(page, paymentLabel, 54, 16.5, semibold, isPaymentPending ? ALERT : INK, CW);
-  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, 36, 8.8, semibold, INK, CW);
+  page.drawImage(qrImage, { x: (W - qrSize) / 2, y: qrY, width: qrSize, height: qrSize });
+  centered(page, `REM: ${senderName}`, qrY - 8, 7.5, regular, MUTED, CW - 12);
+  centered(page, `TEL: ${senderPhone || "-"}`, qrY - 18, 9, semibold, INK, CW - 12);
+  centered(page, paymentLabel, qrY - 33, 16.5, semibold, isPaymentPending ? ALERT : INK, CW);
+  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, qrY - 49, 8.8, semibold, INK, CW);
   if (registeredByEmail) {
-    centered(page, `REGISTRADO POR: ${registeredByEmail}`, 24, 6.8, regular, MUTED, CW);
+    centered(page, `REGISTRADO POR: ${registeredByEmail}`, qrY - 58, 6.8, regular, MUTED, CW);
   }
 
   return pdfDoc.save();

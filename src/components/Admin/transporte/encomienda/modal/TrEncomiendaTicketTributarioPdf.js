@@ -255,7 +255,7 @@ const drawPaymentStatusLarge = (page, { isPending, label, x, y, width, bold, sem
     return;
   }
 
-  centeredIn(page, label, x, y - (11 * scale), width, 18.5 * scale, semibold, INK);
+  centeredIn(page, label, x, y - (5 * scale), width, 10.5 * scale, semibold, MUTED);
 };
 
 const fetchFontBytes = async (url) => {
@@ -318,7 +318,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const payment = clean(encomienda.condicion_pago || venta.forma_pago_id || "PAGADO").toUpperCase();
   const paymentNormalized = payment.replace(/[^A-Z]/g, "");
   const isPaymentPending = paymentNormalized.includes("PORCOBRAR") || paymentNormalized.includes("PORPAGAR");
-  const paymentLabel = isPaymentPending ? "POR PAGAR" : "PAGADO";
+  const paymentLabel = isPaymentPending ? "POR PAGAR" : "CANCELADO";
   const arrivalApprox = timePe(encomienda.llegada_aprox || venta.llegada_aprox || jsonTicket.llegada_aprox);
   const registeredBy = clean(
     encomienda.registrado_por_correo ||

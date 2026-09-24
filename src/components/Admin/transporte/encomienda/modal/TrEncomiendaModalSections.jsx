@@ -245,6 +245,10 @@ export default function TrEncomiendaModalSections({
                   value={draft.destinatario_entrega}
                   inputRef={refs.destinatarioEntregaRef}
                   nextRef={draft.destinatario_entrega === "CLIENTE" ? refs.destinatarioZonaRef : refs.destinatarioDocRef}
+                  options={[
+                    { value: "OFICINA", label: "OFICINA" },
+                    { value: "CLIENTE", label: "DOMICILIO" },
+                  ]}
                   onChange={(value) => {
                     updateDraft("destinatario_entrega", value);
                     if (value === "OFICINA") {
