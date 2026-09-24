@@ -244,6 +244,25 @@ const formatFechaHoraEntrega = (value) => {
   return text || "-";
 };
 
+const formatFechaHoraMinuto = (value) => {
+  const text = String(value || "").trim();
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?/);
+
+  if (match) {
+    const fecha = `${match[3]}/${match[2]}/${match[1]}`;
+    const hora = match[4] && match[5] ? `${match[4]}:${match[5]}` : "";
+    return `${fecha}${hora ? ` ${hora}` : ""}`;
+  }
+
+  const matchFormateado = text.match(/^(\d{2}\/\d{2}\/\d{4})(?:\s+(\d{2}):(\d{2})(?::\d{2})?)?/);
+  if (matchFormateado) {
+    const hora = matchFormateado[2] && matchFormateado[3] ? ` ${matchFormateado[2]}:${matchFormateado[3]}` : "";
+    return `${matchFormateado[1]}${hora}`;
+  }
+
+  return text || "-";
+};
+
 const nombreDestinoRuta = (item) => {
   const ruta = String(item.nombre_ruta || "").trim();
   if (!ruta) {
@@ -1307,7 +1326,7 @@ export default function TrEncomiendaEntregaList() {
 
       swal2.fire({
         title: "Llegada marcada",
-        text: formatFechaHoraEntrega(dataResponse.data?.llegada_real),
+        text: formatFechaHoraMinuto(dataResponse.data?.llegada_real),
         icon: "success",
         timer: 1400,
         showConfirmButton: false,
@@ -1335,44 +1354,7 @@ export default function TrEncomiendaEntregaList() {
         const porCobrar = esPorCobrar(row.condicion_pago || row.numero_rdi);
 
         return (
-          <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "32px 38px minmax(0, 1fr)", columnGap: 0.7, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
-            <Tooltip title={row.llegada_real ? `Llegada real: ${formatFechaHoraEntrega(row.llegada_real)}` : "Marcar llegada real"} arrow>
-              <span>
-                <IconButton
-                  aria-label={row.llegada_real ? "Llegada real registrada" : "Marcar llegada real"}
-                  disabled={Boolean(row.llegada_real)}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    marcarLlegadaReal(row);
-                  }}
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: palette.radius.control,
-                    backgroundColor: row.llegada_real ? palette.successSoft : "transparent",
-                    border: "none",
-                    color: row.llegada_real ? palette.success : palette.muted,
-                    gridRow: "1 / span 3",
-                    opacity: 1,
-                    transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
-                    "&.Mui-disabled": {
-                      color: row.llegada_real ? palette.success : palette.muted,
-                      opacity: 1,
-                    },
-                    "&:hover": {
-                      backgroundColor: row.llegada_real ? palette.successSoft : palette.surfaceAlt,
-                      color: row.llegada_real ? palette.success : palette.accent,
-                      transform: "scale(1.32)",
-                    },
-                    "&:active": {
-                      transform: "scale(0.86)",
-                    },
-                  }}
-                >
-                  <MapPinCheck size={16} />
-                </IconButton>
-              </span>
-            </Tooltip>
+          <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) 44px", columnGap: 0.85, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
             <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"} arrow>
               <IconButton
                 aria-label={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"}
@@ -1432,8 +1414,8 @@ export default function TrEncomiendaEntregaList() {
                 </Box>
               </IconButton>
             </Tooltip>
-            <Box data-tag="allowRowEvents" sx={{ minWidth: 0, gridColumn: 3 }}>
-              <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900, fontSize: "13px", lineHeight: 1.12 }} noWrap>
+            <Box data-tag="allowRowEvents" sx={{ minWidth: 0 }}>
+              <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900, fontSize: "13px", lineHeight: 1.12, minWidth: 0 }} noWrap>
                 {numeroOperacion(row)}
               </Typography>
               {row.descripcion && (
@@ -1466,6 +1448,40 @@ export default function TrEncomiendaEntregaList() {
                 )}
               </Box>
             </Box>
+            <Tooltip title={row.llegada_real ? `Llegada real: ${formatFechaHoraMinuto(row.llegada_real)}` : "Marcar llegada real"} arrow>
+              <IconButton
+                aria-label={row.llegada_real ? "Llegada real registrada" : "Marcar llegada real"}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  marcarLlegadaReal(row);
+                }}
+                sx={{
+                  width: 44,
+                  height: 44,
+                  minWidth: 44,
+                  p: 0,
+                  borderRadius: palette.radius.control,
+                  backgroundColor: row.llegada_real ? palette.successSoft : "transparent",
+                  border: "none",
+                  color: row.llegada_real ? palette.success : palette.muted,
+                  gridColumn: 3,
+                  gridRow: "1 / span 3",
+                  justifySelf: "end",
+                  alignSelf: "center",
+                  transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
+                  "&:hover": {
+                    backgroundColor: row.llegada_real ? palette.successSoft : palette.surfaceAlt,
+                    color: row.llegada_real ? palette.success : palette.accent,
+                    transform: "scale(1.28)",
+                  },
+                  "&:active": {
+                    transform: "scale(0.82)",
+                  },
+                }}
+              >
+                <MapPinCheck size={22} strokeWidth={2.6} />
+              </IconButton>
+            </Tooltip>
           </Box>
         );
       },
@@ -1506,6 +1522,31 @@ export default function TrEncomiendaEntregaList() {
           )}
         </Box>
       ),
+    },
+    {
+      name: "Llegada real",
+      width: "154px",
+      selector: (row) => row.llegada_real || "",
+      cell: (row) => {
+        const fechaLlegada = formatFechaHoraMinuto(row.llegada_real);
+        const sinLlegada = fechaLlegada === "-";
+
+        return (
+          <Box data-tag="allowRowEvents" sx={{ minWidth: 0, color: sinLlegada ? palette.muted : palette.success }}>
+            <Typography
+              data-tag="allowRowEvents"
+              sx={{
+                fontSize: sinLlegada ? "11.5px" : "12px",
+                fontWeight: 900,
+                lineHeight: 1.15,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {sinLlegada ? "Sin marcar" : fechaLlegada}
+            </Typography>
+          </Box>
+        );
+      },
     },
     {
       name: "Remitente",
@@ -1553,7 +1594,7 @@ export default function TrEncomiendaEntregaList() {
 
   return (
     <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
-      <Box sx={{ maxWidth: 980, mx: "auto" }}>
+      <Box sx={{ width: "100%", maxWidth: { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto" }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: { xs: "flex-start", md: "center" }, flexDirection: { xs: "column", md: "row" }, mb: 2 }}>
           <Box>
             <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "22px", lineHeight: 1.2 }}>
