@@ -143,42 +143,96 @@ export default function Header() {
                 },
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                {themeOptions.map((themeOption) => {
-                  const values = getThemeValues(themeOption.id);
-                  const isSelected = selectedThemeId === themeOption.id;
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.1 }}>
+                {(() => {
+                  const lightTheme = themeOptions.find((themeOption) => themeOption.id === 'light-smoke');
+                  if (!lightTheme) return null;
+
+                  const values = getThemeValues(lightTheme.id);
+                  const isSelected = selectedThemeId === lightTheme.id;
 
                   return (
-                    <Tooltip key={themeOption.id} title={themeOption.label}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleSelectTheme(themeOption.id)}
-                        sx={{
-                          width: 30,
-                          height: 30,
-                          p: 0.35,
-                          border: `1px solid ${isSelected ? values.accent : palette.borderSoft}`,
-                          backgroundColor: isSelected ? values.accentSoft : palette.overlaySoft,
-                          '&:hover': {
-                            backgroundColor: values.accentSoft,
-                            borderColor: values.accent,
-                          },
-                        }}
-                      >
-                        <Box
-                          component="span"
+                    <Box sx={{ display: 'grid', gap: 0.45, justifyItems: 'center' }}>
+                      <Typography sx={{ color: palette.muted, fontSize: 9.5, fontWeight: 800, textTransform: 'uppercase', lineHeight: 1 }}>
+                        Light
+                      </Typography>
+                      <Tooltip title={lightTheme.label}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleSelectTheme(lightTheme.id)}
                           sx={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: '50%',
-                            backgroundColor: values.accent,
+                            width: 34,
+                            height: 34,
+                            p: 0.35,
+                            border: `1px solid ${isSelected ? values.accent : palette.borderSoft}`,
+                            backgroundColor: '#f5f5f5',
                             boxShadow: isSelected ? `0 0 0 3px ${values.accentSoft}` : 'none',
+                            '&:hover': {
+                              backgroundColor: '#ffffff',
+                              borderColor: values.accent,
+                            },
                           }}
-                        />
-                      </IconButton>
-                    </Tooltip>
+                        >
+                          <Box
+                            component="span"
+                            sx={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: '50%',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #d6d9dd',
+                            }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   );
-                })}
+                })()}
+
+                <Box sx={{ width: '1px', height: 38, backgroundColor: palette.borderSoft }} />
+
+                <Box sx={{ display: 'grid', gap: 0.45 }}>
+                  <Typography sx={{ color: palette.muted, fontSize: 9.5, fontWeight: 800, textTransform: 'uppercase', lineHeight: 1 }}>
+                    Dark variantes
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    {themeOptions.filter((themeOption) => themeOption.id !== 'light-smoke').map((themeOption) => {
+                      const values = getThemeValues(themeOption.id);
+                      const isSelected = selectedThemeId === themeOption.id;
+
+                      return (
+                        <Tooltip key={themeOption.id} title={themeOption.label}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleSelectTheme(themeOption.id)}
+                            sx={{
+                              width: 30,
+                              height: 30,
+                              p: 0.35,
+                              border: `1px solid ${isSelected ? values.accent : palette.borderSoft}`,
+                              backgroundColor: isSelected ? values.accentSoft : palette.overlaySoft,
+                              '&:hover': {
+                                backgroundColor: values.accentSoft,
+                                borderColor: values.accent,
+                              },
+                            }}
+                          >
+                            <Box
+                              component="span"
+                              sx={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: '50%',
+                                backgroundColor: values.accent,
+                                boxShadow: isSelected ? `0 0 0 3px ${values.accentSoft}` : 'none',
+                              }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
+                </Box>
                 <Tooltip title="Color libre">
                   <IconButton
                     size="small"

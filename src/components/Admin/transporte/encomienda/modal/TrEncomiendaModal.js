@@ -1364,7 +1364,7 @@ export default function TrEncomiendaModal({
               disabled={guardando || imprimiendoTicketAdmin || !puedeGenerarTicket}
               sx={{ justifyContent: "flex-start" }}
             >
-              Ticket admin
+              Ticket Paquete
             </AppButton>
             <AppButton
               icon={<Ticket size={18} />}

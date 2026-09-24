@@ -37,9 +37,15 @@ export const customStyles = {
       paddingRight: "14px",
       transition: "border-color .18s ease, background-color .18s ease",
       "&:hover": {
-        backgroundColor: palette.surfaceAlt,
+        backgroundColor: "var(--app-row-hover, #f8fafc)",
         borderColor: palette.border,
       },
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: "var(--app-row-hover, #f8fafc)",
+      borderColor: palette.border,
+      color: palette.text,
+      outline: "none",
     },
   },
   pagination: {

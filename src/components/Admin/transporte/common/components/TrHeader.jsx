@@ -24,7 +24,7 @@ export default function TrHeader({
 }) {
   const ticketOptions = [
     { value: "completo", label: "Completo", icon: Layers },
-    { value: "admin", label: "Admin", icon: ShieldCheck },
+    { value: "admin", label: "Paquete", icon: ShieldCheck },
     { value: "cliente", label: "Cliente", icon: ReceiptText },
   ];
 
