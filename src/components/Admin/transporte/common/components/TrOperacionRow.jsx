@@ -29,12 +29,12 @@ export const customStyles = {
     style: {
       backgroundColor: palette.surface,
       color: palette.text,
-      minHeight: "112px",
-      marginBottom: "10px",
+      minHeight: "92px",
+      marginBottom: "8px",
       borderRadius: palette.radius.listCard,
       border: `1px solid ${palette.borderSoft}`,
-      paddingLeft: "16px",
-      paddingRight: "16px",
+      paddingLeft: "14px",
+      paddingRight: "14px",
       transition: "border-color .18s ease, background-color .18s ease",
       "&:hover": {
         backgroundColor: palette.surfaceAlt,
@@ -272,10 +272,24 @@ function TrOperacionRow({
   canDelete = false,
 }) {
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
+  const esEncomienda = row.tipo_operacion === "E";
   const anulada = Number(row.registrado) === 0;
+  const fechaHoraOperacion = [row.fecha, row.horaGrabacion].filter(Boolean).join(" ");
+  const TotalOperacion = (
+    <Box sx={{ display: "grid", gap: 0.2, justifyItems: { xs: "flex-start", sm: "flex-end" } }}>
+      <Typography sx={{ color: row.condicionPagoLabel ? palette.accent : palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap" }}>
+        {formatMoney(row.total)}
+      </Typography>
+      {row.condicionPagoLabel && (
+        <Typography sx={{ color: palette.accent, fontSize: "11.2px", fontWeight: 500, lineHeight: 1, opacity: 0.72, whiteSpace: "nowrap" }}>
+          Por cobrar
+        </Typography>
+      )}
+    </Box>
+  );
 
   return (
-    <Box sx={{ width: "100%", py: 2 }}>
+    <Box sx={{ width: "100%", py: 1.2 }}>
       <Box
         sx={{
           display: "flex",
@@ -286,21 +300,27 @@ function TrOperacionRow({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexWrap: "wrap" }}>
-          <Box
-            sx={{
-              width: { xs: 40, sm: 30 },
-              height: { xs: 40, sm: 30 },
-              borderRadius: palette.radius.control,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: palette.accentSoft,
-              color: palette.accent,
-              flexShrink: 0,
-            }}
-          >
-            {row.tipo_operacion === "E" ? <Package size={16} /> : <Bus size={16} />}
-          </Box>
+          {!esEncomienda && (
+            <Box
+              sx={{
+                width: { xs: 40, sm: 30 },
+                height: { xs: 40, sm: 30 },
+                borderRadius: palette.radius.control,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: palette.accentSoft,
+                color: palette.accent,
+                flexShrink: 0,
+              }}
+            >
+              <Bus size={16} />
+            </Box>
+          )}
+
+          {esEncomienda && !anulada && (
+            <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
+          )}
 
           <Typography sx={{ color: palette.text, fontWeight: 700, fontSize: "15px" }}>
             {row.numero}
@@ -323,17 +343,23 @@ function TrOperacionRow({
             mt: { xs: 0.75, sm: 0 },
           }}
         >
-          {row.tipo_operacion === "E" && !anulada && (
-            <>
-              <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
-            </>
+          {esEncomienda && (
+            <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
+              <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
+                {protegidaSunat || anulada ? <Eye size={14} /> : <Pencil size={14} />}
+              </Box>
+            </Tooltip>
           )}
 
-          <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
-            <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
-              {protegidaSunat || anulada ? <Eye size={14} /> : <Pencil size={14} />}
-            </Box>
-          </Tooltip>
+          {esEncomienda && TotalOperacion}
+
+          {!esEncomienda && (
+            <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
+              <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
+                {protegidaSunat || anulada ? <Eye size={14} /> : <Pencil size={14} />}
+              </Box>
+            </Tooltip>
+          )}
 
           {!protegidaSunat && !anulada && (
             <Tooltip title="Anular operacion" arrow>
@@ -351,36 +377,39 @@ function TrOperacionRow({
             </Tooltip>
           )}
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.85,
-              color: palette.accent,
-              fontWeight: 600,
-              fontSize: "12.5px",
-              height: { xs: 42, sm: "auto" },
-              flexWrap: "wrap",
-            }}
-          >
-            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, whiteSpace: "nowrap" }}>
-              <Calendar size={13} />
-              {row.fecha}
-            </Box>
-            {row.horaGrabacion && (
-              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, color: palette.muted, whiteSpace: "nowrap" }}>
-                <Clock3 size={13} />
-                {row.horaGrabacion}
+          {!esEncomienda && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.85,
+                color: palette.accent,
+                fontWeight: 600,
+                fontSize: "12.5px",
+                height: { xs: 42, sm: "auto" },
+                flexWrap: "wrap",
+              }}
+            >
+              <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, whiteSpace: "nowrap" }}>
+                <Calendar size={13} />
+                {row.fecha}
               </Box>
-            )}
-          </Box>
+              {row.horaGrabacion && (
+                <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, color: palette.muted, whiteSpace: "nowrap" }}>
+                  <Clock3 size={13} />
+                  {row.horaGrabacion}
+                </Box>
+              )}
+            </Box>
+          )}
         </Box>
       </Box>
 
       <Box
         sx={{
-          mt: 1,
-          display: "flex",
+          mt: 0.65,
+          display: esEncomienda ? "grid" : "flex",
+          gridTemplateColumns: esEncomienda ? { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr)" } : undefined,
           alignItems: { xs: "flex-start", sm: "center" },
           justifyContent: "space-between",
           flexDirection: { xs: "column", sm: "row" },
@@ -388,35 +417,51 @@ function TrOperacionRow({
           color: palette.muted,
         }}
       >
-        <Box sx={{ display: "grid", gap: 0.45, minWidth: 0, width: { xs: "100%", sm: "auto" } }}>
-          <PersonaOperacionLine
-            icon={<ReceiptText size={13} style={{ flexShrink: 0, color: palette.accent }} />}
-            label={row.clienteLabel}
-            documento={row.cliente_documento || row.cliente_documento_id}
-          />
-          {row.tipo_operacion === "E" && row.destinatario && (
+        {esEncomienda ? (
+          <>
             <PersonaOperacionLine
-              icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
-              label={row.destinatario}
-              documento={row.destinatario_documento || row.destinatario_documento_id}
+              icon={<ReceiptText size={13} style={{ flexShrink: 0, color: palette.accent }} />}
+              label={row.clienteLabel}
+              documento={row.cliente_documento || row.cliente_documento_id}
             />
-          )}
-        </Box>
-        <Box sx={{ display: "grid", gap: 0.2, justifyItems: { xs: "flex-start", sm: "flex-end" }, ml: { xs: 2.5, sm: 1 } }}>
-          <Typography sx={{ color: row.condicionPagoLabel ? palette.accent : palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap" }}>
-            {formatMoney(row.total)}
-          </Typography>
-          {row.condicionPagoLabel && (
-            <Typography sx={{ color: palette.accent, fontSize: "11.2px", fontWeight: 500, lineHeight: 1, opacity: 0.72, whiteSpace: "nowrap" }}>
-              Por cobrar
-            </Typography>
-          )}
-        </Box>
+            {row.destinatario ? (
+              <Box sx={{ minWidth: 0, justifySelf: { xs: "start", md: "end" }, maxWidth: "100%" }}>
+                <PersonaOperacionLine
+                  icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
+                  label={row.destinatario}
+                  documento={row.destinatario_documento || row.destinatario_documento_id}
+                />
+              </Box>
+            ) : (
+              <Box />
+            )}
+          </>
+        ) : (
+          <Box sx={{ display: "grid", gap: 0.45, minWidth: 0, width: { xs: "100%", sm: "auto" } }}>
+            <PersonaOperacionLine
+              icon={<ReceiptText size={13} style={{ flexShrink: 0, color: palette.accent }} />}
+              label={row.clienteLabel}
+              documento={row.cliente_documento || row.cliente_documento_id}
+            />
+            {row.tipo_operacion === "E" && row.destinatario && (
+              <PersonaOperacionLine
+                icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
+                label={row.destinatario}
+                documento={row.destinatario_documento || row.destinatario_documento_id}
+              />
+            )}
+          </Box>
+        )}
+        {!esEncomienda && (
+          <Box sx={{ ml: { xs: 2.5, sm: 1 } }}>
+            {TotalOperacion}
+          </Box>
+        )}
       </Box>
 
       <Box
         sx={{
-          mt: 1.75,
+          mt: 1,
           display: "flex",
           alignItems: "center",
           flexWrap: "wrap",
@@ -431,7 +476,12 @@ function TrOperacionRow({
             nombreDestinoRuta(row)
             }
           </Box>
-          <AppChip>{row.servicioLabel}</AppChip>
+          <AppChip>
+            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
+              {esEncomienda && <Package size={13} />}
+              {row.servicioLabel}
+            </Box>
+          </AppChip>
           {row.tipo_operacion === "B" && row.asiento && <AppChip>Asiento {row.asiento}</AppChip>}
         </Box>
 
@@ -440,13 +490,19 @@ function TrOperacionRow({
             ml: { xs: 0, sm: "auto" },
             display: "flex",
             alignItems: "center",
-            gap: 0.75,
+            gap: 0.65,
             minWidth: 0,
             width: { xs: "100%", sm: "auto" },
-            maxWidth: { xs: "100%", sm: "36%" },
+            maxWidth: { xs: "100%", sm: "46%" },
             color: palette.muted,
           }}
         >
+          {esEncomienda && fechaHoraOperacion && (
+            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.45, color: palette.muted, fontSize: "12px", fontWeight: 650, whiteSpace: "nowrap" }}>
+              <Calendar size={13} />
+              {fechaHoraOperacion}
+            </Box>
+          )}
           <UserPen size={14} style={{ flexShrink: 0 }} />
           <Typography sx={{ color: palette.muted, fontSize: "12.5px", minWidth: 0 }} noWrap>
             {row.autor}

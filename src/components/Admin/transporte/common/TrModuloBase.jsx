@@ -216,6 +216,9 @@ export default function TrModuloBase({
   const resumenEncomiendasDiaOk = tipoOperacionFijo === "E" && Boolean(diaSel && diaSel !== "*") && totalPendienteResumenEncomiendas === 0;
   const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
   const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
+  const listadoMaxWidth = tipoOperacionFijo === "E"
+    ? { xs: "100%", lg: 1280, xl: 1440 }
+    : 980;
   const empresaTrabajo = useMemo(() => {
     const seleccionada = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo) || {};
 
@@ -741,8 +744,8 @@ export default function TrModuloBase({
   // -----------------------------
 
   return (
-    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
-      <Box sx={{ maxWidth: 980, mx: "auto" }}>
+    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 3, xl: 4 } }}>
+      <Box sx={{ width: "100%", maxWidth: listadoMaxWidth, mx: "auto" }}>
         <TrHeader
           titulo={titulo}
           contador={data.length}
