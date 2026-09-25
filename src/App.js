@@ -1,11 +1,11 @@
-import {BrowserRouter,Routes,Route} from "react-router-dom";
+import {BrowserRouter,Routes,Route,useLocation} from "react-router-dom";
 import {Box,Container} from "@mui/material";
 import CorrentistaForm from "./components/CorrentistaForm";
 import CorrentistaList from "./components/CorrentistaList";
 import SeguridadList from "./components/SeguridadList";
 import { useAuth0 } from '@auth0/auth0-react'; 
 import Inicio from "./components/Inicio";
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import AsientoVentaForm from './components/AsientoVentaForm';
 import AsientoCompraForm from './components/AsientoCompraForm';
@@ -63,8 +63,43 @@ import TrEncomiendaDashboardMockup from "./components/Admin/transporte/dashboard
 import TrCajaMovimientoList from "./components/Admin/transporte/caja/TrCajaMovimientoList";
 import palette from "./theme/palette";
 
-function App(props) {
+function AppLayout(props) {
   const {user, isAuthenticated } = useAuth0();
+  const location = useLocation();
+  const isEntregasRoute = location.pathname.startsWith("/ad_transporteentregas");
+  const isEncomiendaRoute = location.pathname.startsWith("/ad_transportesencomienda") || location.pathname.startsWith("/ad_transporte/");
+  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute;
+  const [panoramicMode, setPanoramicMode] = useState(() => (
+    typeof window !== "undefined" && (
+      window.location.pathname.startsWith("/ad_transporteentregas") ||
+      window.location.pathname.startsWith("/ad_transportesencomienda") ||
+      window.location.pathname.startsWith("/ad_transporte/")
+    )
+  ));
+
+  const previousPanoramicRoute = useRef(isPanoramicRoute);
+  const claveMenuPanoramico = (pathname) => {
+    if (pathname.startsWith("/ad_transporteentregas")) return "entregas";
+    if (pathname.startsWith("/ad_transportesencomienda") || pathname.startsWith("/ad_transporte/")) return "encomiendas";
+    return "";
+  };
+  const handleNavigatePanoramicMenu = (targetKey) => {
+    const currentKey = claveMenuPanoramico(location.pathname);
+
+    if (currentKey && currentKey === targetKey) {
+      setPanoramicMode((current) => !current);
+      return;
+    }
+
+    setPanoramicMode(true);
+  };
+
+  useEffect(() => {
+    if (previousPanoramicRoute.current !== isPanoramicRoute) {
+      setPanoramicMode(isPanoramicRoute);
+      previousPanoramicRoute.current = isPanoramicRoute;
+    }
+  }, [isPanoramicRoute]);
 
   useEffect( ()=> {
     if (isAuthenticated && user && user.email) {
@@ -73,16 +108,12 @@ function App(props) {
   },[isAuthenticated, user]);
 
   return (
-    <BrowserRouter>
-      {/* 👇 Aquí envolvemos TODO dentro del ConfirmProvider */}
-      <AdminConfirmDialogProvider>
-      
       <Box sx={{ display: 'flex',
-                 gap: { xs: 0, md: 2 },
+                 gap: { xs: 0, md: panoramicMode ? 0 : 2 },
                  alignItems: { xs: 'stretch', md: 'flex-start' },
                  backgroundColor: palette.bg,
                  color: palette.text,
-                 p: { xs: 0, md: 2 },
+                 p: { xs: 0, md: panoramicMode ? 0 : 2 },
                  boxSizing: 'border-box',
                  minHeight: "100vh", // 🔹 ocupa toda la altura disponible
               }}
@@ -93,6 +124,9 @@ function App(props) {
             idInvitado={props.idInvitado}
             rubro={props.rubro}
             super={props.super}
+            panoramicMode={panoramicMode}
+            onTogglePanoramic={isPanoramicRoute ? () => setPanoramicMode((current) => !current) : undefined}
+            onNavigatePanoramic={handleNavigatePanoramicMenu}
           />
 
 
@@ -106,9 +140,9 @@ function App(props) {
               p: 0,
               marginLeft: 0,
               width: '100%',
-              minHeight: { xs: '100vh', md: 'calc(100vh - 32px)' },
-              height: { xs: 'auto', md: 'calc(100vh - 32px)' },
-              maxHeight: { xs: 'none', md: 'calc(100vh - 32px)' },
+              minHeight: { xs: '100vh', md: panoramicMode ? '100vh' : 'calc(100vh - 32px)' },
+              height: { xs: 'auto', md: panoramicMode ? '100vh' : 'calc(100vh - 32px)' },
+              maxHeight: { xs: 'none', md: panoramicMode ? '100vh' : 'calc(100vh - 32px)' },
               minWidth: 0,
               boxSizing: 'border-box',
               overflowX: 'hidden',
@@ -131,12 +165,22 @@ function App(props) {
               },
               backgroundColor: palette.navBg,
               border: 'none',
-              borderRadius: { xs: 0, md: 3 },
-              boxShadow: { xs: 'none', md: palette.shadowSoft },
+              borderRadius: { xs: 0, md: panoramicMode ? 0 : 3 },
+              boxShadow: { xs: 'none', md: panoramicMode ? 'none' : palette.shadowSoft },
             }}
           >
-            <Header />
-            <Box className="app-content-shell" sx={{ px: { xs: 1, sm: 2, md: 3 }, pt: { xs: 1, md: 2 }, pb: { xs: 1, md: 2 } }}>
+            <Header
+              panoramicMode={panoramicMode}
+              onExitPanoramic={() => setPanoramicMode(false)}
+            />
+            <Box
+              className="app-content-shell"
+              sx={{
+                px: { xs: 1, sm: 2, md: panoramicMode ? 1.5 : 3 },
+                pt: { xs: 1, md: panoramicMode ? 0.5 : 2 },
+                pb: { xs: 1, md: panoramicMode ? 1 : 2 },
+              }}
+            >
             <Routes>
               {/* tus rutas originales, sin cambios */}
 
@@ -144,11 +188,11 @@ function App(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
-              <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} />} />
+              <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} panoramicMode={panoramicMode} />} />
               <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList />} />
-              <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} />} />
+              <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} panoramicMode={panoramicMode} />} />
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />
-              <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList />} />
+              <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList panoramicMode={panoramicMode} />} />
               <Route path="/ad_transportecaja/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrCajaMovimientoList />} />
               <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
               <Route path="/ad_puntoventa/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
@@ -237,6 +281,14 @@ function App(props) {
             </Box>
           </Container>
       </Box>
+  );
+}
+
+function App(props) {
+  return (
+    <BrowserRouter>
+      <AdminConfirmDialogProvider>
+        <AppLayout {...props} />
       </AdminConfirmDialogProvider>
     </BrowserRouter>
   );

@@ -16,17 +16,17 @@ const headerFieldSx = {
   fontSize: { xs: "12px", md: "13px" },
 };
 
-function HeaderInlineLabel({ children }) {
+function HeaderInlineLabel({ children, compact = false }) {
   return (
     <Typography
       component="span"
       sx={{
         color: palette.muted,
-        fontSize: { xs: "9px", md: "10px" },
+        fontSize: compact ? "9px" : { xs: "9px", md: "10px" },
         fontWeight: 800,
         textTransform: "uppercase",
         whiteSpace: "nowrap",
-        mr: { xs: 0.5, md: 1 },
+        mr: compact ? { xs: 0.3, md: 0.5 } : { xs: 0.5, md: 1 },
         flexShrink: 0,
       }}
     >
@@ -36,7 +36,7 @@ function HeaderInlineLabel({ children }) {
 }
 
 // Select compacto usado en la cabecera. Se mantiene como Menu para encajar con el diseno oscuro.
-export default function TrHeaderMenuPicker({ label, value, displayValue, options, onSelect, minWidth = 140 }) {
+export default function TrHeaderMenuPicker({ label, value, displayValue, options, onSelect, minWidth = 140, compact = false }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const menuMinWidth = anchorEl?.offsetWidth || (typeof minWidth === "number" ? minWidth : 180);
@@ -48,20 +48,26 @@ export default function TrHeaderMenuPicker({ label, value, displayValue, options
         onClick={(event) => setAnchorEl(event.currentTarget)}
         sx={{
           ...headerFieldSx,
+          ...(compact ? {
+            height: { xs: 30, md: 34 },
+            px: { xs: 0.4, md: 0.75 },
+            border: `1px solid ${palette.borderSoft}`,
+            fontSize: "12px",
+          } : {}),
           minWidth: { xs: 0, md: minWidth === "100%" ? 0 : minWidth },
           width: { xs: "100%", md: isFullWidth ? "100%" : "auto" },
           maxWidth: "100%",
           boxSizing: "border-box",
           cursor: "pointer",
           transition: "all .18s ease",
-          gap: { xs: 0.5, md: 1 },
+          gap: compact ? { xs: 0.35, md: 0.5 } : { xs: 0.5, md: 1 },
           "&:hover": {
             borderColor: palette.accent,
             backgroundColor: palette.surfaceAlt,
           },
         }}
       >
-        <HeaderInlineLabel>{label}</HeaderInlineLabel>
+        <HeaderInlineLabel compact={compact}>{label}</HeaderInlineLabel>
         <Box
           component="span"
           sx={{

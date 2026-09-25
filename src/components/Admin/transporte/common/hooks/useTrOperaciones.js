@@ -54,7 +54,7 @@ export default function useTrOperaciones({
 
     setLoading(true);
     try {
-      const estadoQuery = mostrarAnuladas ? "?estado=anuladas" : "";
+      const estadoQuery = mostrarAnuladas ? "?estado=anulados" : "";
       const url = puntoVentaTrabajo
         ? `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}/${puntoVentaTrabajo}`
         : `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}`;

@@ -21,12 +21,26 @@ export default function TrHeader({
   onToggleAnuladas,
   onNuevo,
   onBuscar,
+  compactControles = false,
+  headerExtra = null,
 }) {
   const ticketOptions = [
     { value: "completo", label: "Completo", icon: Layers },
     { value: "admin", label: "Paquete", icon: ShieldCheck },
     { value: "cliente", label: "Cliente", icon: ReceiptText },
   ];
+
+  const controlButtonSx = compactControles
+    ? {
+        height: 38,
+        minHeight: 38,
+        px: 1.25,
+        gap: 0.6,
+        fontSize: "12px",
+      }
+    : {};
+  const searchWidth = compactControles ? { xs: "100%", sm: 220 } : undefined;
+  const searchHeight = compactControles ? 38 : undefined;
 
   return (
     <Box
@@ -35,8 +49,8 @@ export default function TrHeader({
         flexDirection: { xs: "column", sm: "row" },
         justifyContent: "space-between",
         alignItems: { xs: "flex-start", sm: "center" },
-        gap: { xs: 1, sm: 2 },
-        mb: { xs: 1.25, md: 3 },
+        gap: compactControles ? { xs: 0.5, sm: 0.75 } : { xs: 1, sm: 2 },
+        mb: compactControles ? { xs: 0.5, md: 0.5 } : { xs: 1.25, md: 3 },
       }}
     >
       <Box>
@@ -47,7 +61,7 @@ export default function TrHeader({
           {contador} {contadorTexto}
         </Typography>
         {onTicketModoChange && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.55, mt: 0.85, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: compactControles ? 0.35 : 0.55, mt: compactControles ? 0.45 : 0.85, flexWrap: "wrap" }}>
             <Typography sx={{ color: palette.muted, fontSize: "10.5px", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.35 }}>
               Ticket pred.
             </Typography>
@@ -97,16 +111,19 @@ export default function TrHeader({
         sx={{
           display: "flex",
           alignItems: "center",
+          alignSelf: { xs: "stretch", sm: compactControles ? "flex-start" : "center" },
           justifyContent: "flex-end",
-          gap: 1,
+          gap: compactControles ? { xs: 0.5, sm: 0.5 } : 1,
           width: { xs: "100%", sm: "auto" },
-          flexWrap: { xs: "wrap", md: "nowrap" },
+          flexWrap: compactControles ? { xs: "wrap", sm: "wrap", lg: "nowrap" } : { xs: "wrap", md: "nowrap" },
         }}
       >
         <AppSearch
           placeholder={buscarTexto}
           value={valorBusqueda}
           onChange={onBuscar}
+          width={searchWidth}
+          height={searchHeight}
         />
 
         {onToggleAnuladas && (
@@ -114,6 +131,7 @@ export default function TrHeader({
             icon={mostrarAnuladas ? <CheckCircle2 size={18} /> : <Ban size={18} />}
             onClick={onToggleAnuladas}
             sx={{
+              ...controlButtonSx,
               backgroundColor: mostrarAnuladas ? "rgba(245,158,11,0.18)" : palette.surface,
               borderColor: mostrarAnuladas ? "rgba(245,158,11,0.45)" : palette.border,
               color: mostrarAnuladas ? "#fbbf24" : palette.text,
@@ -129,16 +147,19 @@ export default function TrHeader({
           </AppButton>
         )}
 
+        {headerExtra}
+
         <AppButton
           icon={<Plus size={18} />}
           onClick={onNuevo}
           disabled={nuevoDeshabilitado}
           sx={{
+            ...controlButtonSx,
             backgroundColor: nuevoDeshabilitado ? palette.chip : palette.accent,
             borderColor: nuevoDeshabilitado ? palette.border : palette.accent,
             color: nuevoDeshabilitado ? palette.muted : palette.onAccent,
             fontWeight: 800,
-            ml: { xs: "auto", sm: 0 },
+            ml: compactControles ? 0 : { xs: "auto", sm: 0 },
             "&:hover": {
               backgroundColor: nuevoDeshabilitado ? palette.chip : palette.accent,
               borderColor: nuevoDeshabilitado ? palette.border : palette.accent,

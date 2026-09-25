@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
+import { Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
 import {
   generarConstanciaEntregaPdfBlob,
   generarConstanciaEntregaPngFallback,
@@ -40,7 +40,7 @@ const customTableStyles = {
   table: { style: { backgroundColor: palette.surface } },
   headRow: {
     style: {
-      minHeight: "42px",
+      minHeight: "38px",
       backgroundColor: palette.surfaceAlt,
       color: palette.muted,
       borderBottom: `1px solid ${palette.borderSoft}`,
@@ -57,7 +57,7 @@ const customTableStyles = {
   },
   rows: {
     style: {
-      minHeight: "56px",
+      minHeight: "50px",
       backgroundColor: palette.surface,
       color: palette.text,
       borderBottom: `1px solid ${palette.borderSoft}`,
@@ -73,8 +73,8 @@ const customTableStyles = {
   cells: {
     style: {
       fontSize: "12.5px",
-      paddingTop: "6px",
-      paddingBottom: "6px",
+      paddingTop: "4px",
+      paddingBottom: "4px",
     },
   },
   pagination: {
@@ -179,8 +179,8 @@ const formatMoney = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", 
   maximumFractionDigits: 2,
 })}`;
 
-const rowsPerPage = 50;
-const rowsPerPageOptions = [50, 100, 150, 200];
+const rowsPerPage = 100;
+const rowsPerPageOptions = [25, 50, 100, 150, 200, 300];
 const TICKET_ENTREGA_MODO_KEY = "xpertcont.transporte.entrega.ticketPredeterminado";
 const normalizarTicketEntregaModo = (value) => (
   ["fisico", "whatsapp"].includes(value) ? value : "fisico"
@@ -401,17 +401,22 @@ const selectSx = {
   "& .MuiSvgIcon-root": { color: palette.muted },
 };
 
-function SelectFiltro({ label, value, options, onChange }) {
+const selectSxCompacto = {
+  ...selectSx,
+  height: 34,
+};
+
+function SelectFiltro({ label, value, options, onChange, compact = false }) {
   return (
     <Box sx={{ minWidth: 0 }}>
-      <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
+      <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0 }}>
         {label}
       </Typography>
       <Select
         fullWidth
         value={value || ""}
         onChange={(event) => onChange(event.target.value)}
-        sx={selectSx}
+        sx={compact ? selectSxCompacto : selectSx}
         MenuProps={{
           PaperProps: {
             sx: {
@@ -432,7 +437,7 @@ function SelectFiltro({ label, value, options, onChange }) {
   );
 }
 
-export default function TrEncomiendaEntregaList() {
+export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const params = useParams();
   const navigate = useNavigate();
@@ -551,7 +556,7 @@ export default function TrEncomiendaEntregaList() {
     setLoading(true);
     try {
       const query = new URLSearchParams({
-        limit: "200",
+        limit: "300",
         periodos: String(periodosBusqueda),
         estado: mostrarEntregadas ? "entregadas" : "pendientes",
       });
@@ -1277,14 +1282,23 @@ export default function TrEncomiendaEntregaList() {
 
   const columns = [
     {
-      name: "Encomienda",
-      minWidth: "250px",
+      name: (
+        <Box sx={{ display: "grid", gap: 0.1, justifyItems: "start" }}>
+          <Typography component="span" sx={{ fontSize: "11px", fontWeight: 900, lineHeight: 1 }}>
+            Encomienda
+          </Typography>
+          <Typography component="span" sx={{ color: palette.muted, fontSize: "9px", fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap" }}>
+            Doble click: {mostrarEntregadas ? "ver o enviar ticket" : "registrar entrega"}
+          </Typography>
+        </Box>
+      ),
+      minWidth: "294px",
       selector: (row) => numeroOperacion(row),
       cell: (row) => {
         const porCobrar = esPorCobrar(row.condicion_pago || row.numero_rdi);
 
         return (
-          <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) 44px", columnGap: 0.85, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
+          <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) auto", columnGap: 0.85, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
             <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"} arrow>
               <IconButton
                 aria-label={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"}
@@ -1378,73 +1392,49 @@ export default function TrEncomiendaEntregaList() {
                 )}
               </Box>
             </Box>
-            <Tooltip title={tieneLlegadaReal(row) ? `Llegada de Chofer: ${fechaLlegadaVisible(row)}` : 'Marcar "Llegada de Chofer"'} arrow>
-              <IconButton
-                aria-label={tieneLlegadaReal(row) ? "Llegada de Chofer registrada" : 'Marcar "Llegada de Chofer"'}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  marcarLlegadaReal(row);
-                }}
-                sx={{
-                  width: 44,
-                  height: 44,
-                  minWidth: 44,
-                  p: 0,
-                  borderRadius: palette.radius.control,
-                  backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : "transparent",
-                  border: "none",
-                  color: tieneLlegadaReal(row) ? palette.success : palette.muted,
-                  gridColumn: 3,
-                  gridRow: "1 / span 3",
-                  justifySelf: "end",
-                  alignSelf: "center",
-                  transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
-                  "&:hover": {
-                    backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : palette.surfaceAlt,
-                    color: tieneLlegadaReal(row) ? palette.success : palette.accent,
-                    transform: "scale(1.28)",
-                  },
-                  "&:active": {
-                    transform: "scale(0.82)",
-                  },
-                }}
-              >
-                <MapPinCheck size={22} strokeWidth={2.6} />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        );
-      },
-    },
-    {
-      name: "Destinatario",
-      minWidth: "230px",
-      grow: 1.1,
-      selector: (row) => row.destinatario || "",
-      cell: (row) => (
-        <Box data-tag="allowRowEvents" sx={{ minWidth: 0, width: "100%" }}>
-          <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 800, lineHeight: 1.15 }} noWrap>
-            {row.destinatario || "-"}
-          </Typography>
-          <Typography data-tag="allowRowEvents" sx={{ color: palette.muted, fontSize: "10.5px", fontWeight: 600, lineHeight: 1.1, opacity: 0.78, mt: 0.2 }} noWrap>
-            {row.destinatario_documento || row.destinatario_documento_id || "-"}
-          </Typography>
-          {row.destinatario_telefono && (
             <Box
               data-tag="allowRowEvents"
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 0.45,
-                minWidth: 0,
-                mt: 0.2,
-                color: palette.text,
-                fontSize: "12px",
-                fontWeight: 800,
-                lineHeight: 1.15,
+                gap: 0.25,
+                gridColumn: 3,
+                gridRow: "1 / span 3",
+                justifySelf: "end",
+                alignSelf: "center",
               }}
             >
-              {tieneLlegadaReal(row) ? (
+              <Tooltip title={tieneLlegadaReal(row) ? `Llegada de Chofer: ${fechaLlegadaVisible(row)}` : 'Marcar "Llegada de Chofer"'} arrow>
+                <IconButton
+                  aria-label={tieneLlegadaReal(row) ? "Llegada de Chofer registrada" : 'Marcar "Llegada de Chofer"'}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    marcarLlegadaReal(row);
+                  }}
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    minWidth: 44,
+                    p: 0,
+                    borderRadius: palette.radius.control,
+                    backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : "transparent",
+                    border: "none",
+                    color: tieneLlegadaReal(row) ? palette.success : palette.muted,
+                    transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
+                    "&:hover": {
+                      backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : palette.surfaceAlt,
+                      color: tieneLlegadaReal(row) ? palette.success : palette.accent,
+                      transform: "scale(1.28)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.82)",
+                    },
+                  }}
+                >
+                  <MapPinCheck size={22} strokeWidth={2.6} />
+                </IconButton>
+              </Tooltip>
+              {tieneLlegadaReal(row) && (
                 <Tooltip title={mostrarEntregadas ? "Enviar ticket de entrega" : "Enviar aviso de llegada y ticket de entrega"} arrow>
                   <IconButton
                     data-tag="allowRowEvents"
@@ -1458,38 +1448,97 @@ export default function TrEncomiendaEntregaList() {
                       });
                     }}
                     sx={{
-                      width: 30,
-                      height: 30,
-                      minWidth: 30,
+                      width: 44,
+                      height: 44,
+                      minWidth: 44,
                       p: 0,
-                      ml: -0.2,
-                      borderRadius: "50%",
-                      color: palette.success,
-                      backgroundColor: palette.successSoft,
-                      border: `1px solid ${palette.success}`,
-                      transition: "transform 140ms ease, background-color 140ms ease",
+                      borderRadius: palette.radius.control,
+                      backgroundColor: palette.success,
+                      border: "none",
+                      color: palette.onAccent,
+                      transition: "transform 140ms ease, filter 140ms ease",
                       "&:hover": {
-                        backgroundColor: palette.successSoft,
-                        transform: "scale(1.15)",
+                        filter: "brightness(1.08)",
+                        transform: "scale(1.12)",
                       },
                       "&:active": {
                         transform: "scale(0.92)",
                       },
                     }}
                   >
-                    <MessageCircle data-tag="allowRowEvents" size={20} strokeWidth={2.6} />
+                    <MessageCircle size={22} strokeWidth={2.6} />
                   </IconButton>
                 </Tooltip>
-              ) : (
-                <Phone data-tag="allowRowEvents" size={12} strokeWidth={2.5} />
               )}
-              <Typography data-tag="allowRowEvents" component="span" sx={{ color: "inherit", fontSize: "inherit", fontWeight: "inherit", lineHeight: "inherit", minWidth: 0 }} noWrap>
-                {row.destinatario_telefono}
-              </Typography>
             </Box>
-          )}
-        </Box>
-      ),
+          </Box>
+        );
+      },
+    },
+    {
+      name: "Destinatario",
+      minWidth: "230px",
+      grow: 0.9,
+      selector: (row) => row.destinatario || "",
+      cell: (row) => {
+        const zonaEntrega = String(row.destinatario_zona || "").trim();
+        const direccionEntrega = String(row.destinatario_direccion || "").trim();
+        const tieneDetalleEntrega = Boolean(zonaEntrega || direccionEntrega);
+        const tieneTelefono = Boolean(row.destinatario_telefono);
+
+        return (
+          <Box data-tag="allowRowEvents" sx={{ minWidth: 0, width: "100%" }}>
+            <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontSize: "12px", fontWeight: 800, lineHeight: 1.1 }} noWrap>
+              {row.destinatario || "-"}
+            </Typography>
+            <Typography data-tag="allowRowEvents" sx={{ color: palette.muted, fontSize: "10px", fontWeight: 600, lineHeight: 1.05, opacity: 0.78, mt: 0.15 }} noWrap>
+              {row.destinatario_documento || row.destinatario_documento_id || "-"}
+            </Typography>
+            {(tieneTelefono || tieneDetalleEntrega) && (
+              <Box
+                data-tag="allowRowEvents"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.35,
+                  minWidth: 0,
+                  mt: 0.1,
+                  overflow: "hidden",
+                }}
+              >
+                {tieneTelefono && (
+                  <Box data-tag="allowRowEvents" sx={{ display: "flex", alignItems: "center", gap: 0.3, minWidth: 0, flexShrink: 0, color: palette.text, fontSize: "11px", fontWeight: 800, lineHeight: 1.05 }}>
+                    <Phone data-tag="allowRowEvents" size={12} strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                    <Typography data-tag="allowRowEvents" component="span" title={row.destinatario_telefono} sx={{ color: "inherit", fontSize: "inherit", fontWeight: "inherit", lineHeight: "inherit", whiteSpace: "nowrap" }} noWrap>
+                      {row.destinatario_telefono}
+                    </Typography>
+                  </Box>
+                )}
+                {tieneDetalleEntrega && (
+                  <Box data-tag="allowRowEvents" sx={{ display: "flex", alignItems: "center", gap: 0.3, minWidth: 0, flex: 1, color: palette.muted }}>
+                    <MapPin data-tag="allowRowEvents" size={11} strokeWidth={2.2} style={{ flexShrink: 0 }} />
+                    <Typography
+                      data-tag="allowRowEvents"
+                      component="span"
+                      title={[zonaEntrega, direccionEntrega].filter(Boolean).join(" · ")}
+                      sx={{ color: "inherit", fontSize: "9px", fontWeight: 600, lineHeight: 1.05, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}
+                      noWrap
+                    >
+                      {zonaEntrega && (
+                        <Box component="span" data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900 }}>ZONA: {zonaEntrega}</Box>
+                      )}
+                      {zonaEntrega && direccionEntrega && <Box component="span" data-tag="allowRowEvents"> · </Box>}
+                      {direccionEntrega && (
+                        <Box component="span" data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900 }}>DIR: {direccionEntrega}</Box>
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Box>
+        );
+      },
     },
     {
       name: "LLEGADA CHOFER",
@@ -1518,19 +1567,32 @@ export default function TrEncomiendaEntregaList() {
     },
     {
       name: "Remitente",
-      minWidth: "230px",
-      grow: 1.1,
+      width: "160px",
       selector: (row) => row.cliente || "",
       cell: (row) => (
-        <Box data-tag="allowRowEvents" sx={{ minWidth: 0, width: "100%" }}>
-          <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 700, lineHeight: 1.15 }} noWrap>
+        <Box data-tag="allowRowEvents" sx={{ minWidth: 0, width: "100%", overflow: "hidden" }}>
+          <Typography data-tag="allowRowEvents" title={row.cliente || ""} sx={{ color: palette.text, fontSize: "11.5px", fontWeight: 800, lineHeight: 1.08, overflow: "hidden", textOverflow: "ellipsis" }} noWrap>
             {row.cliente || "-"}
           </Typography>
-          <Typography data-tag="allowRowEvents" sx={{ color: palette.muted, fontSize: "10.5px", fontWeight: 600, lineHeight: 1.1, opacity: 0.78, mt: 0.2 }} noWrap>
+          <Typography data-tag="allowRowEvents" title={row.cliente_documento || row.cliente_documento_id || ""} sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 600, lineHeight: 1.05, opacity: 0.78, mt: 0.12, overflow: "hidden", textOverflow: "ellipsis" }} noWrap>
             {row.cliente_documento || row.cliente_documento_id || "-"}
           </Typography>
         </Box>
       ),
+    },
+    {
+      name: "PLACA",
+      width: "86px",
+      selector: (row) => row.placa || "",
+      cell: (row) => {
+        const placa = String(row.placa || "").trim();
+
+        return (
+          <Typography data-tag="allowRowEvents" title={placa || "Sin placa"} sx={{ color: placa ? palette.text : palette.muted, fontSize: "11.5px", fontWeight: 900, letterSpacing: 0.35, lineHeight: 1.1, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis" }} noWrap>
+            {placa || "-"}
+          </Typography>
+        );
+      },
     },
     {
       name: "Origen",
@@ -1561,9 +1623,9 @@ export default function TrEncomiendaEntregaList() {
   ];
 
   return (
-    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
-      <Box sx={{ width: "100%", maxWidth: { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto" }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: { xs: "flex-start", md: "center" }, flexDirection: { xs: "column", md: "row" }, mb: 2 }}>
+    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: panoramicMode ? 1.5 : 4 } }}>
+      <Box sx={{ width: "100%", maxWidth: panoramicMode ? "100%" : { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto" }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, alignItems: { xs: "flex-start", md: "center" }, flexDirection: { xs: "column", md: "row" }, mb: panoramicMode ? 1 : 2 }}>
           <Box>
             <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "22px", lineHeight: 1.2 }}>
               Encomiendas por Entregar
@@ -1654,13 +1716,13 @@ export default function TrEncomiendaEntregaList() {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "240px minmax(220px, 1fr) minmax(190px, 220px) 160px" }, gap: 1, mb: 2, p: 1.2, backgroundColor: palette.surface, border: `1px solid ${palette.border}`, borderRadius: palette.radius.listCard, alignItems: "end" }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: panoramicMode ? "210px minmax(220px, 1fr) minmax(180px, 220px) 145px" : "240px minmax(220px, 1fr) minmax(190px, 220px) 160px" }, gap: 0, mb: 0, p: 0, backgroundColor: "transparent", border: "none", borderRadius: 0, alignItems: "end" }}>
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0 }}>
               Periodo busqueda
             </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 0.7, alignItems: "center" }}>
-              <Box sx={{ height: 40, px: 1.15, display: "flex", alignItems: "center", borderRadius: palette.radius.control, backgroundColor: palette.bg, border: `1px solid ${palette.border}`, color: palette.muted, fontSize: "12.5px", fontWeight: 700, whiteSpace: "nowrap" }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 0, alignItems: "center" }}>
+              <Box sx={{ height: panoramicMode ? 34 : 40, px: 1.15, display: "flex", alignItems: "center", borderRadius: palette.radius.control, backgroundColor: palette.bg, border: `1px solid ${palette.border}`, color: palette.muted, fontSize: "12.5px", fontWeight: 700, whiteSpace: "nowrap" }}>
                 {periodoLimiteBusqueda ? `${periodoLimiteBusqueda} -> Hasta Hoy` : "-"}
               </Box>
               <Tooltip title="Ampliar periodo" arrow>
@@ -1668,7 +1730,7 @@ export default function TrEncomiendaEntregaList() {
                   <AppButton
                     icon={<CalendarPlus size={17} />}
                     onClick={() => setPeriodosBusqueda((prev) => Math.min(prev + 1, 12))}
-                    sx={{ width: 40, height: 40, minWidth: 40, p: 0, color: palette.accent }}
+                    sx={{ width: panoramicMode ? 34 : 40, height: panoramicMode ? 34 : 40, minWidth: panoramicMode ? 34 : 40, p: 0, color: palette.accent }}
                   />
                 </Box>
               </Tooltip>
@@ -1679,18 +1741,20 @@ export default function TrEncomiendaEntregaList() {
             value={contabilidadTrabajo}
             options={contabilidadSelect.map((item) => ({ value: item.documento_id, label: item.razon_social || item.documento_id }))}
             onChange={handleContabilidadSelect}
+            compact={panoramicMode}
           />
           <SelectFiltro
             label="Punto destino"
             value={puntoVentaTrabajo}
             options={puntosVentaAsignados.map((item) => ({ value: item.id_punto_venta, label: `${item.id_punto_venta} - ${item.nombre}` }))}
             onChange={handlePuntoVentaSelect}
+            compact={panoramicMode}
           />
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0.35 }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", mb: 0 }}>
               Estado
             </Typography>
-            <Box sx={{ height: 40, p: 0.25, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.25, borderRadius: palette.radius.control, border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.overlaySoft, minWidth: 0 }}>
+            <Box sx={{ height: panoramicMode ? 34 : 40, p: 0.25, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.25, borderRadius: palette.radius.control, border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.overlaySoft, minWidth: 0 }}>
               {[
                 { value: false, label: "Pendientes" },
                 { value: true, label: "Entregadas" },
@@ -1720,12 +1784,6 @@ export default function TrEncomiendaEntregaList() {
         </Box>
 
         <Box sx={{ position: "relative" }}>
-          <Box sx={{ px: 1.2, py: 0.8, display: "flex", alignItems: "center", gap: 0.75, border: `1px solid ${palette.borderSoft}`, borderBottom: 0, borderRadius: `${palette.radius.listCard} ${palette.radius.listCard} 0 0`, backgroundColor: palette.surfaceAlt, color: palette.muted }}>
-            <BadgeCheck size={14} />
-            <Typography sx={{ fontSize: "11.5px", fontWeight: 800 }}>
-              {mostrarEntregadas ? "Doble click en una fila para ver o enviar la constancia." : "Doble click en una fila para registrar la entrega."}
-            </Typography>
-          </Box>
           <DataTable
             theme="transportesEntregaDark"
             columns={columns}

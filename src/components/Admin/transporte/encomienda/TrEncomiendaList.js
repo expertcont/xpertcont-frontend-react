@@ -25,6 +25,7 @@ export default function TrEncomiendaList(props) {
       footerTexto=""
       basePath="/ad_transportesencomienda"
       superUsuario={props.super}
+      panoramicMode={props.panoramicMode}
     />
   );
 }

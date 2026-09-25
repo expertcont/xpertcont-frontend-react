@@ -5,10 +5,11 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import PaletteIcon from '@mui/icons-material/Palette';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { useAuth0 } from '@auth0/auth0-react';
 import palette, { applyCustomAccent, applyTheme, getStoredCustomAccent, getStoredThemeId, getThemeValues, themeOptions } from '../theme/palette';
 
-export default function Header() {
+export default function Header({ panoramicMode = false, onExitPanoramic }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { user, isAuthenticated, loginWithRedirect, logout } = useAuth0();
@@ -26,8 +27,8 @@ export default function Header() {
     .join('');
 
   const headerIconSx = {
-    width: 34,
-    height: 34,
+    width: panoramicMode && !isMobile ? 28 : 34,
+    height: panoramicMode && !isMobile ? 28 : 34,
     color: palette.muted,
     border: 'none',
     backgroundColor: palette.overlaySoft,
@@ -77,6 +78,9 @@ export default function Header() {
         width: '100%',
         borderRadius: 0,
         zIndex: 1100,
+        ...(panoramicMode && !isMobile
+          ? { height: 36, minHeight: 36, maxHeight: 36, overflow: 'hidden' }
+          : {}),
       }}
     >
       <Toolbar
@@ -84,18 +88,48 @@ export default function Header() {
           display: 'flex',
           justifyContent: 'flex-end',
           alignItems: 'center',
-          minHeight: isMobile ? '56px' : '64px',
-          px: { xs: 1, sm: 2, md: 3 },
+          minHeight: isMobile ? '56px' : panoramicMode ? '36px' : '64px',
+          height: isMobile ? '56px' : panoramicMode ? '36px' : '64px',
+          maxHeight: isMobile ? '56px' : panoramicMode ? '36px' : '64px',
+          px: { xs: 1, sm: 2, md: panoramicMode ? 1 : 3 },
+          py: 0,
           mx: 0,
           mt: 0,
+          transition: 'min-height 0.2s ease, padding 0.2s ease',
           backgroundColor: 'transparent',
           border: 'none',
           borderRadius: 0,
           boxShadow: 'none',
         }}
       >
+        {panoramicMode && !isMobile && (
+          <Button
+            size="small"
+            startIcon={<FullscreenExitIcon sx={{ fontSize: 16 }} />}
+            onClick={onExitPanoramic}
+            sx={{
+              mr: "auto",
+              minHeight: 28,
+              height: 28,
+              px: 0.85,
+              color: palette.accent,
+              borderColor: palette.accent,
+              backgroundColor: palette.accentSoft,
+              fontSize: "11px",
+              fontWeight: 800,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              "&:hover": {
+                borderColor: palette.accent,
+                backgroundColor: palette.accentSoft,
+              },
+            }}
+          >
+            Cerrar vista panorámica
+          </Button>
+        )}
         {isAuthenticated ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: panoramicMode ? 0.5 : 1.25 }}>
             <Tooltip title="Notificaciones">
               <IconButton size="small" sx={headerIconSx}>
                 <NotificationsNoneIcon fontSize="small" />
@@ -285,7 +319,7 @@ export default function Header() {
                 </Tooltip>
               </Box>
             </Popover>
-            {!isMobile && (
+            {!isMobile && !panoramicMode && (
               <Typography
                 sx={{
                   color: palette.text,
@@ -305,8 +339,8 @@ export default function Header() {
                 alt={userName}
                 onClick={handleOpenProfile}
                 sx={{
-                  width: 34,
-                  height: 34,
+                  width: panoramicMode && !isMobile ? 28 : 34,
+                  height: panoramicMode && !isMobile ? 28 : 34,
                   bgcolor: palette.accent,
                   color: palette.onAccent,
                   fontSize: '0.78rem',
@@ -393,6 +427,8 @@ export default function Header() {
               size="small"
               onClick={() => logout()}
               sx={{
+                width: panoramicMode && !isMobile ? 28 : undefined,
+                height: panoramicMode && !isMobile ? 28 : undefined,
                 color: palette.muted,
                 border: `1px solid ${palette.borderSoft}`,
                 backgroundColor: palette.overlaySoft,

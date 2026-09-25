@@ -10,6 +10,7 @@ export default function AppSearch({
   onChange,
   onKeyDown,
   width = { xs: "95%", sm: 260 },
+  height,
   inputRef,
 }) {
   return (
@@ -23,8 +24,9 @@ export default function AppSearch({
         border: `1px solid ${palette.border}`,
         borderRadius: 2,
 
-        px: 1.5,
-        py: 0.75,
+        px: height ? 1.25 : 1.5,
+        py: height ? 0.5 : 0.75,
+        height,
 
         width,
         minWidth: 0,

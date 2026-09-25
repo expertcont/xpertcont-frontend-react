@@ -65,6 +65,7 @@ export default function NavSideBar(props) {
   const [selectedButton, setSelectedButton] = useState(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const panoramicMode = Boolean(props.panoramicMode);
   
   const { user, isAuthenticated } = useAuth0();
   const [permisos, setPermisos] = useState([]);
@@ -103,6 +104,11 @@ export default function NavSideBar(props) {
   }
 
   const toggleDrawer = () => {
+    if (!isMobile && typeof props.onTogglePanoramic === "function") {
+      setIsExpanded(true);
+      props.onTogglePanoramic();
+      return;
+    }
     if (isMobile) {
       setMobileOpen(!mobileOpen);
     } else {
@@ -239,7 +245,9 @@ export default function NavSideBar(props) {
     }
   }
 
-  const itemLabelVisible = isMobile || isExpanded;
+  const itemLabelVisible = isMobile || (isExpanded && !panoramicMode);
+  const menuIconSize = itemLabelVisible ? 20 : 25;
+  const submenuIconSize = itemLabelVisible ? 16 : 21;
   const rubroTrabajo = String(props.rubro || sessionStorage.getItem('rubro_trabajo') || 'COMERCIAL').trim().toUpperCase();
   const esRubroTransporte = rubroTrabajo === 'TRANSPORTE' || rubroTrabajo === 'TRANSPORTES';
   const esRubroProyectos = rubroTrabajo === 'PROYECTO' || rubroTrabajo === 'PROYECTOS';
@@ -304,7 +312,7 @@ export default function NavSideBar(props) {
             minWidth: itemLabelVisible ? 30 : 0,
             color: isActive ? sidebarColors.accent : sidebarColors.muted,
             justifyContent: 'center',
-            '& svg': { fontSize: 20 },
+            '& svg': { fontSize: menuIconSize },
           }}
         >
           {badge && (
@@ -405,7 +413,7 @@ export default function NavSideBar(props) {
             minWidth: itemLabelVisible ? 28 : 0,
             color: isActive ? sidebarColors.accent : sidebarColors.muted,
             justifyContent: 'center',
-            '& svg': { fontSize: 16 },
+            '& svg': { fontSize: submenuIconSize },
           }}
         >
           {icon}
@@ -484,7 +492,7 @@ export default function NavSideBar(props) {
             src={logo}
             alt="XpertCont"
             sx={{
-              width: 36,
+              width: 40,
               height: 'auto',
               objectFit: 'contain',
             }}
@@ -505,7 +513,7 @@ export default function NavSideBar(props) {
             },
           }}
         >
-          {isMobile ? <CloseIcon /> : itemLabelVisible ? <ArrowBackIosIcon sx={{ fontSize: 18 }} /> : <MenuIcon />}
+          {isMobile ? <CloseIcon /> : itemLabelVisible ? <ArrowBackIosIcon sx={{ fontSize: 18 }} /> : <MenuIcon sx={{ fontSize: 22 }} />}
         </IconButton>
       </Box>
 
@@ -672,6 +680,9 @@ export default function NavSideBar(props) {
                   label="Encomiendas"
                   isActive={selectedButton === 'icono11-1'}
                   onClick={() => {
+                    if (typeof props.onNavigatePanoramic === 'function') {
+                      props.onNavigatePanoramic('encomiendas');
+                    }
                     navigate(`/ad_transportesencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-1');
                   }}
@@ -690,6 +701,9 @@ export default function NavSideBar(props) {
                   label="Encomiendas por Entregar"
                   isActive={selectedButton === 'icono11-8'}
                   onClick={() => {
+                    if (typeof props.onNavigatePanoramic === 'function') {
+                      props.onNavigatePanoramic('entregas');
+                    }
                     navigate(`/ad_transporteentregas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-8');
                   }}
@@ -976,10 +990,10 @@ export default function NavSideBar(props) {
         <Drawer
           variant="permanent"
           sx={{
-            width: isExpanded ? drawerWidthExpanded : drawerWidthCollapsed,
+            width: isExpanded && !panoramicMode ? drawerWidthExpanded : drawerWidthCollapsed,
             flexShrink: 0,
             '& .MuiDrawer-paper': {
-              width: isExpanded ? drawerWidthExpanded : drawerWidthCollapsed,
+              width: isExpanded && !panoramicMode ? drawerWidthExpanded : drawerWidthCollapsed,
               boxSizing: 'border-box',
               transition: 'width 0.3s ease',
               overflowX: 'hidden',

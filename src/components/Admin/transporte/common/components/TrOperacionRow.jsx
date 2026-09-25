@@ -87,6 +87,27 @@ export const customStylesEncomienda = {
   },
 };
 
+export const customStylesEncomiendaPanoramica = {
+  ...customStylesEncomienda,
+  rows: {
+    ...customStylesEncomienda.rows,
+    style: {
+      ...customStylesEncomienda.rows.style,
+      minHeight: "58px",
+      marginBottom: "2px",
+      paddingLeft: "6px",
+      paddingRight: "6px",
+    },
+  },
+  pagination: {
+    ...customStylesEncomienda.pagination,
+    style: {
+      ...customStylesEncomienda.pagination.style,
+      marginTop: "3px",
+    },
+  },
+};
+
 const actionButtonSx = (danger = false) => ({
   width: { xs: 42, sm: 30 },
   height: { xs: 42, sm: 30 },
@@ -518,6 +539,7 @@ function TrOperacionRow({
   onEnviarSunat,
   sunatContext,
   canDelete = false,
+  compact = false,
 }) {
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
   const esEncomienda = row.tipo_operacion === "E";
@@ -537,14 +559,14 @@ function TrOperacionRow({
   );
 
   return (
-    <Box sx={{ width: "100%", py: esEncomienda ? 0.45 : 1.2 }}>
+    <Box sx={{ width: "100%", py: esEncomienda ? (compact ? 0.2 : 0.45) : 1.2 }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: { xs: "wrap", sm: "nowrap" },
-          gap: esEncomienda ? 0.45 : 1,
+          gap: esEncomienda ? (compact ? 0.3 : 0.45) : 1,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexWrap: "wrap" }}>
@@ -799,6 +821,7 @@ export const createColumns = ({
   onEnviarSunat,
   sunatContext,
   canDelete,
+  compact = false,
 }) => [
   {
     name: "",
@@ -812,6 +835,7 @@ export const createColumns = ({
         onEnviarSunat={onEnviarSunat}
         sunatContext={sunatContext}
         canDelete={canDelete}
+        compact={compact}
       />
     ),
   },

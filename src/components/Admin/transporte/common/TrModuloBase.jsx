@@ -12,7 +12,7 @@ import TrBoletoModal from "../TrBoletoModal";
 import TrEncomiendaModal from "../encomienda/modal/TrEncomiendaModal";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
-import { createColumns, customStyles, customStylesEncomienda, operacionProtegidaSunat } from "./components/TrOperacionRow";
+import { createColumns, customStyles, customStylesEncomienda, customStylesEncomiendaPanoramica, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
@@ -35,11 +35,11 @@ createTheme(
 );
 
 const resumenSunatButtonSx = (ok = false, pending = false) => ({
-  ml: "auto",
-  mb: 1.25,
+  ml: 0,
+  mb: 0,
   width: { xs: "100%", sm: "auto" },
   minHeight: 38,
-  px: 1.35,
+  px: 1.1,
   borderRadius: palette.radius.control,
   border: `1px solid ${ok ? "rgba(146,214,173,0.38)" : pending ? "rgba(232,198,109,0.38)" : palette.border}`,
   backgroundColor: ok ? palette.successSoft : pending ? palette.warningSoft : palette.chip,
@@ -47,9 +47,9 @@ const resumenSunatButtonSx = (ok = false, pending = false) => ({
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: 0.85,
+  gap: 0.6,
   cursor: "pointer",
-  fontSize: "12px",
+  fontSize: "11.5px",
   fontWeight: 800,
   letterSpacing: 0,
   transition: "all .18s ease",
@@ -89,6 +89,7 @@ export default function TrModuloBase({
   footerTexto = "Encomiendas de transporte registradas en mve_transventa.",
   basePath = "/ad_transportesencomienda",
   superUsuario = "0",
+  panoramicMode = false,
 }) {
   /*
     Componente base del modulo.
@@ -217,7 +218,7 @@ export default function TrModuloBase({
   const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
   const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
   const listadoMaxWidth = tipoOperacionFijo === "E"
-    ? { xs: "100%", lg: 1280, xl: 1440 }
+    ? (panoramicMode ? "100%" : { xs: "100%", lg: 1280, xl: 1440 })
     : 980;
   const empresaTrabajo = useMemo(() => {
     const seleccionada = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo) || {};
@@ -744,7 +745,7 @@ export default function TrModuloBase({
   // -----------------------------
 
   return (
-    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 3, xl: 4 } }}>
+    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: panoramicMode ? 1.5 : 3, xl: panoramicMode ? 2 : 4 } }}>
       <Box sx={{ width: "100%", maxWidth: listadoMaxWidth, mx: "auto" }}>
         <TrHeader
           titulo={titulo}
@@ -760,10 +761,8 @@ export default function TrModuloBase({
           onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : undefined}
           onNuevo={() => solicitarOperacion()}
           onBuscar={actualizaValorFiltro}
-        />
-
-        {tipoOperacionFijo === "E" && (
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          compactControles={tipoOperacionFijo === "E" || panoramicMode}
+          headerExtra={tipoOperacionFijo === "E" ? (
             <Box
               onClick={handleEnviarResumenEncomiendas}
               sx={resumenSunatButtonSx(resumenEncomiendasDiaOk, totalPendienteResumenEncomiendas > 0)}
@@ -773,12 +772,12 @@ export default function TrModuloBase({
                 component="img"
                 src={SunatResumenIcon}
                 alt="Resumen SUNAT"
-                sx={{ width: 24, height: 24, objectFit: "contain", display: "block" }}
+                sx={{ width: 20, height: 20, objectFit: "contain", display: "block" }}
               />
               {resumenEncomiendasDiaOk ? "RDI OK" : `RDI encomiendas (${totalPendienteResumenEncomiendas})`}
             </Box>
-          </Box>
-        )}
+          ) : null}
+        />
 
         <TrFiltros
           periodoTrabajo={periodoTrabajo}
@@ -790,6 +789,7 @@ export default function TrModuloBase({
           onPeriodoSelect={handlePeriodoSelect}
           onContabilidadSelect={handleContabilidadSelect}
           onPuntoVentaSelect={handlePuntoVentaSelect}
+          compact={tipoOperacionFijo === "E" || panoramicMode}
         />
 
         <DaySelector period={periodoTrabajo || params.periodo} onDaySelect={handleDayFilter} />
@@ -802,6 +802,7 @@ export default function TrModuloBase({
             onCancel: handleCancel,
             onEnviarSunat: handleEnviarSunat,
             canDelete: puedeEliminarOperacion,
+            compact: tipoOperacionFijo === "E" && panoramicMode,
             sunatContext: {
               backHost: back_host,
               documentoId: contabilidadTrabajo,
@@ -819,11 +820,13 @@ export default function TrModuloBase({
           data={data}
           progressPending={loading}
           pagination
-          paginationPerPage={tipoOperacionFijo === "E" ? 50 : 10}
-          paginationRowsPerPageOptions={tipoOperacionFijo === "E" ? [10, 25, 50, 100] : undefined}
+          paginationPerPage={tipoOperacionFijo === "E" ? 100 : 10}
+          paginationRowsPerPageOptions={tipoOperacionFijo === "E" ? [25, 50, 100, 150, 200, 300] : undefined}
           highlightOnHover
           responsive
-          customStyles={tipoOperacionFijo === "E" ? customStylesEncomienda : customStyles}
+          customStyles={tipoOperacionFijo === "E"
+            ? (panoramicMode ? customStylesEncomiendaPanoramica : customStylesEncomienda)
+            : customStyles}
           noDataComponent={
             <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
               <Search size={16} />
