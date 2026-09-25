@@ -68,12 +68,14 @@ function AppLayout(props) {
   const location = useLocation();
   const isEntregasRoute = location.pathname.startsWith("/ad_transporteentregas");
   const isEncomiendaRoute = location.pathname.startsWith("/ad_transportesencomienda") || location.pathname.startsWith("/ad_transporte/");
-  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute;
+  const isCajaRoute = location.pathname.startsWith("/ad_transportecaja");
+  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isCajaRoute;
   const [panoramicMode, setPanoramicMode] = useState(() => (
     typeof window !== "undefined" && (
       window.location.pathname.startsWith("/ad_transporteentregas") ||
       window.location.pathname.startsWith("/ad_transportesencomienda") ||
-      window.location.pathname.startsWith("/ad_transporte/")
+      window.location.pathname.startsWith("/ad_transporte/") ||
+      window.location.pathname.startsWith("/ad_transportecaja")
     )
   ));
 
@@ -81,6 +83,7 @@ function AppLayout(props) {
   const claveMenuPanoramico = (pathname) => {
     if (pathname.startsWith("/ad_transporteentregas")) return "entregas";
     if (pathname.startsWith("/ad_transportesencomienda") || pathname.startsWith("/ad_transporte/")) return "encomiendas";
+    if (pathname.startsWith("/ad_transportecaja")) return "caja";
     return "";
   };
   const handleNavigatePanoramicMenu = (targetKey) => {

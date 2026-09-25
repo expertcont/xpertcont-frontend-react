@@ -52,6 +52,24 @@ const sidebarColors = {
   shadowSoft: palette.shadowSoft,
 };
 
+const operationalIconTones = {
+  encomiendas: {
+    color: '#6ea8ff',
+    soft: 'rgba(110,168,255,0.16)',
+    border: 'rgba(110,168,255,0.45)',
+  },
+  entregas: {
+    color: '#92d6ad',
+    soft: 'rgba(146,214,173,0.16)',
+    border: 'rgba(146,214,173,0.45)',
+  },
+  caja: {
+    color: '#e8c66d',
+    soft: 'rgba(232,198,109,0.16)',
+    border: 'rgba(232,198,109,0.45)',
+  },
+};
+
 // Fuente personalizada para todo el Sidebar
 //const sidebarFont = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const sidebarFont = 'var(--app-font-sans)';
@@ -369,7 +387,17 @@ export default function NavSideBar(props) {
     );
   };
 
-  const SubMenuItem = ({ icon, label, isActive, onClick, watermarkIcon = null }) => {
+  const SubMenuItem = ({ icon, label, isActive, onClick, watermarkIcon = null, iconTone = null }) => {
+    const tone = iconTone ? operationalIconTones[iconTone] : null;
+    const compactTone = Boolean(tone && !itemLabelVisible);
+    const iconColor = isActive
+      ? (tone?.color || sidebarColors.accent)
+      : (compactTone ? tone.color : sidebarColors.muted);
+    const iconGlow = compactTone ? `drop-shadow(0 0 5px ${tone.soft})` : 'none';
+    const toneShadow = compactTone
+      ? `inset 0 0 0 1px ${tone.border}${isActive ? `, 0 0 10px ${tone.soft}` : ''}`
+      : 'none';
+
     const item = (
       <ListItem
         button
@@ -382,10 +410,16 @@ export default function NavSideBar(props) {
           paddingLeft: itemLabelVisible ? 3.75 : 0,
           paddingRight: itemLabelVisible ? 1 : 0,
           justifyContent: itemLabelVisible ? 'flex-start' : 'center',
-          backgroundColor: isActive ? sidebarColors.accentSoft : 'transparent',
+          backgroundColor: isActive
+            ? (compactTone ? tone.soft : sidebarColors.accentSoft)
+            : 'transparent',
           borderRight: 'none',
+          boxShadow: toneShadow,
           '&:hover': {
-            backgroundColor: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
+            backgroundColor: isActive
+              ? (compactTone ? tone.soft : sidebarColors.accentSoft)
+              : (compactTone ? tone.soft : sidebarColors.overlaySoft),
+            boxShadow: toneShadow,
           },
           borderRadius: '9px',
           marginY: 0.03,
@@ -411,9 +445,12 @@ export default function NavSideBar(props) {
         <ListItemIcon
           sx={{
             minWidth: itemLabelVisible ? 28 : 0,
-            color: isActive ? sidebarColors.accent : sidebarColors.muted,
+            color: iconColor,
             justifyContent: 'center',
-            '& svg': { fontSize: submenuIconSize },
+            '& svg': {
+              fontSize: submenuIconSize,
+              filter: iconGlow,
+            },
           }}
         >
           {icon}
@@ -678,6 +715,7 @@ export default function NavSideBar(props) {
                 <SubMenuItem
                   icon={<Inventory2Icon />}
                   label="Encomiendas"
+                   iconTone="encomiendas"
                   isActive={selectedButton === 'icono11-1'}
                   onClick={() => {
                     if (typeof props.onNavigatePanoramic === 'function') {
@@ -699,6 +737,7 @@ export default function NavSideBar(props) {
                 <SubMenuItem
                   icon={<AssignmentTurnedInIcon />}
                   label="Encomiendas por Entregar"
+                   iconTone="entregas"
                   isActive={selectedButton === 'icono11-8'}
                   onClick={() => {
                     if (typeof props.onNavigatePanoramic === 'function') {
@@ -711,8 +750,12 @@ export default function NavSideBar(props) {
                 <SubMenuItem
                   icon={<AccountBalanceWalletIcon />}
                   label="Caja"
+                   iconTone="caja"
                   isActive={selectedButton === 'icono11-9'}
                   onClick={() => {
+                    if (typeof props.onNavigatePanoramic === 'function') {
+                      props.onNavigatePanoramic('caja');
+                    }
                     navigate(`/ad_transportecaja/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-9');
                   }}
