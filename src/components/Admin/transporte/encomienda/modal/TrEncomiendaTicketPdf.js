@@ -60,6 +60,10 @@ const LAYOUT = {
     phoneGap: 1.8,
     phoneSize: 9.2,
     phoneLineHeight: 10,
+    descriptionGap: 4,
+    descriptionSize: 7.8,
+    descriptionLineHeight: 9.2,
+    descriptionMaxLines: 2,
   },
   qr: {
     size: 111,
@@ -67,7 +71,7 @@ const LAYOUT = {
     preferredBottom: 74,
     minSize: 86,
     preferredY: 118,
-    gapAbove: -4,
+    gapAbove: 0,
     emailGap: 9,
     emailSize: 6.8,
   },
@@ -253,6 +257,7 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   const senderPhone = clean(encomienda.cliente_telefono);
   const receiverName = encomienda.destinatario || "-";
   const receiverPhone = clean(encomienda.destinatario_telefono);
+  const receiverDescription = clean(encomienda.descripcion);
   const receiverArrivalZone = clean(encomienda.destinatario_zona);
   const receiverAddress = clean(encomienda.destinatario_direccion);
   const registeredByEmail = clean(
@@ -332,6 +337,29 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
     cursorY -= LAYOUT.recipient.phoneGap;
     centered(page, `TEL: ${receiverPhone}`, cursorY, LAYOUT.recipient.phoneSize, semibold, INK, CW - 16);
     cursorY -= LAYOUT.recipient.phoneLineHeight;
+  }
+
+  if (receiverDescription) {
+    cursorY -= LAYOUT.recipient.descriptionGap;
+    const descriptionLines = wrap(
+      `DESCRIPCIÓN: ${receiverDescription.toUpperCase()}`,
+      regular,
+      LAYOUT.recipient.descriptionSize,
+      CW - 16,
+      LAYOUT.recipient.descriptionMaxLines,
+    );
+    descriptionLines.forEach((item, index) => {
+      centered(
+        page,
+        item,
+        cursorY - (index * LAYOUT.recipient.descriptionLineHeight),
+        LAYOUT.recipient.descriptionSize,
+        regular,
+        MUTED,
+        CW - 16,
+      );
+    });
+    cursorY -= descriptionLines.length * LAYOUT.recipient.descriptionLineHeight;
   }
 
   const qrAvailableHeight = cursorY - LAYOUT.qr.gapAbove - LAYOUT.qr.preferredBottom;
