@@ -59,6 +59,50 @@ const money = (value) => Number(value || 0).toLocaleString("es-PE", {
   currency: "PEN",
 });
 
+const RESUMEN_CAJA_INICIAL = {
+  total_ingresos: 0,
+  total_salidas: 0,
+  total_salidas_bancarias: 0,
+  total_salidas_no_bancarias: 0,
+  neto: 0,
+};
+
+const toCajaNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const esMotivoBancario = (value) => (
+  ["1", "true", "t", "yes"].includes(String(value ?? "").trim().toLowerCase())
+);
+
+const calcularSalidasBancarias = (rows = []) => rows.reduce((total, row) => {
+  const tipoMovimiento = String(row?.tipo_movimiento || "").trim().toUpperCase();
+  const activo = Number(row?.registrado ?? 1) === 1;
+  if (tipoMovimiento !== "S" || !activo || !esMotivoBancario(row?.bancario)) {
+    return total;
+  }
+  return total + toCajaNumber(row.importe);
+}, 0);
+
+const normalizarResumenCaja = (data, movimientos = []) => {
+  const source = data && typeof data === "object" ? data : {};
+  const totalBancarioBackend = source.total_salidas_bancarias;
+  const totalIngresos = toCajaNumber(source.total_ingresos);
+  const totalSalidas = toCajaNumber(source.total_salidas);
+  const totalSalidasBancarias = totalBancarioBackend === undefined || totalBancarioBackend === null
+    ? calcularSalidasBancarias(movimientos)
+    : toCajaNumber(totalBancarioBackend);
+
+  return {
+    total_ingresos: totalIngresos,
+    total_salidas: totalSalidas,
+    total_salidas_bancarias: totalSalidasBancarias,
+    total_salidas_no_bancarias: Math.max(0, totalSalidas - totalSalidasBancarias),
+    neto: toCajaNumber(source.neto),
+  };
+};
+
 const fieldSx = {
   height: 38,
   px: 1.15,
@@ -167,8 +211,14 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
     {
       key: "salidas",
       label: "SALIDAS",
-      value: money(resumen.total_salidas),
+      value: money(resumen.total_salidas_no_bancarias ?? (toCajaNumber(resumen.total_salidas) - toCajaNumber(resumen.total_salidas_bancarias))),
       tone: "danger",
+    },
+    {
+      key: "salidas_bancarias",
+      label: "SALIDAS YAPE/PLIN/ETC",
+      value: money(resumen.total_salidas_bancarias),
+      tone: "warning",
     },
     {
       key: "neto",
@@ -185,7 +235,7 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" },
         mb: 1.5,
         border: `1px solid ${palette.border}`,
         borderRadius: palette.radius.listCard,
@@ -195,7 +245,11 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
       }}
     >
       {items.map((item, index) => {
-        const color = item.tone === "danger" ? palette.danger : palette.success;
+        const color = item.tone === "danger"
+          ? palette.danger
+          : item.tone === "warning"
+            ? palette.warning
+            : palette.success;
         const clickable = Boolean(item.onClick);
 
         return (
@@ -217,8 +271,16 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
               flexDirection: "column",
               justifyContent: "center",
               backgroundColor: item.key === "neto" ? palette.overlaySoft : "transparent",
-              borderTop: { xs: index ? `1px solid ${palette.borderSoft}` : "none", sm: "none" },
-              borderLeft: { xs: "none", sm: index ? `1px solid ${palette.borderSoft}` : "none" },
+              borderTop: {
+                xs: index ? `1px solid ${palette.borderSoft}` : "none",
+                sm: index >= 2 ? `1px solid ${palette.borderSoft}` : "none",
+                lg: "none",
+              },
+              borderLeft: {
+                xs: "none",
+                sm: index % 2 ? `1px solid ${palette.borderSoft}` : "none",
+                lg: index ? `1px solid ${palette.borderSoft}` : "none",
+              },
               cursor: clickable ? "pointer" : "default",
               transition: "background-color .16s ease",
               "&:hover": clickable ? { backgroundColor: palette.accentSoft } : undefined,
@@ -931,7 +993,7 @@ export default function TrCajaMovimientoList() {
   const [motivoFiltro, setMotivoFiltro] = useState("");
   const [usuariosTrabajo, setUsuariosTrabajo] = useState([]);
   const [usuarioTrabajo, setUsuarioTrabajo] = useState("");
-  const [resumen, setResumen] = useState({ total_ingresos: 0, total_salidas: 0, neto: 0 });
+  const [resumen, setResumen] = useState(RESUMEN_CAJA_INICIAL);
   const [modalOpen, setModalOpen] = useState(false);
   const [ingresosModalOpen, setIngresosModalOpen] = useState(false);
   const [ingresosDetalle, setIngresosDetalle] = useState([]);
@@ -1053,7 +1115,7 @@ export default function TrCajaMovimientoList() {
   const cargarCaja = useCallback(async () => {
     if (!periodoTrabajo || !contabilidadTrabajo) {
       setMovimientos([]);
-      setResumen({ total_ingresos: 0, total_salidas: 0, neto: 0 });
+      setResumen({ ...RESUMEN_CAJA_INICIAL });
       return;
     }
 
@@ -1067,12 +1129,13 @@ export default function TrCajaMovimientoList() {
       const movimientosResult = await movimientosResponse.json();
       const resumenResult = await resumenResponse.json();
 
-      setMovimientos(Array.isArray(movimientosResult?.data) ? movimientosResult.data : []);
-      setResumen(resumenResult?.data || { total_ingresos: 0, total_salidas: 0, neto: 0 });
+      const movimientosData = Array.isArray(movimientosResult?.data) ? movimientosResult.data : [];
+      setMovimientos(movimientosData);
+      setResumen(normalizarResumenCaja(resumenResult?.data, movimientosData));
     } catch (error) {
       console.log("Error cargando caja de transporte:", error);
       setMovimientos([]);
-      setResumen({ total_ingresos: 0, total_salidas: 0, neto: 0 });
+      setResumen({ ...RESUMEN_CAJA_INICIAL });
     } finally {
       setLoading(false);
     }
@@ -1385,8 +1448,23 @@ export default function TrCajaMovimientoList() {
     {
       name: "Motivo",
       selector: (row) => row.motivo_nombre || row.id_motivo,
+      cell: (row) => {
+        const salidaBancaria = String(row.tipo_movimiento || "").trim().toUpperCase() === "S" && esMotivoBancario(row.bancario);
+        return (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
+            <Typography component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {row.motivo_nombre || row.id_motivo}
+            </Typography>
+            {salidaBancaria && (
+              <Box sx={{ flexShrink: 0, px: 0.45, py: 0.15, borderRadius: palette.radius.control, color: palette.warning, backgroundColor: palette.warningSoft, fontSize: "9px", fontWeight: 900 }}>
+                BANCARIO
+              </Box>
+            )}
+          </Box>
+        );
+      },
       sortable: true,
-      width: "150px",
+      width: "190px",
     },
     {
       name: "Descripcion",

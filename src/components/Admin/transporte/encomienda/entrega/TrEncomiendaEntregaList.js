@@ -4,8 +4,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Search, X } from "lucide-react";
-import { PDFDocument } from "pdf-lib";
+import { BadgeCheck, Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
+import {
+  generarConstanciaEntregaPdfBlob,
+  generarConstanciaEntregaPngFallback,
+  pdfBlobToPngBlob,
+} from "./TrEncomiendaEntregaConstanciaPdf";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -131,10 +135,28 @@ const numeroOperacion = (item) => [
   item.r_numero,
 ].filter(Boolean).join("-");
 
+const claveEncomienda = (item = {}) => [
+  item.periodo_origen || item.periodo || "",
+  item.r_cod,
+  item.r_serie,
+  item.r_numero,
+  item.elemento || 1,
+].join("|");
+
 const numeroTicketAdmin = (item) => [
   item.r_serie,
   item.r_numero,
 ].filter(Boolean).join("-");
+
+const construirMensajeLlegadaWhatsapp = (item = {}) => {
+  const destinatario = String(item.destinatario || "").trim();
+  const numero = numeroOperacion(item) || "registrada";
+  return [
+    `Hola${destinatario ? ` ${destinatario}` : ""},`,
+    `su encomienda ${numero} ya llegó y se encuentra pendiente de entrega.`,
+    "Le enviamos el ticket correspondiente.",
+  ].join("\n");
+};
 
 const nombreOrigenRuta = (item) => {
   const ruta = String(item.nombre_ruta || "").trim();
@@ -159,6 +181,10 @@ const formatMoney = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", 
 
 const rowsPerPage = 50;
 const rowsPerPageOptions = [50, 100, 150, 200];
+const TICKET_ENTREGA_MODO_KEY = "xpertcont.transporte.entrega.ticketPredeterminado";
+const normalizarTicketEntregaModo = (value) => (
+  ["fisico", "whatsapp"].includes(value) ? value : "fisico"
+);
 
 const esPorCobrar = (value) => normalizarTexto(value)
   .replace(/[^a-z]/g, "") === "porcobrar";
@@ -278,227 +304,6 @@ const nombreDestinoRuta = (item) => {
   return partes[partes.length - 1] || item.punto_venta_dest_nombre || item.id_punto_venta_dest || "-";
 };
 
-const generarConstanciaEntregaPng = (encomienda) => new Promise((resolve, reject) => {
-  const canvas = document.createElement("canvas");
-  const scale = 1.5;
-  const logicalWidth = 720;
-  const logicalHeight = 940;
-  canvas.width = logicalWidth * scale;
-  canvas.height = logicalHeight * scale;
-  const ctx = canvas.getContext("2d");
-
-  if (!ctx) {
-    reject(new Error("No se pudo preparar la constancia."));
-    return;
-  }
-
-  ctx.scale(scale, scale);
-
-  const colors = {
-    bg: "#eef2f6",
-    paper: "#ffffff",
-    paperSoft: "#f7f9fb",
-    border: "#d6dde5",
-    borderSoft: "#e7ecf1",
-    text: "#17212b",
-    muted: "#657485",
-    accent: resolveCssColor(palette.accent, "#2f83b7"),
-    success: "#167a4a",
-    successSoft: "#e7f6ee",
-  };
-
-  const drawPanel = (x, y, width, height, fill = colors.paper) => {
-    ctx.fillStyle = fill;
-    roundedRect(ctx, x, y, width, height, 18);
-    ctx.fill();
-    ctx.strokeStyle = colors.border;
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-  };
-  const drawDivider = (y) => {
-    ctx.strokeStyle = colors.borderSoft;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(70, y);
-    ctx.lineTo(650, y);
-    ctx.stroke();
-  };
-  const drawField = (label, value, x, y, width, maxLines = 1) => {
-    ctx.fillStyle = colors.muted;
-    ctx.font = "700 13px Arial";
-    ctx.fillText(label.toUpperCase(), x, y);
-    ctx.fillStyle = colors.text;
-    ctx.font = "700 18px Arial";
-    return drawWrappedText(ctx, value, x, y + 25, width, 25, maxLines);
-  };
-  const drawSubText = (value, x, y, width) => {
-    ctx.fillStyle = colors.muted;
-    ctx.font = "700 14px Arial";
-    return drawWrappedText(ctx, value || "-", x, y, width, 19, 1);
-  };
-  const drawPackageIcon = (x, y, size = 30) => {
-    ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 2;
-    roundedRect(ctx, x, y, size, size, 7);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x + size * 0.5, y);
-    ctx.lineTo(x + size * 0.5, y + size);
-    ctx.moveTo(x, y + size * 0.34);
-    ctx.lineTo(x + size, y + size * 0.34);
-    ctx.stroke();
-  };
-  const drawPinIcon = (x, y) => {
-    ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0.8 * Math.PI, 2.2 * Math.PI);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x, y - 1, 2.5, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x - 5, y + 6);
-    ctx.lineTo(x, y + 15);
-    ctx.lineTo(x + 5, y + 6);
-    ctx.stroke();
-  };
-
-  const paperX = 34;
-  const paperY = 30;
-  const paperW = 652;
-  const paperH = 880;
-  const innerX = 58;
-  const innerW = 604;
-  const contentX = 82;
-  const contentW = 556;
-
-  const sectionTitle = (title, x, y, icon = null) => {
-    if (icon === "package") {
-      drawPackageIcon(x, y - 19, 25);
-      x += 36;
-    }
-    if (icon === "pin") {
-      drawPinIcon(x + 8, y - 8);
-      x += 34;
-    }
-    ctx.fillStyle = colors.muted;
-    ctx.font = "900 12px Arial";
-    ctx.fillText(title.toUpperCase(), x, y);
-  };
-
-  const drawSoftBox = (x, y, width, height) => {
-    ctx.strokeStyle = colors.borderSoft;
-    ctx.lineWidth = 1;
-    roundedRect(ctx, x, y, width, height, 14);
-    ctx.stroke();
-  };
-  const drawPhoneIcon = (x, y, size = 16) => {
-    ctx.strokeStyle = colors.accent;
-    ctx.lineWidth = 2.2;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(x + size * 0.25, y + size * 0.18);
-    ctx.quadraticCurveTo(x + size * 0.08, y + size * 0.34, x + size * 0.22, y + size * 0.58);
-    ctx.quadraticCurveTo(x + size * 0.42, y + size * 0.92, x + size * 0.78, y + size * 0.78);
-    ctx.lineTo(x + size * 0.88, y + size * 0.62);
-    ctx.moveTo(x + size * 0.24, y + size * 0.18);
-    ctx.lineTo(x + size * 0.38, y + size * 0.34);
-    ctx.moveTo(x + size * 0.62, y + size * 0.66);
-    ctx.lineTo(x + size * 0.78, y + size * 0.78);
-    ctx.stroke();
-    ctx.lineCap = "butt";
-    ctx.lineJoin = "miter";
-  };
-
-  ctx.fillStyle = colors.bg;
-  ctx.fillRect(0, 0, logicalWidth, logicalHeight);
-  ctx.shadowColor = "rgba(15, 23, 42, 0.18)";
-  ctx.shadowBlur = 22;
-  ctx.shadowOffsetY = 10;
-  drawPanel(paperX, paperY, paperW, paperH);
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  ctx.fillStyle = colors.accent;
-  roundedRect(ctx, innerX, 52, innerW, 8, 4);
-  ctx.fill();
-
-  ctx.textAlign = "center";
-  ctx.fillStyle = colors.text;
-  ctx.font = "900 18px Arial";
-  const empresaBottom = drawWrappedText(ctx, encomienda.empresa_razon_social || "EMPRESA", logicalWidth / 2, 86, 520, 21, 2);
-  ctx.fillStyle = colors.muted;
-  ctx.font = "800 15px Arial";
-  ctx.fillText(`RUC: ${encomienda.empresa_documento_id || "-"}`, logicalWidth / 2, Math.max(124, empresaBottom + 13));
-  ctx.fillStyle = colors.text;
-  ctx.font = "900 16px Arial";
-  ctx.fillText("CONSTANCIA DE ENTREGA", logicalWidth / 2, 156);
-  ctx.textAlign = "left";
-  drawDivider(172);
-
-  sectionTitle("Remitente", contentX, 198);
-  drawSoftBox(contentX, 210, contentW, 78);
-  drawField("Nombre", encomienda.cliente || "-", contentX + 18, 236, 360, 1);
-  drawField("Doc.", encomienda.cliente_documento || encomienda.cliente_documento_id || "-", contentX + 400, 236, 130, 1);
-  if (encomienda.cliente_telefono) {
-    drawPhoneIcon(contentX + 18, 262, 18);
-    ctx.fillStyle = colors.text;
-    ctx.font = "900 18px Arial";
-    ctx.fillText(encomienda.cliente_telefono, contentX + 45, 278);
-  }
-
-  sectionTitle("Encomienda", contentX, 324, "package");
-  drawSoftBox(contentX, 336, contentW, 92);
-  ctx.fillStyle = colors.text;
-  ctx.font = "900 30px Arial";
-  ctx.fillText(numeroOperacion(encomienda), contentX + 18, 378);
-
-  sectionTitle("Origen / destino / contenido", contentX, 464, "pin");
-  drawSoftBox(contentX, 476, contentW, 150);
-  drawField("Origen", nombreOrigenRuta(encomienda), contentX + 18, 502, 230, 1);
-  drawField("Destino", nombreDestinoRuta(encomienda), contentX + 304, 502, 220, 1);
-  drawField("Contenido", encomienda.descripcion || "-", contentX + 18, 568, 500, 2);
-
-  sectionTitle("Espacio para firma", contentX, 660);
-  drawSoftBox(contentX, 672, contentW, 110);
-  ctx.save();
-  ctx.globalAlpha = 0.075;
-  ctx.fillStyle = colors.success;
-  ctx.font = "900 44px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText("ENTREGADO", logicalWidth / 2, 770);
-  ctx.restore();
-
-  drawSoftBox(contentX, 806, contentW, 76);
-  ctx.fillStyle = colors.muted;
-  ctx.font = "800 11px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText("FIRMA / CONFORMIDAD DE ENTREGA", logicalWidth / 2, 800);
-  ctx.textAlign = "left";
-
-  drawField("Destinatario", encomienda.destinatario || "-", contentX + 18, 830, 300, 1);
-  drawSubText(encomienda.destinatario_documento || encomienda.destinatario_documento_id || "-", contentX + 18, 870, 260);
-  drawField("Fecha entrega", formatFechaHoraEntrega(encomienda.entrega_fecha), contentX + 348, 830, 170, 1);
-
-  const registradoTexto = `Registrado por: ${encomienda.entrega_ctrl_us || "-"}`;
-  ctx.fillStyle = colors.muted;
-  ctx.font = "700 12px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText(registradoTexto, logicalWidth / 2, 900);
-  ctx.textAlign = "left";
-
-  canvas.toBlob((blob) => {
-    if (blob) {
-      resolve(blob);
-    } else {
-      reject(new Error("No se pudo generar el PNG de constancia."));
-    }
-  }, "image/png");
-});
-
 const copiarPngAlPortapapeles = async (blob) => {
   if (!navigator.clipboard?.write || typeof window.ClipboardItem === "undefined") {
     throw new Error("Este navegador no permite copiar imagenes al portapapeles.");
@@ -507,27 +312,6 @@ const copiarPngAlPortapapeles = async (blob) => {
   await navigator.clipboard.write([
     new window.ClipboardItem({ "image/png": blob }),
   ]);
-};
-
-const generarConstanciaEntregaPdfUrl = async (pngBlob) => {
-  const pdfDoc = await PDFDocument.create();
-  const pngBytes = await pngBlob.arrayBuffer();
-  const pngImage = await pdfDoc.embedPng(pngBytes);
-  const mmToPt = (mm) => (mm * 72) / 25.4;
-  const pageWidth = mmToPt(80);
-  const pageHeight = pageWidth * (pngImage.height / pngImage.width);
-  const page = pdfDoc.addPage([pageWidth, pageHeight]);
-
-  page.drawImage(pngImage, {
-    x: 0,
-    y: 0,
-    width: pageWidth,
-    height: pageHeight,
-  });
-
-  const pdfBytes = await pdfDoc.save();
-  const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
-  return URL.createObjectURL(pdfBlob);
 };
 
 const normalizarTelefonoWhatsapp = (value) => {
@@ -659,10 +443,15 @@ export default function TrEncomiendaEntregaList() {
   const [puntosVentaAsignados, setPuntosVentaAsignados] = useState([]);
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
   const [tablaBase, setTablaBase] = useState([]);
+  const [llegadasLocales, setLlegadasLocales] = useState(() => new Set());
   const [valorBusqueda, setValorBusqueda] = useState("");
   const [periodosBusqueda, setPeriodosBusqueda] = useState(3);
   const [mostrarEntregadas, setMostrarEntregadas] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ticketEntregaModo, setTicketEntregaModo] = useState(() => {
+    if (typeof window === "undefined") return "fisico";
+    return normalizarTicketEntregaModo(window.localStorage.getItem(TICKET_ENTREGA_MODO_KEY));
+  });
   const [updateTrigger, setUpdateTrigger] = useState(0);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState("");
@@ -950,12 +739,28 @@ export default function TrEncomiendaEntregaList() {
     recognition.start();
   };
 
-  const mostrarEntregaRegistrada = async (encomiendaConfirmada) => {
+  const handleTicketEntregaModoChange = (modo) => {
+    const modoNormalizado = normalizarTicketEntregaModo(modo);
+    setTicketEntregaModo(modoNormalizado);
+    window.localStorage.setItem(TICKET_ENTREGA_MODO_KEY, modoNormalizado);
+  };
+
+  const mostrarEntregaRegistrada = async (encomiendaConfirmada, opciones = {}) => {
+    const {
+      forzarWhatsapp = false,
+      mensajeWhatsapp: mensajeWhatsappPersonalizado = "",
+      pendienteEntrega = false,
+    } = opciones;
+    const ticketPendienteEntrega = Boolean(
+      pendienteEntrega || (encomiendaConfirmada.llegada_real && !encomiendaConfirmada.entrega_fecha)
+    );
+    let pdfBlob = null;
     let constanciaBlob = null;
     let previewUrl = "";
     let pdfUrl = "";
     const whatsappRemitente = encomiendaConfirmada.cliente_telefono || "";
     const whatsappDestinatario = encomiendaConfirmada.destinatario_telefono || "";
+    const modoTicket = forzarWhatsapp ? "whatsapp" : ticketEntregaModo;
     const empresa = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo);
     const razonSocialEmpresa = empresa?.razon_social || contabilidadTrabajo || "Empresa";
     const encomiendaConstancia = {
@@ -963,14 +768,124 @@ export default function TrEncomiendaEntregaList() {
       empresa_razon_social: razonSocialEmpresa,
       empresa_documento_id: empresa?.documento_id || contabilidadTrabajo,
     };
+    const whatsappDestinatarioNormalizado = normalizarTelefonoWhatsapp(whatsappDestinatario);
+    const mensajeWhatsapp = mensajeWhatsappPersonalizado || (ticketPendienteEntrega
+      ? construirMensajeLlegadaWhatsapp(encomiendaConfirmada)
+      : [
+        razonSocialEmpresa,
+        "Constancia de entrega",
+        numeroTicketAdmin(encomiendaConfirmada) || numeroOperacion(encomiendaConfirmada),
+      ].join("\n"));
+    const abrirWhatsappNativo = (telefono, mensaje) => {
+      if (!telefono) return;
+      const nativeUrl = `whatsapp://send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
+      const link = document.createElement("a");
+      link.href = nativeUrl;
+      link.target = "_self";
+      link.rel = "noopener noreferrer";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      window.setTimeout(() => link.remove(), 0);
+    };
+    let ventanaTicket = null;
+    const mostrarErrorWhatsapp = async (error) => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        previewUrl = "";
+      }
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+        pdfUrl = "";
+      }
+      await swal2.fire({
+        title: "No se pudo abrir WhatsApp",
+        text: `${error?.message || "No se pudo preparar la imagen."} Verifica que WhatsApp esté instalado y habilitado en este equipo.`,
+        icon: "warning",
+        confirmButtonText: "CERRAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+    };
+
+    if (modoTicket === "fisico") {
+      ventanaTicket = window.open("about:blank", "_blank");
+      if (ventanaTicket) {
+        ventanaTicket.opener = null;
+        try {
+          ventanaTicket.document.title = "Preparando ticket...";
+        } catch {
+          // El navegador puede bloquear el acceso a la ventana emergente.
+        }
+      }
+    }
 
     try {
-      constanciaBlob = await generarConstanciaEntregaPng(encomiendaConstancia);
-      previewUrl = URL.createObjectURL(constanciaBlob);
-      pdfUrl = await generarConstanciaEntregaPdfUrl(constanciaBlob);
+      pdfBlob = await generarConstanciaEntregaPdfBlob(encomiendaConstancia, { pendienteEntrega: ticketPendienteEntrega });
+      pdfUrl = URL.createObjectURL(pdfBlob);
     } catch (error) {
-      console.log("No se pudo generar constancia:", error);
+      console.error("No se pudo generar el PDF de la constancia:", error);
     }
+
+    if (modoTicket === "fisico" && pdfBlob && ventanaTicket) {
+      ventanaTicket.location.href = pdfUrl;
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+      return;
+    }
+
+    if (modoTicket !== "whatsapp" || !whatsappDestinatarioNormalizado) {
+      ventanaTicket?.close();
+      ventanaTicket = null;
+    }
+
+    if (pdfBlob) {
+      try {
+        constanciaBlob = await pdfBlobToPngBlob(pdfBlob);
+        previewUrl = URL.createObjectURL(constanciaBlob);
+      } catch (error) {
+        console.error("No se pudo convertir el PDF en imagen; se usará la vista de respaldo:", error);
+        try {
+          constanciaBlob = await generarConstanciaEntregaPngFallback(encomiendaConstancia, pdfBlob?.ticketPageHeightMm, { pendienteEntrega: ticketPendienteEntrega });
+          previewUrl = URL.createObjectURL(constanciaBlob);
+        } catch (fallbackError) {
+          console.error("No se pudo preparar la vista de respaldo:", fallbackError);
+        }
+      }
+    }
+
+    if (!constanciaBlob) {
+      try {
+        constanciaBlob = await generarConstanciaEntregaPngFallback(encomiendaConstancia, pdfBlob?.ticketPageHeightMm, { pendienteEntrega: ticketPendienteEntrega });
+        previewUrl = URL.createObjectURL(constanciaBlob);
+      } catch (fallbackError) {
+        console.error("No se pudo preparar la vista de respaldo:", fallbackError);
+      }
+    }
+
+    if (modoTicket === "whatsapp" && whatsappDestinatarioNormalizado && !constanciaBlob) {
+      await mostrarErrorWhatsapp(new Error("No se pudo preparar la imagen de la constancia."));
+      return;
+    }
+
+    if (modoTicket === "whatsapp" && whatsappDestinatarioNormalizado && constanciaBlob) {
+      try {
+        const clipboardPromise = copiarPngAlPortapapeles(constanciaBlob);
+        abrirWhatsappNativo(whatsappDestinatarioNormalizado, mensajeWhatsapp);
+        await clipboardPromise;
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        return;
+      } catch (error) {
+        console.error("No se pudo abrir WhatsApp automáticamente:", error);
+        ventanaTicket?.close();
+        ventanaTicket = null;
+        await mostrarErrorWhatsapp(error);
+        return;
+      }
+    }
+
+    ventanaTicket?.close();
+    ventanaTicket = null;
 
     await swal2.fire({
       title: "",
@@ -1032,7 +947,7 @@ export default function TrEncomiendaEntregaList() {
             </div>
           ` : `
             <div style="padding:9px;border:1px solid ${palette.warning};border-radius:${palette.radius.control};color:${palette.warning};background:${palette.warningSoft};font-size:11.5px;font-weight:700">
-              Entrega registrada. No se pudo preparar el PNG en este navegador.
+              Entrega registrada. No se pudo preparar la vista previa en este navegador.
             </div>
           `}
           <div style="display:grid;grid-template-columns:132px minmax(0,1fr);gap:8px;align-items:end">
@@ -1041,8 +956,8 @@ export default function TrEncomiendaEntregaList() {
                 Enviar a
               </label>
               <select id="whatsapp-tipo-entrega" class="constancia-entrega-select">
+                <option value="destinatario" selected>Destinatario</option>
                 <option value="remitente">Remitente</option>
-                <option value="destinatario">Destinatario</option>
               </select>
             </div>
             <div style="display:grid;gap:4px;min-width:0">
@@ -1051,17 +966,19 @@ export default function TrEncomiendaEntregaList() {
               </label>
               <input
                 id="whatsapp-numero-entrega"
-                value="${escapeHtml(whatsappRemitente)}"
+                value="${escapeHtml(whatsappDestinatario)}"
                 data-remitente="${escapeHtml(whatsappRemitente)}"
                 data-destinatario="${escapeHtml(whatsappDestinatario)}"
-                placeholder="Celular"
+                placeholder="Celular del destinatario"
                 inputmode="numeric"
                 style="height:34px;padding:0 9px;border-radius:${palette.radius.control};border:1px solid ${palette.border};background:${palette.bg};color:${palette.text};font-size:12px;outline:none;min-width:0"
               />
             </div>
           </div>
           <div style="color:${palette.muted};font-size:10.8px;line-height:1.35">
-            Puedes imprimir el PDF o enviar el PNG por WhatsApp. En el chat, pega la constancia con Ctrl + V.
+            ${whatsappDestinatarioNormalizado
+              ? "La imagen ya está preparada para pegar en WhatsApp."
+              : "Especifica el celular del destinatario para abrir WhatsApp."}
           </div>
           <div style="display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;padding-top:2px">
             ${pdfUrl ? `<button id="imprimir-pdf-constancia-entrega" type="button" class="constancia-entrega-action" style="border:1px solid ${palette.border};background:${palette.bg};color:${palette.text};margin:0">PDF imprimir</button>` : ""}
@@ -1086,11 +1003,10 @@ export default function TrEncomiendaEntregaList() {
         const numeroInput = document.getElementById("whatsapp-numero-entrega");
         const closeButton = document.getElementById("cerrar-constancia-entrega");
 
-        const mensaje = [
-          razonSocialEmpresa,
-          "Constancia de entrega",
-          numeroTicketAdmin(encomiendaConfirmada) || numeroOperacion(encomiendaConfirmada),
-        ].join("\n");
+        if (!whatsappDestinatarioNormalizado) {
+          window.setTimeout(() => numeroInput?.focus(), 80);
+        }
+
         tipoSelect?.addEventListener("change", () => {
           const key = tipoSelect.value === "destinatario" ? "destinatario" : "remitente";
           numeroInput.value = numeroInput.dataset[key] || "";
@@ -1111,7 +1027,7 @@ export default function TrEncomiendaEntregaList() {
             }
 
             await copiarPngAlPortapapeles(constanciaBlob);
-            window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank", "noopener,noreferrer");
+            abrirWhatsappNativo(telefono, mensajeWhatsapp);
           } catch (error) {
             swal2.showValidationMessage(error.message || "No se pudo preparar WhatsApp.");
           }
@@ -1304,6 +1220,12 @@ export default function TrEncomiendaEntregaList() {
         throw new Error(dataResponse.message || "No se pudo registrar la llegada real.");
       }
 
+      const llegadaRealConfirmada = dataResponse.data?.llegada_real || new Date().toISOString();
+      setLlegadasLocales((prev) => {
+        const next = new Set(prev);
+        next.add(claveEncomienda(item));
+        return next;
+      });
       setTablaBase((prev) => prev.map((row) => {
         const mismaEncomienda = (
           row.r_cod === item.r_cod &&
@@ -1316,6 +1238,7 @@ export default function TrEncomiendaEntregaList() {
           ? {
             ...row,
             ...(dataResponse.data || {}),
+            llegada_real: llegadaRealConfirmada,
             periodo_origen: row.periodo_origen || item.periodo_origen,
             nombre_ruta: dataResponse.data?.nombre_ruta || row.nombre_ruta,
             _textoBusqueda: crearIndiceBusqueda({ ...row, ...(dataResponse.data || {}) }),
@@ -1327,7 +1250,7 @@ export default function TrEncomiendaEntregaList() {
 
       swal2.fire({
         title: "Llegada marcada",
-        text: formatFechaHoraMinuto(dataResponse.data?.llegada_real),
+        text: formatFechaHoraMinuto(llegadaRealConfirmada),
         icon: "success",
         timer: 1400,
         showConfirmButton: false,
@@ -1344,6 +1267,12 @@ export default function TrEncomiendaEntregaList() {
         background: palette.surface,
       });
     }
+  };
+
+  const tieneLlegadaReal = (row) => Boolean(row.llegada_real) || llegadasLocales.has(claveEncomienda(row));
+  const fechaLlegadaVisible = (row) => {
+    if (row.llegada_real) return formatFechaHoraMinuto(row.llegada_real);
+    return llegadasLocales.has(claveEncomienda(row)) ? "Llegada registrada" : "-";
   };
 
   const columns = [
@@ -1449,9 +1378,9 @@ export default function TrEncomiendaEntregaList() {
                 )}
               </Box>
             </Box>
-            <Tooltip title={row.llegada_real ? `Llegada de Chofer: ${formatFechaHoraMinuto(row.llegada_real)}` : 'Marcar "Llegada de Chofer"'} arrow>
+            <Tooltip title={tieneLlegadaReal(row) ? `Llegada de Chofer: ${fechaLlegadaVisible(row)}` : 'Marcar "Llegada de Chofer"'} arrow>
               <IconButton
-                aria-label={row.llegada_real ? "Llegada de Chofer registrada" : 'Marcar "Llegada de Chofer"'}
+                aria-label={tieneLlegadaReal(row) ? "Llegada de Chofer registrada" : 'Marcar "Llegada de Chofer"'}
                 onClick={(event) => {
                   event.stopPropagation();
                   marcarLlegadaReal(row);
@@ -1462,17 +1391,17 @@ export default function TrEncomiendaEntregaList() {
                   minWidth: 44,
                   p: 0,
                   borderRadius: palette.radius.control,
-                  backgroundColor: row.llegada_real ? palette.successSoft : "transparent",
+                  backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : "transparent",
                   border: "none",
-                  color: row.llegada_real ? palette.success : palette.muted,
+                  color: tieneLlegadaReal(row) ? palette.success : palette.muted,
                   gridColumn: 3,
                   gridRow: "1 / span 3",
                   justifySelf: "end",
                   alignSelf: "center",
                   transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
                   "&:hover": {
-                    backgroundColor: row.llegada_real ? palette.successSoft : palette.surfaceAlt,
-                    color: row.llegada_real ? palette.success : palette.accent,
+                    backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : palette.surfaceAlt,
+                    color: tieneLlegadaReal(row) ? palette.success : palette.accent,
                     transform: "scale(1.28)",
                   },
                   "&:active": {
@@ -1515,7 +1444,45 @@ export default function TrEncomiendaEntregaList() {
                 lineHeight: 1.15,
               }}
             >
-              <Phone data-tag="allowRowEvents" size={12} strokeWidth={2.5} />
+              {tieneLlegadaReal(row) ? (
+                <Tooltip title={mostrarEntregadas ? "Enviar ticket de entrega" : "Enviar aviso de llegada y ticket de entrega"} arrow>
+                  <IconButton
+                    data-tag="allowRowEvents"
+                    aria-label={mostrarEntregadas ? "Enviar ticket de entrega" : "Enviar aviso de llegada y ticket de entrega"}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      mostrarEntregaRegistrada(row, {
+                        forzarWhatsapp: true,
+                        pendienteEntrega: !mostrarEntregadas,
+                        mensajeWhatsapp: !mostrarEntregadas ? construirMensajeLlegadaWhatsapp(row) : "",
+                      });
+                    }}
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      minWidth: 30,
+                      p: 0,
+                      ml: -0.2,
+                      borderRadius: "50%",
+                      color: palette.success,
+                      backgroundColor: palette.successSoft,
+                      border: `1px solid ${palette.success}`,
+                      transition: "transform 140ms ease, background-color 140ms ease",
+                      "&:hover": {
+                        backgroundColor: palette.successSoft,
+                        transform: "scale(1.15)",
+                      },
+                      "&:active": {
+                        transform: "scale(0.92)",
+                      },
+                    }}
+                  >
+                    <MessageCircle data-tag="allowRowEvents" size={20} strokeWidth={2.6} />
+                  </IconButton>
+                </Tooltip>
+              ) : (
+                <Phone data-tag="allowRowEvents" size={12} strokeWidth={2.5} />
+              )}
               <Typography data-tag="allowRowEvents" component="span" sx={{ color: "inherit", fontSize: "inherit", fontWeight: "inherit", lineHeight: "inherit", minWidth: 0 }} noWrap>
                 {row.destinatario_telefono}
               </Typography>
@@ -1529,8 +1496,8 @@ export default function TrEncomiendaEntregaList() {
       width: "154px",
       selector: (row) => row.llegada_real || "",
       cell: (row) => {
-        const fechaLlegada = formatFechaHoraMinuto(row.llegada_real);
-        const sinLlegada = fechaLlegada === "-";
+        const fechaLlegada = fechaLlegadaVisible(row);
+        const sinLlegada = !tieneLlegadaReal(row);
 
         return (
           <Box data-tag="allowRowEvents" sx={{ minWidth: 0, color: sinLlegada ? palette.muted : palette.success }}>
@@ -1604,6 +1571,46 @@ export default function TrEncomiendaEntregaList() {
             <Typography sx={{ color: palette.muted, fontSize: "13px", mt: 0.35 }}>
               {registros.length} {mostrarEntregadas ? "entregadas recientes" : "pendientes en destino"}
             </Typography>
+          </Box>
+          <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 0.6, flexWrap: "wrap" }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.35 }}>
+              Ticket pred.
+            </Typography>
+            {[
+              { value: "fisico", label: "Ticket físico", icon: Printer },
+              { value: "whatsapp", label: "Ticket WhatsApp", icon: MessageCircle },
+            ].map((option) => {
+              const Icon = option.icon;
+              const active = ticketEntregaModo === option.value;
+              return (
+                <Box
+                  key={option.value}
+                  component="button"
+                  type="button"
+                  onClick={() => handleTicketEntregaModoChange(option.value)}
+                  title={option.value === "fisico" ? "Mostrar PDF inmediatamente" : "Abrir WhatsApp con la imagen"}
+                  sx={{
+                    height: 26,
+                    px: 0.8,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 0.4,
+                    borderRadius: 1,
+                    border: `1px solid ${active ? palette.accent : palette.borderSoft}`,
+                    backgroundColor: active ? palette.accentSoft : "transparent",
+                    color: active ? palette.accent : palette.muted,
+                    fontSize: "10.5px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    lineHeight: 1,
+                    "&:hover": { borderColor: palette.accent, color: palette.accent },
+                  }}
+                >
+                  <Icon size={12} />
+                  {option.label}
+                </Box>
+              );
+            })}
           </Box>
           <Box sx={{
             display: "grid",

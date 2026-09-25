@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, Tooltip, Typography } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Popover, Tooltip, Typography } from "@mui/material";
 import {
   Bus,
   Calendar,
@@ -8,6 +8,7 @@ import {
   Eye,
   Ban,
   MapPin,
+  MapPinCheck,
   Package,
   Pencil,
   Trash2,
@@ -20,7 +21,7 @@ import {
 import AppChip from "../../../../ui/AppChip";
 import AdminSunatIcon from "../../../AdminSunatIcon";
 import palette from "../../../../../theme/palette";
-import { formatMoney } from "../utils/trUtils";
+import { formatFecha, formatHora, formatMoney } from "../utils/trUtils";
 import SunatIcon from "../../../../../assets/images/sunat0.png";
 
 export const customStyles = {
@@ -231,40 +232,258 @@ function SunatActionButton({ row, onEnviarSunat, sunatContext }) {
   );
 }
 
-function DeliveryStatusBadge({ entregada }) {
-  const Icon = entregada ? CheckCircle2 : Clock3;
-  const label = entregada ? "Entregada" : "Pendiente";
+function PlacaStatusChip({ placa, llegadaReal }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const llegadaRegistrada = Boolean(llegadaReal);
+  const fechaHoraReal = [formatFecha(llegadaReal), formatHora(llegadaReal)].filter(Boolean).join(" ") || "No registrada";
+
+  const handleClick = (event) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
 
   return (
-    <Box
-      sx={{
-        height: 30,
-        px: 1.5,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 0.55,
-        borderRadius: 1.5,
-        backgroundColor: palette.chip,
-        border: `1px solid ${palette.border}`,
-        color: palette.text,
-        fontSize: "12px",
-        fontWeight: 360,
-        fontVariationSettings: '"wght" 360',
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        transition: "all .18s ease",
-        "&:hover": {
-          backgroundColor: palette.accent,
-          borderColor: palette.accent,
-          color: palette.onAccent,
-          transform: "translateY(-1px)",
-        },
-      }}
-    >
-      <Icon size={13} />
-      {label}
-    </Box>
+    <>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-label={llegadaRegistrada ? "Ver hora de llegada del carro" : "Ver estado de llegada del carro"}
+        onClick={handleClick}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setAnchorEl(event.currentTarget);
+          }
+        }}
+        sx={{
+          height: 30,
+          px: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0.45,
+          borderRadius: palette.radius.control,
+          backgroundColor: llegadaRegistrada ? palette.successSoft : palette.chip,
+          border: `1px solid ${llegadaRegistrada ? palette.success : palette.border}`,
+          color: llegadaRegistrada ? palette.success : palette.muted,
+          boxShadow: llegadaRegistrada ? `0 0 0 1px ${palette.success}, 0 0 10px ${palette.successSoft}` : "none",
+          fontSize: "12px",
+          fontWeight: llegadaRegistrada ? 800 : 360,
+          fontVariationSettings: llegadaRegistrada ? '"wght" 800' : '"wght" 360',
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          transition: "all .18s ease",
+          "&:hover": {
+            backgroundColor: llegadaRegistrada ? palette.success : palette.accent,
+            borderColor: llegadaRegistrada ? palette.success : palette.accent,
+            color: palette.onAccent,
+            transform: "translateY(-1px)",
+          },
+          "&:focus-visible": {
+            outline: `2px solid ${palette.accent}`,
+            outlineOffset: 2,
+          },
+        }}
+      >
+        {llegadaRegistrada ? <MapPinCheck size={13} /> : <Clock3 size={13} />}
+        {placa}
+      </Box>
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        PaperProps={{
+          sx: {
+            mt: 0.75,
+            width: { xs: "min(290px, calc(100vw - 32px))" },
+            border: `1px solid ${palette.border}`,
+            borderRadius: palette.radius.modal,
+            backgroundColor: palette.surface,
+            color: palette.text,
+            boxShadow: palette.shadowSoft,
+          },
+        }}
+      >
+        <Box sx={{ p: 1.35 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                borderRadius: "50%",
+                backgroundColor: llegadaRegistrada ? palette.successSoft : palette.warningSoft,
+                color: llegadaRegistrada ? palette.success : palette.warning,
+                "@keyframes placa-llegada-pop": {
+                  "0%": { transform: "scale(0.6) rotate(-10deg)", opacity: 0 },
+                  "70%": { transform: "scale(1.12) rotate(3deg)", opacity: 1 },
+                  "100%": { transform: "scale(1) rotate(0deg)", opacity: 1 },
+                },
+                animation: llegadaRegistrada ? "placa-llegada-pop 600ms ease-out both" : "none",
+              }}
+            >
+              {llegadaRegistrada ? <CheckCircle2 size={23} strokeWidth={2.3} /> : <Clock3 size={22} strokeWidth={2.2} />}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ color: palette.text, fontSize: "13.5px", fontWeight: 900 }}>
+                {llegadaRegistrada ? "Llegada registrada" : "Pendiente de llegada"}
+              </Typography>
+              <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.15 }}>
+                {llegadaRegistrada ? "El carro ya registró su llegada." : "Aún no se ha marcado la hora de llegada."}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ mt: 1.2, pt: 1.05, borderTop: `1px solid ${palette.borderSoft}` }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Hora de llegada
+            </Typography>
+            <Typography sx={{ color: llegadaRegistrada ? palette.success : palette.warning, fontSize: "13px", fontWeight: 900, mt: 0.18 }}>
+              {fechaHoraReal}
+            </Typography>
+          </Box>
+        </Box>
+      </Popover>
+    </>
+  );
+}
+
+function DeliveryStatusBadge({ entregada, fechaEntrega, usuarioEntrega }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const Icon = entregada ? CheckCircle2 : Clock3;
+  const label = entregada ? "Entregada" : "Pendiente";
+  const fechaEntregaTexto = [formatFecha(fechaEntrega), formatHora(fechaEntrega)].filter(Boolean).join(" ") || "-";
+
+  const handleClick = (event) => {
+    event.stopPropagation();
+    if (!entregada) return;
+    setAnchorEl(event.currentTarget);
+  };
+
+  return (
+    <>
+      <Box
+        role={entregada ? "button" : undefined}
+        tabIndex={entregada ? 0 : undefined}
+        aria-label={entregada ? "Ver detalle de entrega" : "Encomienda pendiente"}
+        onClick={handleClick}
+        onKeyDown={(event) => {
+          if (entregada && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            setAnchorEl(event.currentTarget);
+          }
+        }}
+        sx={{
+          height: 30,
+          px: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0.55,
+          borderRadius: 1.5,
+          backgroundColor: entregada ? palette.successSoft : palette.chip,
+          border: `1px solid ${entregada ? palette.success : palette.border}`,
+          color: entregada ? palette.success : palette.text,
+          boxShadow: entregada ? `0 0 0 1px ${palette.success}, 0 0 12px ${palette.successSoft}` : "none",
+          fontSize: "12px",
+          fontWeight: entregada ? 800 : 360,
+          fontVariationSettings: entregada ? '"wght" 800' : '"wght" 360',
+          cursor: entregada ? "pointer" : "default",
+          whiteSpace: "nowrap",
+          transition: "all .18s ease",
+          "&:hover": entregada ? {
+            backgroundColor: palette.success,
+            borderColor: palette.success,
+            color: palette.onAccent,
+            transform: "translateY(-1px)",
+          } : undefined,
+          "&:focus-visible": entregada ? {
+            outline: `2px solid ${palette.accent}`,
+            outlineOffset: 2,
+          } : undefined,
+        }}
+      >
+        <Icon size={13} />
+        {label}
+      </Box>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        PaperProps={{
+          sx: {
+            mt: 0.75,
+            width: { xs: "min(300px, calc(100vw - 32px))" },
+            border: `1px solid ${palette.border}`,
+            borderRadius: palette.radius.modal,
+            backgroundColor: palette.surface,
+            color: palette.text,
+            boxShadow: palette.shadowSoft,
+          },
+        }}
+      >
+        <Box sx={{ p: 1.4 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                width: 42,
+                height: 42,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                borderRadius: "50%",
+                backgroundColor: palette.successSoft,
+                color: palette.success,
+                "@keyframes delivery-success-pop": {
+                  "0%": { transform: "scale(0.55) rotate(-12deg)", opacity: 0 },
+                  "65%": { transform: "scale(1.12) rotate(3deg)", opacity: 1 },
+                  "100%": { transform: "scale(1) rotate(0deg)", opacity: 1 },
+                },
+                animation: "delivery-success-pop 650ms ease-out both",
+              }}
+            >
+              <CheckCircle2 size={25} strokeWidth={2.3} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 900 }}>
+                Encomienda entregada
+              </Typography>
+              <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.15 }}>
+                La entrega fue registrada correctamente.
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ mt: 1.25, pt: 1.1, borderTop: `1px solid ${palette.borderSoft}`, display: "grid", gap: 0.85 }}>
+            <Box>
+              <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Fecha de entrega
+              </Typography>
+              <Typography sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 800, mt: 0.15 }}>
+                {fechaEntregaTexto}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Correo / usuario que entregó
+              </Typography>
+              <Typography sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 800, mt: 0.15, wordBreak: "break-word" }}>
+                {usuarioEntrega || "-"}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Popover>
+    </>
   );
 }
 
@@ -351,7 +570,7 @@ function TrOperacionRow({
             {row.numero}
           </Typography>
 
-          {row.placa && <AppChip>{row.placa}</AppChip>}
+          {row.placa && <PlacaStatusChip placa={row.placa} llegadaReal={row.llegada_real} />}
 
           {row.tipo_operacion !== "E" && <AppChip>{row.tipoLabel}</AppChip>}
 
@@ -394,7 +613,7 @@ function TrOperacionRow({
             mt: { xs: 0.75, sm: 0 },
           }}
         >
-          {esEncomienda && <DeliveryStatusBadge entregada={row.entregada} />}
+          {esEncomienda && <DeliveryStatusBadge entregada={row.entregada} fechaEntrega={row.entrega_fecha} usuarioEntrega={row.entrega_ctrl_us} />}
           {esEncomienda && (
             <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
               <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
@@ -523,7 +742,7 @@ function TrOperacionRow({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, minWidth: 0, flex: "1 1 260px" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: palette.muted, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", mr: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: palette.text, fontSize: "11px", fontWeight: "1000 !important", fontVariationSettings: '"wght" 1000', WebkitTextStroke: "0.12px currentColor", textTransform: "uppercase", letterSpacing: "0.5px", mr: 0.5 }}>
             <MapPin size={13} />
             {
             //row.nombre_ruta

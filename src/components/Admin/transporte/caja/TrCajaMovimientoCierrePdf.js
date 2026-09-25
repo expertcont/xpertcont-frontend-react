@@ -14,7 +14,7 @@ const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
 // - "Advance" es cuanto baja la coordenada y despues de dibujar un bloque.
 // En pdf-lib, y crece hacia arriba; por eso avanzar hacia abajo siempre es y -= valor.
 const LAYOUT = {
-  summaryHeight: 46,        // Alto de cada chip superior: ingresos, salidas, saldo.
+  summaryHeight: 46,        // Alto de cada chip superior: ingresos, salidas, resumen bancario y saldo.
   summaryGap: 8,            // Separacion horizontal entre chips superiores.
   summaryBottomGap: 18,     // Aire debajo de los chips antes de la cabecera de tabla.
   tableHeaderHeight: 20,    // Alto del chip/cabecera de tabla.
@@ -65,6 +65,7 @@ const getPdfPalette = () => {
     accent: hexToPdfRgb(theme.accent, rgb(0.56, 0.85, 1)),
     danger: hexToPdfRgb(theme.danger, rgb(1, 0.54, 0.44)),
     warning: hexToPdfRgb(theme.warning, rgb(0.91, 0.78, 0.36)),
+    yape: rgb(0.49, 0.20, 0.68),
     border: hexToPdfRgb(theme.border, rgb(0.23, 0.27, 0.31)),
     line: hexToPdfRgb(theme.borderSoft || theme.border, rgb(0.18, 0.22, 0.25)),
     soft: rgb(0.96, 0.98, 0.99),
@@ -79,6 +80,10 @@ const money = (value) => Number(value || 0).toLocaleString("es-PE", {
 });
 
 const fechaTexto = (value) => String(value || "").slice(0, 16).replace("T", " ");
+
+const esBancario = (value) => (
+  ["1", "true", "t", "yes"].includes(String(value ?? "").trim().toLowerCase())
+);
 
 const wrapText = (text, font, size, maxWidth) => {
   const words = cleanText(text).split(" ").filter(Boolean);
@@ -246,6 +251,7 @@ const normalizarSalida = (row) => {
     tipo: "Salida de dinero",
     detalle: [
       row.motivo_nombre || row.id_motivo,
+      esBancario(row.bancario) ? "Bancario" : "",
       contabiliza ? "" : "Obs: Anulado - no contabiliza",
       row.descripcion,
       row.beneficiario ? `Benef: ${row.beneficiario}` : "",
@@ -254,6 +260,7 @@ const normalizarSalida = (row) => {
     ].filter(Boolean).join(" | "),
     ingreso: 0,
     salida: contabiliza ? Number(row.importe || 0) : 0,
+    bancario: esBancario(row.bancario),
     informativo: !contabiliza,
   };
 };
@@ -287,7 +294,7 @@ export default async function crearCierreCajaMovimientoPdf({
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fonts = { regular, bold };
   const pdfColors = getPdfPalette();
-  const { ink: INK, muted: MUTED, accent: ACCENT, danger: DANGER, warning: WARNING, line: LINE, soft: SOFT } = pdfColors;
+  const { ink: INK, muted: MUTED, accent: ACCENT, danger: DANGER, warning: WARNING, yape: YAPE, line: LINE, soft: SOFT } = pdfColors;
 
   const movimientos = [
     ...ingresos.map(normalizarIngreso),
@@ -298,6 +305,11 @@ export default async function crearCierreCajaMovimientoPdf({
 
   const totalIngresos = movimientos.reduce((sum, item) => sum + item.ingreso, 0);
   const totalSalidas = movimientos.reduce((sum, item) => sum + item.salida, 0);
+  const totalSalidasBancarias = salidas.reduce((sum, row) => {
+    const salida = normalizarSalida(row);
+    return salida.salida > 0 && esBancario(row.bancario) ? sum + salida.salida : sum;
+  }, 0);
+  const totalSalidasNoBancarias = Math.max(0, totalSalidas - totalSalidasBancarias);
   const saldoFinal = totalIngresos - totalSalidas;
   let saldo = 0;
   let page;
@@ -321,10 +333,11 @@ export default async function crearCierreCajaMovimientoPdf({
     y -= 18;
 
     if (pagina === 1) {
-      const summary = getSummaryMetrics(3);
+      const summary = getSummaryMetrics(4);
       const summaryItems = [
         { label: "INGRESOS", value: totalIngresos, color: ACCENT },
-        { label: "SALIDAS", value: totalSalidas, color: DANGER },
+        { label: "SALIDAS", value: totalSalidasNoBancarias, color: DANGER },
+        { label: "SALIDAS YAPE/PLIN/ETC", value: totalSalidasBancarias, color: YAPE },
         { label: "SALDO FINAL", value: saldoFinal, color: saldoFinal >= 0 ? ACCENT : DANGER },
       ];
 
@@ -371,6 +384,8 @@ export default async function crearCierreCajaMovimientoPdf({
     const ingresoPorCobrar = esIngresoPorCobrar(item);
     const ingresoAnulado = esIngresoAnulado(item);
     const ingresoTexto = item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-");
+    const salidaFont = item.bancario && item.salida ? bold : regular;
+    const salidaColor = item.bancario && item.salida ? YAPE : item.salida ? INK : MUTED;
 
     page.drawLine({ start: { x: MARGIN, y: y + 5 }, end: { x: PAGE_WIDTH - MARGIN, y: y + 5 }, thickness: 0.4, color: LINE });
     page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - 8, size: 7.1, font: regular, color: INK });
@@ -379,7 +394,7 @@ export default async function crearCierreCajaMovimientoPdf({
       page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: INK });
     });
     drawRight(page, ingresoTexto, COLUMNS.ingresoRight, y - 8, 7.1, ingresoPorCobrar || ingresoAnulado ? bold : regular, ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : item.ingreso ? INK : MUTED);
-    drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, regular, item.salida ? INK : MUTED);
+    drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, salidaFont, salidaColor);
     drawRight(page, money(saldo), COLUMNS.saldoRight, y - 8, 7.1, bold, saldo >= 0 ? INK : DANGER);
     y -= rowHeight;
   });
