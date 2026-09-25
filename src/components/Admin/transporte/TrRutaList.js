@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import DataTable, { createTheme } from "react-data-table-component";
+import DataTable from "react-data-table-component";
 import { Box, Dialog, Grid, IconButton, InputBase, MenuItem, Select, Tooltip, Typography } from "@mui/material";
 import { MapPinned, Pencil, Plus, Save, Search, Trash2, X } from "lucide-react";
 import swal2 from "sweetalert2";
@@ -13,16 +13,7 @@ import AppChip from "../../ui/AppChip";
 import AppSearch from "../../ui/AppSearch";
 import palette from "../../../theme/palette";
 
-createTheme(
-  "transportesDark",
-  {
-    text: { primary: palette.text, secondary: palette.accent },
-    background: { default: "transparent" },
-    divider: { default: palette.borderSoft },
-    action: { hover: "rgba(42,161,152,0.06)" },
-  },
-  "dark",
-);
+import "./common/trDataTableTheme";
 
 const fieldSx = {
   minHeight: 40,

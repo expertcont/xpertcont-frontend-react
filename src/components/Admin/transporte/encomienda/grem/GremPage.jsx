@@ -179,7 +179,7 @@ export default function GremPage() {
 
   return (
     <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
-      <Box sx={{ maxWidth: 980, mx: "auto", display: "grid", gap: 1.4 }}>
+      <Box sx={{ width: "100%", maxWidth: { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto", display: "grid", gap: 1.4 }}>
         <Box
           sx={{
             display: "flex",

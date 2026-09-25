@@ -15,7 +15,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import PersonIcon from '@mui/icons-material/Person';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -54,21 +54,67 @@ const sidebarColors = {
 
 const operationalIconTones = {
   encomiendas: {
-    color: '#6ea8ff',
-    soft: 'rgba(110,168,255,0.16)',
-    border: 'rgba(110,168,255,0.45)',
+    color: '#8fa6bd',
+    soft: 'rgba(143,166,189,0.14)',
+    border: 'rgba(143,166,189,0.38)',
   },
   entregas: {
-    color: '#92d6ad',
-    soft: 'rgba(146,214,173,0.16)',
-    border: 'rgba(146,214,173,0.45)',
+    color: '#79ab8f',
+    soft: 'rgba(121,171,143,0.14)',
+    border: 'rgba(121,171,143,0.38)',
   },
   caja: {
-    color: '#e8c66d',
-    soft: 'rgba(232,198,109,0.16)',
-    border: 'rgba(232,198,109,0.45)',
+    color: '#bda269',
+    soft: 'rgba(189,162,105,0.14)',
+    border: 'rgba(189,162,105,0.38)',
   },
 };
+
+// Icono de transporte (Shuttle con lineas de velocidad), usado en el submenu GREM.
+const GremShuttleIcon = () => (
+  <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        left: -9,
+        top: 5,
+        width: 10,
+        height: 2,
+        borderRadius: 2,
+        backgroundColor: 'currentColor',
+        opacity: 0.62,
+      }}
+    />
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        left: -14,
+        top: 11,
+        width: 14,
+        height: 2,
+        borderRadius: 2,
+        backgroundColor: 'currentColor',
+        opacity: 0.72,
+      }}
+    />
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        left: -7,
+        top: 17,
+        width: 8,
+        height: 2,
+        borderRadius: 2,
+        backgroundColor: 'currentColor',
+        opacity: 0.48,
+      }}
+    />
+    <AirportShuttleIcon sx={{ transform: 'skewX(-8deg) translateX(2px)' }} />
+  </Box>
+);
 
 // Fuente personalizada para todo el Sidebar
 //const sidebarFont = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -390,12 +436,13 @@ export default function NavSideBar(props) {
   const SubMenuItem = ({ icon, label, isActive, onClick, watermarkIcon = null, iconTone = null }) => {
     const tone = iconTone ? operationalIconTones[iconTone] : null;
     const compactTone = Boolean(tone && !itemLabelVisible);
+    const compactToneActive = Boolean(compactTone && isActive);
     const iconColor = isActive
       ? (tone?.color || sidebarColors.accent)
       : (compactTone ? tone.color : sidebarColors.muted);
-    const iconGlow = compactTone ? `drop-shadow(0 0 5px ${tone.soft})` : 'none';
-    const toneShadow = compactTone
-      ? `inset 0 0 0 1px ${tone.border}${isActive ? `, 0 0 10px ${tone.soft}` : ''}`
+    const iconGlow = compactToneActive ? `drop-shadow(0 0 5px ${tone.soft})` : 'none';
+    const toneShadow = compactToneActive
+      ? `inset 0 0 0 1px ${tone.border}, 0 0 10px ${tone.soft}`
       : 'none';
 
     const item = (
@@ -418,7 +465,7 @@ export default function NavSideBar(props) {
           '&:hover': {
             backgroundColor: isActive
               ? (compactTone ? tone.soft : sidebarColors.accentSoft)
-              : (compactTone ? tone.soft : sidebarColors.overlaySoft),
+              : (compactTone ? 'transparent' : sidebarColors.overlaySoft),
             boxShadow: toneShadow,
           },
           borderRadius: '9px',
@@ -652,50 +699,7 @@ export default function NavSideBar(props) {
         {accesoAdmin && esRubroTransporte && (
           <>
             <MenuItem
-              icon={
-                <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
-                  <Box
-                    component="span"
-                    sx={{
-                      position: 'absolute',
-                      left: -9,
-                      top: 5,
-                      width: 10,
-                      height: 2,
-                      borderRadius: 2,
-                      backgroundColor: 'currentColor',
-                      opacity: 0.62,
-                    }}
-                  />
-                  <Box
-                    component="span"
-                    sx={{
-                      position: 'absolute',
-                      left: -14,
-                      top: 11,
-                      width: 14,
-                      height: 2,
-                      borderRadius: 2,
-                      backgroundColor: 'currentColor',
-                      opacity: 0.72,
-                    }}
-                  />
-                  <Box
-                    component="span"
-                    sx={{
-                      position: 'absolute',
-                      left: -7,
-                      top: 17,
-                      width: 8,
-                      height: 2,
-                      borderRadius: 2,
-                      backgroundColor: 'currentColor',
-                      opacity: 0.48,
-                    }}
-                  />
-                  <AirportShuttleIcon sx={{ transform: 'skewX(-8deg) translateX(2px)' }} />
-                </Box>
-              }
+              icon={<SummarizeIcon />}
               label="Operaciones"
               onClick={handleTransportesClick}
               hasSubmenu={true}
@@ -726,7 +730,7 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  icon={<SummarizeIcon />}
+                  icon={<GremShuttleIcon />}
                   label="GREM"
                   isActive={selectedButton === 'icono11-grem'}
                   onClick={() => {
@@ -761,7 +765,7 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  icon={<ConfirmationNumberIcon />}
+                  icon={<PersonIcon />}
                   label="Boletos"
                   isActive={selectedButton === 'icono11-2'}
                   onClick={() => {

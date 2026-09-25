@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable, { createTheme } from "react-data-table-component";
+import DataTable from "react-data-table-component";
 import { Box } from "@mui/material";
 import { Search, Truck } from "lucide-react";
 import swal2 from "sweetalert2";
@@ -18,21 +18,7 @@ import useTrOperaciones from "./hooks/useTrOperaciones";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
 // Tema oscuro propio de las tablas del modulo transporte.
-createTheme(
-  "transportesDark",
-  {
-    text: { primary: palette.text, secondary: palette.accent },
-    background: { default: "transparent" },
-    context: { background: palette.accent, text: palette.onAccent },
-    divider: { default: palette.borderSoft },
-    action: {
-      button: palette.muted,
-      hover: palette.accentSoft,
-      disabled: palette.border,
-    },
-  },
-  "dark",
-);
+import "./trDataTableTheme";
 
 const resumenSunatButtonSx = (ok = false, pending = false) => ({
   ml: 0,
@@ -41,7 +27,7 @@ const resumenSunatButtonSx = (ok = false, pending = false) => ({
   minHeight: 38,
   px: 1.1,
   borderRadius: palette.radius.control,
-  border: `1px solid ${ok ? "rgba(146,214,173,0.38)" : pending ? "rgba(232,198,109,0.38)" : palette.border}`,
+  border: `1px solid ${ok ? "rgba(121,171,143,0.30)" : pending ? "rgba(189,162,105,0.30)" : palette.border}`,
   backgroundColor: ok ? palette.successSoft : pending ? palette.warningSoft : palette.chip,
   color: ok ? palette.success : pending ? palette.warning : palette.muted,
   display: "inline-flex",
@@ -54,9 +40,9 @@ const resumenSunatButtonSx = (ok = false, pending = false) => ({
   letterSpacing: 0,
   transition: "all .18s ease",
   "&:hover": {
-    backgroundColor: ok ? palette.successSoft : "rgba(37,99,235,0.14)",
-    borderColor: ok ? "rgba(146,214,173,0.52)" : "rgba(77,163,255,0.34)",
-    color: ok ? palette.success : "#8fc7ff",
+    backgroundColor: ok ? palette.successSoft : "rgba(143,166,189,0.12)",
+    borderColor: ok ? "rgba(121,171,143,0.42)" : "rgba(143,166,189,0.32)",
+    color: ok ? palette.success : "#a9bccf",
   },
 });
 

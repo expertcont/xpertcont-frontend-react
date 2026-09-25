@@ -1063,17 +1063,17 @@ export default function GremEditorDialog({
             <Box sx={{ ...sectionSx, py: 1 }}>
               <Grid container spacing={1} alignItems="center">
                 <Grid item xs={12} sm={4} md={2.4}>
-                  <Field label="Traslado">
+                  <Field sinBorde label="Traslado">
                     <CaptureInput inputRef={fechaTrasladoRef} nextRef={pesoTotalRef} type="date" value={form.fecha_traslado} onChange={(value) => setForm((prev) => ({ ...prev, fecha_traslado: value }))} align="center" />
                   </Field>
                 </Grid>
                 <Grid item xs={6} sm={4} md={1.5}>
-                  <Field label="KGM">
+                  <Field sinBorde label="KGM">
                     <CaptureInput inputRef={pesoTotalRef} nextRef={numeroBultosRef} value={form.peso_total} onChange={(value) => setForm((prev) => ({ ...prev, peso_total: value }))} inputMode="decimal" align="right" />
                   </Field>
                 </Grid>
                 <Grid item xs={6} sm={4} md={1.2}>
-                  <Field label="Bultos">
+                  <Field sinBorde label="Bultos">
                     <CaptureInput inputRef={numeroBultosRef} nextRef={destinoAgenciaRef} value={form.numero_bultos} onChange={(value) => setForm((prev) => ({ ...prev, numero_bultos: value }))} inputMode="numeric" align="right" />
                   </Field>
                 </Grid>
@@ -1093,7 +1093,7 @@ export default function GremEditorDialog({
             <Box sx={sectionSx}>
               <Grid container spacing={1}>
                 <Grid item xs={12} md={4}>
-                  <Field label="Origen">
+                  <Field sinBorde label="Origen">
                     <AgenciaField
                       inputRef={origenAgenciaRef}
                       value={origenAgenciaTexto}
@@ -1104,7 +1104,7 @@ export default function GremEditorDialog({
                   </Field>
                 </Grid>
                 <Grid item xs={12} sm={4} md={2.2}>
-                  <Field label="Ubigeo">
+                  <Field sinBorde label="Ubigeo">
                     <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
                       <CaptureInput
                         inputRef={partidaUbigeoRef}
@@ -1131,12 +1131,12 @@ export default function GremEditorDialog({
                   </Field>
                 </Grid>
                 <Grid item xs={12} sm={8} md={5.8}>
-                  <Field label="Direccion">
+                  <Field sinBorde label="Direccion">
                     <CaptureInput inputRef={partidaDireccionRef} nextRef={llegadaUbigeoRef} value={form.partida_direccion} onChange={(value) => setForm((prev) => ({ ...prev, partida_direccion: String(value || "").toUpperCase() }))} placeholder="Direccion de partida" />
                   </Field>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                  <Field label="Destino">
+                  <Field sinBorde label="Destino">
                     <AgenciaField
                       inputRef={destinoAgenciaRef}
                       value={destinoAgenciaTexto}
@@ -1147,7 +1147,7 @@ export default function GremEditorDialog({
                   </Field>
                 </Grid>
                 <Grid item xs={12} sm={4} md={2.2}>
-                  <Field label="Ubigeo">
+                  <Field sinBorde label="Ubigeo">
                     <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
                       <CaptureInput
                         inputRef={llegadaUbigeoRef}
@@ -1174,7 +1174,7 @@ export default function GremEditorDialog({
                   </Field>
                 </Grid>
                 <Grid item xs={12} sm={8} md={5.8}>
-                  <Field label="Direccion">
+                  <Field sinBorde label="Direccion">
                     <CaptureInput inputRef={llegadaDireccionRef} nextRef={placaRef} value={form.llegada_direccion} onChange={(value) => setForm((prev) => ({ ...prev, llegada_direccion: String(value || "").toUpperCase() }))} placeholder="Direccion de llegada" />
                   </Field>
                 </Grid>
@@ -1185,7 +1185,7 @@ export default function GremEditorDialog({
             <Box sx={sectionSx}>
               <Grid container spacing={1}>
                 <Grid item xs={12} md={3}>
-                  <Field label="" labelWidth={0}>
+                  <Field sinBorde label="" labelWidth={0}>
                     <PlacaField
                       value={form.placa}
                       onChange={(value) => setForm((prev) => ({ ...prev, placa: String(value || "").toUpperCase() }))}
@@ -1196,7 +1196,7 @@ export default function GremEditorDialog({
                   </Field>
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <Field label="" labelWidth={0}>
+                  <Field sinBorde label="" labelWidth={0}>
                     <LicenciaField
                       value={form.licencia}
                       onChange={(value) => setForm((prev) => ({ ...prev, licencia: String(value || "").toUpperCase() }))}
@@ -1207,17 +1207,17 @@ export default function GremEditorDialog({
                   </Field>
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <Field label="DNI">
+                  <Field sinBorde label="DNI">
                     <CaptureInput inputRef={conductorDocumentoRef} nextRef={conductorNombresRef} value={form.conductor_dni} onChange={(value) => setForm((prev) => ({ ...prev, conductor_dni: value }))} inputMode="numeric" pattern="[0-9]*" align="right" />
                   </Field>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Field label="Nombres">
+                  <Field sinBorde label="Nombres">
                     <CaptureInput inputRef={conductorNombresRef} nextRef={conductorApellidosRef} value={form.conductor_nombres} onChange={(value) => setForm((prev) => ({ ...prev, conductor_nombres: String(value || "").toUpperCase() }))} />
                   </Field>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Field label="Apellidos">
+                  <Field sinBorde label="Apellidos">
                     <CaptureInput inputRef={conductorApellidosRef} nextRef={pesoTotalRef} value={form.conductor_apellidos} onChange={(value) => setForm((prev) => ({ ...prev, conductor_apellidos: String(value || "").toUpperCase() }))} />
                   </Field>
                 </Grid>

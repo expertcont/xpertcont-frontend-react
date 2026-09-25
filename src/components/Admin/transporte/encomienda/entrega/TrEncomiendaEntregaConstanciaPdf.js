@@ -16,8 +16,12 @@ const TICKET_PNG_SCALE = 2;
 const TICKET_PNG_WIDTH_PX = Math.round(mmToPt(PAGE_WIDTH_MM) * TICKET_PNG_SCALE);
 const PENDING_LOGO_MAX_WIDTH_MM = 46;
 const PENDING_LOGO_MAX_HEIGHT_MM = 16;
-const PENDING_LOGO_GAP_MM = 4;
+const PENDING_LOGO_GAP_MM = 4; // reserva de alto en el respaldo, no separa el logo del estado
 const PENDING_STATUS_BLOCK_GAP_MM = 2;
+// Sin holgura entre "PENDIENTE DE ENTREGA" y el logo: solo la altura de la linea.
+const PENDING_STATUS_TO_LOGO_MM = 3;
+// En el render de canvas el texto se dibuja en px de canvas (1 mm = 9 px).
+const PENDING_STATUS_TO_LOGO_CANVAS_MM = 20 / 9;
 const PENDING_LOGO_FALLBACK_HEIGHT_MM = 6;
 const DESTINO_ICON_PATH = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z";
 
@@ -229,36 +233,40 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
   const destination = destinoEntrega(encomienda);
   const estimatedRucTop = 11 + (estimatedEmpresaLineCount * 3.4) + 1.2;
   const estimatedEntregaTop = estimatedRucTop + 2.5;
+  const estimarDestinatario = (fechaEntrega) => {
+    estimatedCursor += (countLines(formatFechaHoraEntrega(fechaEntrega), regular, 9, 72, 1) * 4) + 1;
+    estimatedCursor += (countLines(encomienda.destinatario || "-", bold, 12, 72, 3) * 4.2) + 1;
+    estimatedCursor += (countLines(dniEntrega(encomienda), bold, 10.5, 72, 2) * 4) + 2;
+    if (ticketPendienteEntrega) {
+      estimatedCursor += 6;
+    }
+    if (destination) {
+      estimatedCursor += (countLines(destination, regular, 8.5, 47, 2) * 3.6) + 3;
+    }
+  };
+  const estimarRemitente = () => {
+    estimatedCursor += 6;
+    estimatedCursor += (countLines(encomienda.cliente || "-", bold, 9.2, 72, 3) * 3.8) + 1.5;
+    estimatedCursor += 10;
+    estimatedCursor += 6;
+    estimatedCursor += (countLines(encomienda.descripcion || "-", regular, 8.5, 72, 3) * 3.8) + 5;
+  };
   let estimatedCursor = estimatedEntregaTop + 10.5;
   if (ticketPendienteEntrega) {
-    estimatedCursor += (countLines(formatFechaHoraEntrega(encomienda.llegada_real), regular, 9, 72, 1) * 4) + 1;
-    estimatedCursor += (countLines(encomienda.destinatario || "-", bold, 12, 72, 3) * 4.2) + 1;
-    estimatedCursor += (countLines(dniEntrega(encomienda), bold, 10.5, 72, 2) * 4) + 2;
-    estimatedCursor += 6;
-    if (destination) {
-      estimatedCursor += (countLines(destination, regular, 8.5, 47, 2) * 3.6) + 3;
-    }
+    // Destinatario y destino, despues estado + logo, y al final el remitente.
+    estimarDestinatario(encomienda.llegada_real);
     estimatedCursor += 4;
-  }
-  estimatedCursor += 6;
-  estimatedCursor += (countLines(encomienda.cliente || "-", bold, 9.2, 72, 3) * 3.8) + 1.5;
-  estimatedCursor += 10;
-  estimatedCursor += 6;
-  estimatedCursor += (countLines(encomienda.descripcion || "-", regular, 8.5, 72, 3) * 3.8) + 5;
-  if (ticketPendienteEntrega) {
-    estimatedCursor += PENDING_LOGO_GAP_MM;
+    estimatedCursor += PENDING_STATUS_BLOCK_GAP_MM;
+    estimatedCursor += 6;
+    estimatedCursor += PENDING_STATUS_TO_LOGO_MM;
     estimatedCursor += logoBlockHeightMm;
-  }
-  estimatedCursor += ticketPendienteEntrega ? PENDING_STATUS_BLOCK_GAP_MM : 5 + RECEIVED_BLOCK_OFFSET_MM;
-  estimatedCursor += 6;
-  estimatedCursor += 7;
-  if (!ticketPendienteEntrega) {
-    estimatedCursor += (countLines(formatFechaHoraEntrega(encomienda.entrega_fecha), regular, 9, 72, 1) * 4) + 1;
-    estimatedCursor += (countLines(encomienda.destinatario || "-", bold, 12, 72, 3) * 4.2) + 1;
-    estimatedCursor += (countLines(dniEntrega(encomienda), bold, 10.5, 72, 2) * 4) + 2;
-    if (destination) {
-      estimatedCursor += (countLines(destination, regular, 8.5, 47, 2) * 3.6) + 3;
-    }
+    estimarRemitente();
+  } else {
+    estimarRemitente();
+    estimatedCursor += 5 + RECEIVED_BLOCK_OFFSET_MM;
+    estimatedCursor += 6;
+    estimatedCursor += 7;
+    estimarDestinatario(encomienda.entrega_fecha);
   }
   estimatedCursor += 6;
   const pageHeightMm = Math.max(MIN_PAGE_HEIGHT_MM, estimatedCursor + PAGE_BOTTOM_PADDING_MM);
@@ -495,13 +503,22 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
 
   let cursor = entregaTop + 10.5;
   if (ticketPendienteEntrega) {
+    // Destinatario y destino, despues estado + logo, y al final el remitente.
     cursor = drawRecipientBlock(cursor, encomienda.llegada_real);
     cursor += 4;
-  }
-  cursor = drawSenderBlock(cursor);
-  if (ticketPendienteEntrega) {
-    cursor += PENDING_LOGO_GAP_MM;
-    const logoTop = cursor + 1;
+
+    // El estado va pegado justo arriba del logo.
+    cursor += PENDING_STATUS_BLOCK_GAP_MM;
+    cursor += 6;
+    drawText(statusText, 40, cursor, {
+      font: bold,
+      size: 9.8,
+      color: statusColor,
+      align: "center",
+    });
+    cursor += PENDING_STATUS_TO_LOGO_MM;
+
+    const logoTop = cursor;
     if (logoImage) {
       page.drawImage(logoImage, {
         x: (pageWidth - logoWidthPt) / 2,
@@ -518,18 +535,20 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
       });
     }
     cursor += logoBlockHeightMm;
-  }
-  cursor += ticketPendienteEntrega ? PENDING_STATUS_BLOCK_GAP_MM : 5 + RECEIVED_BLOCK_OFFSET_MM;
-  drawDivider(cursor);
-  cursor += 6;
-  drawText(statusText, 40, cursor, {
-    font: bold,
-    size: ticketPendienteEntrega ? 9.8 : 10.5,
-    color: statusColor,
-    align: "center",
-  });
-  cursor += 7;
-  if (!ticketPendienteEntrega) {
+
+    cursor = drawSenderBlock(cursor);
+  } else {
+    cursor = drawSenderBlock(cursor);
+    cursor += 5 + RECEIVED_BLOCK_OFFSET_MM;
+    drawDivider(cursor);
+    cursor += 6;
+    drawText(statusText, 40, cursor, {
+      font: bold,
+      size: 10.5,
+      color: statusColor,
+      align: "center",
+    });
+    cursor += 7;
     cursor = drawRecipientBlock(cursor, encomienda.entrega_fecha);
   }
   drawText(`Registró la entrega: ${emailRegistroEntrega(encomienda)}`, 40, cursor, {
@@ -787,6 +806,30 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
       context.stroke();
     };
 
+    const drawSenderBlockCanvas = (startTop) => {
+      let cursor = startTop;
+      sectionTitle("Remitente", cursor, { font: "500 12px Arial" });
+      cursor += 6;
+      context.fillStyle = colors.ink;
+      context.font = "500 20px Arial";
+      const remitenteLineCount = wrapCanvasText(encomienda.cliente || "-", width / 2, px(cursor), px(72), 18, 3, "center");
+      cursor += (remitenteLineCount * 3.8) + 1.5;
+      context.fillStyle = colors.ink;
+      context.font = "500 18px Arial";
+      wrapCanvasText(formatFechaEmision(encomienda), width / 2, px(cursor), px(72), 20, 1, "center");
+      cursor += 5;
+      context.font = "800 18px Arial";
+      wrapCanvasText(formatComprobante(encomienda), width / 2, px(cursor), px(72), 20, 1, "center");
+      cursor += 5;
+
+      sectionTitle("Descripción de la encomienda", cursor);
+      cursor += 6;
+      context.fillStyle = colors.ink;
+      context.font = "500 17px Arial";
+      const descripcionLineCount = wrapCanvasText(encomienda.descripcion || "-", width / 2, px(cursor), px(72), 18, 3, "center");
+      return cursor + (descripcionLineCount * 3.8) + 5;
+    };
+
     context.fillStyle = colors.page;
     context.fillRect(0, 0, width, height);
     roundedRect(px(3), px(3), px(74), px(fallbackPageHeightMm - 6), px(2));
@@ -833,34 +876,20 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
 
     let cursor = entregaTop + 10.5;
     if (ticketPendienteEntrega) {
+      // Destinatario y destino, despues estado + logo, y al final el remitente.
       cursor = drawRecipientBlock(cursor, encomienda.llegada_real);
       cursor += 4;
-    }
 
-    sectionTitle("Remitente", cursor, { font: "500 12px Arial" });
-    cursor += 6;
-    context.fillStyle = colors.ink;
-    context.font = "500 20px Arial";
-    const remitenteLineCount = wrapCanvasText(encomienda.cliente || "-", width / 2, px(cursor), px(72), 18, 3, "center");
-    cursor += (remitenteLineCount * 3.8) + 1.5;
-    context.fillStyle = colors.ink;
-    context.font = "500 18px Arial";
-    wrapCanvasText(formatFechaEmision(encomienda), width / 2, px(cursor), px(72), 20, 1, "center");
-    cursor += 5;
-    context.font = "800 18px Arial";
-    wrapCanvasText(formatComprobante(encomienda), width / 2, px(cursor), px(72), 20, 1, "center");
-    cursor += 5;
+      // El estado va pegado justo arriba del logo.
+      cursor += PENDING_STATUS_BLOCK_GAP_MM;
+      cursor += 6;
+      context.textAlign = "center";
+      context.fillStyle = colors.pending;
+      context.font = "900 19px Arial";
+      context.fillText("PENDIENTE DE ENTREGA", width / 2, px(cursor));
+      cursor += PENDING_STATUS_TO_LOGO_CANVAS_MM;
 
-    sectionTitle("Descripción de la encomienda", cursor);
-    cursor += 6;
-    context.fillStyle = colors.ink;
-    context.font = "500 17px Arial";
-    const descripcionLineCount = wrapCanvasText(encomienda.descripcion || "-", width / 2, px(cursor), px(72), 18, 3, "center");
-    cursor += (descripcionLineCount * 3.8) + 5;
-
-    if (ticketPendienteEntrega) {
-      cursor += PENDING_LOGO_GAP_MM;
-      const logoTop = cursor + 1;
+      const logoTop = cursor;
       if (logoImage) {
         context.drawImage(logoImage, (width - logoWidth) / 2, px(logoTop), logoWidth, logoHeightMm * unit);
       } else {
@@ -870,18 +899,18 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
         context.fillText("expertcont.pe", width / 2, px(logoTop));
       }
       cursor += logoBlockHeightMm;
-    }
 
-    cursor += ticketPendienteEntrega ? PENDING_STATUS_BLOCK_GAP_MM : 5 + RECEIVED_BLOCK_OFFSET_MM;
-    divider(cursor);
-    cursor += 6;
-    context.textAlign = "center";
-    context.fillStyle = ticketPendienteEntrega ? colors.pending : colors.success;
-    context.font = ticketPendienteEntrega ? "900 19px Arial" : "900 21px Arial";
-    context.fillText(ticketPendienteEntrega ? "PENDIENTE DE ENTREGA" : "RECIBIDO CONFORME", width / 2, px(cursor));
-    cursor += 7;
-
-    if (!ticketPendienteEntrega) {
+      cursor = drawSenderBlockCanvas(cursor);
+    } else {
+      cursor = drawSenderBlockCanvas(cursor);
+      cursor += 5 + RECEIVED_BLOCK_OFFSET_MM;
+      divider(cursor);
+      cursor += 6;
+      context.textAlign = "center";
+      context.fillStyle = colors.success;
+      context.font = "900 21px Arial";
+      context.fillText("RECIBIDO CONFORME", width / 2, px(cursor));
+      cursor += 7;
       cursor = drawRecipientBlock(cursor, encomienda.entrega_fecha);
     }
     context.textAlign = "center";

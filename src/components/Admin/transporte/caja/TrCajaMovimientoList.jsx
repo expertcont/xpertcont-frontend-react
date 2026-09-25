@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable, { createTheme } from "react-data-table-component";
-import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, MenuItem, Select, Typography } from "@mui/material";
-import { ChevronDown, ChevronUp, Edit3, Printer, Search, Trash2, WalletCards, X } from "lucide-react";
+import DataTable from "react-data-table-component";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, MenuItem, Select, Tooltip, Typography } from "@mui/material";
+import { ChevronDown, ChevronUp, Pencil, Printer, Search, Trash2, WalletCards, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import DaySelector from "../../AdminDias";
@@ -15,21 +15,57 @@ import TrHeaderMenuPicker from "../common/components/TrHeaderMenuPicker";
 import useTrCatalogos from "../common/hooks/useTrCatalogos";
 import crearCierreCajaMovimientoPdf from "./TrCajaMovimientoCierrePdf";
 
-createTheme(
-  "transportesDark",
-  {
-    text: { primary: palette.text, secondary: palette.accent },
-    background: { default: "transparent" },
-    context: { background: palette.accent, text: palette.onAccent },
-    divider: { default: palette.borderSoft },
-    action: {
-      button: palette.muted,
-      hover: palette.accentSoft,
-      disabled: palette.border,
-    },
+import "../common/trDataTableTheme";
+
+const formatFechaCaja = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return { fecha: "-", hora: "" };
+
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{1,2}):(\d{2})/);
+  if (!match) return { fecha: raw.slice(0, 16).replace("T", " "), hora: "" };
+
+  const [, anio, mes, dia, horas, minutos] = match;
+  const hora24 = Number(horas);
+  const hora12 = hora24 % 12 === 0 ? 12 : hora24 % 12;
+
+  return {
+    fecha: `${dia}/${mes}/${anio}`,
+    hora: `${String(hora12).padStart(2, "0")}:${minutos} ${hora24 >= 12 ? "PM" : "AM"}`,
+  };
+};
+
+// Mismo estilo de acciones usado en Maestros de Rutas / Licencias / Zonas / Placas.
+const actionButtonSx = (danger = false) => ({
+  width: 30,
+  height: 30,
+  flexShrink: 0,
+  borderRadius: palette.radius.control,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: palette.chip,
+  border: `1px solid ${palette.border}`,
+  color: palette.muted,
+  cursor: "pointer",
+  transition: "all .18s ease",
+  "& svg": { width: 14, height: 14 },
+  "&:hover": {
+    backgroundColor: danger ? palette.danger : palette.accent,
+    borderColor: danger ? palette.danger : palette.accent,
+    color: palette.onAccent,
   },
-  "dark",
-);
+});
+
+const actionButtonDisabledSx = {
+  ...actionButtonSx(false),
+  cursor: "not-allowed",
+  opacity: 0.45,
+  "&:hover": {
+    backgroundColor: palette.chip,
+    borderColor: palette.border,
+    color: palette.muted,
+  },
+};
 
 const fechaHoyLima = () => {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -197,7 +233,7 @@ function FieldLabel({ children }) {
   );
 }
 
-function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
+function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre, extraContent = null, maxWidth = "100%" }) {
   const items = [
     {
       key: "ingresos",
@@ -235,16 +271,23 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" },
-        mb: 1.5,
-        border: `1px solid ${palette.border}`,
-        borderRadius: palette.radius.listCard,
-        backgroundColor: palette.surface,
-        boxShadow: palette.shadowSoft,
-        overflow: "hidden",
+        gridTemplateColumns: {
+          xs: "minmax(0, 1fr)",
+          sm: "repeat(2, minmax(0, 1fr))",
+          lg: "repeat(4, minmax(0, 1fr)) minmax(190px, 0.85fr)",
+        },
+        gap: 0.5,
+        width: "100%",
+        maxWidth,
+        mb: 1,
+        border: "none",
+        borderRadius: 0,
+        backgroundColor: "transparent",
+        boxShadow: "none",
+        overflow: "visible",
       }}
     >
-      {items.map((item, index) => {
+      {items.map((item) => {
         const color = item.tone === "danger"
           ? palette.danger
           : item.tone === "warning"
@@ -265,25 +308,22 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
               }
             }}
             sx={{
-              minHeight: 68,
-              p: { xs: 1, md: 1.15 },
+              minHeight: 56,
+              p: { xs: 0.85, md: 0.95 },
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
-              backgroundColor: item.key === "neto" ? palette.overlaySoft : "transparent",
-              borderTop: {
-                xs: index ? `1px solid ${palette.borderSoft}` : "none",
-                sm: index >= 2 ? `1px solid ${palette.borderSoft}` : "none",
-                lg: "none",
-              },
-              borderLeft: {
-                xs: "none",
-                sm: index % 2 ? `1px solid ${palette.borderSoft}` : "none",
-                lg: index ? `1px solid ${palette.borderSoft}` : "none",
-              },
+              backgroundColor: item.key === "neto" ? palette.overlaySoft : palette.surface,
+              border: `1px solid ${palette.borderSoft}`,
+              borderRadius: palette.radius.control,
               cursor: clickable ? "pointer" : "default",
-              transition: "background-color .16s ease",
-              "&:hover": clickable ? { backgroundColor: palette.accentSoft } : undefined,
+              transition: "background-color .16s ease, transform .16s ease, box-shadow .16s ease",
+              "&:hover": {
+                backgroundColor: clickable ? palette.accentSoft : palette.surfaceAlt,
+                transform: clickable ? "translateY(-1px)" : "none",
+                boxShadow: clickable ? "0 6px 16px rgba(0,0,0,0.22)" : "none",
+              },
+              "&:active": clickable ? { transform: "translateY(0) scale(0.985)" } : undefined,
               "&:focus-visible": {
                 outline: `2px solid ${palette.accent}`,
                 outlineOffset: -2,
@@ -319,9 +359,9 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
             </Box>
             <Typography
               sx={{
-                mt: 0.35,
+                mt: 0.25,
                 color,
-                fontSize: "20px",
+                fontSize: "18px",
                 fontWeight: "1000 !important",
                 lineHeight: 1.1,
                 whiteSpace: "nowrap",
@@ -332,6 +372,23 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre }) {
           </Box>
         );
       })}
+      {extraContent && (
+        <Box
+          sx={{
+            gridColumn: { xs: "auto", sm: "1 / -1", lg: "auto" },
+            minHeight: 56,
+            p: { xs: 0.6, md: 0.65 },
+            display: "flex",
+            alignItems: "center",
+            minWidth: 0,
+            backgroundColor: palette.surface,
+            border: `1px solid ${palette.borderSoft}`,
+            borderRadius: palette.radius.control,
+          }}
+        >
+          {extraContent}
+        </Box>
+      )}
     </Box>
   );
 }
@@ -1428,9 +1485,25 @@ export default function TrCajaMovimientoList() {
   const columns = [
     {
       name: "Fecha",
-      selector: (row) => String(row.fecha || "").slice(0, 16).replace("T", " "),
+      selector: (row) => String(row.fecha || ""),
+      cell: (row) => {
+        const { fecha, hora } = formatFechaCaja(row.fecha);
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.25, minWidth: 0 }}>
+            <Typography component="span" sx={{ fontSize: "12.5px", fontWeight: 700, whiteSpace: "nowrap" }}>
+              {fecha}
+            </Typography>
+            {hora && (
+              <Typography component="span" sx={{ fontSize: "11px", fontWeight: 800, color: palette.accent, whiteSpace: "nowrap" }}>
+                {hora}
+              </Typography>
+            )}
+          </Box>
+        );
+      },
       sortable: true,
-      width: "142px",
+      width: "126px",
+      grow: 0,
     },
     {
       name: "Tipo",
@@ -1443,7 +1516,8 @@ export default function TrCajaMovimientoList() {
         );
       },
       sortable: true,
-      width: "104px",
+      width: "108px",
+      grow: 0,
     },
     {
       name: "Motivo",
@@ -1464,25 +1538,29 @@ export default function TrCajaMovimientoList() {
         );
       },
       sortable: true,
-      width: "190px",
+      width: "210px",
+      grow: 1,
     },
     {
       name: "Descripcion",
       selector: (row) => row.descripcion || "-",
-      width: "260px",
+      width: "250px",
+      grow: 2,
     },
     ...(mostrarUsuarioEnMovimientos ? [{
       name: "Usuario",
       selector: (row) => row.id_invitado || "-",
       sortable: true,
       width: "150px",
+      grow: 0,
     }] : []),
     {
       name: "Importe",
       selector: (row) => money(row.importe),
       right: true,
       sortable: true,
-      width: "118px",
+      width: "124px",
+      grow: 0,
     },
     {
       name: "Estado",
@@ -1491,21 +1569,31 @@ export default function TrCajaMovimientoList() {
           {Number(row.registrado) === 1 ? "ACTIVO" : "ANULADO"}
         </Box>
       ),
-      width: "104px",
+      width: "112px",
+      grow: 0,
     },
     {
       name: "Acciones",
-      cell: (row) => (
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          <IconButton size="small" disabled={Number(row.registrado) !== 1} onClick={() => abrirEdicion(row)} sx={{ color: palette.accent }}>
-            <Edit3 size={16} />
-          </IconButton>
-          <IconButton size="small" disabled={Number(row.registrado) !== 1} onClick={() => anularCajaMovimiento(row)} sx={{ color: palette.danger }}>
-            <Trash2 size={16} />
-          </IconButton>
-        </Box>
-      ),
-      width: "104px",
+      cell: (row) => {
+        const activa = Number(row.registrado) === 1;
+        return (
+          <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 0.6, width: "100%" }}>
+            <Tooltip title={activa ? "Editar movimiento" : "Movimiento anulado"} arrow>
+              <Box onClick={activa ? () => abrirEdicion(row) : undefined} sx={activa ? actionButtonSx(false) : actionButtonDisabledSx}>
+                <Pencil size={14} />
+              </Box>
+            </Tooltip>
+            <Tooltip title={activa ? "Anular movimiento" : "Movimiento anulado"} arrow>
+              <Box onClick={activa ? () => anularCajaMovimiento(row) : undefined} sx={activa ? actionButtonSx(true) : actionButtonDisabledSx}>
+                <Trash2 size={14} />
+              </Box>
+            </Tooltip>
+          </Box>
+        );
+      },
+      width: "100px",
+      grow: 0,
+      right: true,
       ignoreRowClick: true,
     },
   ];
@@ -1514,7 +1602,7 @@ export default function TrCajaMovimientoList() {
     table: {
       style: {
         width: "100%",
-        minWidth: "100%",
+        minWidth: mostrarUsuarioEnMovimientos ? "1180px" : "1040px",
         tableLayout: "auto",
         backgroundColor: palette.surface,
         borderCollapse: "separate",
@@ -1547,7 +1635,6 @@ export default function TrCajaMovimientoList() {
       style: {
         backgroundColor: palette.surfaceAlt,
         borderBottom: `1px solid ${palette.border}`,
-        boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
         minHeight: "44px",
       },
     },
@@ -1558,6 +1645,8 @@ export default function TrCajaMovimientoList() {
         fontSize: "11px",
         fontWeight: 800,
         textTransform: "uppercase",
+        padding: "10px 12px",
+        whiteSpace: "nowrap",
       },
     },
     rows: {
@@ -1580,6 +1669,7 @@ export default function TrCajaMovimientoList() {
         backgroundColor: "transparent",
         color: palette.text,
         fontSize: "12.5px",
+        padding: "10px 12px",
       },
     },
     pagination: {
@@ -1587,10 +1677,16 @@ export default function TrCajaMovimientoList() {
         backgroundColor: palette.surface,
         color: palette.muted,
         borderTop: `1px solid ${palette.border}`,
-        boxShadow: "0 -3px 10px rgba(0,0,0,0.08)",
       },
     },
   };
+
+  const muestraFiltroUsuario = usuarioPuedeVerTodosCorreos && usuariosTrabajo.length > 0;
+  const resumenCajaMaxWidth = muestraFiltroUsuario
+    ? "950px"
+    : puntosVentaAsignados.length > 0
+      ? "730px"
+      : "540px";
 
   return (
     <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
@@ -1624,6 +1720,7 @@ export default function TrCajaMovimientoList() {
             filtroDerechaPuntoVenta={usuarioPuedeVerTodosCorreos && usuariosTrabajo.length > 0 ? (
               <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>
                 <TrHeaderMenuPicker
+                  compact
                   label="Usuario"
                   value={usuarioTrabajo}
                   displayValue={
@@ -1640,10 +1737,11 @@ export default function TrCajaMovimientoList() {
                 />
               </Box>
             ) : null}
+            compact
           />
 
-          <Box sx={{ mt: 1, p: 1, border: `1px solid ${palette.borderSoft}`, borderRadius: palette.radius.listCard, backgroundColor: palette.surface }}>
-            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.55 }}>
+          <Box sx={{ mt: 0.5 }}>
+            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.3 }}>
               Día
             </Typography>
             <Box sx={{ overflowX: "auto", pb: 0.15 }}>
@@ -1662,33 +1760,38 @@ export default function TrCajaMovimientoList() {
           resumen={resumen}
           onDetalleIngresos={abrirDetalleIngresos}
           onImprimirCierre={imprimirCierreCaja}
-        />
-
-        <Box sx={{ mb: 1.25, p: 1, border: `1px solid ${palette.borderSoft}`, borderRadius: palette.radius.listCard, backgroundColor: palette.surface, display: "flex", alignItems: "flex-end", gap: 1, flexWrap: "wrap" }}>
-          <Box sx={{ flex: "1 1 260px", maxWidth: "360px" }}>
-            <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.55 }}>
-              Filtro específico
-            </Typography>
-            <TrHeaderMenuPicker
-              label="Motivo"
-              value={motivoFiltro}
-              displayValue={motivos.find((item) => item.id_motivo === motivoFiltro)?.nombre || "Todos"}
-              minWidth="100%"
-              options={[{ value: "", label: "Todos" }, ...motivos.map((item) => ({ value: item.id_motivo, label: item.nombre }))]}
-              onSelect={setMotivoFiltro}
-            />
-          </Box>
-          {motivoFiltro && (
-            <Box
-              component="button"
-              type="button"
-              onClick={() => setMotivoFiltro("")}
-              sx={{ height: 42, px: 1.2, border: `1px solid ${palette.border}`, borderRadius: palette.radius.control, backgroundColor: "transparent", color: palette.muted, fontSize: "12px", fontWeight: 800, cursor: "pointer", "&:hover": { color: palette.accent, borderColor: palette.accent } }}
-            >
-              Limpiar
+          maxWidth={resumenCajaMaxWidth}
+          extraContent={(
+            <Box sx={{ width: "100%", minWidth: 0 }}>
+              <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.8px", mb: 0.3 }}>
+                Filtro específico
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 0 }}>
+                <Box sx={{ flex: "1 1 auto", minWidth: 0 }}>
+                  <TrHeaderMenuPicker
+                    compact
+                    label="Motivo"
+                    value={motivoFiltro}
+                    displayValue={motivos.find((item) => item.id_motivo === motivoFiltro)?.nombre || "Todos"}
+                    minWidth="100%"
+                    options={[{ value: "", label: "Todos" }, ...motivos.map((item) => ({ value: item.id_motivo, label: item.nombre }))]}
+                    onSelect={setMotivoFiltro}
+                  />
+                </Box>
+                {motivoFiltro && (
+                  <Box
+                    component="button"
+                    type="button"
+                    onClick={() => setMotivoFiltro("")}
+                    sx={{ height: 34, px: 0.7, flexShrink: 0, border: `1px solid ${palette.border}`, borderRadius: palette.radius.control, backgroundColor: "transparent", color: palette.muted, fontSize: "10.5px", fontWeight: 800, cursor: "pointer", "&:hover": { color: palette.accent, borderColor: palette.accent } }}
+                  >
+                    Limpiar
+                  </Box>
+                )}
+              </Box>
             </Box>
           )}
-        </Box>
+        />
 
         <DataTable
           theme="transportesDark"

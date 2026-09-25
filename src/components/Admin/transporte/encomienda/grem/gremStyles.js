@@ -1,21 +1,6 @@
-import { createTheme } from "react-data-table-component";
 import palette from "../../../../../theme/palette";
 
-createTheme(
-  "transportesDark",
-  {
-    text: { primary: palette.text, secondary: palette.accent },
-    background: { default: "transparent" },
-    context: { background: palette.accent, text: palette.onAccent },
-    divider: { default: palette.borderSoft },
-    action: {
-      button: palette.muted,
-      hover: palette.accentSoft,
-      disabled: palette.border,
-    },
-  },
-  "dark",
-);
+import "../../common/trDataTableTheme";
 
 export const gremTableStyles = {
   table: { style: { backgroundColor: "transparent" } },

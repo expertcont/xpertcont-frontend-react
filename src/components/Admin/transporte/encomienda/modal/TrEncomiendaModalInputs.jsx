@@ -78,7 +78,7 @@ const focusControl = (ref) => {
   }
 };
 
-export function Field({ label, icon, children, labelWidth = "auto", tall = false, controlHeight, plain = false }) {
+export function Field({ label, icon, children, labelWidth = "auto", tall = false, controlHeight, plain = false, sinBorde = false }) {
   return (
     <Box
       sx={{
@@ -87,6 +87,10 @@ export function Field({ label, icon, children, labelWidth = "auto", tall = false
           display: "flex",
           alignItems: "center",
         } : fieldSx),
+        ...(!plain && sinBorde ? {
+          border: "none",
+          px: 0.35,
+        } : null),
         minHeight: controlHeight || (tall ? 35 : fieldSx.minHeight),
       }}
     >

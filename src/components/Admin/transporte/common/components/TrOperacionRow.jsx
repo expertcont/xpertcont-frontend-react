@@ -135,11 +135,11 @@ const actionButtonSx = (danger = false) => ({
 const protectedActionButtonSx = {
   ...actionButtonSx(false),
   color: palette.success,
-  borderColor: "rgba(146,214,173,0.38)",
-  backgroundColor: "rgba(66,160,104,0.10)",
+  borderColor: "rgba(121,171,143,0.30)",
+  backgroundColor: "rgba(121,171,143,0.08)",
   "&:hover": {
-    backgroundColor: "rgba(66,160,104,0.18)",
-    borderColor: "rgba(146,214,173,0.52)",
+    backgroundColor: "rgba(121,171,143,0.14)",
+    borderColor: "rgba(121,171,143,0.42)",
     color: palette.success,
   },
 };
@@ -153,9 +153,9 @@ const sunatEstadoDocumento = (row) => {
   if (row.r_vfirmado) {
     return {
       title: "Comprobante procesado por SUNAT",
-      border: "rgba(146,214,173,0.46)",
-      background: "rgba(66,160,104,0.12)",
-      filter: "saturate(1.2)",
+      border: "rgba(121,171,143,0.36)",
+      background: "rgba(121,171,143,0.10)",
+      filter: "saturate(1.05)",
     };
   }
 
@@ -172,9 +172,9 @@ function SunatActionButton({ row, onEnviarSunat, sunatContext }) {
   const estado = bloqueadoPorRdi
     ? {
         title: `Procesado por RDI ${row.numero_rdi}`,
-        border: "rgba(232,198,109,0.48)",
-        background: "rgba(232,198,109,0.12)",
-        filter: "saturate(0.9) sepia(0.28)",
+        border: "rgba(189,162,105,0.38)",
+        background: "rgba(189,162,105,0.10)",
+        filter: "saturate(0.9) sepia(0.18)",
       }
     : sunatEstadoDocumento(row);
 

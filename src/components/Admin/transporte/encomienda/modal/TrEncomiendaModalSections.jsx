@@ -88,8 +88,8 @@ export default function TrEncomiendaModalSections({
         <Typography
           sx={{
             color: palette.success,
-            backgroundColor: "rgba(66,160,104,0.10)",
-            border: "1px solid rgba(146,214,173,0.28)",
+            backgroundColor: "rgba(121,171,143,0.09)",
+            border: "1px solid rgba(121,171,143,0.24)",
             borderRadius: palette.radius.control,
             px: 1,
             py: 0.7,

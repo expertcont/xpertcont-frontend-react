@@ -26,7 +26,6 @@ const LAYOUT = {
   beforeSignatureGap: 28,   // Separacion entre la ultima fila y las lineas de firma.
   signatureWidth: 180,      // Largo de cada linea de firma.
   signatureInset: 34,       // Separacion lateral de las lineas de firma.
-  movementIconSize: 14,     // Diametro del icono +/- en la columna Tipo.
   summaryAccentWidth: 3,    // Barra lateral del total; evita bordes redondeados que se cortan al hacer zoom.
 };
 
@@ -36,9 +35,8 @@ const LAYOUT = {
 // - ingresoRight/salidaRight/saldoRight son los bordes derechos de cada monto.
 const COLUMNS = {
   fechaX: MARGIN + 6,
-  // Tipo queda pegado entre fecha y detalle: solo ocupa el diametro del icono.
-  tipoCenterX: MARGIN + 72,
-  detailX: MARGIN + 84,
+  // Sin columna de iconos: el detalle arranca donde estaba el icono.
+  detailX: MARGIN + 72,
   // Montos: bordes derechos separados para que no se sientan apretados.
   ingresoRight: PAGE_WIDTH - MARGIN - 146,
   salidaRight: PAGE_WIDTH - MARGIN - 72,
@@ -138,12 +136,6 @@ const drawSummaryBox = (page, { label, value, x, y, width, color }, fonts, pdfCo
   drawRight(page, money(value), x + width - 10, y - 34, 13, fonts.bold, color);
 };
 
-const getMovementKind = (item) => {
-  if (item.informativo) return "info";
-  if (item.salida > 0) return "salida";
-  return "ingreso";
-};
-
 const esIngresoPorCobrar = (item) => (
   String(item?.ingresoTexto || "").trim().toLowerCase() === "por cobrar"
 );
@@ -151,28 +143,6 @@ const esIngresoPorCobrar = (item) => (
 const esIngresoAnulado = (item) => (
   String(item?.ingresoTexto || "").trim().toLowerCase() === "anulado"
 );
-
-const drawMovementIcon = (page, { centerX, centerY, kind, fonts, pdfColors }) => {
-  const size = LAYOUT.movementIconSize;
-  const radius = size / 2;
-  const color = kind === "salida" ? pdfColors.danger : kind === "info" ? pdfColors.muted : pdfColors.accent;
-  const sign = kind === "salida" ? "-" : kind === "info" ? "i" : "+";
-  const signSize = kind === "info" ? 8.2 : 11;
-  const signWidth = fonts.bold.widthOfTextAtSize(sign, signSize);
-
-  // Icono +/- grande y pintado:
-  // - El circulo de color permite identificar el tipo rapidamente.
-  // - El signo blanco mantiene buen contraste al imprimir o hacer zoom.
-  // - movementIconSize controla el diametro del boton visual.
-  page.drawEllipse({ x: centerX, y: centerY, xScale: radius, yScale: radius, color });
-  page.drawText(sign, {
-    x: centerX - (signWidth / 2),
-    y: centerY - (signSize / 2) + 1.6,
-    size: signSize,
-    font: fonts.bold,
-    color: rgb(1, 1, 1),
-  });
-};
 
 const tipoIngresoTexto = (row) => {
   if (row.tipo_ingreso === "ORIGEN") return "Ingreso origen";
@@ -355,7 +325,6 @@ export default async function crearCierreCajaMovimientoPdf({
     // Si quieres mas/menos alto, cambia tableHeaderHeight en LAYOUT.
     page.drawRectangle({ x: MARGIN, y: y - tableHeader.height + 2, width: tableHeader.width, height: tableHeader.height, color: SOFT });
     page.drawText("Fecha hora", { x: COLUMNS.fechaX, y: y - 11, size: 7.2, font: bold, color: MUTED });
-    drawRight(page, "T.", COLUMNS.tipoCenterX + 4, y - 11, 7.2, bold, MUTED);
     page.drawText("Detalle", { x: COLUMNS.detailX, y: y - 11, size: 7.2, font: bold, color: MUTED });
     drawRight(page, "Ingreso", COLUMNS.ingresoRight, y - 11, 7.2, bold, MUTED);
     drawRight(page, "Salida", COLUMNS.salidaRight, y - 11, 7.2, bold, MUTED);
@@ -380,7 +349,6 @@ export default async function crearCierreCajaMovimientoPdf({
     if (y - rowHeight < LAYOUT.bottomReserved) addPage();
 
     saldo += item.ingreso - item.salida;
-    const movementKind = getMovementKind(item);
     const ingresoPorCobrar = esIngresoPorCobrar(item);
     const ingresoAnulado = esIngresoAnulado(item);
     const ingresoTexto = item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-");
@@ -389,7 +357,6 @@ export default async function crearCierreCajaMovimientoPdf({
 
     page.drawLine({ start: { x: MARGIN, y: y + 5 }, end: { x: PAGE_WIDTH - MARGIN, y: y + 5 }, thickness: 0.4, color: LINE });
     page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - 8, size: 7.1, font: regular, color: INK });
-    drawMovementIcon(page, { centerX: COLUMNS.tipoCenterX, centerY: y - 5, kind: movementKind, fonts, pdfColors });
     detailLines.forEach((line, index) => {
       page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: INK });
     });

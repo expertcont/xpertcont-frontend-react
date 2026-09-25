@@ -625,6 +625,21 @@ export default function TrEncomiendaModal({
     return digits;
   };
 
+  // Abre la app de WhatsApp directo con el esquema nativo: wa.me / web.whatsapp.com
+  // muestran una pagina intermedia (api.whatsapp.com) que hay que volver a confirmar.
+  const abrirWhatsappNativo = (telefono, mensaje) => {
+    if (!telefono) return;
+
+    const link = document.createElement("a");
+    link.href = `whatsapp://send?phone=${telefono}&text=${encodeURIComponent(mensaje || "")}`;
+    link.target = "_self";
+    link.rel = "noopener noreferrer";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    window.setTimeout(() => link.remove(), 0);
+  };
+
   const obtenerNombresPersona = (nombreCompleto) => {
     const partes = String(nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
     if (partes.length <= 1) return partes.join(" ");
@@ -990,8 +1005,7 @@ export default function TrEncomiendaModal({
     try {
       const ticketUrl = await generarTicketPdfUrl({ encomiendaBase: whatsappEncomienda, cacheBust: false, local: false });
       const mensaje = crearMensajeWhatsappTicket(whatsappEncomienda, ticketUrl);
-      const whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      abrirWhatsappNativo(telefono, mensaje);
       cerrarFlujoWhatsapp();
     } catch (error) {
       swal2.fire({
@@ -1066,7 +1080,7 @@ export default function TrEncomiendaModal({
         "Imagen del ticket."
       ].filter(Boolean).join("\n");
 
-      window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank", "noopener,noreferrer");
+      abrirWhatsappNativo(telefono, mensaje);
       cerrarFlujoWhatsapp();
     } catch (error) {
       swal2.fire({
@@ -1215,7 +1229,7 @@ export default function TrEncomiendaModal({
             gap: 1,
             border: `1px solid ${palette.success}`,
             borderRadius: palette.radius.control,
-            backgroundColor: "rgba(66,160,104,0.12)",
+            backgroundColor: "rgba(121,171,143,0.10)",
             color: palette.text,
             flexShrink: 0,
           }}
@@ -1457,7 +1471,7 @@ export default function TrEncomiendaModal({
             Si no tiene codigo de pais, se asumira Peru (+51).
           </Typography>
           <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.8 }}>
-            Enviar imagen copia el ticket; en WhatsApp pega con Ctrl+V o Pegar.
+            Enviar imagen copia el ticket y abre WhatsApp; ahi pega con Ctrl+V o Pegar. Necesitas la app de WhatsApp instalada.
           </Typography>
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.8, mt: 1.6, flexWrap: "wrap" }}>
             <AppButton disabled={enviandoWhatsapp || copiandoEnvioRapido} onClick={cerrarFlujoWhatsapp}>

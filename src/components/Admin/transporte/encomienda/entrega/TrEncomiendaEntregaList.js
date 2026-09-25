@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import DataTable, { createTheme } from "react-data-table-component";
+import DataTable from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
 import { Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
 import {
@@ -16,16 +16,7 @@ import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
 import palette from "../../../../../theme/palette";
 
-createTheme(
-  "transportesEntregaDark",
-  {
-    text: { primary: palette.text, secondary: palette.accent },
-    background: { default: "transparent" },
-    divider: { default: palette.borderSoft },
-    action: { hover: "rgba(42,161,152,0.06)" },
-  },
-  "dark",
-);
+import "../../common/trDataTableTheme";
 
 const customTableStyles = {
   tableWrapper: {
