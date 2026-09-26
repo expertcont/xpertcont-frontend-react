@@ -96,15 +96,20 @@ const combinarTicketsParaCorte = async (ticketUrl, ticketAdminUrl) => {
     ticketDoc.getPage(0).getSize(),
     adminDoc.getPage(0).getSize(),
   ];
+  // El ticket del cliente entra COMPLETO. Antes se le recortaban 160pt de la
+  // base (un numero fijo, sin mirar el contenido) y con eso se perdian
+  // TERMINOS Y CONDICIONES, GRACIAS POR CONFIAR, HORA LLEGADA y REGISTRADO POR.
+  // El papel en blanco de mas lo recorta el propio generador del cliente, que
+  // sabe donde termina su contenido; aqui no se recorta nada y el ticket del
+  // paquete simplemente baja.
   const separatorHeight = 6;
-  const ticketBottomCrop = 160;
-  const ticketVisibleHeight = ticketSize.height - ticketBottomCrop;
+  const ticketVisibleHeight = ticketSize.height;
   const width = Math.max(ticketSize.width, adminSize.width);
   const height = ticketVisibleHeight + adminSize.height + separatorHeight;
   const pdfDoc = await PDFDocument.create();
   const ticketPage = await pdfDoc.embedPage(ticketDoc.getPage(0), {
     left: 0,
-    bottom: ticketBottomCrop,
+    bottom: 0,
     right: ticketSize.width,
     top: ticketSize.height,
   });

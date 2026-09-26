@@ -11,6 +11,14 @@ const W = 226.77;
 const H = 610;
 const M = 12;
 const CW = W - (M * 2);
+// Aire que se deja bajo el ultimo texto al recortar el papel en blanco del final.
+// Antes ese recorte lo hacia el modal con un 160pt fijo, que se llevaba
+// TERMINOS Y CONDICIONES, GRACIAS POR CONFIAR, HORA LLEGADA y REGISTRADO POR.
+const TICKET_TRAILING_MARGIN = 10;
+// Caja maxima del logo del emisor. Antes 170 x 56 pt, que ocupaba el 75% del ancho
+// del ticket; reducido ~30% para que no se coma la cabecera.
+const LOGO_MAX_WIDTH = 119;
+const LOGO_MAX_HEIGHT = 39.2;
 
 const INK = rgb(0.03, 0.035, 0.045);
 const MUTED = rgb(0.34, 0.35, 0.37);
@@ -355,7 +363,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const qrImage = await pdfDoc.embedPng(base64ToBytes(qrDataUrl.split(",")[1]));
 
   if (logoImage) {
-    const scale = Math.min(170 / logoImage.width, 56 / logoImage.height);
+    const scale = Math.min(LOGO_MAX_WIDTH / logoImage.width, LOGO_MAX_HEIGHT / logoImage.height);
     const logoWidth = logoImage.width * scale;
     const logoHeight = logoImage.height * scale;
     page.drawImage(logoImage, {
@@ -365,10 +373,21 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
       height: logoHeight,
     });
   } else {
-    centered(page, "TRANSPORTE DE ENCOMIENDAS", 616, 10.5, bold);
+    // Sin logo el titulo se dibujaba en y=616 sobre una pagina de 610: quedaba
+    // fuera del papel y no se imprimia. Se alinea con la base del logo.
+    centered(page, "TRANSPORTE DE ENCOMIENDAS", H - 24, 10.5, bold);
   }
 
-  const BODY_Y_OFFSET = -54;
+  // Desplazamiento vertical de TODO el cuerpo del ticket (razon social, RUC,
+  // origen, destino, encomienda, totales, terminos y hora de llegada).
+  //
+  // Todos los y del ticket se derivan de esta constante a traves de bodyY(),
+  // asi que moverla sube el bloque completo y no descuadra nada entre si.
+  // Antes era -54, calibrado cuando el logo ocupaba 56pt de alto y su base caia
+  // en H-56-12 = 542, a 20pt del primer texto. Al reducir el logo a 39.2pt su
+  // base subio a 558.8 y quedaron 36.8pt de blanco debajo (~3 lineas). Con -37
+  // el cuerpo vuelve a quedar a 20pt del logo.
+  const BODY_Y_OFFSET = -37;
   const bodyY = (value) => value + BODY_Y_OFFSET;
   const HEADER_HEIGHT_REDUCTION = 10;
   const afterHeaderY = (value) => bodyY(value + HEADER_HEIGHT_REDUCTION);
@@ -473,8 +492,39 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   text(page, "POR CONFIAR", 176, summaryY(85), 6, regular, INK, 42);
   text(page, "EN NOSOTROS", 176, summaryY(77), 6, regular, INK, 42);
 
+  // Ultimo texto del ticket. Se anota su y porque el recorte del papel en blanco
+  // se calcula desde ahi: summaryY() ya descuenta las lineas que agrego cada
+  // bloque, asi que el valor sube o baja con el contenido real y el recorte
+  // nunca se lleva informacion.
+  const ultimaLineaY = summaryY(55);
+
   centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, summaryY(68), 8.8, semibold, INK, CW);
-  centered(page, `REGISTRADO POR: ${registeredBy || "-"}`, summaryY(55), 6.8, regular, MUTED, CW);
+  centered(page, `REGISTRADO POR: ${registeredBy || "-"}`, ultimaLineaY, 6.8, regular, MUTED, CW);
+
+  // Se recorta solo la cola de papel en blanco (mas el margen de aire) y se
+  // devuelve una pagina mas corta. El modal apila este ticket arriba del del
+  // paquete sin recortarlo.
+  const tintaInferior = ultimaLineaY - 2;
+  const papelSinUso = Math.max(0, tintaInferior - TICKET_TRAILING_MARGIN);
+
+  if (papelSinUso < H - 120) {
+    // OJO: el recorte se hace dentro del MISMO documento. Con un PDFDocument
+    // nuevo, pdf-lib deja la pagina embebida apuntando a las fuentes del
+    // documento de origen (/BarlowCondensed) y esas referencias no existen en el
+    // destino: el ticket salia con caracteres desconocidos.
+    const embed = await pdfDoc.embedPage(page, {
+      left: 0,
+      bottom: papelSinUso,
+      right: W,
+      top: H,
+    });
+    const recortada = pdfDoc.addPage([W, H - papelSinUso]);
+    recortada.drawPage(embed, { x: 0, y: 0, width: W, height: H - papelSinUso });
+    // La pagina original queda en la posicion 0, que es la que lee el modal al
+    // unir los dos tickets, asi que se elimina.
+    pdfDoc.removePage(0);
+    return pdfDoc.save();
+  }
 
   return pdfDoc.save();
 };

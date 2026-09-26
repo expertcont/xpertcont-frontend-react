@@ -30,7 +30,10 @@ const LAYOUT = {
     titleSize: 10.4,
     numberGap: 23,
     numberSize: 16.8,
-    dateLabelGap: 30,
+    // Las etiquetas FECHA/HORA se dibujan en la misma linea base que su valor
+    // (mismo gap). Antes iban 3pt mas arriba y se leian flotando al lado del dato.
+    dateLabelGap: 33,
+    dateLabelSize: 7.4,
     dateValueGap: 33,
     dateValueSize: 9.2,
   },
@@ -303,10 +306,10 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   dotted(page, cpeTopY + 5);
   centered(page, "DATOS DE ENTREGA", cpeTopY - LAYOUT.cpe.titleGap, LAYOUT.cpe.titleSize, semibold);
   centeredTracking(page, displayNumber || "MODELO", cpeTopY - LAYOUT.cpe.numberGap, LAYOUT.cpe.numberSize, regular, INK, 0.55, CW - 8);
-  text(page, "FECHA", 39, cpeTopY - LAYOUT.cpe.dateLabelGap, 6.3, regular, MUTED, 29);
+  text(page, "FECHA", 39, cpeTopY - LAYOUT.cpe.dateLabelGap, LAYOUT.cpe.dateLabelSize, regular, MUTED, 29);
   text(page, datePe(issueDate), 68, cpeTopY - LAYOUT.cpe.dateValueGap, LAYOUT.cpe.dateValueSize, regular, INK, 52);
   line(page, cpeTopY - 40, 113, 113, 0.45);
-  text(page, "HORA", 126, cpeTopY - LAYOUT.cpe.dateLabelGap, 6.3, regular, MUTED, 26);
+  text(page, "HORA", 126, cpeTopY - LAYOUT.cpe.dateLabelGap, LAYOUT.cpe.dateLabelSize, regular, MUTED, 26);
   text(page, timePe(issueTime), 152, cpeTopY - LAYOUT.cpe.dateValueGap, LAYOUT.cpe.dateValueSize, regular, INK, 58);
 
   const deliveryTopY = cpeTopY - LAYOUT.delivery.topGap;
