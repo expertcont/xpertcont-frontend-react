@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { Box } from "@mui/material";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import SummarizeIcon from "@mui/icons-material/Summarize";
 import { Search, Truck } from "lucide-react";
 import swal2 from "sweetalert2";
 
@@ -12,6 +14,7 @@ import TrBoletoModal from "../TrBoletoModal";
 import TrEncomiendaModal from "../encomienda/modal/TrEncomiendaModal";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
+import TrRdiProgresoModal from "./TrRdiProgresoModal";
 import { createColumns, customStyles, customStylesEncomienda, customStylesEncomiendaPanoramica, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
@@ -20,31 +23,62 @@ import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 // Tema oscuro propio de las tablas del modulo transporte.
 import "./trDataTableTheme";
 
+// Boton de envio del Resumen Diario. Mismo diseno que el de ventas
+// comerciales: solo el logo de SUNAT con un distintivo que marca el estado del dia,
+// sin texto, para no robarle ancho a la barra de filtros.
 const resumenSunatButtonSx = (ok = false, pending = false) => ({
-  ml: 0,
-  mb: 0,
-  width: { xs: "100%", sm: "auto" },
-  minHeight: 38,
-  px: 1.1,
+  width: 42,
+  height: 42,
+  flexShrink: 0,
+  p: 0,
   borderRadius: palette.radius.control,
-  border: `1px solid ${ok ? "rgba(121,171,143,0.30)" : pending ? "rgba(189,162,105,0.30)" : palette.border}`,
-  backgroundColor: ok ? palette.successSoft : pending ? palette.warningSoft : palette.chip,
+  border: `1px solid ${ok ? palette.success : pending ? palette.warning : palette.border}`,
+  backgroundColor: palette.chip,
   color: ok ? palette.success : pending ? palette.warning : palette.muted,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 0.6,
-  cursor: "pointer",
-  fontSize: "11.5px",
-  fontWeight: 800,
-  letterSpacing: 0,
-  transition: "all .18s ease",
+  transition: "background-color .18s ease, color .18s ease, border-color .18s ease",
   "&:hover": {
-    backgroundColor: ok ? palette.successSoft : "rgba(143,166,189,0.12)",
-    borderColor: ok ? "rgba(121,171,143,0.42)" : "rgba(143,166,189,0.32)",
-    color: ok ? palette.success : "#a9bccf",
+    backgroundColor: ok ? palette.successSoft : pending ? palette.warningSoft : palette.accentSoft,
+    borderColor: ok ? palette.success : pending ? palette.warning : palette.accent,
+    color: ok ? palette.success : pending ? palette.warning : palette.accent,
   },
 });
+
+const resumenSunatIconSx = {
+  position: "relative",
+  width: 28,
+  height: 28,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  "& img": {
+    width: 22,
+    height: 22,
+    objectFit: "contain",
+    display: "block",
+  },
+  "& .resumen-badge": {
+    position: "absolute",
+    right: -2,
+    bottom: -1,
+    width: 13,
+    height: 13,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.surface,
+    border: `1px solid ${palette.accent}`,
+    color: palette.accent,
+  },
+  "& .resumen-badge.ok": {
+    borderColor: palette.success,
+    color: palette.success,
+  },
+  "& .resumen-badge.warn": {
+    borderColor: palette.warning,
+    color: palette.warning,
+  },
+};
 
 const fechaHoyLima = () => {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -104,6 +138,9 @@ export default function TrModuloBase({
   const [contabilidadTrabajo, setContabilidadTrabajo] = useState("");
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
   const [colaResumenEncomiendas, setColaResumenEncomiendas] = useState([]);
+  // Cola de resumenes a enviar: un paso por dia, del mas antiguo al mas nuevo.
+  const [pasosResumenEnvio, setPasosResumenEnvio] = useState([]);
+  const [modalResumenOpen, setModalResumenOpen] = useState(false);
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
   const [ticketEncomiendaModo, setTicketEncomiendaModo] = useState(() => {
     if (typeof window === "undefined") return "completo";
@@ -181,8 +218,8 @@ export default function TrModuloBase({
     return hoy.startsWith(periodoTrabajo) ? hoy : `${periodoTrabajo}-01`;
   }, [diaSel, periodoTrabajo]);
 
-  const encomiendasPendientesResumen = useMemo(() => {
-    if (tipoOperacionFijo !== "E" || !diaSel || diaSel === "*") {
+  const pendientesResumen = useMemo(() => {
+    if (!diaSel || diaSel === "*") {
       return 0;
     }
 
@@ -191,16 +228,29 @@ export default function TrModuloBase({
 
       return codigo === "03" && !item.numero_rdi && !item.r_vfirmado;
     }).length;
-  }, [data, diaSel, tipoOperacionFijo]);
+  }, [data, diaSel]);
 
   const estadosRdiAbiertos = useMemo(() => (
     ["PENDIENTE", "GENERADO", "ENVIADO", "INCIERTO", "ERROR"]
   ), []);
-  const resumenesEncomiendaAbiertos = useMemo(() => (
+
+  // Rubro del Resumen Diario. El alcance es siempre toda la empresa: lo unico que
+  // diferencia un resumen del otro es el rubro (encomienda / boleto).
+  const rubroResumen = useMemo(() => (tipoOperacionFijo === "B" ? "BOLETOS" : "ENCOMIENDAS"), [tipoOperacionFijo]);
+  const origenResumen = useMemo(
+    () => (tipoOperacionFijo === "B" ? "TRANS_BOLETO" : "TRANS_ENCOMIENDA"),
+    [tipoOperacionFijo]
+  );
+  const nombreRubro = useMemo(() => (rubroResumen === "BOLETOS" ? "boleto" : "encomienda"), [rubroResumen]);
+  const nombreRubroPlural = useMemo(
+    () => (rubroResumen === "BOLETOS" ? "boletos" : "encomiendas"),
+    [rubroResumen]
+  );
+  const resumenesAbiertos = useMemo(() => (
     colaResumenEncomiendas.filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()))
   ), [colaResumenEncomiendas, estadosRdiAbiertos]);
-  const totalPendienteResumenEncomiendas = encomiendasPendientesResumen + resumenesEncomiendaAbiertos.length;
-  const resumenEncomiendasDiaOk = tipoOperacionFijo === "E" && Boolean(diaSel && diaSel !== "*") && totalPendienteResumenEncomiendas === 0;
+  const totalPendienteResumen = pendientesResumen + resumenesAbiertos.length;
+  const resumenDiaOk = Boolean(diaSel && diaSel !== "*") && totalPendienteResumen === 0;
   const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
   const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
   const listadoMaxWidth = tipoOperacionFijo === "E"
@@ -219,26 +269,28 @@ export default function TrModuloBase({
     };
   }, [contabilidadSelect, contabilidadTrabajo]);
 
-  const cargarColaResumenEncomiendas = useCallback(async () => {
-    if (tipoOperacionFijo !== "E" || !periodoTrabajo || !contabilidadTrabajo || !diaSel || diaSel === "*") {
+  // Cola de resumenes del periodo. El Resumen Diario es diario: su alcance es el
+  // periodo, asi que la cola no sale de ahi. Trae todas las fechas del periodo, no
+  // solo el dia seleccionado, porque al enviar se recorre del mas antiguo al mas
+  // nuevo.
+  const cargarColaResumen = useCallback(async () => {
+    if (!periodoTrabajo || !contabilidadTrabajo) {
       setColaResumenEncomiendas([]);
       return [];
     }
 
-    const fechaResumen = `${periodoTrabajo}-${String(diaSel).padStart(2, "0")}`;
     try {
-      const response = await fetch(`${back_host}/mve_transventa/cpe/resumen/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?origen=TRANS_ENCOMIENDA`);
+      const response = await fetch(`${back_host}/mve_transventa/cpe/resumen/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?origen=${origenResumen}`);
       const result = await response.json();
       const dataResumen = Array.isArray(result?.data) ? result.data : [];
-      const resumenesDia = dataResumen.filter((item) => String(item.fecha || "").substring(0, 10) === fechaResumen);
-      setColaResumenEncomiendas(resumenesDia);
-      return resumenesDia;
+      setColaResumenEncomiendas(dataResumen);
+      return dataResumen;
     } catch (error) {
       console.log("No se pudo cargar cola RDI de encomiendas:", error);
       setColaResumenEncomiendas([]);
       return [];
     }
-  }, [back_host, contabilidadTrabajo, diaSel, params.id_anfitrion, periodoTrabajo, tipoOperacionFijo]);
+  }, [back_host, contabilidadTrabajo, origenResumen, params.id_anfitrion, periodoTrabajo]);
 
   // -----------------------------
   // Efectos de carga y refresco
@@ -264,8 +316,8 @@ export default function TrModuloBase({
   }, [aplicarBusquedaLocal]);
 
   useEffect(() => {
-    cargarColaResumenEncomiendas();
-  }, [cargarColaResumenEncomiendas, updateTrigger]);
+    cargarColaResumen();
+  }, [cargarColaResumen, updateTrigger]);
 
   // Catalogos dependientes de empresa o punto operativo.
   useEffect(() => {
@@ -617,11 +669,7 @@ export default function TrModuloBase({
     }
   };
 
-  const handleEnviarResumenEncomiendas = async () => {
-    if (tipoOperacionFijo !== "E") {
-      return;
-    }
-
+  const handleEnviarResumen = async () => {
     if (!periodoTrabajo || !contabilidadTrabajo) {
       await confirmDialog({
         title: "Faltan datos",
@@ -635,7 +683,7 @@ export default function TrModuloBase({
     if (!diaSel || diaSel === "*") {
       await confirmDialog({
         title: "Selecciona un dia",
-        message: "El RDI de encomiendas se envia por dia. Primero elige un dia en el calendario.",
+        message: `El RDI de ${nombreRubroPlural} se envia por dia. Primero elige un dia en el calendario.`,
         icon: "warning",
         confirmText: "ACEPTAR",
       });
@@ -643,23 +691,65 @@ export default function TrModuloBase({
     }
 
     const fechaResumen = `${periodoTrabajo}-${String(diaSel).padStart(2, "0")}`;
-    const colaDia = await cargarColaResumenEncomiendas();
-    const abiertosDia = colaDia.filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()));
-    const totalPendienteActual = encomiendasPendientesResumen + abiertosDia.length;
+    const cola = await cargarColaResumen();
+    // Del mas antiguo al mas nuevo: el backend envia siempre el primero pendiente.
+    const abiertosCola = cola
+      .filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()))
+      .sort((a, b) => (
+        String(a.fecha || "").localeCompare(String(b.fecha || ""))
+        || Number(a.secuencia || 0) - Number(b.secuencia || 0)
+      ));
+    const totalPendienteActual = pendientesResumen + abiertosCola.length;
+    // Un paso por dia, del mas antiguo al mas nuevo. El ultimo paso es el del dia
+    // seleccionado cuando todavia quedan boletas sin RDI: ese resumen todavia no
+    // existe, se crea en el momento.
+    const pasos = abiertosCola.map((item) => ({
+      clave: `rdi-${item.numero_rdi}`,
+      fecha: String(item.fecha || "").substring(0, 10),
+      numeroRdi: item.numero_rdi,
+      estado: item.estado || "PENDIENTE",
+      cantidad: item.cantidad_boletas || 0,
+    }));
+
+    if (pendientesResumen > 0) {
+      pasos.push({
+        clave: `nuevo-${fechaResumen}`,
+        fecha: fechaResumen,
+        numeroRdi: "",
+        estado: "SIN RDI",
+        cantidad: pendientesResumen,
+      });
+    }
+
+    const lineasPasos = pasos.map((paso, indice) => {
+      // La cola puede venir de meses anteriores, asi que el dia va con mes: solo
+      // el dia haria ambiguo un 12/08 anterior a un 05/09.
+      const dia = `${paso.fecha.substring(8, 10)}/${paso.fecha.substring(5, 7)}`;
+      const detalle = paso.numeroRdi
+        ? `${paso.numeroRdi} - ${paso.estado} - ${paso.cantidad} ${nombreRubroPlural}`
+        : `resumen nuevo - ${paso.cantidad} ${nombreRubroPlural} sin RDI`;
+      return `   ${indice + 1}. dia ${dia} | ${detalle}`;
+    });
+
     const result = await confirmDialog({
-      title: "Enviar RDI de encomiendas?",
+      title: `Enviar RDI de ${nombreRubroPlural}?`,
       message: [
         `Empresa: ${contabilidadTrabajo}`,
-        `Fecha: ${fechaResumen}`,
-        puntoVentaTrabajo ? `Punto venta: ${puntoVentaTrabajo}` : "Punto venta: todos",
-        `Encomiendas nuevas sin RDI: ${encomiendasPendientesResumen}`,
-        `Resumenes abiertos en cola: ${abiertosDia.length}`,
-        ...abiertosDia.map((item, index) => (
-          `${index + 1}. ${item.numero_rdi} - ${item.estado || "PENDIENTE"} - ${item.cantidad_boletas || 0} encomiendas${item.ticket ? ` - Ticket: ${item.ticket}` : ""}`
-        )),
-      ].join("\n"),
+        `Periodo: ${periodoTrabajo} (dia por dia)`,
+        `Rubro: ${rubroResumen}`,
+        // El resumen es de toda la empresa. El punto de venta del filtro solo
+        // acota lo que se ve en la tabla, asi que se aclara para que nadie crea
+        // que el alcance del RDI cambia con el filtro.
+        "Alcance del resumen: todas las agencias",
+        puntoVentaTrabajo ? `Filtro de tabla: ${puntoVentaTrabajo} (no limita el resumen)` : null,
+        "",
+        `Se enviaran ${pasos.length} resumen(es) a SUNAT, del dia mas antiguo al dia ${String(diaSel).padStart(2, "0")}:`,
+        ...lineasPasos,
+        "",
+        "Se detiene en el primer error para no saltarse un dia pendiente.",
+      ].filter((linea) => linea !== null && linea !== undefined).join("\n"),
       icon: totalPendienteActual > 0 ? "success" : "info",
-      confirmText: totalPendienteActual > 0 ? "ENVIAR" : "ACEPTAR",
+      confirmText: totalPendienteActual > 0 ? `ENVIAR ${pasos.length}` : "ACEPTAR",
       cancelText: "CANCELAR",
     });
 
@@ -667,19 +757,33 @@ export default function TrModuloBase({
       return;
     }
 
+    // El envio lo recorre el modal, paso por paso, para que se vea cual va.
+    setPasosResumenEnvio(pasos);
+    setModalResumenOpen(true);
+  };
+
+  // Un envio por paso: periodo + dia. El periodo es siempre el del filtro y el dia
+  // es el del paso, que es lo que espera el backend para armar el payload.
+  const enviarPasoResumen = async (paso) => {
+    const controlador = new AbortController();
+    const temporizador = setTimeout(() => controlador.abort(), 120000);
+
     try {
       const response = await fetch(`${back_host}/mve_transventa/cpe/resumen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controlador.signal,
         body: JSON.stringify({
           periodo: periodoTrabajo,
           id_anfitrion: params.id_anfitrion,
           id_usuario: params.id_anfitrion,
           id_invitado: params.id_invitado,
           documento_id: contabilidadTrabajo,
-          fecha_documentos: fechaResumen,
-          id_punto_venta: puntoVentaTrabajo || undefined,
-          tipo_operacion: "E",
+          fecha_documentos: paso.fecha,
+          // Sin numero_rdi el backend crea el resumen del dia; con numero_rdi
+          // reenvia exactamente ese, que es lo que hay en la cola.
+          numero_rdi: paso.numeroRdi || undefined,
+          tipo_operacion: tipoOperacionFijo,
           solo_payload: false,
           ctrl_mod_us: params.id_invitado,
         }),
@@ -687,36 +791,32 @@ export default function TrModuloBase({
       const dataResponse = await response.json();
 
       if (!response.ok || dataResponse.success === false) {
-        throw new Error(
-          dataResponse.mensaje_usuario ||
-          dataResponse.respuesta_sunat_descripcion ||
-          dataResponse.message ||
-          "No se pudo enviar el RDI de encomiendas."
-        );
+        return {
+          ok: false,
+          mensaje: dataResponse.mensaje_usuario
+            || dataResponse.respuesta_sunat_descripcion
+            || dataResponse.message
+            || `No se pudo enviar el RDI de ${nombreRubroPlural}.`,
+        };
       }
 
-      await confirmDialog({
-        title: "RDI de encomiendas enviado",
-        message: [
-          dataResponse.numero_rdi || "RDI generado",
-          `Fecha: ${fechaResumen}`,
-          `${dataResponse.cantidad || dataResponse.total_documentos || 0} encomiendas incluidas.`,
-          dataResponse.ticket ? `Ticket: ${dataResponse.ticket}` : null,
-          dataResponse.nombre_archivo ? `Archivo: ${dataResponse.nombre_archivo}` : null,
+      return {
+        ok: true,
+        mensaje: [
+          `${dataResponse.cantidad || dataResponse.total_documentos || 0} ${nombreRubroPlural} enviadas`,
+          dataResponse.ticket ? `ticket ${dataResponse.ticket}` : null,
           dataResponse.mensaje_usuario || dataResponse.respuesta_sunat_descripcion || null,
-        ].filter(Boolean).join("\n"),
-        icon: "success",
-        confirmText: "ACEPTAR",
-      });
-      cargarColaResumenEncomiendas();
-      setUpdateTrigger(Date.now());
+        ].filter(Boolean).join(" - "),
+      };
     } catch (error) {
-      await confirmDialog({
-        title: "No se pudo enviar el RDI",
-        message: error.message || "Error interno.",
-        icon: "error",
-        confirmText: "ACEPTAR",
-      });
+      return {
+        ok: false,
+        mensaje: error?.name === "AbortError"
+          ? "La solicitud tardo mas de 2 minutos y se cancelo. Revisa el estado del RDI antes de reintentar."
+          : (error?.message || "No hubo respuesta del servidor."),
+      };
+    } finally {
+      clearTimeout(temporizador);
     }
   };
 
@@ -748,21 +848,31 @@ export default function TrModuloBase({
           onNuevo={() => solicitarOperacion()}
           onBuscar={actualizaValorFiltro}
           compactControles={tipoOperacionFijo === "E" || panoramicMode}
-          headerExtra={tipoOperacionFijo === "E" ? (
-            <Box
-              onClick={handleEnviarResumenEncomiendas}
-              sx={resumenSunatButtonSx(resumenEncomiendasDiaOk, totalPendienteResumenEncomiendas > 0)}
-              title={resumenEncomiendasDiaOk ? "Todo OK: sin encomiendas pendientes" : `Enviar RDI de encomiendas (${totalPendienteResumenEncomiendas})`}
+          headerExtra={(
+            <Tooltip
+              title={resumenDiaOk ? `Todo OK: sin ${nombreRubroPlural} pendientes` : `ENVIAR RDI DE ${rubroResumen} (${totalPendienteResumen})`}
+              arrow
             >
-              <Box
-                component="img"
-                src={SunatResumenIcon}
-                alt="Resumen SUNAT"
-                sx={{ width: 20, height: 20, objectFit: "contain", display: "block" }}
-              />
-              {resumenEncomiendasDiaOk ? "RDI OK" : `RDI encomiendas (${totalPendienteResumenEncomiendas})`}
-            </Box>
-          ) : null}
+              <IconButton
+                color="inherit"
+                onClick={handleEnviarResumen}
+                sx={resumenSunatButtonSx(resumenDiaOk, totalPendienteResumen > 0)}
+              >
+                <Box sx={resumenSunatIconSx}>
+                  <img src={SunatResumenIcon} alt="Resumen SUNAT" />
+                  <Box
+                    className={`resumen-badge ${resumenDiaOk ? "ok" : totalPendienteResumen > 0 ? "warn" : ""}`}
+                  >
+                    {resumenDiaOk ? (
+                      <CheckCircleOutlineIcon sx={{ fontSize: 9 }} />
+                    ) : (
+                      <SummarizeIcon sx={{ fontSize: 9 }} />
+                    )}
+                  </Box>
+                </Box>
+              </IconButton>
+            </Tooltip>
+          )}
         />
 
         <TrFiltros
@@ -865,6 +975,22 @@ export default function TrModuloBase({
             guardando={guardandoOperacion}
           />
         )}
+
+        <TrRdiProgresoModal
+          abierto={modalResumenOpen}
+          pasos={pasosResumenEnvio}
+          nombreRubroPlural={nombreRubroPlural}
+          periodo={periodoTrabajo}
+          enviarPaso={enviarPasoResumen}
+          alCerrar={() => {
+            setModalResumenOpen(false);
+            setPasosResumenEnvio([]);
+          }}
+          alTerminar={() => {
+            cargarColaResumen();
+            setUpdateTrigger(Date.now());
+          }}
+        />
 
         {footerTexto && (
           <Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 1, color: palette.muted, fontSize: "12px" }}>

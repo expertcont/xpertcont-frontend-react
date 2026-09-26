@@ -416,12 +416,21 @@ export default async function crearCierreCajaMovimientoPdf({
     const ingresoAnulado = esIngresoAnulado(item);
     const ingresoTexto = item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-");
     const salidaFont = item.bancario && item.salida ? bold : regular;
-    const salidaColor = item.bancario && item.salida ? YAPE : item.salida ? INK : MUTED;
+    // Fila por cobrar: se pinta TODO el renglon del mismo rojo, no solo el monto.
+    // Es el mismo rojo que ya usaba la columna Ingreso, para que el reporte no
+    // tenga dos rojos distintos. Solo cambia el color: se conserva la fuente de
+    // cada celda, asi que no se altera el ancho ni el corte de las lineas.
+    const colorFila = ingresoPorCobrar ? DANGER : null;
+    const colorTexto = colorFila || INK;
+    const colorApunte = colorFila || MUTED;
+    const salidaColor = colorFila || (item.bancario && item.salida ? YAPE : item.salida ? INK : MUTED);
 
+    // La linea divisoria se queda en su color normal: el rojo es solo para el
+    // texto de la fila, las guias del reporte se mantienen discretas.
     page.drawLine({ start: { x: MARGIN, y: y + 5 }, end: { x: PAGE_WIDTH - MARGIN, y: y + 5 }, thickness: 0.4, color: LINE });
-    page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - 8, size: 7.1, font: regular, color: INK });
+    page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - 8, size: 7.1, font: regular, color: colorTexto });
     detailLines.forEach((line, index) => {
-      page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: INK });
+      page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: colorTexto });
     });
 
     // Monto de referencia del por cobrar, en la 1era linea a la derecha del
@@ -457,7 +466,7 @@ export default async function crearCierreCajaMovimientoPdf({
           y: y - 8 - (linea * LAYOUT.rowLineHeight),
           size: REFERENCIA_SIZE,
           font: regular,
-          color: MUTED,
+          color: colorApunte,
         });
       }
     }
@@ -470,7 +479,7 @@ export default async function crearCierreCajaMovimientoPdf({
         x: COLUMNS.detailX,
         y: yDescripcion + ICONO_OFFSET_Y,
         scale: ICONO_SIZE / 24,
-        color: MUTED,
+        color: colorApunte,
       });
       const descripcion = truncar(
         item.descripcionEncomienda,
@@ -484,12 +493,14 @@ export default async function crearCierreCajaMovimientoPdf({
           y: yDescripcion,
           size: REFERENCIA_SIZE,
           font: regular,
-          color: MUTED,
+          color: colorApunte,
         });
       }
     }
     drawRight(page, ingresoTexto, COLUMNS.ingresoRight, y - 8, 7.1, ingresoPorCobrar || ingresoAnulado ? bold : regular, ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : item.ingreso ? INK : MUTED);
     drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, salidaFont, salidaColor);
+    // El saldo conserva su color por signo: es una columna acumulada y teñirla
+    // de rojo haria pensar que el balance de la fila esta en negativo.
     drawRight(page, money(saldo), COLUMNS.saldoRight, y - 8, 7.1, bold, saldo >= 0 ? INK : DANGER);
     y -= rowHeight;
   });
