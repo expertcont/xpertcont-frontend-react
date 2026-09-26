@@ -1,31 +1,32 @@
 export const themeOptions = [
   {
+    // Primer tema de la lista = tema por defecto de la app.
     id: "carbon",
     label: "Carbón",
     values: {
-      bg: "#15191c",
-      navBg: "#1b2024",
-      surface: "#22282d",
-      surfaceAlt: "#293036",
-      chip: "#313940",
-      border: "#3d4750",
-      borderSoft: "#2f383f",
-      text: "#d7dde2",
-      muted: "#8a949c",
-      accent: "#9db2c7",
-      accentSoft: "rgba(157,178,199,0.14)",
-      onAccent: "#0f1418",
+      bg: "#17171a",
+      navBg: "#1d1d21",
+      surface: "#242428",
+      surfaceAlt: "#2b2b30",
+      chip: "#333338",
+      border: "#3e3e45",
+      borderSoft: "#35353b",
+      text: "#d7d7dc",
+      muted: "#8f8f99",
+      accent: "#a5a5b0",
+      accentSoft: "rgba(165,165,176,0.14)",
+      onAccent: "#151518",
       overlaySoft: "rgba(255,255,255,0.02)",
-      rowHover: "#252c32",
+      rowHover: "#292930",
       shadowSoft: "0 4px 12px rgba(0,0,0,0.14)",
-      danger: "#c07a6d",
-      dangerSoft: "rgba(192,122,109,0.12)",
-      warning: "#bda269",
-      warningSoft: "rgba(189,162,105,0.12)",
-      success: "#79ab8f",
-      successSoft: "rgba(121,171,143,0.12)",
-      porCobrar: "#d4786e",
-      porCobrarSoft: "rgba(212,120,110,0.14)",
+      danger: "#c2857a",
+      dangerSoft: "rgba(194,133,122,0.12)",
+      warning: "#bda87f",
+      warningSoft: "rgba(189,168,127,0.12)",
+      success: "#8aa78e",
+      successSoft: "rgba(138,167,142,0.12)",
+      porCobrar: "#d67f75",
+      porCobrarSoft: "rgba(214,127,117,0.14)",
       radiusContent: "8px",
       radiusControl: "8px",
       radiusListCard: "12px",
@@ -33,10 +34,6 @@ export const themeOptions = [
     },
   },
   {
-    // El id sigue siendo "default" por compatibilidad con las sesiones ya
-    // guardadas; el tema por defecto de la app es Carbón.
-    id: "default",
-    label: "Pizarra",
     id: "light-smoke",
     label: "Blanco humo",
     values: {
@@ -74,53 +71,13 @@ export const themeOptions = [
 // Primer tema de la lista = tema por defecto de la app (Carbón).
 const DEFAULT_THEME_ID = "carbon";
 const defaultThemeValues = themeOptions[0].values;
-const CUSTOM_THEME_ID = "custom";
 
-const hexToRgb = (hex) => {
-  const normalized = String(hex || "").replace("#", "");
-  if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
-    return null;
-  }
-
-  return {
-    r: parseInt(normalized.slice(0, 2), 16),
-    g: parseInt(normalized.slice(2, 4), 16),
-    b: parseInt(normalized.slice(4, 6), 16),
-  };
-};
-
-const accentSoftFromHex = (hex) => {
-  const rgb = hexToRgb(hex);
-  return rgb ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.15)` : defaultThemeValues.accentSoft;
-};
-
-const onAccentFromHex = (hex) => {
-  const rgb = hexToRgb(hex);
-  if (!rgb) {
-    return defaultThemeValues.onAccent;
-  }
-
-  const brightness = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000;
-  return brightness > 150 ? "#101820" : "#f4f8fb";
-};
-
-export const getStoredCustomAccent = () => {
-  if (typeof window === "undefined") {
-    return defaultThemeValues.accent;
-  }
-
-  return sessionStorage.getItem("xpertcont_custom_accent") || defaultThemeValues.accent;
-};
-
+// Sin tema de color libre: el acento es parte del tema, no un ajuste aparte. Con el
+// color suelto se movia solo 'accent' y quedaban combinaciones que rompian el
+// contraste (por ejemplo onAccent claro sobre un fondo oscuro elegido a mano).
 export const getThemeValues = (themeId = DEFAULT_THEME_ID) => ({
   ...defaultThemeValues,
-  ...(themeId === CUSTOM_THEME_ID
-    ? {
-      accent: getStoredCustomAccent(),
-      accentSoft: accentSoftFromHex(getStoredCustomAccent()),
-      onAccent: onAccentFromHex(getStoredCustomAccent()),
-    }
-    : themeOptions.find((theme) => theme.id === themeId)?.values || {}),
+  ...themeOptions.find((theme) => theme.id === themeId)?.values || {},
 });
 
 export const getStoredThemeId = () => {
@@ -136,7 +93,11 @@ export const applyTheme = (themeId = DEFAULT_THEME_ID) => {
     return;
   }
 
-  const values = getThemeValues(themeId);
+  // Si el id guardado ya no corresponde a ningun tema (sesiones viejas con el
+  // color libre, o con el tema que se elimino), se aplica el de por defecto.
+  const esValido = themeOptions.some((opcion) => opcion.id === themeId);
+  const temaAplicado = esValido ? themeId : DEFAULT_THEME_ID;
+  const values = getThemeValues(temaAplicado);
 
   Object.entries({
     "--app-bg": values.bg,
@@ -171,19 +132,16 @@ export const applyTheme = (themeId = DEFAULT_THEME_ID) => {
   });
 
   if (typeof window !== "undefined") {
-    sessionStorage.setItem("xpertcont_theme_id", themeId);
+    sessionStorage.setItem("xpertcont_theme_id", temaAplicado);
   }
-};
-
-export const applyCustomAccent = (accent) => {
-  if (typeof window !== "undefined") {
-    sessionStorage.setItem("xpertcont_custom_accent", accent);
-  }
-
-  applyTheme(CUSTOM_THEME_ID);
 };
 
 export const applyStoredTheme = () => {
+  if (typeof window !== "undefined") {
+    // Limpia el acento guardado del color libre: ya no se usa.
+    sessionStorage.removeItem("xpertcont_custom_accent");
+  }
+
   applyTheme(getStoredThemeId());
 };
 

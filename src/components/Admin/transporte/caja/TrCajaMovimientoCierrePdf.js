@@ -45,6 +45,40 @@ const COLUMNS = {
 
 const DETAIL_WIDTH = COLUMNS.ingresoRight - COLUMNS.detailX - 14;
 
+// Monto de referencia de las encomiendas por cobrar. Va en la columna de detalle,
+// a la derecha del destino, y no en las de montos: junto a los importes reales se
+// leia como un importe mas y hacia dudar del cuadre.
+const REFERENCIA_SIZE = 6.8;
+const REFERENCIA_GAP = 7;
+
+// Cajita de encomienda, misma ruta que usa el ticket. Solo se dibuja en filas que
+// son encomiendas: los ingresos manuales y las salidas de dinero no llevan icono.
+const ICONO_SIZE = 6;
+const ICONO_GAP = 3;
+// pdf-lib dibuja el path con scale(escala, -escala): el eje Y del SVG queda
+// invertido, asi que el punto de anclaje NO es el centro visual de la cajita.
+// Este path ocupa y de 3.5 a 23.19 dentro de su caja de 24. Con el anclaje en
+// yLinea - 1 la cajita caia 6.8 pt mas abajo que las letras, casi una linea del
+// reporte. El desfase de abajo la deja centrada con las mayusculas del texto.
+const ICONO_PATH_Y_MIN = 3.5;
+const ICONO_PATH_Y_MAX = 23.19;
+const ICONO_OFFSET_Y = (ICONO_SIZE / 24) * ((ICONO_PATH_Y_MIN + ICONO_PATH_Y_MAX) / 2)
+  + (0.717 * REFERENCIA_SIZE) / 2;
+const ICONO_ENCOMIENDA = "M20 8.69V18c0 .72-.38 1.38-1 1.73l-6 3.46c-.62.36-1.38.36-2 0l-6-3.46A2 2 0 0 1 4 18V8.69c0-.72.38-1.38 1-1.73l6-3.46c.62-.36 1.38-.36 2 0l6 3.46c.62.35 1 1.01 1 1.73zM12 5.23 6.74 8.26 12 11.29l5.26-3.03L12 5.23zm-6 4.76V18l5 2.88v-7.86L6 9.99zm12 0-5 3.03v7.86L18 18V9.99z";
+
+// Recorta con puntos suspensivos para que el texto entre en el ancho dado.
+const truncar = (text, font, size, maxWidth) => {
+  const original = cleanText(text);
+  if (!original || maxWidth <= 0) return "";
+  if (font.widthOfTextAtSize(original, size) <= maxWidth) return original;
+
+  let salida = original;
+  while (salida.length > 2 && font.widthOfTextAtSize(`${salida}...`, size) > maxWidth) {
+    salida = salida.slice(0, -1);
+  }
+  return salida.length > 2 ? `${salida}...` : "";
+};
+
 const hexToPdfRgb = (hex, fallback) => {
   const normalized = String(hex || "").replace("#", "");
   if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return fallback;
@@ -136,9 +170,11 @@ const drawSummaryBox = (page, { label, value, x, y, width, color }, fonts, pdfCo
   drawRight(page, money(value), x + width - 10, y - 34, 13, fonts.bold, color);
 };
 
-const esIngresoPorCobrar = (item) => (
-  String(item?.ingresoTexto || "").trim().toLowerCase() === "por cobrar"
+const esTextoPorCobrar = (value) => (
+  String(value || "").trim().toLowerCase() === "por cobrar"
 );
+
+const esIngresoPorCobrar = (item) => esTextoPorCobrar(item?.ingresoTexto);
 
 const esIngresoAnulado = (item) => (
   String(item?.ingresoTexto || "").trim().toLowerCase() === "anulado"
@@ -169,11 +205,12 @@ const normalizarIngreso = (row) => {
   const destino = row.punto_venta_dest_nombre || row.id_punto_venta_dest;
   const remitente = row.cliente ? `Rem.: ${row.cliente}` : "";
   const destinatario = row.destinatario ? `Dest.: ${row.destinatario}` : "";
-  const primeraLinea = [
-    numeroEncomienda,
-    destino ? `Dst.: ${destino}` : "",
-  ].filter(Boolean).join(" | ");
+  // Sin rotulo "Dst.: ": el destino ya se ubica solo en la linea, despues del
+  // numero de comprobante y separado por "|".
+  const primeraLinea = [numeroEncomienda, destino].filter(Boolean).join(" ");
   const segundaLinea = [remitente, destinatario].filter(Boolean).join(" | ");
+
+  const ingresoTexto = ingresoReferenciaTexto(row, contabiliza);
 
   return {
     fecha: row.fecha_caja,
@@ -186,7 +223,17 @@ const normalizarIngreso = (row) => {
     ingreso: contabiliza ? Number(row.r_monto_total || 0) : 0,
     salida: 0,
     informativo: !contabiliza,
-    ingresoTexto: ingresoReferenciaTexto(row, contabiliza),
+    ingresoTexto,
+    // Monto de la encomienda por cobrar, solo como referencia visual junto al
+    // destino. A proposito NO se guarda en 'ingreso': ese campo es el unico que
+    // alimenta totalIngresos y el saldo de la fila, y aqui debe quedar en cero
+    // para que el cuadre no cambie.
+    montoReferencia: esTextoPorCobrar(ingresoTexto) ? Number(row.r_monto_total || 0) : 0,
+    // Las filas de este bloque SI son encomiendas (traen serie, numero y
+    // descripcion del envio). Los ingresos manuales y las salidas no pasan por
+    // aqui, asi que no llevan icono de cajita.
+    esEncomienda: true,
+    descripcionEncomienda: cleanText(row.descripcion),
   };
 };
 
@@ -199,8 +246,7 @@ const normalizarPagoChofer = (row) => {
   const destino = row.punto_venta_dest_nombre || row.id_punto_venta_dest;
   const detalle = [
     "Pago chofer",
-    numeroEncomienda,
-    destino ? `Dst.: ${destino}` : "",
+    [numeroEncomienda, destino].filter(Boolean).join(" "),
     row.descripcion,
   ].filter(Boolean).join(" | ");
 
@@ -354,9 +400,13 @@ export default async function crearCierreCajaMovimientoPdf({
     // Alto automatico de fila:
     // rowBaseHeight + (cantidad de lineas * rowLineHeight), respetando rowMinHeight.
     // Si aumentas rowLineHeight, el detalle respirara mas y el salto de pagina se ajusta solo.
+    // La descripcion de la encomienda ocupa una 3ra linea propia, solo en las
+    // filas que la tienen: el resto no crece y el reporte sigue compacto.
+    const tieneLineaEncomienda = Boolean(item.esEncomienda && item.descripcionEncomienda);
+    const lineasFila = detailLines.length + (tieneLineaEncomienda ? 1 : 0);
     const rowHeight = Math.max(
       LAYOUT.rowMinHeight,
-      LAYOUT.rowBaseHeight + (detailLines.length * LAYOUT.rowLineHeight),
+      LAYOUT.rowBaseHeight + (lineasFila * LAYOUT.rowLineHeight),
     );
 
     if (y - rowHeight < LAYOUT.bottomReserved) addPage();
@@ -373,6 +423,71 @@ export default async function crearCierreCajaMovimientoPdf({
     detailLines.forEach((line, index) => {
       page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: INK });
     });
+
+    // Monto de referencia del por cobrar, en la 1era linea a la derecha del
+    // destino. No suma nada: vive en un campo que ninguna operacion del reporte lee.
+    const esReferencia = Number(item.montoReferencia || 0) > 0;
+    const limiteDerecho = COLUMNS.detailX + DETAIL_WIDTH;
+    const anchoLinea = (indice) => regular.widthOfTextAtSize(detailLines[indice] || "", 7.1);
+
+    if (esReferencia) {
+      const referencia = money(item.montoReferencia);
+      const anchoReferencia = regular.widthOfTextAtSize(referencia, REFERENCIA_SIZE);
+
+      let linea = -1;
+      let cursor = limiteDerecho;
+      for (let i = 0; i < detailLines.length; i += 1) {
+        const inicio = COLUMNS.detailX + anchoLinea(i) + REFERENCIA_GAP;
+        if (inicio + anchoReferencia <= limiteDerecho) {
+          linea = i;
+          cursor = inicio;
+          break;
+        }
+      }
+      // Si no entra en ninguna linea, se apoya contra el borde de la columna: jamas
+      // invade la zona de montos.
+      if (linea === -1 && limiteDerecho - anchoReferencia >= COLUMNS.detailX) {
+        linea = Math.max(0, detailLines.length - 1);
+        cursor = limiteDerecho - anchoReferencia;
+      }
+
+      if (cursor + anchoReferencia <= limiteDerecho) {
+        page.drawText(referencia, {
+          x: cursor,
+          y: y - 8 - (linea * LAYOUT.rowLineHeight),
+          size: REFERENCIA_SIZE,
+          font: regular,
+          color: MUTED,
+        });
+      }
+    }
+
+    // Cajita + descripcion de la encomienda, en una 3ra linea propia debajo del
+    // detalle. Solo en encomiendas: las salidas y los ingresos manuales no llevan.
+    if (tieneLineaEncomienda) {
+      const yDescripcion = y - 8 - (detailLines.length * LAYOUT.rowLineHeight);
+      page.drawSvgPath(ICONO_ENCOMIENDA, {
+        x: COLUMNS.detailX,
+        y: yDescripcion + ICONO_OFFSET_Y,
+        scale: ICONO_SIZE / 24,
+        color: MUTED,
+      });
+      const descripcion = truncar(
+        item.descripcionEncomienda,
+        regular,
+        REFERENCIA_SIZE,
+        DETAIL_WIDTH - ICONO_SIZE - ICONO_GAP,
+      );
+      if (descripcion) {
+        page.drawText(descripcion, {
+          x: COLUMNS.detailX + ICONO_SIZE + ICONO_GAP,
+          y: yDescripcion,
+          size: REFERENCIA_SIZE,
+          font: regular,
+          color: MUTED,
+        });
+      }
+    }
     drawRight(page, ingresoTexto, COLUMNS.ingresoRight, y - 8, 7.1, ingresoPorCobrar || ingresoAnulado ? bold : regular, ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : item.ingreso ? INK : MUTED);
     drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, salidaFont, salidaColor);
     drawRight(page, money(saldo), COLUMNS.saldoRight, y - 8, 7.1, bold, saldo >= 0 ? INK : DANGER);
