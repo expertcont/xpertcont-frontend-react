@@ -7,14 +7,34 @@ const formatearMonto = (monto) => Number(monto || 0).toLocaleString("en-US", {
   maximumFractionDigits: 2,
 });
 
+// Los dos botones del listado (Ventas y RECORDS) usan este mismo dialogo con
+// endpoints distintos: /ad_ventarecaudacion agrupa por forma de pago y
+// /ad_ventausuario por usuario que registro. "modo" solo cambia el encabezado y
+// el texto vacio; las filas son iguales en los dos casos.
+const MODOS = {
+  recaudacion: {
+    titulo: "Datos de recaudacion",
+    subtitulo: "Resumen por forma de pago segun el filtro actual",
+    vacio: "No hay recaudaciones",
+  },
+  usuario: {
+    titulo: "Ventas por usuario",
+    subtitulo: "Total vendido por quien registro el comprobante",
+    vacio: "No hay ventas por usuario",
+  },
+};
+
 export default function AdminVentaRecaudacionDialog({
   open,
   recaudaciones,
+  modo = "recaudacion",
   onClose,
 }) {
   if (!open) {
     return null;
   }
+
+  const contenido = MODOS[modo] || MODOS.recaudacion;
 
   return (
     <Dialog
@@ -25,7 +45,7 @@ export default function AdminVentaRecaudacionDialog({
       PaperProps={{
         sx: {
           m: { xs: 1.5, sm: 2 },
-          width: { xs: "calc(100vw - 24px)", sm: 420 },
+          width: { xs: "calc(100vw - 24px)", sm: 460 },
           maxWidth: "calc(100vw - 24px)",
           maxHeight: { xs: "calc(100dvh - 24px)", sm: "80vh" },
           backgroundColor: palette.surface,
@@ -43,11 +63,11 @@ export default function AdminVentaRecaudacionDialog({
           borderBottom: `1px solid ${palette.borderSoft}`,
         }}
       >
-        <Typography sx={{ fontWeight: 800, fontSize: "16px", lineHeight: 1.2 }}>
-          Datos de recaudacion
+        <Typography sx={{ color: palette.text, fontWeight: 800, fontSize: "16px", lineHeight: 1.2 }}>
+          {contenido.titulo}
         </Typography>
         <Typography sx={{ color: palette.muted, fontSize: "12px", mt: 0.25 }}>
-          Resumen segun el filtro actual
+          {contenido.subtitulo}
         </Typography>
       </DialogTitle>
 
@@ -76,7 +96,8 @@ export default function AdminVentaRecaudacionDialog({
                   minHeight: 42,
                   px: 1.2,
                   py: 0.85,
-                  backgroundColor: index % 2 === 0 ? palette.bg : palette.surfaceAlt,
+                  backgroundColor: index % 2 === 0 ? palette.bg : "transparent",
+                  border: `1px solid ${palette.borderSoft}`,
                   borderRadius: 1.5,
                 }}
               >
@@ -94,14 +115,24 @@ export default function AdminVentaRecaudacionDialog({
                 >
                   {item.recaudacion}
                 </Typography>
-                <Typography sx={{ color: "#7ddbd3", fontSize: "13px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                <Typography
+                  sx={{
+                    color: palette.accent,
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    whiteSpace: "nowrap",
+                    textAlign: "right",
+                    minWidth: 120,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
                   S/ {formatearMonto(item.monto)}
                 </Typography>
               </Box>
             ))
           ) : (
             <Typography sx={{ color: palette.muted, fontSize: "13px", textAlign: "center", py: 2 }}>
-              No hay recaudaciones
+              {contenido.vacio}
             </Typography>
           )}
         </Box>
@@ -122,7 +153,7 @@ export default function AdminVentaRecaudacionDialog({
             "&:hover": {
               backgroundColor: palette.accent,
               borderColor: palette.accent,
-              color: palette.surface,
+              color: palette.onAccent,
               boxShadow: "none",
             },
           }}

@@ -41,7 +41,7 @@ const modalPaperSx = {
   color: palette.text,
   border: `1px solid ${palette.border}`,
   borderRadius: 2,
-  boxShadow: "0 18px 48px rgba(0,0,0,0.34)",
+  boxShadow: palette.shadowSoft,
   overflow: "hidden",
 };
 
@@ -50,11 +50,11 @@ const modalFieldSx = {
   "& .MuiOutlinedInput-root": {
     minHeight: 40,
     color: palette.text,
-    backgroundColor: "rgba(26,33,39,0.48)",
+    backgroundColor: palette.surfaceAlt,
     borderRadius: 2,
-    "& fieldset": { borderColor: "rgba(139,154,165,0.14)" },
-    "&:hover fieldset": { borderColor: "rgba(42,161,152,0.28)" },
-    "&.Mui-focused fieldset": { borderColor: "rgba(42,161,152,0.45)" },
+    "& fieldset": { borderColor: palette.border },
+    "&:hover fieldset": { borderColor: palette.accent },
+    "&.Mui-focused fieldset": { borderColor: palette.accent },
   },
   "& input": {
     color: palette.text,
@@ -70,7 +70,7 @@ const modalSelectSx = {
   width: 270,
   height: 40,
   color: palette.text,
-  backgroundColor: "rgba(26,33,39,0.48)",
+  backgroundColor: palette.surfaceAlt,
   borderRadius: 2,
   fontSize: "13px",
   ".MuiSelect-select": {
@@ -78,26 +78,26 @@ const modalSelectSx = {
     justifyContent: "center",
     textAlign: "center",
   },
-  "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(139,154,165,0.14)" },
-  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(42,161,152,0.28)" },
+  "& .MuiOutlinedInput-notchedOutline": { borderColor: palette.border },
+  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: palette.accent },
   "& .MuiSelect-icon": { color: palette.muted },
 };
 
 const toggleButtonSx = {
   flex: 1,
-  borderColor: "rgba(139,154,165,0.16)",
+  borderColor: palette.border,
   color: palette.muted,
   fontSize: "12px",
   fontWeight: 700,
   "&.Mui-selected": {
-    backgroundColor: "rgba(42,161,152,0.18)",
-    color: "#9fe7e0",
+    backgroundColor: palette.accentSoft,
+    color: palette.text,
   },
   "&.Mui-selected:hover": {
-    backgroundColor: "rgba(42,161,152,0.25)",
+    backgroundColor: palette.chip,
   },
   "&:hover": {
-    backgroundColor: "rgba(139,154,165,0.08)",
+    backgroundColor: palette.surfaceAlt,
     color: palette.text,
   },
 };
@@ -106,15 +106,15 @@ const primaryButtonSx = {
   width: 270,
   height: 40,
   borderRadius: 2,
-  backgroundColor: "rgba(42,161,152,0.18)",
-  border: "1px solid rgba(42,161,152,0.30)",
-  color: "#bff5ef",
+  backgroundColor: palette.accentSoft,
+  border: `1px solid ${palette.border}`,
+  color: palette.text,
   boxShadow: "none",
   fontSize: "12px",
   fontWeight: 800,
   "&:hover": {
-    backgroundColor: "rgba(42,161,152,0.28)",
-    borderColor: "rgba(42,161,152,0.42)",
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
     boxShadow: "none",
   },
 };
@@ -123,14 +123,15 @@ const secondaryButtonSx = {
   width: 270,
   height: 40,
   borderRadius: 2,
-  backgroundColor: "rgba(139,154,165,0.10)",
-  border: "1px solid rgba(139,154,165,0.16)",
+  backgroundColor: palette.surfaceAlt,
+  border: `1px solid ${palette.border}`,
   color: palette.text,
   boxShadow: "none",
   fontSize: "12px",
   fontWeight: 800,
   "&:hover": {
-    backgroundColor: "rgba(139,154,165,0.16)",
+    backgroundColor: palette.chip,
+    borderColor: palette.accent,
     boxShadow: "none",
   },
 };
@@ -242,7 +243,10 @@ export default function AdminVentaEmisionModal({
       </DialogTitle>
 
       <ToggleButtonGroup
-        color="success"
+        // Sin prop color: ToggleButton (MUI v5) hace theme.palette[color].main
+        // sin validar, asi que 'inherit' lo revienta con
+        // "Cannot read properties of undefined (reading 'main')".
+        // El color real lo pone toggleButtonSx.
         value={valorEmite}
         exclusive
         size="small"
@@ -252,7 +256,7 @@ export default function AdminVentaEmisionModal({
           width: 270,
           mt: 1.35,
           mb: 0.75,
-          backgroundColor: "rgba(26,33,39,0.34)",
+          backgroundColor: palette.surfaceAlt,
           borderRadius: 2,
           overflow: "hidden",
         }}
@@ -388,10 +392,10 @@ export default function AdminVentaEmisionModal({
             >
               <Tooltip title="Buscar RUC/DNI">
                 <IconButton
-                  color="default"
+                  color="inherit"
                   aria-label="buscar ruc dni"
                   size="small"
-                  sx={{ color: "#f4c46f", "&:hover": { backgroundColor: "rgba(245,158,11,0.12)" } }}
+                  sx={{ color: palette.warning, "&:hover": { backgroundColor: palette.warningSoft } }}
                   onClick={() => onBuscarRazonSocial(datosEmitir.r_documento_id)}
                 >
                   <FindIcon />
@@ -399,10 +403,10 @@ export default function AdminVentaEmisionModal({
               </Tooltip>
               <Tooltip title="Clientes habituales">
                 <IconButton
-                  color="default"
+                  color="inherit"
                   aria-label="clientes habituales"
                   size="small"
-                  sx={{ color: "#7ddbd3", "&:hover": { backgroundColor: "rgba(42,161,152,0.12)" } }}
+                  sx={{ color: palette.accent, "&:hover": { backgroundColor: palette.accentSoft } }}
                   onClick={cargarHabituales}
                 >
                   <ManageSearchIcon />
@@ -491,9 +495,9 @@ export default function AdminVentaEmisionModal({
               disabled={!datosEmitir.r_documento_id || !datosEmitir.r_razon_social}
               onChange={(event) => onChangeEmite("registrar_habitual", event.target.checked)}
               sx={{
-                color: "rgba(139,154,165,0.56)",
+                color: palette.muted,
                 "&.Mui-checked": {
-                  color: "#7ddbd3",
+                  color: palette.accent,
                 },
               }}
             />
@@ -601,7 +605,7 @@ export default function AdminVentaEmisionModal({
             endAdornment: datosEmitir.efectivo > 0 && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={() => onSwitchPago("efectivo")}>
-                  <CompareArrowsIcon sx={{ color: "#7ddbd3" }} />
+                  <CompareArrowsIcon sx={{ color: palette.accent }} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -655,7 +659,7 @@ export default function AdminVentaEmisionModal({
             endAdornment: datosEmitir.efectivo2 > 0 && (
               <InputAdornment position="end">
                 <IconButton size="small" onClick={() => onSwitchPago("efectivo2")}>
-                  <CompareArrowsIcon sx={{ color: "#7ddbd3" }} />
+                  <CompareArrowsIcon sx={{ color: palette.accent }} />
                 </IconButton>
               </InputAdornment>
             ),
@@ -677,7 +681,7 @@ export default function AdminVentaEmisionModal({
 
       <Button
         variant="contained"
-        color="primary"
+        color="inherit"
         onClick={onSaveComprobante}
         sx={{ ...primaryButtonSx, mt: 1.2 }}
       >
@@ -737,7 +741,7 @@ export default function AdminVentaEmisionModal({
             {cargandoHabituales && (
               <ListItemText
                 primary="Cargando clientes..."
-                primaryTypographyProps={{ sx: { color: "#d1d5db", textAlign: "center", py: 2 } }}
+                primaryTypographyProps={{ sx: { color: palette.muted, textAlign: "center", py: 2 } }}
               />
             )}
 
@@ -748,7 +752,7 @@ export default function AdminVentaEmisionModal({
                 sx={{
                   borderBottom: `1px solid ${palette.borderSoft}`,
                   "&:hover": {
-                    backgroundColor: "rgba(42,161,152,0.08)",
+                    backgroundColor: palette.accentSoft,
                   },
                 }}
               >
@@ -768,7 +772,7 @@ export default function AdminVentaEmisionModal({
             {!cargandoHabituales && clientesFiltrados.length === 0 && (
               <ListItemText
                 primary="Sin clientes habituales"
-                primaryTypographyProps={{ sx: { color: "#d1d5db", textAlign: "center", py: 2 } }}
+                primaryTypographyProps={{ sx: { color: palette.muted, textAlign: "center", py: 2 } }}
               />
             )}
           </List>

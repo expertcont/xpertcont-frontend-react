@@ -21,7 +21,7 @@ const tableTheme = {
   divider: { default: palette.borderSoft },
   button: { default: palette.muted, focus: palette.accentSoft, hover: palette.accentSoft, disabled: palette.border },
   selected: { default: palette.accentSoft, text: palette.text },
-  highlightOnHover: { default: palette.surfaceAlt, text: palette.text },
+  highlightOnHover: { default: palette.rowHover, text: palette.text },
   striped: { default: "transparent", text: palette.text },
 };
 

@@ -34,8 +34,11 @@ import AdminVentaFormTables from './AdminVentaFormTables';
 import palette from '../../../../theme/palette';
 
 const formShellSx = {
-  backgroundColor: 'transparent',
-  border: 0,
+  // Superficie propia: el form va un escalon por encima de la pagina, igual que
+  // las barras del listado. Antes era transparente y todo quedaba sobre
+  // palette.bg, que es el token mas oscuro.
+  backgroundColor: palette.surface,
+  border: `1px solid ${palette.border}`,
   borderRadius: 2,
   boxShadow: 'none',
   overflow: 'visible',
@@ -46,13 +49,13 @@ const formFieldSx = {
   '& .MuiOutlinedInput-root': {
     minHeight: 42,
     color: palette.text,
-    backgroundColor: 'rgba(26, 33, 39, 0.48)',
+    backgroundColor: palette.surfaceAlt,
     borderRadius: 2,
-    '& fieldset': { borderColor: 'rgba(139,154,165,0.10)' },
-    '&:hover': { backgroundColor: 'rgba(26, 33, 39, 0.62)' },
-    '&:hover fieldset': { borderColor: 'rgba(42,161,152,0.24)' },
-    '&.Mui-focused': { backgroundColor: 'rgba(34,45,53,0.66)' },
-    '&.Mui-focused fieldset': { borderColor: 'rgba(42,161,152,0.42)' },
+    '& fieldset': { borderColor: palette.border },
+    '&:hover': { backgroundColor: palette.chip },
+    '&:hover fieldset': { borderColor: palette.accent },
+    '&.Mui-focused': { backgroundColor: palette.chip },
+    '&.Mui-focused fieldset': { borderColor: palette.accent },
   },
   '& input': {
     color: palette.text,
@@ -76,7 +79,7 @@ const formSelectSx = {
   height: 42,
   mt: 0,
   color: palette.text,
-  backgroundColor: 'rgba(26, 33, 39, 0.38)',
+  backgroundColor: palette.surfaceAlt,
   border: 0,
   borderRadius: 2,
   fontSize: '13px',
@@ -90,10 +93,11 @@ const formSelectSx = {
   '& .MuiOutlinedInput-notchedOutline': { border: 0 },
   '& .MuiSelect-icon': { color: palette.muted },
   '&:hover': {
-    backgroundColor: 'rgba(26, 33, 39, 0.56)',
+    backgroundColor: palette.chip,
   },
   '&.Mui-focused': {
-    backgroundColor: 'rgba(34,45,53,0.64)',
+    backgroundColor: palette.chip,
+    boxShadow: `inset 0 0 0 1px ${palette.accent}`,
   },
 };
 
@@ -111,26 +115,38 @@ const actionButtonSx = {
 
 const emitButtonSx = {
   ...actionButtonSx,
-  backgroundColor: 'rgba(139,154,165,0.10)',
-  border: '1px solid rgba(139,154,165,0.16)',
-  color: '#d7e7e5',
+  backgroundColor: palette.surfaceAlt,
+  border: `1px solid ${palette.border}`,
+  color: palette.text,
   '&:hover': {
-    backgroundColor: 'rgba(42,161,152,0.16)',
-    borderColor: 'rgba(42,161,152,0.30)',
-    color: '#bff5ef',
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
+    color: palette.text,
     boxShadow: 'none',
+  },
+  '&.Mui-disabled': {
+    backgroundColor: palette.bg,
+    borderColor: palette.borderSoft,
+    color: palette.muted,
+    opacity: 1,
   },
 };
 
 const modifyButtonSx = {
   ...actionButtonSx,
-  backgroundColor: 'rgba(42,161,152,0.14)',
-  border: '1px solid rgba(42,161,152,0.34)',
+  backgroundColor: palette.accentSoft,
+  border: `1px solid ${palette.accent}`,
   color: palette.text,
   '&:hover': {
     backgroundColor: palette.accent,
-    color: palette.surface,
+    color: palette.onAccent,
     boxShadow: 'none',
+  },
+  '&.Mui-disabled': {
+    backgroundColor: palette.bg,
+    borderColor: palette.borderSoft,
+    color: palette.muted,
+    opacity: 1,
   },
 };
 
@@ -167,7 +183,7 @@ const emitColumnWidthSx = {
 const totalMiniSelectSx = {
   height: 26,
   color: palette.text,
-  backgroundColor: 'rgba(26, 33, 39, 0.24)',
+  backgroundColor: palette.surfaceAlt,
   borderRadius: 1.4,
   fontSize: '12px',
   '.MuiSelect-select': {
@@ -184,7 +200,7 @@ const totalMiniSelectSx = {
     fontSize: 17,
   },
   '&:hover': {
-    backgroundColor: 'rgba(26, 33, 39, 0.48)',
+    backgroundColor: palette.chip,
     color: palette.text,
   },
 };
@@ -197,7 +213,7 @@ const totalLineSx = {
 };
 
 const totalLabelSx = {
-  color: 'rgba(139,154,165,0.88)',
+  color: palette.muted,
   fontSize: '12px',
   fontWeight: 600,
   textAlign: 'left',
@@ -217,15 +233,15 @@ const dangerIconButtonSx = {
   width: 40,
   height: 40,
   borderRadius: 2,
-  backgroundColor: 'rgba(139,154,165,0.08)',
-  color: '#caa79c',
+  backgroundColor: palette.surfaceAlt,
+  color: palette.danger,
   '&:hover': {
-    backgroundColor: 'rgba(239, 116, 82, 0.12)',
-    color: '#efb8a8',
+    backgroundColor: palette.dangerSoft,
+    color: palette.danger,
   },
   '&.Mui-disabled': {
     color: palette.muted,
-    backgroundColor: 'rgba(139,154,165,0.08)',
+    backgroundColor: palette.bg,
   },
 };
 
@@ -233,7 +249,7 @@ const toolbarIconButtonSx = {
   width: 40,
   height: 40,
   borderRadius: 2,
-  backgroundColor: 'rgba(139,154,165,0.10)',
+  backgroundColor: palette.surfaceAlt,
   color: palette.muted,
   transition: 'all 0.18s ease',
   '&:hover': {
@@ -244,54 +260,54 @@ const toolbarIconButtonSx = {
 
 const backIconButtonSx = {
   ...toolbarIconButtonSx,
-  color: '#a8c7ff',
+  color: palette.accent,
   '&:hover': {
-    backgroundColor: 'rgba(96,165,250,0.18)',
-    color: '#d7e7ff',
+    backgroundColor: palette.accentSoft,
+    color: palette.text,
   },
 };
 
 const addProductIconButtonSx = {
   ...toolbarIconButtonSx,
-  color: '#7ddbd3',
+  color: palette.accent,
   '&:hover': {
-    backgroundColor: 'rgba(42,161,152,0.20)',
-    color: '#9ff2ec',
+    backgroundColor: palette.accentSoft,
+    color: palette.text,
   },
 };
 
 const addReferenceIconButtonSx = {
   ...toolbarIconButtonSx,
-  color: '#f4c46f',
+  color: palette.warning,
   '&:hover': {
-    backgroundColor: 'rgba(245,158,11,0.18)',
-    color: '#ffd98a',
+    backgroundColor: palette.warningSoft,
+    color: palette.text,
   },
 };
 
 const searchIconButtonSx = {
-  color: '#f4c46f',
+  color: palette.warning,
   '&:hover': {
-    backgroundColor: 'rgba(245,158,11,0.12)',
-    color: '#ffd98a',
+    backgroundColor: palette.warningSoft,
+    color: palette.text,
   },
 };
 
 const rowDeleteIconSx = {
   cursor: 'pointer',
-  color: '#ff9f7a',
+  color: palette.danger,
   transition: 'color 0.18s ease',
   '&:hover': {
-    color: '#ffd1c2',
+    color: palette.text,
   },
 };
 
 const rowEditIconSx = {
   cursor: 'pointer',
-  color: '#7ddbd3',
+  color: palette.accent,
   transition: 'color 0.18s ease',
   '&:hover': {
-    color: '#b6fff9',
+    color: palette.text,
   },
 };
 
@@ -1638,7 +1654,7 @@ export default function AdminVentaForm() {
             onClick={() => handleEditarDetalleClick(row)}
             sx={{
               ...rowEditIconSx,
-              color: copiedRowId === row.documento_id ? '#86efac' : rowEditIconSx.color,
+              color: copiedRowId === row.documento_id ? palette.success : rowEditIconSx.color,
             }}
           />
         ):null
@@ -1906,7 +1922,7 @@ export default function AdminVentaForm() {
 
   const emitirAction = (
     <Button variant='contained'
-            color='primary'
+            color='inherit'
             fullWidth
             sx={emitButtonSx}
             onClick = { () => {
@@ -1937,7 +1953,7 @@ export default function AdminVentaForm() {
     <Tooltip title="Liberar Proceso">
       <span>
         <IconButton
-          color="primary"
+          color="inherit"
           onClick={() => {
             handleLiberarProceso(params.comprobante, 1);
           }}
@@ -1966,10 +1982,19 @@ export default function AdminVentaForm() {
               onClose={cerrarModalPedidos}
               maxWidth="xl"
               fullWidth
+              PaperProps={{
+                sx: {
+                  backgroundColor: palette.surface,
+                  color: palette.text,
+                  border: `1px solid ${palette.border}`,
+                  borderRadius: palette.radius.modal,
+                  boxShadow: palette.shadowSoft,
+                },
+              }}
             >
               <DialogContent
                 sx={{
-                  background: '#1e272e',
+                  background: palette.surface,
                   padding: 2
                 }}
               >
@@ -2007,8 +2032,8 @@ export default function AdminVentaForm() {
                                             type="date"
                                             value={venta.r_fecemi}
                                             onChange={handleChange}
-                                            inputProps={{ style:{color:'white'} }}
-                                            InputLabelProps={{ style:{color:'white'} }}
+                                            
+                                            
                                   />
                                 </Box>
                                 {params.comprobante.includes('NP') && (
@@ -2033,7 +2058,7 @@ export default function AdminVentaForm() {
                                   <Typography sx={totalLabelSx}>
                                     Total
                                   </Typography>
-                                  <Typography sx={{ color: '#8de5de', fontSize: '20px', fontWeight: 800, lineHeight: 1, whiteSpace: 'nowrap', textAlign: 'left' }}>
+                                  <Typography sx={{ color: palette.accent, fontSize: '20px', fontWeight: 800, lineHeight: 1, whiteSpace: 'nowrap', textAlign: 'left' }}>
                                     {`S/ ${totalCabecera}`}
                                   </Typography>
                                 </Box>
@@ -2102,8 +2127,8 @@ export default function AdminVentaForm() {
                                         onChange={(e) => handleChangeEmite("efectivo", e.target.value)}
 
                                         onKeyDown={handleCodigoKeyDown}
-                                        inputProps={{ style: { color: 'white' } }}
-                                        InputLabelProps={{ style: {color: 'white'}, shrink: true }}
+                                        
+                                        InputLabelProps={{ shrink: true }}
                                       />                                
                                   )
                                   }
@@ -2165,8 +2190,8 @@ export default function AdminVentaForm() {
                                       onChange={(e) => handleChangeEmite("efectivo2", e.target.value)}
 
                                       onKeyDown={handleCodigoKeyDown}
-                                      inputProps={{ style: { color: 'white' } }}
-                                      InputLabelProps={{ style: { color:'white'}, shrink: true }}
+                                      
+                                      InputLabelProps={{ shrink: true }}
                                     />                                
                                   )
                                   }
@@ -2194,7 +2219,7 @@ export default function AdminVentaForm() {
                                (  //Caso contrario, solo se modifica pero 'NV' (Notas de Venta)
                                   //Comprobantes Sunat NO, porque ya estan declarados en OSE-sunat
                                   <Button variant='contained' 
-                                          color='primary' 
+                                          color='inherit' 
                                           type='submit'
                                           fullWidth
                                           sx={modifyButtonSx}
@@ -2254,8 +2279,8 @@ export default function AdminVentaForm() {
                                           value={venta.r_documento_id}
                                           onChange={handleChange}
                                           onKeyDown={handleCodigoKeyDown}
-                                          inputProps={{ style: { color: 'white' } }}
-                                          InputLabelProps={{ style: { color: 'white' } }}
+                                          
+                                          
                                           InputProps={{
                                             endAdornment: (
                                               <InputAdornment position="end">
@@ -2284,8 +2309,8 @@ export default function AdminVentaForm() {
                                                     value={venta.r_razon_social}
                                                     onChange={handleChange} //new para busqueda
                                                     onKeyDown={handleCodigoKeyDown} //new para busqueda
-                                                    inputProps={{ style:{color:'white'} }}
-                                                    InputLabelProps={{ style:{color:'white'} }}
+                                                    
+                                                    
                                         />
                                     </Grid>
 
@@ -2300,8 +2325,8 @@ export default function AdminVentaForm() {
                                                 name="r_direccion"
                                                 value={venta.r_direccion}
                                                 onChange={handleChange}
-                                                inputProps={{ style:{color:'white'} }}
-                                                InputLabelProps={{ style:{color:'white'} }}
+                                                
+                                                
                                         />
                                     </Grid>
 

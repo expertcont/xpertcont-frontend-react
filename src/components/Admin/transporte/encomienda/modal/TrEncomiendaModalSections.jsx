@@ -14,7 +14,7 @@ import {
   Field,
   MoneyStepper,
   SectionHeader,
-  searchIconButtonSx,
+  searchIconButtonSxColgado,
   sectionSx,
 } from "./TrEncomiendaModalInputs";
 import {
@@ -22,6 +22,15 @@ import {
   documentoTipoDesdeNumero,
 } from "./trEncomiendaModalUtils";
 import TimeWheelPicker from "./TimeWheelPicker";
+
+// Pista (placeholder) de los campos de documento: chica, tenue y sin peso visual,
+// para que se lea como ayuda y no como un texto fijo dentro de la caja.
+const pistaDocumentoSx = {
+  fontSize: "10.5px",
+  fontWeight: 700,
+  letterSpacing: "0.3px",
+  opacity: 0.4,
+};
 
 const compactSectionSx = {
   ...sectionSx,
@@ -106,12 +115,77 @@ export default function TrEncomiendaModalSections({
       <Box sx={compactSectionSx}>
         <Grid container columnSpacing={0.65} rowSpacing={0.35}>
           <Grid item xs={12}>
+            <Field label="DNI / RUC" labelWidth={104} controlHeight={40}>
+              <Box sx={{ position: "relative", display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
+                <IconButton
+                  size="small"
+                  onClick={buscarRemitente}
+                  disabled={buscandoRemitente}
+                  title="Buscar remitente por DNI o RUC"
+                  sx={{
+                    ...searchIconButtonSxColgado,
+                    color: buscandoRemitente ? palette.border : palette.muted,
+                  }}
+                >
+                  <Search />
+                </IconButton>
+                <CaptureInput
+                  value={draft.cliente_documento}
+                  onChange={(value) => {
+                    updateDraft("cliente_documento", value);
+                    updateDraft("id_documento", documentoTipoDesdeNumero(value));
+                    updateDraft("r_cod", comprobanteDesdeDocumento(value).r_cod);
+                  }}
+                  inputRef={refs.remitenteDocRef}
+                  nextRef={draft.cliente ? refs.remitenteTelefonoRef : refs.remitenteNombreRef}
+                  placeholder="DNI 8 digitos o RUC 11"
+                  placeholderSx={pistaDocumentoSx}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  align="right"
+                  prominent
+                  onPlus={buscarRemitente}
+                  onF3={abrirClonePicker}
+                />
+              </Box>
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="Nombres / R.Social" labelWidth={104}>
+              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="Telefono" labelWidth={104}>
+              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.remitenteEntregaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
+            </Field>
+          </Grid>
+          {remitenteEsEmpresa && (
+            <Grid item xs={12}>
+              <Field label="Dir Facturacion" labelWidth={104}>
+                <CaptureInput
+                  value={draft.cliente_direccion_fact}
+                  onChange={(value) => updateDraft("cliente_direccion_fact", String(value || "").toUpperCase())}
+                  inputRef={refs.clienteDireccionFactRef}
+                  nextRef={refs.remitenteEntregaRef}
+                  placeholder="Direccion fiscal del RUC"
+                />
+              </Field>
+            </Grid>
+          )}
+          <Grid item xs={12}>
             <Field label="" labelWidth={0}>
               <Box sx={{ width: "100%", display: "flex" }}>
                 <ChoiceGroup
                   value={draft.remitente_entrega}
                   inputRef={refs.remitenteEntregaRef}
-                  nextRef={mostrarDireccionRemitente ? refs.remitenteZonaRef : refs.remitenteDocRef}
+                  nextRef={mostrarDireccionRemitente ? refs.remitenteZonaRef : refs.destinatarioDocRef}
+                  // Se muestra DOMICILIO pero se sigue guardando "CLIENTE": es el valor que
+                  // espera el backend y el que ya traen los registros existentes.
+                  options={[
+                    { value: "OFICINA", label: "OFICINA" },
+                    { value: "CLIENTE", label: "DOMICILIO" },
+                  ]}
                   onChange={(value) => {
                     updateDraft("remitente_entrega", value);
                     if (value === "OFICINA") {
@@ -126,7 +200,7 @@ export default function TrEncomiendaModalSections({
           {mostrarDireccionRemitente && (
             <>
               <Grid item xs={12}>
-                <Field label="Zona">
+                <Field label="Zona" labelWidth={104}>
                   {/* Zonas filtradas por id_punto_venta de origen; se guarda nombre de zona. */}
                   <ZonaField
                     value={draft.remitente_zona}
@@ -139,76 +213,17 @@ export default function TrEncomiendaModalSections({
                 </Field>
               </Grid>
               <Grid item xs={12}>
-                <Field label="Direccion">
+                <Field label="Direccion" labelWidth={104}>
                   <CaptureInput
                     value={draft.remitente_direccion}
                     onChange={(value) => updateDraft("remitente_direccion", String(value || "").toUpperCase())}
                     inputRef={refs.remitenteDireccionRef}
-                    nextRef={refs.remitenteDocRef}
+                    nextRef={refs.destinatarioDocRef}
                     placeholder="Direccion si envia desde casa"
                   />
                 </Field>
               </Grid>
             </>
-          )}
-          <Grid item xs={12}>
-            <Field label="DNI / RUC" labelWidth={58} controlHeight={40}>
-              <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
-                <IconButton
-                  size="small"
-                  onClick={buscarRemitente}
-                  disabled={buscandoRemitente}
-                  sx={{
-                    ...searchIconButtonSx,
-                    width: 34,
-                    height: 34,
-                    color: buscandoRemitente ? palette.muted : palette.accent,
-                  }}
-                >
-                  <Search />
-                </IconButton>
-                <CaptureInput
-                  value={draft.cliente_documento}
-                  onChange={(value) => {
-                    updateDraft("cliente_documento", value);
-                    updateDraft("id_documento", documentoTipoDesdeNumero(value));
-                    updateDraft("r_cod", comprobanteDesdeDocumento(value).r_cod);
-                  }}
-                  inputRef={refs.remitenteDocRef}
-                  nextRef={draft.cliente ? refs.remitenteTelefonoRef : refs.remitenteNombreRef}
-                  placeholder="Documento"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  align="right"
-                  prominent
-                  onPlus={buscarRemitente}
-                  onF3={abrirClonePicker}
-                />
-              </Box>
-            </Field>
-          </Grid>
-          <Grid item xs={12}>
-            <Field label="Nombres / R.Social">
-              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
-            </Field>
-          </Grid>
-          <Grid item xs={12}>
-            <Field label="Telefono" labelWidth={53}>
-              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.rutaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
-            </Field>
-          </Grid>
-          {remitenteEsEmpresa && (
-            <Grid item xs={12}>
-              <Field label="Dir Facturacion" labelWidth={92}>
-                <CaptureInput
-                  value={draft.cliente_direccion_fact}
-                  onChange={(value) => updateDraft("cliente_direccion_fact", String(value || "").toUpperCase())}
-                  inputRef={refs.clienteDireccionFactRef}
-                  nextRef={refs.rutaRef}
-                  placeholder="Direccion fiscal del RUC"
-                />
-              </Field>
-            </Grid>
           )}
         </Grid>
       </Box>
@@ -217,8 +232,48 @@ export default function TrEncomiendaModalSections({
       <Box sx={compactSectionSx}>
         <Grid container columnSpacing={0.65} rowSpacing={0.35}>
           <Grid item xs={12}>
+            <Field label="DNI" labelWidth={104} controlHeight={40}>
+              <Box sx={{ position: "relative", display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
+                <IconButton
+                  size="small"
+                  onClick={buscarDestinatario}
+                  disabled={buscandoDestinatario}
+                  sx={{
+                    ...searchIconButtonSxColgado,
+                    color: buscandoDestinatario ? palette.border : palette.muted,
+                  }}
+                >
+                  <Search />
+                </IconButton>
+                <CaptureInput
+                  value={draft.destinatario_documento}
+                  onChange={(value) => updateDraft("destinatario_documento", value)}
+                  inputRef={refs.destinatarioDocRef}
+                  nextRef={draft.destinatario ? refs.destinatarioTelefonoRef : refs.destinatarioNombreRef}
+                  placeholder="DNI 8 digitos"
+                  placeholderSx={pistaDocumentoSx}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  align="right"
+                  prominent
+                  onPlus={buscarDestinatario}
+                />
+              </Box>
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="NOMBRES APELLIDOS" labelWidth={104}>
+              <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="Telefono" labelWidth={104}>
+              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.rutaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
             {/* Destino se escoge desde rutas; se conserva id_ruta para guardar la operacion. */}
-            <Field label="Destino" labelWidth={58}>
+            <Field label="Destino" labelWidth={104}>
               <RutaField
                 ruta={rutaVisual}
                 onChange={limpiarRuta}
@@ -234,7 +289,7 @@ export default function TrEncomiendaModalSections({
                 <ChoiceGroup
                   value={draft.destinatario_entrega}
                   inputRef={refs.destinatarioEntregaRef}
-                  nextRef={draft.destinatario_entrega === "CLIENTE" ? refs.destinatarioZonaRef : refs.destinatarioDocRef}
+                  nextRef={draft.destinatario_entrega === "CLIENTE" ? refs.destinatarioZonaRef : refs.descripcionRef}
                   options={[
                     { value: "OFICINA", label: "OFICINA" },
                     { value: "CLIENTE", label: "DOMICILIO" },
@@ -253,7 +308,7 @@ export default function TrEncomiendaModalSections({
           {draft.destinatario_entrega === "CLIENTE" && (
             <>
               <Grid item xs={12}>
-                <Field label="Zona">
+                <Field label="Zona" labelWidth={104}>
                   {/* Zonas filtradas por id_punto_venta_dest de la ruta elegida; se guarda nombre de zona. */}
                   <ZonaField
                     value={draft.destinatario_zona}
@@ -266,59 +321,18 @@ export default function TrEncomiendaModalSections({
                 </Field>
               </Grid>
               <Grid item xs={12}>
-                <Field label="Direccion">
+                <Field label="Direccion" labelWidth={104}>
                   <CaptureInput
                     value={draft.destinatario_direccion}
                     onChange={(value) => updateDraft("destinatario_direccion", String(value || "").toUpperCase())}
                     inputRef={refs.destinatarioDireccionRef}
-                    nextRef={refs.destinatarioDocRef}
+                    nextRef={refs.descripcionRef}
                     placeholder="Direccion si recibe en casa"
                   />
                 </Field>
               </Grid>
             </>
           )}
-          <Grid item xs={12}>
-            <Field label="DNI" labelWidth={58} controlHeight={40}>
-              <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
-                <IconButton
-                  size="small"
-                  onClick={buscarDestinatario}
-                  disabled={buscandoDestinatario}
-                  sx={{
-                    ...searchIconButtonSx,
-                    width: 34,
-                    height: 34,
-                    color: buscandoDestinatario ? palette.muted : palette.accent,
-                  }}
-                >
-                  <Search />
-                </IconButton>
-                <CaptureInput
-                  value={draft.destinatario_documento}
-                  onChange={(value) => updateDraft("destinatario_documento", value)}
-                  inputRef={refs.destinatarioDocRef}
-                  nextRef={draft.destinatario ? refs.destinatarioTelefonoRef : refs.destinatarioNombreRef}
-                  placeholder="Documento"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  align="right"
-                  prominent
-                  onPlus={buscarDestinatario}
-                />
-              </Box>
-            </Field>
-          </Grid>
-          <Grid item xs={12}>
-            <Field label="NOMBRES APELLIDOS">
-              <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
-            </Field>
-          </Grid>
-          <Grid item xs={12}>
-            <Field label="Telefono" labelWidth={53}>
-              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.descripcionRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
-            </Field>
-          </Grid>
         </Grid>
       </Box>
 

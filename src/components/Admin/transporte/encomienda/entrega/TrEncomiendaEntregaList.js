@@ -54,7 +54,9 @@ const customTableStyles = {
       borderBottom: `1px solid ${palette.borderSoft}`,
     },
     highlightOnHoverStyle: {
-      backgroundColor: "rgba(42,161,152,0.075)",
+      // Hover neutro por tema: el teal fijo rgba(42,161,152,.075) dejaba la fila
+      // verdosa en dark y casi invisible en light.
+      backgroundColor: palette.rowHover,
       borderBottomColor: palette.borderSoft,
       color: palette.text,
       cursor: "pointer",
@@ -942,7 +944,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
               />
             </div>
           ` : `
-            <div style="padding:9px;border:1px solid ${palette.warning};border-radius:${palette.radius.control};color:${palette.warning};background:${palette.warningSoft};font-size:11.5px;font-weight:700">
+            <div style="padding:9px;border:1px solid ${palette.porCobrar};border-radius:${palette.radius.control};color:${palette.porCobrar};background:${palette.porCobrarSoft};font-size:11.5px;font-weight:700">
               Entrega registrada. No se pudo preparar la vista previa en este navegador.
             </div>
           `}
@@ -1064,11 +1066,11 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
             @keyframes alerta-cobro-pulse {
               0%, 100% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 ${palette.warningSoft};
+                box-shadow: 0 0 0 0 ${palette.porCobrarSoft};
               }
               50% {
                 transform: scale(1.015);
-                box-shadow: 0 0 0 5px ${palette.warningSoft};
+                box-shadow: 0 0 0 5px ${palette.porCobrarSoft};
               }
             }
             @keyframes alerta-cobro-text {
@@ -1082,8 +1084,8 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
             ${escapeHtml(operacion)}
           </div>
           ${porCobrar ? `
-            <div style="padding:12px;border:1px solid ${palette.warning};border-radius:8px;background:${palette.warningSoft};text-align:center;animation:alerta-cobro-pulse 1.05s ease-in-out infinite">
-              <div style="color:${palette.warning};font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;animation:alerta-cobro-text .8s ease-in-out infinite">Por cobrar</div>
+            <div style="padding:12px;border:1px solid ${palette.porCobrar};border-radius:8px;background:${palette.porCobrarSoft};text-align:center;animation:alerta-cobro-pulse 1.05s ease-in-out infinite">
+              <div style="color:${palette.porCobrar};font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;animation:alerta-cobro-text .8s ease-in-out infinite">Por cobrar</div>
               <div style="color:${palette.text};font-size:26px;font-weight:900;line-height:1.15;margin-top:2px">${escapeHtml(monto)}</div>
               <div style="color:${palette.muted};font-size:12px;font-weight:700;margin-top:4px">Cobrar antes de registrar la entrega.</div>
             </div>
@@ -1104,7 +1106,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
       cancelButtonText: "Cancelar",
       color: palette.text,
       background: palette.surface,
-      confirmButtonColor: porCobrar ? palette.warning : palette.accent,
+      confirmButtonColor: porCobrar ? palette.porCobrar : palette.accent,
       cancelButtonColor: palette.border,
     });
 
@@ -1303,12 +1305,12 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                   height: 38,
                   borderRadius: palette.radius.control,
                   backgroundColor: palette.surfaceAlt,
-                  border: `1px solid ${mostrarEntregadas ? palette.successSoft : palette.accentSoft}`,
-                  color: mostrarEntregadas ? palette.success : palette.accent,
+                  border: `1px solid ${porCobrar ? palette.porCobrarSoft : mostrarEntregadas ? palette.successSoft : palette.accentSoft}`,
+                  color: porCobrar ? palette.porCobrar : mostrarEntregadas ? palette.success : palette.accent,
                   gridRow: "1 / span 3",
                   transition: "background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease",
                   "&:hover": {
-                    backgroundColor: mostrarEntregadas ? palette.successSoft : palette.accentSoft,
+                    backgroundColor: porCobrar ? palette.porCobrarSoft : mostrarEntregadas ? palette.successSoft : palette.accentSoft,
                     transform: "scale(1.22)",
                   },
                   "&:active": {
@@ -1325,7 +1327,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                       position: "absolute",
                       right: -2,
                       bottom: -1,
-                      color: mostrarEntregadas ? palette.success : palette.accent,
+                      color: porCobrar ? palette.porCobrar : mostrarEntregadas ? palette.success : palette.accent,
                     }}
                   />
                 </Box>
@@ -1341,7 +1343,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: mostrarEntregadas ? palette.successSoft : "transparent",
-                    color: mostrarEntregadas ? palette.success : palette.accent,
+                    color: porCobrar ? palette.porCobrar : mostrarEntregadas ? palette.success : palette.accent,
                     border: mostrarEntregadas ? `1px solid ${palette.success}` : "none",
                   }}
                 >
@@ -1359,7 +1361,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                 </Typography>
               )}
               <Box data-tag="allowRowEvents" sx={{ display: "flex", alignItems: "center", gap: 0.55, mt: porCobrar ? 0.35 : 0.25, minWidth: 0 }}>
-                <Typography data-tag="allowRowEvents" sx={{ color: porCobrar ? palette.warning : palette.text, fontSize: porCobrar ? "17px" : "11px", fontWeight: 950, lineHeight: 1, whiteSpace: "nowrap" }}>
+                <Typography data-tag="allowRowEvents" sx={{ color: porCobrar ? palette.porCobrar : palette.text, fontSize: porCobrar ? "17px" : "11px", fontWeight: 950, lineHeight: 1, whiteSpace: "nowrap" }}>
                   {formatMoney(row.r_monto_total || row.precio_neto)}
                 </Typography>
                 {porCobrar && (
@@ -1370,9 +1372,9 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                       ...inlineBadgeSx,
                       height: 18,
                       px: 0.6,
-                      backgroundColor: palette.warningSoft,
-                      borderColor: palette.warning,
-                      color: palette.warning,
+                      backgroundColor: palette.porCobrarSoft,
+                      borderColor: palette.porCobrar,
+                      color: palette.porCobrar,
                       fontSize: "9.5px",
                       fontWeight: 900,
                       opacity: 0.82,

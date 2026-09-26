@@ -1262,6 +1262,10 @@ export default function TrCajaMovimientoList() {
         ingresosManuales: Array.isArray(ingresosManualesResult.data) ? ingresosManualesResult.data : [],
         salidas: Array.isArray(salidasResult.data) ? salidasResult.data : [],
         generadoPor: params.id_invitado,
+        // El cierre se imprime del filtro de Usuario, no del correo de sesion:
+        // en un cuadre importa a quien corresponde cada movimiento.
+        usuario: usuarioTrabajo,
+        muestraFiltroUsuario,
         filtros: {
           periodo: periodoTrabajo,
           fecha: fechaFiltro,

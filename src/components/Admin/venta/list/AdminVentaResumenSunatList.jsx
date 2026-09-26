@@ -56,22 +56,27 @@ const selectMenuProps = {
   },
 };
 
+// Superficies con los mismos tokens que el listado de ventas: asi el resumen
+// SUNAT no queda con la caja oscura del tema viejo en el tema claro.
+const resumenTableCardBg = palette.surface;
+const resumenTableHeaderBg = palette.surfaceAlt;
+
 const tableStyles = {
-  table: { style: { backgroundColor: "#1c252c" } },
-  tableWrapper: { style: { backgroundColor: "#1c252c" } },
-  responsiveWrapper: { style: { backgroundColor: "#1c252c" } },
-  headRow: { style: { backgroundColor: "#202a32", borderBottomColor: "transparent" } },
-  headCells: { style: { backgroundColor: "#202a32", color: palette.muted } },
+  table: { style: { backgroundColor: resumenTableCardBg } },
+  tableWrapper: { style: { backgroundColor: resumenTableCardBg } },
+  responsiveWrapper: { style: { backgroundColor: resumenTableCardBg } },
+  headRow: { style: { backgroundColor: resumenTableHeaderBg, borderBottomColor: "transparent" } },
+  headCells: { style: { backgroundColor: resumenTableHeaderBg, color: palette.muted } },
   rows: {
-    style: { backgroundColor: "#1c252c", borderBottomColor: "transparent" },
+    style: { backgroundColor: resumenTableCardBg, borderBottomColor: "transparent" },
     highlightOnHoverStyle: {
-      backgroundColor: "rgba(139,154,165,0.07)",
+      backgroundColor: palette.rowHover,
       borderBottomColor: "transparent",
       outline: "none",
     },
   },
   cells: { style: { backgroundColor: "transparent" } },
-  pagination: { style: { backgroundColor: "#1c252c", borderTopColor: "transparent" } },
+  pagination: { style: { backgroundColor: resumenTableCardBg, borderTopColor: "transparent" } },
 };
 
 const formatDateTime = (value) => {
@@ -404,7 +409,8 @@ export default function AdminVentaResumenSunatList() {
     <Box sx={{ width: "100%", display: "grid", gap: 1.15 }}>
       <Box
         sx={{
-          backgroundColor: "#1c252c",
+          backgroundColor: palette.surface,
+          border: `1px solid ${palette.borderSoft}`,
           borderRadius: 1,
           px: { xs: 1, md: 1.5 },
           py: { xs: 1, md: 1.25 },
@@ -461,7 +467,8 @@ export default function AdminVentaResumenSunatList() {
 
       <Box
         sx={{
-          backgroundColor: "#1c252c",
+          backgroundColor: palette.surface,
+          border: `1px solid ${palette.borderSoft}`,
           borderRadius: 1,
           px: { xs: 1, md: 1.5 },
           py: 1,
@@ -481,7 +488,7 @@ export default function AdminVentaResumenSunatList() {
             alignItems: "center",
             gap: 0.85,
             backgroundColor: palette.bg,
-            border: "1px solid rgba(139,154,165,0.14)",
+            border: `1px solid ${palette.border}`,
             borderRadius: 1,
           }}
         >
@@ -503,7 +510,7 @@ export default function AdminVentaResumenSunatList() {
         sx={{
           overflow: "hidden",
           borderRadius: 1,
-          backgroundColor: "#1c252c",
+          backgroundColor: resumenTableCardBg,
           px: { xs: 0.25, md: 0.75 },
           py: { xs: 0.25, md: 0.75 },
           "& .rdt_Table": {

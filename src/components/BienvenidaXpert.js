@@ -7,6 +7,8 @@ import axios from 'axios';
 import LoginPerfil from "./LoginPerfil" //new
 import LoginLogoutBoton from "./LoginLogoutBoton" //new
 import palette from '../theme/palette';
+import { obtenerIdentidadEquipo, consultarEquipo, verificarEquipoConReto, CONTROL_EQUIPOS_ACTIVO, CONTROL_EQUIPOS_EXIGIDO } from '../security/dispositivo';
+import EquipoAutorizadoPanel from './EquipoAutorizadoPanel';
 
 
 const BienvenidaXpert = ({ onStartClick }) => {
@@ -14,16 +16,68 @@ const BienvenidaXpert = ({ onStartClick }) => {
   const {user, isAuthenticated } = useAuth0();
   const [estudios_select,setEstudioSelect] = useState([]);
 
+  // Control de equipo autorizado: reto/respuesta con clave no exportable.
+  // equipoEstado = pendiente | verificando | autorizado | rechazado | sin-control
+  // "sin-control" = el backend aun no tiene la tabla de equipos; en ese caso no
+  // se bloquea a nadie para no dejar el sistema inaccesible durante la puesta en marcha.
+  const [equipoEstado, setEquipoEstado] = useState('pendiente');
+  const [equipoInfo, setEquipoInfo] = useState({ motivo: '', huellaCorta: '', etiqueta: '' });
+
   const [idAnfitrionSeleccionado, setAnfitrionSeleccionado] = useState('');
 
     //Aqui se leen parametros en caso lleguen
-    useEffect( ()=> {
-      if (isAuthenticated && user && user.email) {
-        //Verificar Estudios Contables registrados
-        cargaEstudiosAnfitrion();
+  useEffect( ()=> {
+    if (isAuthenticated && user && user.email) {
+      verificarEquipoAutorizado(user.email);
+    } else if (!isAuthenticated) {
+      setEquipoEstado('pendiente');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[isAuthenticated, user]);
 
-      }  
-    },[isAuthenticated, user]);
+  // 1ro consulta si el equipo esta registrado, 2do demuestra la posesion de la clave.
+  const verificarEquipoAutorizado = async (correo) => {
+    // Interruptor maestro apagado: no se verifica nada y no se bloquea el ingreso.
+    if (!CONTROL_EQUIPOS_ACTIVO) {
+      setEquipoEstado('desactivado');
+      cargaEstudiosAnfitrion();
+      return;
+    }
+
+    setEquipoEstado('verificando');
+    try {
+      const identidad = await obtenerIdentidadEquipo();
+      setEquipoInfo((prev) => ({ ...prev, huellaCorta: identidad.huellaCorta }));
+
+      const consulta = await consultarEquipo(back_host, correo, identidad);
+      if (!consulta.disponible) {
+        setEquipoInfo({ motivo: consulta.motivo, huellaCorta: identidad.huellaCorta, etiqueta: '' });
+        setEquipoEstado('sin-control');
+        return;
+      }
+
+      if (!consulta.autorizado) {
+        setEquipoInfo({ motivo: consulta.motivo, huellaCorta: identidad.huellaCorta, etiqueta: '' });
+        setEquipoEstado(CONTROL_EQUIPOS_EXIGIDO ? 'rechazado' : 'sin-control');
+        return;
+      }
+
+      const verificado = await verificarEquipoConReto(back_host, correo, identidad);
+      if (!verificado.autorizado) {
+        setEquipoInfo({ motivo: verificado.motivo, huellaCorta: identidad.huellaCorta, etiqueta: '' });
+        setEquipoEstado(CONTROL_EQUIPOS_EXIGIDO ? 'rechazado' : 'sin-control');
+        return;
+      }
+
+      setEquipoInfo({ motivo: '', huellaCorta: identidad.huellaCorta, etiqueta: verificado.etiqueta || '' });
+      setEquipoEstado('autorizado');
+      cargaEstudiosAnfitrion();
+    } catch (error) {
+      console.log('No se pudo verificar el equipo:', error);
+      setEquipoInfo({ motivo: error.message, huellaCorta: '', etiqueta: '' });
+      setEquipoEstado(CONTROL_EQUIPOS_EXIGIDO ? 'rechazado' : 'sin-control');
+    }
+  };
 
     const handleChange = e => {
       setAnfitrionSeleccionado(e.target.value);
@@ -136,6 +190,12 @@ const BienvenidaXpert = ({ onStartClick }) => {
                           </Grid>
                           <Grid item xs={12}>
                               <LoginLogoutBoton ></LoginLogoutBoton>
+                           <EquipoAutorizadoPanel
+                             estado={equipoEstado}
+                             motivo={equipoInfo.motivo}
+                             huellaCorta={equipoInfo.huellaCorta}
+                             etiqueta={equipoInfo.etiqueta}
+                           />
                           </Grid>
                       </Grid>
 
@@ -156,7 +216,10 @@ const BienvenidaXpert = ({ onStartClick }) => {
                         />
                       </Box>
 
-                      { isAuthenticated ? 
+                      { isAuthenticated && (equipoEstado === 'autorizado' || equipoEstado === 'sin-control' || equipoEstado === 'desactivado'
+                        // Con el control apagado el estado inicial 'pendiente' tambien deja pasar: si no, el boton
+                        // aparece un instante despues del render en vez de estar siempre.
+                        || (!CONTROL_EQUIPOS_ACTIVO && equipoEstado === 'pendiente')) ? 
                       ( <>
                        <Select
                               labelId="estudios_select"

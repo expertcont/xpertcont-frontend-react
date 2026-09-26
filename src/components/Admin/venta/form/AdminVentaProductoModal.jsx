@@ -8,6 +8,26 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import Timer10SelectIcon from "@mui/icons-material/Timer10Select";
 
 import ListaPopUp from "../../../ListaPopUp";
+import palette from "../../../../theme/palette";
+
+// Campos del modal: fondo y texto por token. Antes cada TextField traia el color
+// en style inline con 'white', que en tema claro quedaba ilegible.
+const productoFieldSx = {
+  "& .MuiOutlinedInput-root": {
+    color: palette.text,
+    backgroundColor: palette.surfaceAlt,
+    "& fieldset": { borderColor: palette.border },
+    "&:hover fieldset": { borderColor: palette.accent },
+    "&.Mui-focused fieldset": { borderColor: palette.accent },
+  },
+  "& input": {
+    color: palette.text,
+    fontSize: "13px",
+  },
+  "& input::placeholder": { color: palette.muted, opacity: 1 },
+  "& label": { color: palette.muted, fontSize: "12px" },
+  "& label.Mui-focused": { color: palette.accent },
+};
 
 export default function AdminVentaProductoModal({
   isSmallScreen,
@@ -80,8 +100,8 @@ export default function AdminVentaProductoModal({
               flexDirection: "column",
               alignItems: "center",
               marginTop: "10vh",
-              background: "rgba(30, 39, 46, 0.9)",
-              color: "white",
+              background: palette.surface,
+              color: palette.text,
               width: isSmallScreen ? "70%" : "30%",
             },
           }}
@@ -95,15 +115,16 @@ export default function AdminVentaProductoModal({
               onFocus={onFocus}
               autoFocus
               size="small"
+              sx={productoFieldSx}
               name="id_producto"
               value={producto.descripcion}
-              InputLabelProps={{ style: { color: "white" } }}
+              
               InputProps={{
-                style: { color: "white", width: 270 },
+                style: { width: 270 },
                 startAdornment: (
                   <InputAdornment position="start">
                     <IconButton
-                      color="primary"
+                      color="inherit"
                       aria-label="upload picture"
                       component="label"
                       size="small"
@@ -125,7 +146,7 @@ export default function AdminVentaProductoModal({
 
                     {isSmallScreen ? (
                       <IconButton
-                        color="default"
+                        color="inherit"
                         aria-label="Muestra teclado"
                         size="small"
                         onClick={onMostrarTecladoCelular}
@@ -133,10 +154,10 @@ export default function AdminVentaProductoModal({
                           padding: "0px",
                           marginLeft: "20px",
                           marginRight: "-30px",
-                          backgroundColor: "primary",
+                          backgroundColor: palette.surfaceAlt,
                           borderRadius: "4px",
                           "&:hover": {
-                            backgroundColor: "skyblue",
+                            backgroundColor: palette.accentSoft,
                           },
                         }}
                       >
@@ -162,24 +183,23 @@ export default function AdminVentaProductoModal({
             label="CANTIDAD"
             autoFocus
             size="small"
-            sx={{ mt: 2 }}
+            sx={{ ...productoFieldSx, mt: 2 }}
             name="cantidad"
             value={producto.cantidad}
             onChange={onChangeProductoDatos}
             inputProps={{
               style: {
-                color: "white",
                 width: 110,
                 textAlign: "right",
                 readOnly: true,
               },
             }}
-            InputLabelProps={{ style: { color: "white" } }}
+            
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <IconButton
-                    color="default"
+                    color="inherit"
                     aria-label="reiniciar a 1"
                     size="small"
                     onClick={onResetCantidad}
@@ -188,10 +208,11 @@ export default function AdminVentaProductoModal({
                       height: "30",
                       marginLeft: "-10px",
                       marginRight: "0px",
-                      backgroundColor: "primary",
+                      backgroundColor: palette.surfaceAlt,
+                      color: palette.accent,
                       borderRadius: "4px",
                       "&:hover": {
-                        backgroundColor: "skyblue",
+                        backgroundColor: palette.accentSoft,
                       },
                     }}
                   >
@@ -202,7 +223,7 @@ export default function AdminVentaProductoModal({
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
-                    color="default"
+                    color="inherit"
                     aria-label="disminuir en 1"
                     size="small"
                     onClick={onDecreaseByOne}
@@ -210,10 +231,10 @@ export default function AdminVentaProductoModal({
                       padding: "0px",
                       height: "48px",
                       marginRight: "0px",
-                      backgroundColor: "primary",
+                      backgroundColor: palette.surfaceAlt,
                       borderRadius: "4px",
                       "&:hover": {
-                        backgroundColor: "skyblue",
+                        backgroundColor: palette.accentSoft,
                       },
                     }}
                   >
@@ -221,40 +242,40 @@ export default function AdminVentaProductoModal({
                   </IconButton>
 
                   <IconButton
-                    color="default"
+                    color="inherit"
                     aria-label="aumentar de 1 en 1"
                     size="small"
                     onClick={onIncreaseByOne}
                     sx={{
                       padding: "0px",
                       marginRight: "5px",
-                      backgroundColor: "primary",
+                      backgroundColor: palette.surfaceAlt,
                       borderRadius: "4px",
                       "&:hover": {
-                        backgroundColor: "skyblue",
+                        backgroundColor: palette.accentSoft,
                       },
                     }}
                   >
-                    <AddCircleIcon color="success" style={{ width: 35, height: 35 }} />
+                    <AddCircleIcon color="inherit" style={{ width: 35, height: 35 }} />
                   </IconButton>
 
                   <IconButton
-                    color="default"
+                    color="inherit"
                     aria-label="aumentar de 10 en 10"
                     size="large"
                     onClick={onIncreaseByTen}
                     sx={{
                       padding: "0px",
                       marginRight: "-10px",
-                      backgroundColor: "primary",
+                      backgroundColor: palette.surfaceAlt,
                       borderRadius: "4px",
                       "&:hover": {
-                        backgroundColor: "skyblue",
+                        backgroundColor: palette.accentSoft,
                       },
                     }}
                   >
                     <Box sx={{ width: 25, height: 35, overflow: "hidden" }}>
-                      <Timer10SelectIcon color="success" sx={{ fontSize: 35 }} />
+                      <Timer10SelectIcon color="inherit" sx={{ fontSize: 35 }} />
                     </Box>
                   </IconButton>
                 </InputAdornment>
@@ -268,12 +289,13 @@ export default function AdminVentaProductoModal({
             label="PRECIO U."
             autoFocus
             size="small"
+            sx={productoFieldSx}
             name="precio_unitario"
             value={producto.precio_unitario}
             onChange={onChangeProductoDatos}
-            inputProps={{ style: { color: "white", width: 240, textAlign: "center" } }}
+            inputProps={{ style: { width: 240, textAlign: "center" } }}
             InputProps={{ readOnly: false }}
-            InputLabelProps={{ style: { color: "white" } }}
+            
           />
           <TextField
             variant="outlined"
@@ -281,28 +303,29 @@ export default function AdminVentaProductoModal({
             label="IMPORTE"
             autoFocus
             size="small"
+            sx={productoFieldSx}
             name="precio_neto"
             value={producto.precio_neto}
             onChange={onChangeProductoDatos}
-            inputProps={{ style: { color: "white", width: 240, textAlign: "center" } }}
+            inputProps={{ style: { width: 240, textAlign: "center" } }}
             InputProps={{ readOnly: false }}
-            InputLabelProps={{ style: { color: "white" } }}
+            
           />
           {modoEdicionValores && (
             <Box sx={{ width: 270, mt: 1, mb: 0.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="caption" color="gray">
+                <Typography variant="caption" sx={{ color: palette.muted }}>
                   Total actual
                 </Typography>
-                <Typography variant="body2" color="white">
+                <Typography variant="body2" sx={{ color: palette.text, fontWeight: 700 }}>
                   S/ {formatMoney(totalActual)}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.25 }}>
-                <Typography variant="caption" color="gray">
+                <Typography variant="caption" sx={{ color: palette.muted }}>
                   Total previo
                 </Typography>
-                <Typography variant="body2" color="skyblue" fontWeight={700}>
+                <Typography variant="body2" sx={{ color: palette.accent }} fontWeight={700}>
                   S/ {formatMoney(totalPrevio)}
                 </Typography>
               </Box>
@@ -310,9 +333,18 @@ export default function AdminVentaProductoModal({
           )}
           <Button
             variant="contained"
-            color="success"
+            color="inherit"
             onClick={onSaveDetail}
-            sx={{ display: "block", margin: ".5rem 0", width: 270 }}
+            sx={{
+              display: "block",
+              margin: ".5rem 0",
+              width: 270,
+              backgroundColor: palette.accent,
+              color: palette.onAccent,
+              boxShadow: "none",
+              fontWeight: 800,
+              "&:hover": { backgroundColor: palette.accent, color: palette.onAccent, boxShadow: "none" },
+            }}
           >
             {modoEdicionValores ? "GUARDAR" : "AGREGAR"}
           </Button>
@@ -323,9 +355,15 @@ export default function AdminVentaProductoModal({
               display: "block",
               margin: ".5rem 0",
               width: 270,
-              backgroundColor: "rgba(30, 39, 46)",
+              backgroundColor: palette.surfaceAlt,
+              color: palette.text,
+              border: `1px solid ${palette.border}`,
+              boxShadow: "none",
+              fontWeight: 800,
               "&:hover": {
-                backgroundColor: "rgba(30, 39, 46, 0.1)",
+                backgroundColor: palette.chip,
+                borderColor: palette.accent,
+                boxShadow: "none",
               },
               mt: -0.5,
             }}

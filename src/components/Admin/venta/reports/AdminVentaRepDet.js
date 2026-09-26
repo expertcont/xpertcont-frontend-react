@@ -48,7 +48,8 @@ const listContentSx = {
 };
 
 const toolbarSurfaceSx = {
-  backgroundColor: '#1c252c',
+  backgroundColor: palette.surface,
+  border: `1px solid ${palette.borderSoft}`,
   borderRadius: contentRadius,
   px: { xs: 1, md: 1.5 },
   py: { xs: 0.9, md: 1.25 },
@@ -94,10 +95,10 @@ const searchSx = {
   gap: 0.85,
   color: palette.text,
   backgroundColor: palette.bg,
-  border: '1px solid rgba(139,154,165,0.14)',
+  border: `1px solid ${palette.border}`,
   borderRadius: contentRadius,
   '&:focus-within': {
-    borderColor: 'rgba(139,154,165,0.32)',
+    borderColor: palette.accent,
   },
 };
 
@@ -122,19 +123,27 @@ const actionButtonSx = {
   fontSize: '12px',
   fontWeight: 800,
   textTransform: 'none',
-  backgroundColor: 'rgba(42,161,152,0.14)',
-  border: '1px solid rgba(42,161,152,0.34)',
+  backgroundColor: palette.accentSoft,
+  border: `1px solid ${palette.border}`,
   color: palette.text,
   px: 1.5,
   whiteSpace: 'nowrap',
   '&:hover': {
     backgroundColor: palette.accent,
-    color: palette.surface,
+    color: palette.onAccent,
     boxShadow: 'none',
+  },
+  '&.Mui-disabled': {
+    backgroundColor: palette.bg,
+    borderColor: palette.borderSoft,
+    color: palette.muted,
+    opacity: 1,
   },
 };
 
-const listCardBg = '#1c252c';
+// Superficie de la tabla: antes fija en #1c252c, que dejaba una caja oscura
+// dentro de la pagina al cambiar al tema claro.
+const listCardBg = palette.surface;
 
 const dataTableStyles = {
   table: { style: { backgroundColor: listCardBg } },
@@ -164,7 +173,7 @@ const dataTableStyles = {
       minHeight: '42px',
     },
     highlightOnHoverStyle: {
-      backgroundColor: palette.surfaceAlt,
+      backgroundColor: palette.rowHover,
       color: palette.text,
       borderBottomColor: palette.border,
     },
@@ -499,7 +508,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
       }}
     >
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
+            <Typography sx={{ color: palette.text, fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
               Detalle de ventas
             </Typography>
             <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
@@ -585,7 +594,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
 
           <Button
             variant="contained"
-            color="primary"
+            color="inherit"
             onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
             sx={actionButtonSx}
           >

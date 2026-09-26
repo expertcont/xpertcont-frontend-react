@@ -252,22 +252,30 @@ export default function TrEncomiendaModal({
     };
   }, [back_host, documentoId, empresa, idAnfitrion, open]);
 
+  // Orden de las flechas arriba/abajo: sigue el orden visual del formulario.
+  //   1. Origen   : DNI, Nombres, Telefono, Dir facturacion, OFICINA/DOMICILIO, Zona, Direccion
+  //   2. Destino  : DNI, Nombres, Telefono, Destino, OFICINA/DOMICILIO, Zona, Direccion
+  //   3. Encomienda: Descripcion, Total, Condicion de pago, Hora de llegada, Placa, Grabar
+  // Los campos condicionados se saltan solos: su ref.current queda en null.
   focusableRefs.length = 0;
   focusableRefs.push(
-    remitenteEntregaRef,
-    remitenteZonaRef,
-    remitenteDireccionRef,
+    // 1. Origen
     remitenteDocRef,
     remitenteNombreRef,
     remitenteTelefonoRef,
     clienteDireccionFactRef,
+    remitenteEntregaRef,
+    remitenteZonaRef,
+    remitenteDireccionRef,
+    // 2. Destino
+    destinatarioDocRef,
+    destinatarioNombreRef,
+    destinatarioTelefonoRef,
     rutaRef,
     destinatarioEntregaRef,
     destinatarioZonaRef,
     destinatarioDireccionRef,
-    destinatarioDocRef,
-    destinatarioNombreRef,
-    destinatarioTelefonoRef,
+    // 3. Encomienda
     descripcionRef,
     totalRef,
     condicionPagoRef,
@@ -444,8 +452,8 @@ export default function TrEncomiendaModal({
     }));
     setRutaPickerOpen(false);
     window.setTimeout(() => {
-      destinatarioDocRef.current?.focus();
-      destinatarioDocRef.current?.select?.();
+      // El destino/agencia es el campo previo al selector OFICINA/DOMICILIO.
+      destinatarioEntregaRef.current?.focus();
     }, 60);
   };
 

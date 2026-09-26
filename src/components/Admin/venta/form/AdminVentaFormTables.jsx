@@ -6,7 +6,9 @@ import palette from '../../../../theme/palette';
 
 const tablePanelSx = {
   mt: 1,
-  backgroundColor: palette.surface,
+  // Transparentes: heredan la superficie del form y se separan con el borde.
+  // Con su propio color quedaban al mismo nivel que el card y se fundian.
+  backgroundColor: 'transparent',
   border: `1px solid ${palette.borderSoft}`,
   borderRadius: 2,
   overflow: 'hidden',

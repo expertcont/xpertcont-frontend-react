@@ -15,7 +15,7 @@ const modalPaperSx = {
   color: palette.text,
   border: `1px solid ${palette.border}`,
   borderRadius: 2,
-  boxShadow: "0 18px 48px rgba(0,0,0,0.34)",
+  boxShadow: palette.shadowSoft,
   overflow: "hidden",
 };
 
@@ -24,11 +24,11 @@ const fieldSx = {
   "& .MuiOutlinedInput-root": {
     minHeight: 40,
     color: palette.text,
-    backgroundColor: "rgba(26,33,39,0.48)",
+    backgroundColor: palette.surfaceAlt,
     borderRadius: 2,
-    "& fieldset": { borderColor: "rgba(139,154,165,0.14)" },
-    "&:hover fieldset": { borderColor: "rgba(42,161,152,0.28)" },
-    "&.Mui-focused fieldset": { borderColor: "rgba(42,161,152,0.45)" },
+    "& fieldset": { borderColor: palette.border },
+    "&:hover fieldset": { borderColor: palette.accent },
+    "&.Mui-focused fieldset": { borderColor: palette.accent },
   },
   "& .MuiInputBase-input": {
     color: palette.text,
@@ -41,15 +41,15 @@ const primaryButtonSx = {
   width: 270,
   height: 40,
   borderRadius: 2,
-  backgroundColor: "rgba(42,161,152,0.18)",
-  border: "1px solid rgba(42,161,152,0.30)",
-  color: "#bff5ef",
+  backgroundColor: palette.accentSoft,
+  border: `1px solid ${palette.border}`,
+  color: palette.text,
   boxShadow: "none",
   fontSize: "12px",
   fontWeight: 800,
   "&:hover": {
-    backgroundColor: "rgba(42,161,152,0.28)",
-    borderColor: "rgba(42,161,152,0.42)",
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
     boxShadow: "none",
   },
 };
@@ -58,14 +58,15 @@ const secondaryButtonSx = {
   width: 270,
   height: 40,
   borderRadius: 2,
-  backgroundColor: "rgba(139,154,165,0.10)",
-  border: "1px solid rgba(139,154,165,0.16)",
+  backgroundColor: palette.surfaceAlt,
+  border: `1px solid ${palette.border}`,
   color: palette.text,
   boxShadow: "none",
   fontSize: "12px",
   fontWeight: 800,
   "&:hover": {
-    backgroundColor: "rgba(139,154,165,0.16)",
+    backgroundColor: palette.chip,
+    borderColor: palette.accent,
     boxShadow: "none",
   },
 };
@@ -124,7 +125,7 @@ export default function AdminVentaCloneDialog({
 
         <Button
           variant="contained"
-          color="primary"
+          color="inherit"
           onClick={onClone}
           sx={primaryButtonSx}
           startIcon={<TaskAltIcon sx={{ fontSize: 18 }} />}

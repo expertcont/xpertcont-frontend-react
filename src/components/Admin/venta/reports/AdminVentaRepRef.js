@@ -47,7 +47,8 @@ const listContentSx = {
 };
 
 const toolbarSurfaceSx = {
-  backgroundColor: '#1c252c',
+  backgroundColor: palette.surface,
+  border: `1px solid ${palette.borderSoft}`,
   borderRadius: contentRadius,
   px: { xs: 1, md: 1.5 },
   py: { xs: 0.9, md: 1.25 },
@@ -93,10 +94,10 @@ const searchSx = {
   gap: 0.85,
   color: palette.text,
   backgroundColor: palette.bg,
-  border: '1px solid rgba(139,154,165,0.14)',
+  border: `1px solid ${palette.border}`,
   borderRadius: contentRadius,
   '&:focus-within': {
-    borderColor: 'rgba(139,154,165,0.32)',
+    borderColor: palette.accent,
   },
 };
 
@@ -114,7 +115,9 @@ const inputSx = {
   },
 };
 
-const listCardBg = '#1c252c';
+// Superficie de la tabla: antes fija en #1c252c, que dejaba una caja oscura
+// dentro de la pagina al cambiar al tema claro.
+const listCardBg = palette.surface;
 
 const dataTableStyles = {
   table: { style: { backgroundColor: listCardBg } },
@@ -144,7 +147,7 @@ const dataTableStyles = {
       minHeight: '42px',
     },
     highlightOnHoverStyle: {
-      backgroundColor: palette.surfaceAlt,
+      backgroundColor: palette.rowHover,
       color: palette.text,
       borderBottomColor: palette.border,
     },
@@ -376,7 +379,7 @@ const handleDayFilter = (selectedDay) => {
       }}
     >
           <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
+            <Typography sx={{ color: palette.text, fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
               Ventas con documentos referenciados
             </Typography>
             <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>

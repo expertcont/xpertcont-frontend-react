@@ -8,7 +8,8 @@ import {
   CaptureInput,
   focusByArrow,
   inputSx,
-  searchIconButtonSx,
+  searchIconButtonSxPlano,
+  searchIconButtonSxColgado,
 } from "./TrEncomiendaModalInputs";
 
 export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
@@ -16,8 +17,8 @@ export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
   const textoRuta = ruta ? destinoDesdeRuta(ruta) : "";
 
   return (
-    <Box sx={{ width: "100%", display: "flex", alignItems: "center", cursor: "text" }}>
-      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSx}>
+    <Box sx={{ position: "relative", flex: 1, minWidth: 0, width: "100%", display: "flex", alignItems: "center", cursor: "text" }}>
+      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSxColgado}>
         <MapPin />
       </IconButton>
       <InputBase
@@ -64,6 +65,10 @@ export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
         }}
         sx={{
           ...inputSx,
+          // Igual que CaptureInput: el control ocupa lo que deja el boton, para que
+          // el largo del input sea el mismo que en los demas campos del formulario.
+          flex: 1,
+          minWidth: 0,
           cursor: "text",
           "& input": {
             cursor: "text",
@@ -82,10 +87,9 @@ export function PuntoVentaField({ value }) {
         size="small"
         tabIndex={-1}
         sx={{
-          ...searchIconButtonSx,
+          ...searchIconButtonSxPlano,
           pointerEvents: "none",
-          color: palette.muted,
-          backgroundColor: palette.chip,
+          color: palette.border,
         }}
       >
         <MapPin />
@@ -102,8 +106,8 @@ export function PuntoVentaField({ value }) {
 
 export function ZonaField({ value, onClear, onOpen, inputRef, nextRef, placeholder }) {
   return (
-    <Box sx={{ width: "100%", display: "flex", alignItems: "center", cursor: "text" }}>
-      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSx}>
+    <Box sx={{ flex: 1, minWidth: 0, width: "100%", display: "flex", alignItems: "center", cursor: "text" }}>
+      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSxPlano}>
         <MapPin />
       </IconButton>
       <InputBase
@@ -138,6 +142,10 @@ export function ZonaField({ value, onClear, onOpen, inputRef, nextRef, placehold
         }}
         sx={{
           ...inputSx,
+          // Igual que CaptureInput: el control ocupa lo que deja el boton, para que
+          // el largo del input sea el mismo que en los demas campos del formulario.
+          flex: 1,
+          minWidth: 0,
           cursor: "text",
           "& input": {
             cursor: "text",
@@ -152,7 +160,7 @@ export function ZonaField({ value, onClear, onOpen, inputRef, nextRef, placehold
 export function PlacaField({ value, onChange, onOpen, inputRef, nextRef }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
-      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSx}>
+      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSxPlano}>
         <Truck />
       </IconButton>
       <CaptureInput
@@ -171,7 +179,7 @@ export function PlacaField({ value, onChange, onOpen, inputRef, nextRef }) {
 export function LicenciaField({ value, onChange, onOpen, inputRef, nextRef, onEnter }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
-      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSx}>
+      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSxPlano}>
         <UserRound />
       </IconButton>
       <CaptureInput

@@ -8,13 +8,53 @@ import FindIcon from '@mui/icons-material/FindInPage';
 import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 
-import { createTheme } from '@mui/material/styles';
+import palette from '../../theme/palette';
 
+import IconButton from '@mui/material/IconButton'
 import axios from 'axios';
 import swal from 'sweetalert';
 import RestoreIcon from '@mui/icons-material/Restore';
 import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton'
+
+// Buscador del dialogo. Antes solo tenga el color en style inline ('white'), que
+// en tema claro era ilegible y en oscuro no respetaba la superficie.
+const campoSx = {
+  '& .MuiOutlinedInput-root': {
+    color: palette.text,
+    backgroundColor: palette.surfaceAlt,
+    '& fieldset': { borderColor: palette.border },
+    '&:hover fieldset': { borderColor: palette.accent },
+    '&.Mui-focused fieldset': { borderColor: palette.accent },
+  },
+  '& input': {
+    color: palette.text,
+    fontSize: '13px',
+  },
+  '& input::placeholder': { color: palette.muted, opacity: 1 },
+};
+
+const actionIconSx = {
+  width: 40,
+  height: 40,
+  borderRadius: 2,
+  backgroundColor: palette.surfaceAlt,
+  border: `1px solid ${palette.border}`,
+  boxShadow: 'none',
+  '&:hover': { backgroundColor: palette.chip, borderColor: palette.accent },
+};
+
+const cerrarButtonSx = {
+  backgroundColor: palette.surfaceAlt,
+  color: palette.text,
+  border: `1px solid ${palette.border}`,
+  boxShadow: 'none',
+  fontWeight: 800,
+  '&:hover': {
+    backgroundColor: palette.chip,
+    borderColor: palette.accent,
+    boxShadow: 'none',
+  },
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -303,8 +343,17 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
 
       <Button
         variant="contained"
-        color="primary"
+        color="inherit"
         onClick={procesarFacturacion}
+        sx={{
+          // La barra de acciones de la tabla se pinta con palette.accent, asi que
+          // el boton va en surface para manter contraste en los tres temas.
+          backgroundColor: palette.surface,
+          color: palette.text,
+          boxShadow: 'none',
+          fontWeight: 800,
+          '&:hover': { backgroundColor: palette.bg, boxShadow: 'none' },
+        }}
       >
         AGRUPAR
       </Button>
@@ -362,37 +411,11 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
   |--------------------------------------------------------------------------
   | THEME TABLA
   |--------------------------------------------------------------------------
+  | El <Datatable theme="solarized"> usa el tema que registra
+  | ensureAdminVentaTableTheme() (tokens de la app) desde AdminVentaForm.
+  | Antes aqui se llamaba al createTheme de MUI, que no register nada en RDT y
+  | solo dejaba la paleta solarizada escrita en el archivo.
   */
-
-  createTheme(
-    'solarized',
-    {
-      text: {
-        primary: '#ffffff',
-        secondary: '#2aa198'
-      },
-
-      background: {
-        default: '#1e272e'
-      },
-
-      context: {
-        background: '#cb4b16',
-        text: '#FFFFFF'
-      },
-
-      divider: {
-        default: '#073642'
-      },
-
-      action: {
-        button: 'rgba(0,0,0,.54)',
-        hover: 'rgba(0,0,0,.08)',
-        disabled: 'rgba(0,0,0,.12)'
-      }
-    },
-    'dark'
-  );
 
   /*
   |--------------------------------------------------------------------------
@@ -513,8 +536,8 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
         <Grid item xs={12} md={0.5}>
           <Tooltip title="Recuperar pendientes - Período Anterior" arrow>
             <IconButton
-              color="warning"
-              sx={{ width: 40, height: 40 }}
+              color="inherit"
+              sx={{ ...actionIconSx, color: palette.warning }}
               onClick={generarPendientesPeriodoAnterior}
             >
               <RestoreIcon sx={{ fontSize: 40 }} />
@@ -525,8 +548,8 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
         <Grid item xs={12} md={0.5}>
           <Tooltip title="Retroceder pendientes - Período Anterior" arrow>
             <IconButton
-              color="error"
-              sx={{ width: 40, height: 40 }}
+              color="inherit"
+              sx={{ ...actionIconSx, color: palette.danger }}
               onClick={retrocederPendientesPeriodoAnterior}
             >
               <RestoreIcon sx={{ fontSize: 40 }} />
@@ -546,15 +569,13 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
             onChange={(e) =>
               handleFilterSearch(e.target.value)
             }
+            sx={campoSx}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <FindIcon />
+                  <FindIcon sx={{ color: palette.muted }} />
                 </InputAdornment>
               ),
-              style: {
-                color: 'white'
-              }
             }}
           />
         </Grid>
@@ -567,6 +588,7 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
             fullWidth
             variant="contained"
             color="inherit"
+            sx={cerrarButtonSx}
             onClick={() => onClose(null)}
           >
             CERRAR
@@ -583,24 +605,26 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
         clienteSeleccionado && (
 
           <Paper
-            elevation={2}
+            elevation={0}
             sx={{
               mt: 2,
               p: 1,
-              background: '#263238'
+              backgroundColor: palette.surfaceAlt,
+              border: `1px solid ${palette.borderSoft}`,
+              borderRadius: 2,
             }}
           >
 
             <Typography
               variant="body2"
-              style={{ color: 'lightgreen' }}
+              sx={{ color: palette.success, fontWeight: 800, letterSpacing: '0.4px' }}
             >
               CLIENTE SELECCIONADO:
             </Typography>
 
             <Typography
               variant="body1"
-              style={{ color: 'white' }}
+              sx={{ color: palette.text }}
             >
               {
                 selectedRows[0]?.documento_id
@@ -653,7 +677,7 @@ const AdminVentaFormFactPedido = ({id_anfitrion, documento_id, periodo_trabajo, 
       <div
         style={{
           marginTop: '10px',
-          color: 'white'
+          color: palette.text
         }}
       >
 

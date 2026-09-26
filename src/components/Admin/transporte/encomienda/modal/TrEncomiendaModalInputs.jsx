@@ -64,6 +64,51 @@ export const searchIconButtonSx = {
   },
 };
 
+// Version sin relleno para los campos de captura (destino, zona, placa...).
+// El boton con fondo se comia ~34px de ancho y hacia que el input se viera mas
+// corto que los campos que no llevan boton.
+export const searchIconButtonSxPlano = {
+  // Icono de 16px dentro de un boton cuadrado con borde, igual que el resto de
+  // controles con marco del formulario (hora de llegada, monto, secciones).
+  width: 28,
+  height: 30,
+  p: 0,
+  mr: 0.25,
+  flexShrink: 0,
+  borderRadius: palette.radius.control,
+  color: palette.muted,
+  backgroundColor: "transparent",
+  border: `1px solid ${palette.border}`,
+  transition: "all .16s ease",
+  "& svg": {
+    width: 16,
+    height: 16,
+  },
+  "&:hover": {
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
+    color: palette.accent,
+  },
+  "&.Mui-disabled": {
+    backgroundColor: "transparent",
+    borderColor: palette.borderSoft,
+    color: palette.border,
+  },
+};
+
+// El icono se cuelga a la izquierda del area de texto, de modo que su borde
+// derecho cae justo donde empieza el texto del campo. Asi los campos con boton
+// (DNI remitente, DNI destinatario, destino/agencia) alinean sus iconos en una
+// sola vertical, igual que los campos sin boton.
+export const searchIconButtonSxColgado = {
+  ...searchIconButtonSxPlano,
+  position: "absolute",
+  right: "100%",
+  top: "50%",
+  transform: "translateY(-50%)",
+  mr: 0,
+};
+
 const focusControl = (ref) => {
   const target = ref?.current;
 
@@ -157,7 +202,7 @@ export const focusByArrow = (event, inputRef) => {
   return false;
 };
 
-export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
+export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, placeholderSx, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
   return (
     <InputBase
       inputRef={inputRef}
@@ -211,6 +256,16 @@ export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, 
         "& textarea": {
           textAlign: align,
         },
+        // Permite que la pista (placeholder) tenga su propio tamano, para que un
+        // campo destacado no muestre un texto grande que parezca un fondo con el nombre.
+        ...(placeholderSx
+          ? {
+            "& input::placeholder, & textarea::placeholder": {
+              ...inputSx["& input::placeholder, & textarea::placeholder"],
+              ...placeholderSx,
+            },
+          }
+          : null),
       }}
     />
   );

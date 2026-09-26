@@ -197,6 +197,37 @@ export default function TimeWheelPicker({
     cambiarPeriodo(period === "AM" ? "PM" : "AM");
   };
 
+  // Rueda del mouse: ajusta la parte activa (hora, minutos o AM/PM) igual que el
+  // teclado con + / -. Arriba suma, abajo resta, y no deja que la pagina se mueva
+  // mientras el puntero esta sobre el control.
+  const wheelHandlerRef = useRef(null);
+
+  useEffect(() => {
+    wheelHandlerRef.current = (event) => {
+      if (!event.deltaY) {
+        return;
+      }
+      event.preventDefault();
+      ajustarParteActiva(event.deltaY < 0 ? 1 : -1);
+    };
+  });
+
+  // Se usa addEventListener y no onWheel porque React registra la rueda como
+  // listener pasivo: sin preventDefault la pagina scrollea en paralelo.
+  useEffect(() => {
+    const nodes = [rootRef.current, expanded ? panelRef.current : null].filter(Boolean);
+    if (!nodes.length) {
+      return undefined;
+    }
+
+    const onWheel = (event) => wheelHandlerRef.current?.(event);
+    nodes.forEach((node) => node.addEventListener("wheel", onWheel, { passive: false }));
+
+    return () => {
+      nodes.forEach((node) => node.removeEventListener("wheel", onWheel));
+    };
+  }, [expanded]);
+
   const wheelOffsets = [-2, -1, 0, 1, 2];
 
   const handleKeyDown = (event) => {

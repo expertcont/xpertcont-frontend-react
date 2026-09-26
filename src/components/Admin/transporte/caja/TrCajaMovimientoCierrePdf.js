@@ -258,6 +258,8 @@ export default async function crearCierreCajaMovimientoPdf({
   salidas = [],
   filtros = {},
   generadoPor = "",
+  usuario = "",
+  muestraFiltroUsuario = false,
 }) {
   const pdfDoc = await PDFDocument.create();
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -281,6 +283,14 @@ export default async function crearCierreCajaMovimientoPdf({
   }, 0);
   const totalSalidasNoBancarias = Math.max(0, totalSalidas - totalSalidasBancarias);
   const saldoFinal = totalIngresos - totalSalidas;
+
+  // Encabezado del filtro Usuario. Si no hay filtro disponible (el usuario solo
+  // ve su propia caja) se cae al correo de sesion, como antes.
+  const usuarioFiltro = cleanText(usuario);
+  const usuarioTexto = usuarioFiltro
+    || (muestraFiltroUsuario ? "Todos los usuarios (toda la agencia)" : "");
+  const lineaUsuario = `Usuario: ${usuarioTexto || cleanText(generadoPor) || "-"}`;
+  const lineaGenerador = usuarioTexto ? `Generado por: ${cleanText(generadoPor) || "-"}` : "";
   let saldo = 0;
   let page;
   let y;
@@ -299,7 +309,10 @@ export default async function crearCierreCajaMovimientoPdf({
     page.drawText(`Fecha: ${cleanText(filtros.fecha) || "Todos"}`, { x: MARGIN + 110, y, size: 8.2, font: regular, color: MUTED });
     page.drawText(`Agencia: ${cleanText(filtros.agencia) || "Todas"}`, { x: MARGIN + 220, y, size: 8.2, font: regular, color: MUTED });
     y -= 13;
-    page.drawText(`Encargado: ${cleanText(generadoPor) || "-"}`, { x: MARGIN, y, size: 8.2, font: regular, color: MUTED });
+    page.drawText(lineaUsuario, { x: MARGIN, y, size: 8.2, font: regular, color: MUTED });
+    if (lineaGenerador) {
+      page.drawText(lineaGenerador, { x: MARGIN + 220, y, size: 8.2, font: regular, color: MUTED });
+    }
     y -= 18;
 
     if (pagina === 1) {

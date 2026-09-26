@@ -5,7 +5,6 @@ import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { Plus, Search } from 'lucide-react';
-import { blueGrey } from '@mui/material/colors';
 //import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "../../AdminDias";
 import { useDialog } from "../../AdminConfirmDialogProvider";
@@ -75,7 +74,8 @@ const listContentSx = {
 };
 
 const toolbarSurfaceSx = {
-  backgroundColor: '#1c252c',
+  backgroundColor: palette.surface,
+  border: `1px solid ${palette.borderSoft}`,
   borderRadius: contentRadius,
   px: { xs: 1, md: 1.5 },
   py: { xs: 0.9, md: 1.25 },
@@ -121,10 +121,10 @@ const searchSx = {
   gap: 0.85,
   color: palette.text,
   backgroundColor: palette.bg,
-  border: '1px solid rgba(139,154,165,0.14)',
+  border: `1px solid ${palette.border}`,
   borderRadius: contentRadius,
   '&:focus-within': {
-    borderColor: 'rgba(139,154,165,0.32)',
+    borderColor: palette.accent,
   },
 };
 
@@ -151,34 +151,34 @@ const toolbarIconSx = {
   color: palette.muted,
   p: 0,
   '&:hover': {
-    backgroundColor: 'rgba(139,154,165,0.14)',
-    borderColor: 'rgba(139,154,165,0.20)',
+    backgroundColor: palette.surfaceAlt,
+    borderColor: palette.border,
     color: palette.text,
   },
 };
 
 const rowActionIconSx = {
-  color: 'rgba(144,164,174,0.78)',
+  color: palette.muted,
   cursor: 'pointer',
   fontSize: 25,
   display: 'block',
-  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.26))',
+  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.22))',
   transition: 'color 0.18s ease, filter 0.18s ease, transform 0.18s ease',
   '&:hover': {
-    color: '#7ddbd3',
-    filter: 'drop-shadow(0 0 6px rgba(125,219,211,0.24))',
+    color: palette.accent,
+    filter: `drop-shadow(0 0 6px ${palette.accentSoft})`,
     transform: 'translateY(-1px) scale(1.03)',
   },
 };
 
 const cloneActionIconSx = {
-  color: 'rgba(139,154,165,0.86)',
+  color: palette.muted,
   cursor: 'pointer',
   fontSize: 23,
   display: 'block',
   transition: 'color 0.18s ease, transform 0.18s ease',
   '&:hover': {
-    color: 'rgba(255,255,255,0.92)',
+    color: palette.text,
     transform: 'translateY(-1px)',
   },
 };
@@ -199,25 +199,25 @@ const totalButtonSx = {
   justifyContent: 'center',
   gap: 0.85,
   px: 1.25,
-  backgroundColor: 'rgba(139,154,165,0.10)',
-  border: '1px solid rgba(139,154,165,0.16)',
-  color: 'rgba(125,219,211,0.86)',
+  backgroundColor: palette.surfaceAlt,
+  border: `1px solid ${palette.border}`,
+  color: palette.accent,
   '&:hover': {
-    backgroundColor: 'rgba(139,154,165,0.16)',
-    borderColor: 'rgba(139,154,165,0.24)',
-    color: 'rgba(255,255,255,0.92)',
+    backgroundColor: palette.chip,
+    borderColor: palette.accent,
+    color: palette.text,
     boxShadow: 'none',
   },
 };
 
 const recordsButtonSx = {
   ...toolbarButtonSx,
-  backgroundColor: 'rgba(139,154,165,0.12)',
-  border: '1px solid rgba(139,154,165,0.25)',
+  backgroundColor: palette.surfaceAlt,
+  border: `1px solid ${palette.border}`,
   color: palette.muted,
   '&:hover': {
     backgroundColor: palette.chip,
-    borderColor: palette.border,
+    borderColor: palette.accent,
     color: palette.text,
     boxShadow: 'none',
   },
@@ -248,15 +248,15 @@ const sunatResumenIconSx = {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: palette.surface,
-    border: '1px solid rgba(77,163,255,0.46)',
-    color: '#8fc7ff',
+    border: `1px solid ${palette.accent}`,
+    color: palette.accent,
   },
   '& .resumen-badge.ok': {
-    borderColor: 'rgba(146,214,173,0.50)',
+    borderColor: palette.success,
     color: palette.success,
   },
   '& .resumen-badge.warn': {
-    borderColor: 'rgba(232,198,109,0.50)',
+    borderColor: palette.warning,
     color: palette.warning,
   },
 };
@@ -269,9 +269,11 @@ const sweetAlertDarkOptions = {
   buttonsStyling: true,
 };
 
-const listCardBg = '#1c252c';
-const listTableHeaderBg = '#202a32';
-const listTableHoverBg = 'rgba(139,154,165,0.07)';
+// Superficies de la tabla. Antes eran fijas (#1c252c / #202a32) y dejaban una
+// caja oscura dentro de la pagina cuando se elegia el tema claro.
+const listCardBg = palette.surface;
+const listTableHeaderBg = palette.surfaceAlt;
+const listTableHoverBg = palette.rowHover;
 
 const dataTableStyles = {
   table: {
@@ -1097,10 +1099,10 @@ export default function AdminVentaList() {
     position:'absolute',
     top:'0%',
     left:'0%',
-    background:'gray',
-    border:'2px solid #000',
+    background:'transparent',
+    border:0,
     padding:'16px 32px 24px',
-    width:'100',
+    width:'100%',
     minHeight: '50px'
     //transform:'translate(0%,0%)'
   };
@@ -1332,8 +1334,12 @@ const fetchTotalVentas = async () => {
 }; 
 const [recaudaciones, setRecaudaciones] = useState([]);
 const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
+// 'recaudacion' = por forma de pago (boton Ventas), 'usuario' = por quien
+// registro (boton RECORDS). Solo define el encabezado del dialogo.
+const [modoModalRecaudacion, setModoModalRecaudacion] = useState('recaudacion');
 const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
 const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
+  setModoModalRecaudacion('recaudacion');
   setShowModalMostrarRecaudacion(true);
   axios.get(`${back_host}/ad_ventarecaudacion/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
           .then(res => {
@@ -1345,6 +1351,7 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
           .catch(err => console.error(err));
 };
 const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
+  setModoModalRecaudacion('usuario');
   setShowModalMostrarRecaudacion(true);
   console.log(`${back_host}/ad_ventausuario/${periodo}/${id_anfitrion}/${documento_id}/${dia}`);
   axios.get(`${back_host}/ad_ventausuario/${periodo}/${id_anfitrion}/${documento_id}/${dia}`)
@@ -1386,6 +1393,7 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
         open={showModalMostrarRecaudacion}
         isSmallScreen={isSmallScreen}
         recaudaciones={recaudaciones}
+        modo={modoModalRecaudacion}
         onClose={() => setShowModalMostrarRecaudacion(false)}
       />
   <div>
@@ -1411,7 +1419,7 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
       }}
   >
       <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
+        <Typography sx={{ color: palette.text, fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
           Registro de Ventas
         </Typography>
         <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
@@ -1543,11 +1551,11 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                             //style={{ padding: '0px'}}
                             sx={{
                               ...toolbarIconSx,
-                              color: blueGrey[500],
+                              color: palette.muted,
                               '&:hover': {
-                                backgroundColor: '#c2410c',
-                                borderColor: '#c2410c',
-                                color: '#fff',
+                                backgroundColor: palette.danger,
+                                borderColor: palette.danger,
+                                color: palette.onAccent,
                               },
                             }}
                             onClick={() => {
@@ -1583,11 +1591,11 @@ const handleClickRecords = (periodo,id_anfitrion,documento_id,dia) => {
                 color="primary"
                 sx={{
                   ...toolbarIconSx,
-                  color: resumenDiaOk ? palette.success : totalPendienteResumenDia > 0 ? palette.warning : '#4da3ff',
+                  color: resumenDiaOk ? palette.success : totalPendienteResumenDia > 0 ? palette.warning : palette.accent,
                   '&:hover': {
-                    backgroundColor: resumenDiaOk ? palette.successSoft : 'rgba(37,99,235,0.14)',
-                    borderColor: resumenDiaOk ? 'rgba(146,214,173,0.32)' : 'rgba(77,163,255,0.32)',
-                    color: resumenDiaOk ? palette.success : '#8fc7ff',
+                    backgroundColor: resumenDiaOk ? palette.successSoft : palette.accentSoft,
+                    borderColor: resumenDiaOk ? palette.success : palette.accent,
+                    color: resumenDiaOk ? palette.success : palette.accent,
                   },
                 }}
                 onClick={enviarResumenBoletas}

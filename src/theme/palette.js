@@ -1,7 +1,7 @@
 export const themeOptions = [
   {
-    id: "default",
-    label: "Pizarra",
+    id: "carbon",
+    label: "Carbón",
     values: {
       bg: "#15191c",
       navBg: "#1b2024",
@@ -24,6 +24,8 @@ export const themeOptions = [
       warningSoft: "rgba(189,162,105,0.12)",
       success: "#79ab8f",
       successSoft: "rgba(121,171,143,0.12)",
+      porCobrar: "#d4786e",
+      porCobrarSoft: "rgba(212,120,110,0.14)",
       radiusContent: "8px",
       radiusControl: "8px",
       radiusListCard: "12px",
@@ -31,37 +33,10 @@ export const themeOptions = [
     },
   },
   {
-    id: "carbon",
-    label: "Carbón",
-    values: {
-      bg: "#17171a",
-      navBg: "#1d1d21",
-      surface: "#242428",
-      surfaceAlt: "#2b2b30",
-      chip: "#333338",
-      border: "#3e3e45",
-      borderSoft: "#35353b",
-      text: "#d7d7dc",
-      muted: "#8f8f99",
-      accent: "#a5a5b0",
-      accentSoft: "rgba(165,165,176,0.14)",
-      onAccent: "#151518",
-      overlaySoft: "rgba(255,255,255,0.02)",
-      rowHover: "#292930",
-      shadowSoft: "0 4px 12px rgba(0,0,0,0.14)",
-      danger: "#c2857a",
-      dangerSoft: "rgba(194,133,122,0.12)",
-      warning: "#bda87f",
-      warningSoft: "rgba(189,168,127,0.12)",
-      success: "#8aa78e",
-      successSoft: "rgba(138,167,142,0.12)",
-      radiusContent: "8px",
-      radiusControl: "8px",
-      radiusListCard: "12px",
-      radiusModal: "12px",
-    },
-  },
-  {
+    // El id sigue siendo "default" por compatibilidad con las sesiones ya
+    // guardadas; el tema por defecto de la app es Carbón.
+    id: "default",
+    label: "Pizarra",
     id: "light-smoke",
     label: "Blanco humo",
     values: {
@@ -86,6 +61,8 @@ export const themeOptions = [
       warningSoft: "rgba(154,106,16,0.12)",
       success: "#28734d",
       successSoft: "rgba(40,115,77,0.11)",
+      porCobrar: "#b3261e",
+      porCobrarSoft: "rgba(179,38,30,0.10)",
       radiusContent: "8px",
       radiusControl: "8px",
       radiusListCard: "12px",
@@ -94,6 +71,8 @@ export const themeOptions = [
   },
 ];
 
+// Primer tema de la lista = tema por defecto de la app (Carbón).
+const DEFAULT_THEME_ID = "carbon";
 const defaultThemeValues = themeOptions[0].values;
 const CUSTOM_THEME_ID = "custom";
 
@@ -133,7 +112,7 @@ export const getStoredCustomAccent = () => {
   return sessionStorage.getItem("xpertcont_custom_accent") || defaultThemeValues.accent;
 };
 
-export const getThemeValues = (themeId = "default") => ({
+export const getThemeValues = (themeId = DEFAULT_THEME_ID) => ({
   ...defaultThemeValues,
   ...(themeId === CUSTOM_THEME_ID
     ? {
@@ -146,13 +125,13 @@ export const getThemeValues = (themeId = "default") => ({
 
 export const getStoredThemeId = () => {
   if (typeof window === "undefined") {
-    return "default";
+    return DEFAULT_THEME_ID;
   }
 
-  return sessionStorage.getItem("xpertcont_theme_id") || "default";
+  return sessionStorage.getItem("xpertcont_theme_id") || DEFAULT_THEME_ID;
 };
 
-export const applyTheme = (themeId = "default") => {
+export const applyTheme = (themeId = DEFAULT_THEME_ID) => {
   if (typeof document === "undefined") {
     return;
   }
@@ -181,6 +160,8 @@ export const applyTheme = (themeId = "default") => {
     "--app-warning-soft": values.warningSoft,
     "--app-success": values.success,
     "--app-success-soft": values.successSoft,
+    "--app-por-cobrar": values.porCobrar || values.danger,
+    "--app-por-cobrar-soft": values.porCobrarSoft || values.dangerSoft,
     "--app-radius-content": values.radiusContent,
     "--app-radius-control": values.radiusControl,
     "--app-radius-list-card": values.radiusListCard,
@@ -207,26 +188,30 @@ export const applyStoredTheme = () => {
 };
 
 const palette = {
-  bg: "var(--app-bg, #15191c)",
-  navBg: "var(--app-nav-bg, #1b2024)",
-  surface: "var(--app-surface, #22282d)",
-  surfaceAlt: "var(--app-surface-alt, #293036)",
-  chip: "var(--app-chip, #313940)",
-  border: "var(--app-border, #3d4750)",
-  borderSoft: "var(--app-border-soft, #2f383f)",
-  text: "var(--app-text, #d7dde2)",
-  muted: "var(--app-muted, #8a949c)",
-  accent: "var(--app-accent, #9db2c7)",
-  accentSoft: "var(--app-accent-soft, rgba(157,178,199,0.14))",
-  onAccent: "var(--app-on-accent, #0f1418)",
+  bg: "var(--app-bg, #17171a)",
+  navBg: "var(--app-nav-bg, #1d1d21)",
+  surface: "var(--app-surface, #242428)",
+  surfaceAlt: "var(--app-surface-alt, #2b2b30)",
+  // Tinte neutro para el hover de fila, definido por tema (sin cast de color).
+  rowHover: "var(--app-row-hover, #292930)",
+  chip: "var(--app-chip, #333338)",
+  border: "var(--app-border, #3e3e45)",
+  borderSoft: "var(--app-border-soft, #35353b)",
+  text: "var(--app-text, #d7d7dc)",
+  muted: "var(--app-muted, #8f8f99)",
+  accent: "var(--app-accent, #a5a5b0)",
+  accentSoft: "var(--app-accent-soft, rgba(165,165,176,0.14))",
+  onAccent: "var(--app-on-accent, #151518)",
   overlaySoft: "var(--app-overlay-soft, rgba(255,255,255,0.02))",
   shadowSoft: "var(--app-shadow-soft, 0 4px 12px rgba(0,0,0,0.14))",
-  danger: "var(--app-danger, #c07a6d)",
-  dangerSoft: "var(--app-danger-soft, rgba(192,122,109,0.12))",
-  warning: "var(--app-warning, #bda269)",
-  warningSoft: "var(--app-warning-soft, rgba(189,162,105,0.12))",
-  success: "var(--app-success, #79ab8f)",
-  successSoft: "var(--app-success-soft, rgba(121,171,143,0.12))",
+  danger: "var(--app-danger, #c2857a)",
+  dangerSoft: "var(--app-danger-soft, rgba(194,133,122,0.12))",
+  warning: "var(--app-warning, #bda87f)",
+  warningSoft: "var(--app-warning-soft, rgba(189,168,127,0.12))",
+  success: "var(--app-success, #8aa78e)",
+  successSoft: "var(--app-success-soft, rgba(138,167,142,0.12))",
+  porCobrar: "var(--app-por-cobrar, #d67f75)",
+  porCobrarSoft: "var(--app-por-cobrar-soft, rgba(214,127,117,0.14))",
   radius: {
     content: "var(--app-radius-content, 8px)",
     control: "var(--app-radius-control, 8px)",
