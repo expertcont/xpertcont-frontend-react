@@ -241,7 +241,6 @@ export default function TrModuloBase({
     () => (tipoOperacionFijo === "B" ? "TRANS_BOLETO" : "TRANS_ENCOMIENDA"),
     [tipoOperacionFijo]
   );
-  const nombreRubro = useMemo(() => (rubroResumen === "BOLETOS" ? "boleto" : "encomienda"), [rubroResumen]);
   const nombreRubroPlural = useMemo(
     () => (rubroResumen === "BOLETOS" ? "boletos" : "encomiendas"),
     [rubroResumen]
@@ -709,6 +708,10 @@ export default function TrModuloBase({
       numeroRdi: item.numero_rdi,
       estado: item.estado || "PENDIENTE",
       cantidad: item.cantidad_boletas || 0,
+      ticket: item.ticket || "",
+      nombreArchivo: item.nombre_archivo || "",
+      rutaCdr: item.ruta_cdr || "",
+      detalle: item.respuesta_desc || item.respuesta_codigo || "",
     }));
 
     if (pendientesResumen > 0) {
@@ -797,6 +800,7 @@ export default function TrModuloBase({
             || dataResponse.respuesta_sunat_descripcion
             || dataResponse.message
             || `No se pudo enviar el RDI de ${nombreRubroPlural}.`,
+          data: dataResponse.data || dataResponse,
         };
       }
 
@@ -807,6 +811,7 @@ export default function TrModuloBase({
           dataResponse.ticket ? `ticket ${dataResponse.ticket}` : null,
           dataResponse.mensaje_usuario || dataResponse.respuesta_sunat_descripcion || null,
         ].filter(Boolean).join(" - "),
+        data: dataResponse.data || dataResponse,
       };
     } catch (error) {
       return {

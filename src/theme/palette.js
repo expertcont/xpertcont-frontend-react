@@ -70,7 +70,20 @@ export const themeOptions = [
 
 // Primer tema de la lista = tema por defecto de la app (Carbón).
 const DEFAULT_THEME_ID = "carbon";
+export const LIGHT_THEME_ID = "light-smoke";
 const defaultThemeValues = themeOptions[0].values;
+
+const normalizarRubro = (rubro) => String(rubro || "").trim().toUpperCase();
+
+export const getDefaultThemeIdForRubro = (rubro) => {
+  const rubroNormalizado = normalizarRubro(rubro);
+
+  if (rubroNormalizado === "TRANSPORTE" || rubroNormalizado === "TRANSPORTES") {
+    return LIGHT_THEME_ID;
+  }
+
+  return DEFAULT_THEME_ID;
+};
 
 // Sin tema de color libre: el acento es parte del tema, no un ajuste aparte. Con el
 // color suelto se movia solo 'accent' y quedaban combinaciones que rompian el
@@ -143,6 +156,10 @@ export const applyStoredTheme = () => {
   }
 
   applyTheme(getStoredThemeId());
+};
+
+export const applyDefaultThemeForRubro = (rubro) => {
+  applyTheme(getDefaultThemeIdForRubro(rubro));
 };
 
 const palette = {

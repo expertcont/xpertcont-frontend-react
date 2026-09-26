@@ -5,7 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Auth0Provider } from '@auth0/auth0-react';
 import BienvenidaXpert from './components/BienvenidaXpert'; // Importa el componente de bienvenida
-import { applyStoredTheme } from './theme/palette';
+import { applyDefaultThemeForRubro, applyStoredTheme } from './theme/palette';
 
 
 const domain = "dev-i4ndxhhmhmbyd4tt.us.auth0.com"; //auth0 propio expertcontperu@gmail.com
@@ -33,12 +33,14 @@ function Main() {
 
   // Función para cambiar al contenido de la aplicación principal
   const startApp = (usuario, invitado, rubroUsuario = 'COMERCIAL', superAcceso = '0') => {
+    const rubroFinal = rubroUsuario || 'COMERCIAL';
     setIdAnfitrion(usuario);
     setIdInvitado(invitado);
-    setRubro(rubroUsuario || 'COMERCIAL');
+    setRubro(rubroFinal);
     setSuperUsuario(superAcceso || '0');
-    sessionStorage.setItem('rubro_trabajo', rubroUsuario || 'COMERCIAL');
+    sessionStorage.setItem('rubro_trabajo', rubroFinal);
     sessionStorage.setItem('super', superAcceso || '0');
+    applyDefaultThemeForRubro(rubroFinal);
     setShowApp(true);
   };
 

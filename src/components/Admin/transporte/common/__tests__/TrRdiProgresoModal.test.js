@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import TrRdiProgresoModal from "../TrRdiProgresoModal";
 
@@ -56,7 +56,7 @@ test("muestra una fila por dia mientras corre, del mas antiguo al mas nuevo", as
     liberar();
   });
 
-  await screen.findByText(/Se detubo/);
+  await screen.findByText(/Se detuvo/);
 
   // Se detiene en el primer error: el cuarto nunca se intenta.
   expect(enviarPaso).toHaveBeenCalledTimes(3);
@@ -67,6 +67,9 @@ test("muestra una fila por dia mientras corre, del mas antiguo al mas nuevo", as
   expect(screen.getByText("error")).toBeTruthy();
   expect(screen.getByText("no se intento")).toBeTruthy();
   expect(screen.getByText("rechazado por SUNAT")).toBeTruthy();
+  expect(screen.getAllByText("Estado").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
+  expect(screen.getByText("REINTENTAR")).toBeTruthy();
 
   // Resumen y cierre habilitado al terminar.
   expect(screen.getByText("2 de 4 enviados")).toBeTruthy();

@@ -111,7 +111,7 @@ export default function TrEncomiendaModalSections({
         </Typography>
       )}
       <Box sx={soloLectura ? { pointerEvents: "none", opacity: 0.82 } : undefined}>
-      <SectionHeader icon={<UserRound size={15} />} title="1. Origen" />
+      <SectionHeader icon={<UserRound size={15} />} title="1. Remitente" />
       <Box sx={compactSectionSx}>
         <Grid container columnSpacing={0.65} rowSpacing={0.35}>
           <Grid item xs={12}>
@@ -228,7 +228,7 @@ export default function TrEncomiendaModalSections({
         </Grid>
       </Box>
 
-      <SectionHeader icon={<UserRound size={15} />} title="2. Destino" />
+      <SectionHeader icon={<UserRound size={15} />} title="2. Destinatario" />
       <Box sx={compactSectionSx}>
         <Grid container columnSpacing={0.65} rowSpacing={0.35}>
           <Grid item xs={12}>

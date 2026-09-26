@@ -53,14 +53,85 @@ export default function TrRdiProgresoModal({
 }) {
   const [estadoPasos, setEstadoPasos] = useState([]);
   const [mensajes, setMensajes] = useState([]);
+  const [resultados, setResultados] = useState([]);
   const [terminado, setTerminado] = useState(false);
+  const [ejecutando, setEjecutando] = useState(false);
   // Sirve para no setear estado si el padre cerro el modal a mitad del envio.
   const vivoRef = useRef(true);
   const alTerminarRef = useRef(alTerminar);
+  const enviarPasoRef = useRef(enviarPaso);
+  const pasosRef = useRef(pasos);
 
   useEffect(() => {
     alTerminarRef.current = alTerminar;
   }, [alTerminar]);
+
+  useEffect(() => {
+    enviarPasoRef.current = enviarPaso;
+  }, [enviarPaso]);
+
+  useEffect(() => {
+    pasosRef.current = pasos;
+  }, [pasos]);
+
+  const procesarDesde = useCallback(async (indiceInicio = 0) => {
+    const pasosActuales = pasosRef.current;
+    setEjecutando(true);
+    setTerminado(false);
+
+    for (let i = indiceInicio; i < pasosActuales.length; i += 1) {
+      if (!vivoRef.current) {
+        setEjecutando(false);
+        return;
+      }
+
+      setEstadoPasos((prev) => prev.map((estado, k) => (
+        k === i ? ESTADO_PASO.ENVIANDO : estado
+      )));
+
+      let resultado = { ok: false, mensaje: "Sin respuesta del servidor.", data: null };
+
+      try {
+        resultado = await enviarPasoRef.current(pasosActuales[i]) || resultado;
+      } catch (error) {
+        resultado = { ok: false, mensaje: error?.message || "Error inesperado.", data: null };
+      }
+
+      if (!vivoRef.current) {
+        setEjecutando(false);
+        return;
+      }
+
+      setMensajes((prev) => prev.map((mensaje, k) => (
+        k === i ? (resultado.mensaje || "") : mensaje
+      )));
+      setResultados((prev) => prev.map((item, k) => (
+        k === i ? (resultado.data || resultado) : item
+      )));
+
+      const estadoFinal = resultado.ok ? ESTADO_PASO.ENVIADO : ESTADO_PASO.ERROR;
+      setEstadoPasos((prev) => prev.map((estado, k) => {
+        if (k === i) {
+          return estadoFinal;
+        }
+        // Con el primer error, lo que sigue queda pendiente de reintento.
+        if (estadoFinal === ESTADO_PASO.ERROR && k > i) {
+          return ESTADO_PASO.OMITIDO;
+        }
+        return estado;
+      }));
+
+      if (!resultado.ok) {
+        break;
+      }
+    }
+
+    if (vivoRef.current) {
+      setEjecutando(false);
+      setTerminado(true);
+      alTerminarRef.current?.();
+    }
+  }, []);
 
   // Cada apertura es una corrida nueva: se reinicia la lista y se procesa.
   useEffect(() => {
@@ -71,64 +142,14 @@ export default function TrRdiProgresoModal({
     vivoRef.current = true;
     setEstadoPasos(pasos.map(() => ESTADO_PASO.PENDIENTE));
     setMensajes(pasos.map(() => ""));
+    setResultados(pasos.map(() => null));
     setTerminado(false);
-
-    const correr = async () => {
-      for (let i = 0; i < pasos.length; i += 1) {
-        if (!vivoRef.current) {
-          return;
-        }
-
-        setEstadoPasos((prev) => prev.map((estado, k) => (
-          k === i ? ESTADO_PASO.ENVIANDO : estado
-        )));
-
-        let resultado = { ok: false, mensaje: "Sin respuesta del servidor." };
-
-        try {
-          resultado = await enviarPaso(pasos[i]) || resultado;
-        } catch (error) {
-          resultado = { ok: false, mensaje: error?.message || "Error inesperado." };
-        }
-
-        if (!vivoRef.current) {
-          return;
-        }
-
-        setMensajes((prev) => prev.map((mensaje, k) => (
-          k === i ? (resultado.mensaje || "") : mensaje
-        )));
-
-        const estadoFinal = resultado.ok ? ESTADO_PASO.ENVIADO : ESTADO_PASO.ERROR;
-        setEstadoPasos((prev) => prev.map((estado, k) => {
-          if (k === i) {
-            return estadoFinal;
-          }
-          // Con el primer error, lo que sigue queda pendiente de reintento.
-          if (estadoFinal === ESTADO_PASO.ERROR && k > i) {
-            return ESTADO_PASO.OMITIDO;
-          }
-          return estado;
-        }));
-
-        if (!resultado.ok) {
-          break;
-        }
-      }
-
-      if (vivoRef.current) {
-        setTerminado(true);
-        alTerminarRef.current?.();
-      }
-    };
-
-    correr();
+    procesarDesde(0);
 
     return () => {
       vivoRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abierto]);
+  }, [abierto, pasos, procesarDesde]);
 
   const resumen = useMemo(() => {
     const enviados = estadoPasos.filter((e) => e === ESTADO_PASO.ENVIADO).length;
@@ -152,15 +173,27 @@ export default function TrRdiProgresoModal({
   }, [estadoPasos, pasos.length]);
 
   const cerrar = useCallback(() => {
-    if (terminado) {
+    if (terminado && !ejecutando) {
       alCerrar?.();
     }
-  }, [alCerrar, terminado]);
+  }, [alCerrar, ejecutando, terminado]);
+
+  const reintentarDesdeError = useCallback(() => {
+    const indice = indiceFallo(estadoPasos, pasos);
+    setEstadoPasos((prev) => prev.map((estado, k) => (
+      k >= indice && [ESTADO_PASO.ERROR, ESTADO_PASO.OMITIDO].includes(estado)
+        ? ESTADO_PASO.PENDIENTE
+        : estado
+    )));
+    setMensajes((prev) => prev.map((mensaje, k) => (k >= indice ? "" : mensaje)));
+    setResultados((prev) => prev.map((resultado, k) => (k >= indice ? null : resultado)));
+    procesarDesde(indice);
+  }, [estadoPasos, pasos, procesarDesde]);
 
   const mensajeFinal = terminado
     ? (
       resumen.fallidos > 0
-        ? `Se detubo en ${nombreRubroPlural} del dia ${diaCorto(pasos[indiceFallo(estadoPasos, pasos)]?.fecha)}. `
+        ? `Se detuvo en ${nombreRubroPlural} del dia ${diaCorto(pasos[indiceFallo(estadoPasos, pasos)]?.fecha)}. `
           + `${resumen.enviados} enviado(s), ${resumen.fallidos} con error`
           + (resumen.omitidos > 0 ? ` y ${resumen.omitidos} sin intentar.` : ".")
         : `Listo: ${resumen.enviados} resumen(es) enviado(s) a SUNAT.`
@@ -218,7 +251,7 @@ export default function TrRdiProgresoModal({
             color: palette.muted,
             backgroundColor: "transparent",
             border: `1px solid ${palette.borderSoft}`,
-            pointerEvents: terminado ? "auto" : "none",
+            pointerEvents: terminado && !ejecutando ? "auto" : "none",
           }}
         >
           <X size={15} />
@@ -248,6 +281,13 @@ export default function TrRdiProgresoModal({
           const activo = estado === ESTADO_PASO.ENVIANDO;
           const estilo = ESTILO_ICONO[estado] || ESTILO_ICONO.PENDIENTE;
           const ultimo = indice === pasos.length - 1;
+          const resultado = resultados[indice] || {};
+          const numeroRdi = resultado.numero_rdi || paso.numeroRdi;
+          const estadoSunat = resultado.nivel || resultado.estado || paso.estado || "PENDIENTE";
+          const ticket = resultado.ticket || paso.ticket;
+          const nombreArchivo = resultado.nombre_archivo || paso.nombreArchivo;
+          const rutaCdr = resultado.ruta_cdr || paso.rutaCdr;
+          const respuesta = resultado.respuesta_sunat_descripcion || resultado.respuesta_desc;
 
           return (
             <Box key={paso.clave || `${paso.fecha}-${indice}`} sx={{ display: "flex", gap: 1.25 }}>
@@ -300,8 +340,8 @@ export default function TrRdiProgresoModal({
                     {`Dia ${diaCorto(paso.fecha)}`}
                   </Typography>
                   <Typography sx={{ fontSize: 12, color: palette.muted }}>
-                    {paso.numeroRdi
-                      ? paso.numeroRdi
+                    {numeroRdi
+                      ? numeroRdi
                       : `resumen nuevo (${paso.cantidad || 0} ${nombreRubroPlural} sin RDI)`}
                   </Typography>
                   {activo && (
@@ -326,8 +366,17 @@ export default function TrRdiProgresoModal({
                   )}
                 </Box>
 
-                <Typography sx={{ mt: 0.15, fontSize: 11.5, color: palette.muted }}>
+                <Box sx={{ mt: 0.5, display: "flex", flexWrap: "wrap", gap: 0.7 }}>
+                  <InfoPill label="Estado" value={estadoSunat} color={estado === ESTADO_PASO.ERROR ? palette.danger : undefined} />
+                  <InfoPill label="Docs" value={resultado.total_documentos || paso.cantidad || 0} />
+                  {ticket && <InfoPill label="Ticket" value={ticket} />}
+                  {nombreArchivo && <InfoPill label="Archivo" value={nombreArchivo} />}
+                  {rutaCdr && rutaCdr !== "error" && <InfoPill label="CDR" value="disponible" color={palette.success} />}
+                </Box>
+
+                <Typography sx={{ mt: 0.45, fontSize: 11.5, color: estado === ESTADO_PASO.ERROR ? palette.danger : palette.muted }}>
                   {mensajes[indice]
+                    || respuesta
                     || paso.detalle
                     || `${paso.cantidad || 0} ${nombreRubroPlural} | estado ${paso.estado || "PENDIENTE"}`}
                 </Typography>
@@ -355,27 +404,75 @@ export default function TrRdiProgresoModal({
             : `${indiceActual >= 0 ? indiceActual + 1 : 0} de ${resumen.total} en curso`}
         </Typography>
 
-        <Box
-          onClick={cerrar}
-          role="button"
-          tabIndex={terminado ? 0 : -1}
-          sx={{
-            px: 2,
-            py: 0.85,
-            borderRadius: palette.radius.control,
-            fontSize: 12,
-            fontWeight: 800,
-            letterSpacing: ".04em",
-            color: palette.onAccent,
-            backgroundColor: palette.accent,
-            cursor: terminado ? "pointer" : "default",
-            pointerEvents: terminado ? "auto" : "none",
-          }}
-        >
-          CERRAR
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {terminado && resumen.fallidos > 0 && (
+            <Box
+              onClick={reintentarDesdeError}
+              role="button"
+              tabIndex={0}
+              sx={{
+                px: 1.6,
+                py: 0.85,
+                borderRadius: palette.radius.control,
+                fontSize: 12,
+                fontWeight: 800,
+                color: palette.accent,
+                backgroundColor: palette.accentSoft,
+                cursor: "pointer",
+              }}
+            >
+              REINTENTAR
+            </Box>
+          )}
+
+          <Box
+            onClick={cerrar}
+            role="button"
+            tabIndex={terminado ? 0 : -1}
+            sx={{
+              px: 2,
+              py: 0.85,
+              borderRadius: palette.radius.control,
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: ".04em",
+              color: palette.onAccent,
+              backgroundColor: palette.accent,
+              cursor: terminado ? "pointer" : "default",
+              pointerEvents: terminado ? "auto" : "none",
+            }}
+          >
+            CERRAR
+          </Box>
         </Box>
       </Box>
     </Dialog>
+  );
+}
+
+function InfoPill({ label, value, color }) {
+  return (
+    <Box
+      sx={{
+        px: 0.85,
+        py: 0.35,
+        borderRadius: 1,
+        border: `1px solid ${palette.borderSoft}`,
+        backgroundColor: palette.surfaceAlt,
+        display: "flex",
+        alignItems: "center",
+        gap: 0.45,
+        minHeight: 22,
+        maxWidth: "100%",
+      }}
+    >
+      <Typography sx={{ fontSize: 10.5, fontWeight: 800, color: palette.muted, textTransform: "uppercase" }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: color || palette.text, overflowWrap: "anywhere" }}>
+        {String(value || "-")}
+      </Typography>
+    </Box>
   );
 }
 
