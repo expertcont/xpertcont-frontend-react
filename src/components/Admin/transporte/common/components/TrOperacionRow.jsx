@@ -544,10 +544,12 @@ function TrOperacionRow({
   sunatContext,
   canDelete = false,
   compact = false,
+  mostrarAnuladas = false,
 }) {
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
   const esEncomienda = row.tipo_operacion === "E";
   const anulada = Number(row.registrado) === 0;
+  const mostrarSelloAnulado = mostrarAnuladas && anulada;
   const puedeImprimirTicket = esEncomienda && !anulada && Boolean(row.r_cod && row.r_serie && row.r_numero);
   const [ticketAnchorEl, setTicketAnchorEl] = useState(null);
   const fechaHoraOperacion = [row.fecha, row.horaGrabacion].filter(Boolean).join(" ");
@@ -567,9 +569,44 @@ function TrOperacionRow({
   );
 
   return (
-    <Box sx={{ width: "100%", py: esEncomienda ? (compact ? 0.2 : 0.45) : 1.2 }}>
+    <Box
+      sx={{
+        position: "relative",
+        overflow: "hidden",
+        width: "100%",
+        py: esEncomienda ? (compact ? 0.2 : 0.45) : 1.2,
+      }}
+    >
+      {mostrarSelloAnulado && (
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%) rotate(-12deg)",
+            zIndex: 0,
+            pointerEvents: "none",
+            px: compact ? 1.6 : 2.1,
+            py: compact ? 0.25 : 0.35,
+            border: "2px solid rgba(239,68,68,0.26)",
+            borderRadius: "7px",
+            color: "rgba(239,68,68,0.22)",
+            fontSize: compact ? "20px" : "26px",
+            fontWeight: 1000,
+            lineHeight: 1,
+            letterSpacing: "0",
+            textTransform: "uppercase",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ANULADO
+        </Box>
+      )}
       <Box
         sx={{
+          position: "relative",
+          zIndex: 1,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -980,6 +1017,7 @@ export const createColumns = ({
   sunatContext,
   canDelete,
   compact = false,
+  mostrarAnuladas = false,
 }) => [
   {
     name: "",
@@ -995,6 +1033,7 @@ export const createColumns = ({
         sunatContext={sunatContext}
         canDelete={canDelete}
         compact={compact}
+        mostrarAnuladas={mostrarAnuladas}
       />
     ),
   },

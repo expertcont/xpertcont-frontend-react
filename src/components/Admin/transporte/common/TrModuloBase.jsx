@@ -974,6 +974,7 @@ export default function TrModuloBase({
               empresa: empresaTrabajo,
               onRefresh: () => setUpdateTrigger(Date.now()),
             },
+            mostrarAnuladas,
           })}
           data={data}
           progressPending={loading}
