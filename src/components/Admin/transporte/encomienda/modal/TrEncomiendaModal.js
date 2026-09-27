@@ -400,8 +400,6 @@ export default function TrEncomiendaModal({
   const origenVisual = operacion?.punto_venta_nombre || puntoVentaOrigenNombre || draft.id_punto_venta || puntoVentaOrigen || "ORIGEN";
   const idPuntoVentaOrigen = draft.id_punto_venta || puntoVentaOrigen || operacion?.id_punto_venta || "";
   const esFactura = (operacion?.r_cod || draft.r_cod) === "01";
-  const encomiendaEnviadaSunat = Boolean(operacion?.numero_rdi || operacion?.r_vfirmado);
-  const puedeEditarFecha = esEdicion && !encomiendaEnviadaSunat;
   const encomiendaGrabada = !esEdicion && Boolean(operacionGuardada);
   const encomiendaTicketBase = operacion || operacionGuardada || draft;
   const tieneComprobanteReal = (encomienda) => Boolean(encomienda?.r_cod && encomienda?.r_serie && encomienda?.r_numero);
@@ -410,6 +408,7 @@ export default function TrEncomiendaModal({
   const numeroEncomiendaCabecera = [draft.r_serie || operacion?.r_serie, draft.r_numero || operacion?.r_numero]
     .filter(Boolean)
     .join("-") || "Sin numero";
+  const fechaEmisionTexto = String(draft.r_fecemi || "").slice(0, 10).split("-").reverse().join("/") || "-";
   const textoBotonGuardarCorto = esEdicion ? "Guardar" : encomiendaGrabada ? "Grabada" : esFactura ? "Grabar" : "Guardar";
   const accionSecundariaSx = {
     height: 42,
@@ -739,11 +738,6 @@ export default function TrEncomiendaModal({
 
   const handleSubmit = async () => {
     if (guardando || soloLectura || encomiendaGrabada) {
-      return;
-    }
-
-    if (esEdicion && puedeEditarFecha && !String(draft.r_fecemi || "").startsWith(`${periodoTrabajo}-`)) {
-      mostrarValidacion("La fecha debe pertenecer al periodo de trabajo.", null);
       return;
     }
 
@@ -1204,23 +1198,9 @@ export default function TrEncomiendaModal({
                 <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase" }}>
                   Fecha
                 </Typography>
-                <InputBase
-                  value={draft.r_fecemi}
-                  onChange={(event) => updateDraft("r_fecemi", event.target.value)}
-                  type="date"
-                  readOnly={soloLectura || !puedeEditarFecha}
-                  sx={{
-                    width: 118,
-                    color: palette.text,
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    "& input": {
-                      p: 0,
-                      color: palette.text,
-                      fontWeight: 800,
-                    },
-                  }}
-                />
+                <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                  {fechaEmisionTexto}
+                </Typography>
               </Box>
             </Box>
           )}
