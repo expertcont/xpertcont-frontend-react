@@ -32,15 +32,14 @@ const LAYOUT = {
 // Posiciones horizontales de la tabla.
 // Si una columna queda apretada, cambia estos valores y todo se alinea junto:
 // - detailX mueve el inicio del detalle.
-// - ingresoRight/salidaRight/saldoRight son los bordes derechos de cada monto.
+// - ingresoRight/salidaRight son los bordes derechos de cada monto.
 const COLUMNS = {
   fechaX: MARGIN + 6,
   // Sin columna de iconos: el detalle arranca donde estaba el icono.
   detailX: MARGIN + 72,
   // Montos: bordes derechos separados para que no se sientan apretados.
-  ingresoRight: PAGE_WIDTH - MARGIN - 146,
-  salidaRight: PAGE_WIDTH - MARGIN - 72,
-  saldoRight: PAGE_WIDTH - MARGIN,
+  ingresoRight: PAGE_WIDTH - MARGIN - 92,
+  salidaRight: PAGE_WIDTH - MARGIN,
 };
 
 const DETAIL_WIDTH = COLUMNS.ingresoRight - COLUMNS.detailX - 14;
@@ -337,7 +336,6 @@ export default async function crearCierreCajaMovimientoPdf({
     || (muestraFiltroUsuario ? "Todos los usuarios (toda la agencia)" : "");
   const lineaUsuario = `Usuario: ${usuarioTexto || cleanText(generadoPor) || "-"}`;
   const lineaGenerador = usuarioTexto ? `Generado por: ${cleanText(generadoPor) || "-"}` : "";
-  let saldo = 0;
   let page;
   let y;
   let pagina = 0;
@@ -387,7 +385,6 @@ export default async function crearCierreCajaMovimientoPdf({
     page.drawText("Detalle", { x: COLUMNS.detailX, y: y - 11, size: 7.2, font: bold, color: MUTED });
     drawRight(page, "Ingreso", COLUMNS.ingresoRight, y - 11, 7.2, bold, MUTED);
     drawRight(page, "Salida", COLUMNS.salidaRight, y - 11, 7.2, bold, MUTED);
-    drawRight(page, "Saldo", COLUMNS.saldoRight, y - 11, 7.2, bold, MUTED);
     y -= tableHeader.advance;
   };
 
@@ -411,7 +408,6 @@ export default async function crearCierreCajaMovimientoPdf({
 
     if (y - rowHeight < LAYOUT.bottomReserved) addPage();
 
-    saldo += item.ingreso - item.salida;
     const ingresoPorCobrar = esIngresoPorCobrar(item);
     const ingresoAnulado = esIngresoAnulado(item);
     const ingresoTexto = item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-");
@@ -499,9 +495,6 @@ export default async function crearCierreCajaMovimientoPdf({
     }
     drawRight(page, ingresoTexto, COLUMNS.ingresoRight, y - 8, 7.1, ingresoPorCobrar || ingresoAnulado ? bold : regular, ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : item.ingreso ? INK : MUTED);
     drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, salidaFont, salidaColor);
-    // El saldo conserva su color por signo: es una columna acumulada y teñirla
-    // de rojo haria pensar que el balance de la fila esta en negativo.
-    drawRight(page, money(saldo), COLUMNS.saldoRight, y - 8, 7.1, bold, saldo >= 0 ? INK : DANGER);
     y -= rowHeight;
   });
 

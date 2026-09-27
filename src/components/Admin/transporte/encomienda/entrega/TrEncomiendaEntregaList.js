@@ -80,6 +80,23 @@ const customTableStyles = {
   },
 };
 
+const porCobrarRowStyles = [
+  {
+    when: (row) => esPorCobrar(row.condicion_pago || row.numero_rdi),
+    style: {
+      backgroundColor: palette.porCobrarSoft,
+      color: palette.text,
+      borderLeft: `4px solid ${palette.porCobrar}`,
+      borderBottomColor: "rgba(220, 68, 68, 0.34)",
+      "&:hover": {
+        backgroundColor: "rgba(220, 68, 68, 0.16)",
+        color: palette.text,
+        cursor: "pointer",
+      },
+    },
+  },
+];
+
 const inlineBadgeSx = {
   height: 20,
   px: 0.75,
@@ -556,7 +573,8 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
       const response = await fetch(`${back_host}/mve_transventa/encomienda/por-entregar/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${puntoVentaTrabajo}?${query.toString()}`);
       const result = await response.json();
       const rows = Array.isArray(result?.data) ? result.data : [];
-      setTablaBase(rows.map((item) => ({
+      const rowsActivas = rows.filter((item) => Number(item.registrado ?? 1) !== 0);
+      setTablaBase(rowsActivas.map((item) => ({
         ...item,
         _textoBusqueda: crearIndiceBusqueda(item),
         _textoBusquedaFonica: crearIndiceBusquedaFonica(item),
@@ -1789,6 +1807,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
             paginationPerPage={rowsPerPage}
             paginationRowsPerPageOptions={rowsPerPageOptions}
             customStyles={customTableStyles}
+            conditionalRowStyles={porCobrarRowStyles}
             noDataComponent={(
               <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
                 <Search size={16} />

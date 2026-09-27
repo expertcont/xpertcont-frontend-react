@@ -130,16 +130,9 @@ test("la fila por cobrar se dibuja completa en rojo", async () => {
     "CAJA CON DOCUMENTOS",
     "Por cobrar",
     "-",
-    "S/ 0.00",
   ]);
 
-  // El saldo es el ultimo dibujo de la fila y queda en tinta: es una columna
-  // acumulada, no un dato de la encomienda por cobrar.
-  const [saldo] = fila.slice(-1);
-  expect(saldo.texto).toBe("S/ 0.00");
-  expect(esTinta(saldo.color)).toBe(true);
-
-  fila.slice(0, -1).forEach((t) => {
+  fila.forEach((t) => {
     const esRojoReal = esRojo(t.color);
     expect(`${t.texto} en rojo: ${esRojoReal}`).toBe(`${t.texto} en rojo: true`);
   });

@@ -18,6 +18,7 @@ import TrRdiProgresoModal from "./TrRdiProgresoModal";
 import { createColumns, customStyles, customStylesEncomienda, customStylesEncomiendaPanoramica, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
+import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
 // Tema oscuro propio de las tablas del modulo transporte.
@@ -155,6 +156,7 @@ export default function TrModuloBase({
   const [operacionEditando, setOperacionEditando] = useState(null);
   const [guardandoOperacion, setGuardandoOperacion] = useState(false);
   const guardandoOperacionRef = useRef(false);
+  const imprimiendoTicketRapidoRef = useRef(false);
 
   // -----------------------------
   // Catalogos y operaciones
@@ -831,6 +833,44 @@ export default function TrModuloBase({
     window.localStorage.setItem(TICKET_ENCOMIENDA_MODO_KEY, modoNormalizado);
   };
 
+  const handleImprimirTicketRapido = async (operacion, modo = ticketEncomiendaModo) => {
+    if (imprimiendoTicketRapidoRef.current) {
+      return;
+    }
+
+    imprimiendoTicketRapidoRef.current = true;
+
+    try {
+      await imprimirTicketEncomienda({
+        modo,
+        backHost: back_host,
+        periodoTrabajo,
+        idAnfitrion: params.id_anfitrion,
+        documentoId: contabilidadTrabajo,
+        encomiendaBase: operacion,
+        draft: operacion,
+        rutasDisponibles,
+        puntoVentaOrigenNombre: puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo)?.nombre || puntoVentaTrabajo,
+        empresa: {
+          ...empresaTrabajo,
+          nombre: empresaTrabajo.nombre,
+          documento_id: contabilidadTrabajo,
+        },
+      });
+    } catch (error) {
+      swal2.fire({
+        title: "No se pudo generar el ticket",
+        text: error.message || "Revisa los datos de la encomienda e intenta nuevamente.",
+        icon: "error",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+    } finally {
+      imprimiendoTicketRapidoRef.current = false;
+    }
+  };
+
   // -----------------------------
   // Renderizado del formulario
   // -----------------------------
@@ -902,6 +942,7 @@ export default function TrModuloBase({
             onDelete: handleDelete,
             onCancel: handleCancel,
             onEnviarSunat: handleEnviarSunat,
+            onImprimirTicket: handleImprimirTicketRapido,
             canDelete: puedeEliminarOperacion,
             compact: tipoOperacionFijo === "E" && panoramicMode,
             sunatContext: {

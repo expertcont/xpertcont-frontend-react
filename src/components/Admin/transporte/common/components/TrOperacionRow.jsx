@@ -11,11 +11,13 @@ import {
   MapPinCheck,
   Package,
   Pencil,
+  Ticket,
   Trash2,
   ArrowRight,
   UserPen,
   UserRound,
   User,
+  X,
 } from "lucide-react";
 
 import AppChip from "../../../../ui/AppChip";
@@ -537,6 +539,7 @@ function TrOperacionRow({
   onDelete,
   onCancel,
   onEnviarSunat,
+  onImprimirTicket,
   sunatContext,
   canDelete = false,
   compact = false,
@@ -544,14 +547,18 @@ function TrOperacionRow({
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
   const esEncomienda = row.tipo_operacion === "E";
   const anulada = Number(row.registrado) === 0;
+  const puedeImprimirTicket = esEncomienda && !anulada && Boolean(row.r_cod && row.r_serie && row.r_numero);
+  const [ticketAnchorEl, setTicketAnchorEl] = useState(null);
   const fechaHoraOperacion = [row.fecha, row.horaGrabacion].filter(Boolean).join(" ");
+  const esPorCobrar = row.condicionPagoLabel === "POR_COBRAR";
+  const montoColor = esPorCobrar ? palette.porCobrar : row.condicionPagoLabel ? palette.accent : palette.text;
   const TotalOperacion = (
     <Box sx={{ display: "grid", gap: 0.2, justifyItems: { xs: "flex-start", sm: "flex-end" } }}>
-      <Typography sx={{ color: row.condicionPagoLabel ? palette.accent : palette.text, fontSize: "15px", fontWeight: "1000 !important", WebkitTextStroke: "0.25px currentColor", whiteSpace: "nowrap" }}>
+      <Typography sx={{ color: montoColor, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.32px currentColor", whiteSpace: "nowrap" }}>
         {formatMoney(row.total)}
       </Typography>
       {row.condicionPagoLabel && (
-        <Typography sx={{ color: palette.accent, fontSize: "11.2px", fontWeight: 500, lineHeight: 1, opacity: 0.72, whiteSpace: "nowrap" }}>
+        <Typography sx={{ color: esPorCobrar ? palette.porCobrar : palette.accent, fontSize: "11.2px", fontWeight: 650, lineHeight: 1, opacity: 0.82, whiteSpace: "nowrap" }}>
           Por cobrar
         </Typography>
       )}
@@ -586,6 +593,155 @@ function TrOperacionRow({
             >
               <Bus size={16} />
             </Box>
+          )}
+
+          {esEncomienda && (
+            <>
+              <Tooltip title={puedeImprimirTicket ? "Imprimir ticket rapido" : "Ticket disponible al grabar comprobante"} arrow>
+                <Box
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (puedeImprimirTicket) {
+                      setTicketAnchorEl(event.currentTarget);
+                    }
+                  }}
+                  sx={{
+                    ...actionButtonSx(false),
+                    width: { xs: 38, sm: 28 },
+                    height: { xs: 38, sm: 28 },
+                    color: puedeImprimirTicket ? palette.accent : palette.muted,
+                    opacity: puedeImprimirTicket ? 1 : 0.48,
+                    cursor: puedeImprimirTicket ? "pointer" : "default",
+                    "&:hover": puedeImprimirTicket ? {
+                      backgroundColor: palette.accent,
+                      borderColor: palette.accent,
+                      color: palette.onAccent,
+                    } : undefined,
+                  }}
+                >
+                  <Ticket size={14} />
+                </Box>
+              </Tooltip>
+              <Popover
+                open={Boolean(ticketAnchorEl)}
+                anchorEl={ticketAnchorEl}
+                onClose={() => setTicketAnchorEl(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+                PaperProps={{
+                  sx: {
+                    mt: 0.75,
+                    width: { xs: "min(300px, calc(100vw - 32px))", sm: 286 },
+                    border: `1px solid ${palette.border}`,
+                    borderRadius: palette.radius.modal,
+                    backgroundColor: palette.surface,
+                    color: palette.text,
+                    boxShadow: palette.shadowSoft,
+                  },
+                }}
+              >
+                <Box sx={{ p: 1.35 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                      <Box
+                        sx={{
+                          width: 42,
+                          height: 42,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          borderRadius: "50%",
+                          backgroundColor: palette.accentSoft,
+                          color: palette.accent,
+                        }}
+                      >
+                        <Ticket size={23} strokeWidth={2.25} />
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 900, lineHeight: 1.15 }}>
+                          Imprimir ticket
+                        </Typography>
+                        <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.25 }} noWrap>
+                          {row.numero || [row.r_serie, row.r_numero].filter(Boolean).join("-")}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Box
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setTicketAnchorEl(null)}
+                      sx={{ ...actionButtonSx(false), width: 28, height: 28, flexShrink: 0 }}
+                    >
+                      <X size={13} />
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ mt: 1.25, pt: 1.05, borderTop: `1px solid ${palette.borderSoft}`, display: "grid", gap: 0.65 }}>
+                    {[
+                      ["completo", "Ticket completo", "Cliente + paquete en un solo corte"],
+                      ["admin", "Ticket Paquete", "Copia interna para adherir al paquete"],
+                      ["cliente", "Ticket cliente", "Comprobante para entregar o reenviar"],
+                    ].map(([modo, label, descripcion]) => (
+                      <Box
+                        key={modo}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setTicketAnchorEl(null);
+                          onImprimirTicket?.(row, modo);
+                        }}
+                        sx={{
+                          minHeight: 44,
+                          px: 1,
+                          py: 0.65,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.85,
+                          borderRadius: palette.radius.control,
+                          border: `1px solid ${palette.borderSoft}`,
+                          backgroundColor: palette.overlaySoft,
+                          color: palette.text,
+                          cursor: "pointer",
+                          transition: "all .18s ease",
+                          "&:hover": {
+                            backgroundColor: palette.accentSoft,
+                            borderColor: palette.accent,
+                            color: palette.accent,
+                            transform: "translateY(-1px)",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            backgroundColor: palette.surface,
+                            border: `1px solid ${palette.borderSoft}`,
+                            color: "inherit",
+                          }}
+                        >
+                          <Ticket size={14} />
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography sx={{ color: "inherit", fontSize: "12.6px", fontWeight: 900, lineHeight: 1.15 }}>
+                            {label}
+                          </Typography>
+                          <Typography sx={{ color: palette.muted, fontSize: "10.8px", mt: 0.25, lineHeight: 1.2 }}>
+                            {descripcion}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Popover>
+            </>
           )}
 
           <Typography sx={{ color: palette.text, fontWeight: "1000 !important", WebkitTextStroke: "0.25px currentColor", fontSize: "16px" }}>
@@ -819,6 +975,7 @@ export const createColumns = ({
   onDelete,
   onCancel,
   onEnviarSunat,
+  onImprimirTicket,
   sunatContext,
   canDelete,
   compact = false,
@@ -833,6 +990,7 @@ export const createColumns = ({
         onDelete={onDelete}
         onCancel={onCancel}
         onEnviarSunat={onEnviarSunat}
+        onImprimirTicket={onImprimirTicket}
         sunatContext={sunatContext}
         canDelete={canDelete}
         compact={compact}
