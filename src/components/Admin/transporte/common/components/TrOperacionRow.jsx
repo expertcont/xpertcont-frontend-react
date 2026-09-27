@@ -11,6 +11,7 @@ import {
   MapPinCheck,
   Package,
   Pencil,
+  ReceiptText,
   Ticket,
   Trash2,
   ArrowRight,
@@ -619,7 +620,7 @@ function TrOperacionRow({
                     } : undefined,
                   }}
                 >
-                  <Ticket size={14} />
+                  <ReceiptText size={14} />
                 </Box>
               </Tooltip>
               <Popover
@@ -656,7 +657,7 @@ function TrOperacionRow({
                           color: palette.accent,
                         }}
                       >
-                        <Ticket size={23} strokeWidth={2.25} />
+                        <ReceiptText size={23} strokeWidth={2.25} />
                       </Box>
                       <Box sx={{ minWidth: 0 }}>
                         <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 900, lineHeight: 1.15 }}>

@@ -98,6 +98,22 @@ const normalizarModoTicketEncomienda = (value) => (
   ["completo", "admin", "cliente"].includes(value) ? value : "completo"
 );
 
+const porCobrarRowStyles = [
+  {
+    when: (row) => row.tipo_operacion === "E" && row.condicionPagoLabel === "POR_COBRAR",
+    style: {
+      backgroundColor: palette.porCobrarSoft,
+      color: palette.text,
+      borderColor: "rgba(220, 68, 68, 0.34)",
+      borderLeft: `4px solid ${palette.porCobrar}`,
+      "&:hover": {
+        backgroundColor: "rgba(220, 68, 68, 0.16)",
+        color: palette.text,
+      },
+    },
+  },
+];
+
 export default function TrModuloBase({
   tipoOperacionFijo = "E",
   titulo = "Control de Encomiendas",
@@ -886,8 +902,6 @@ export default function TrModuloBase({
           buscarTexto={buscarTexto}
           valorBusqueda={valorBusqueda}
           nuevoDeshabilitado={tipoOperacionFijo === "E" && !puntoVentaTrabajo}
-          mostrarAnuladas={mostrarAnuladas}
-          onToggleAnuladas={tipoOperacionFijo === "E" ? handleToggleAnuladas : undefined}
           ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : undefined}
           onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : undefined}
           onNuevo={() => solicitarOperacion()}
@@ -930,6 +944,8 @@ export default function TrModuloBase({
           onPeriodoSelect={handlePeriodoSelect}
           onContabilidadSelect={handleContabilidadSelect}
           onPuntoVentaSelect={handlePuntoVentaSelect}
+          mostrarAnuladas={mostrarAnuladas}
+          onToggleAnuladas={tipoOperacionFijo === "E" ? handleToggleAnuladas : undefined}
           compact={tipoOperacionFijo === "E" || panoramicMode}
         />
 
@@ -969,6 +985,7 @@ export default function TrModuloBase({
           customStyles={tipoOperacionFijo === "E"
             ? (panoramicMode ? customStylesEncomiendaPanoramica : customStylesEncomienda)
             : customStyles}
+          conditionalRowStyles={tipoOperacionFijo === "E" ? porCobrarRowStyles : undefined}
           noDataComponent={
             <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
               <Search size={16} />
