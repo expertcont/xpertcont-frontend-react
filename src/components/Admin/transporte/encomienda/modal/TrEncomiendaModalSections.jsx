@@ -359,7 +359,7 @@ export default function TrEncomiendaModalSections({
                 nextRef={refs.condicionPagoRef}
                 prominent
                 align="center"
-                tone={draft.condicion_pago === "POR_COBRAR" ? "warning" : "default"}
+                tone={draft.condicion_pago === "POR_COBRAR" ? "porCobrar" : "default"}
               />
             </Field>
           </Grid>

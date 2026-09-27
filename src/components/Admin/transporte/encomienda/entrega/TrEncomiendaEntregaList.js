@@ -97,26 +97,6 @@ const porCobrarRowStyles = [
   },
 ];
 
-const inlineBadgeSx = {
-  height: 20,
-  px: 0.75,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: palette.radius.control,
-  backgroundColor: palette.chip,
-  border: `1px solid ${palette.border}`,
-  color: palette.text,
-  fontSize: "10px",
-  fontWeight: 900,
-  lineHeight: 1,
-  whiteSpace: "nowrap",
-  maxWidth: 130,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  flexShrink: 0,
-};
-
 const normalizarTexto = (value) => String(value || "")
   .toLowerCase()
   .normalize("NFD")
@@ -1379,27 +1359,34 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                 </Typography>
               )}
               <Box data-tag="allowRowEvents" sx={{ display: "flex", alignItems: "center", gap: 0.55, mt: porCobrar ? 0.35 : 0.25, minWidth: 0 }}>
-                <Typography data-tag="allowRowEvents" sx={{ color: porCobrar ? palette.porCobrar : palette.text, fontSize: porCobrar ? "17px" : "11px", fontWeight: 950, lineHeight: 1, whiteSpace: "nowrap" }}>
+                <Typography
+                  data-tag="allowRowEvents"
+                  sx={{
+                    color: porCobrar ? palette.porCobrar : palette.text,
+                    fontSize: porCobrar ? "16px" : "11px",
+                    fontWeight: porCobrar ? "1000 !important" : 950,
+                    WebkitTextStroke: porCobrar ? "0.32px currentColor" : "0",
+                    lineHeight: 1,
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   {formatMoney(row.r_monto_total || row.precio_neto)}
                 </Typography>
                 {porCobrar && (
-                  <Box
+                  <Typography
                     data-tag="allowRowEvents"
                     component="span"
                     sx={{
-                      ...inlineBadgeSx,
-                      height: 18,
-                      px: 0.6,
-                      backgroundColor: palette.porCobrarSoft,
-                      borderColor: palette.porCobrar,
                       color: palette.porCobrar,
-                      fontSize: "9.5px",
-                      fontWeight: 900,
+                      fontSize: "11.2px",
+                      fontWeight: 650,
+                      lineHeight: 1,
                       opacity: 0.82,
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    POR_COBRAR
-                  </Box>
+                    Por cobrar
+                  </Typography>
                 )}
               </Box>
             </Box>

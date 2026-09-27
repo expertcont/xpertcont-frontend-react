@@ -45,7 +45,6 @@ export const formatHora = (fechaHora) => {
 };
 
 export const numeroOperacion = (item) => [
-  item.r_cod,
   item.r_serie,
   item.r_numero,
 ].filter(Boolean).join("-");
@@ -76,6 +75,7 @@ export const normalizarTextoBusqueda = (value) => String(value || "")
 
 export const crearIndiceBusqueda = (item) => [
   numeroOperacion(item),
+  item.r_cod,
   item.cliente,
   item.cliente_documento,
   item.cliente_documento_id,

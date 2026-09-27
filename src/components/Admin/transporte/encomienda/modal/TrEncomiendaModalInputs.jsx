@@ -313,7 +313,7 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
 }
 
 export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = false, align = "right", tone = "default" }) {
-  const toneColor = tone === "warning" ? palette.warning : palette.text;
+  const toneColor = tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : palette.text;
   const formatMoneyValue = (rawValue) => {
     const numericValue = Number(String(rawValue || "0").replace(",", "."));
     return Number.isFinite(numericValue) ? Math.max(0, numericValue).toFixed(2) : "0.00";
@@ -388,12 +388,12 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
           minWidth: 0,
           px: 1,
           backgroundColor: palette.bg,
-          color: tone === "warning" ? palette.warning : prominent ? palette.accent : palette.text,
+          color: tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : prominent ? palette.accent : palette.text,
           "& input": {
             textAlign: align,
             fontSize: prominent ? "20px" : undefined,
             fontWeight: prominent ? 950 : 800,
-            color: tone === "warning" ? palette.warning : prominent ? palette.accent : toneColor,
+            color: tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : prominent ? palette.accent : toneColor,
             MozAppearance: "textfield",
           },
           "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
@@ -978,7 +978,7 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
     >
       {normalizedOptions.map((option, index) => {
         const selected = value === option.value;
-        const warningSelected = selected && option.value === "POR_COBRAR";
+        const porCobrarSelected = selected && option.value === "POR_COBRAR";
 
         return (
           <Box
@@ -997,9 +997,9 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
                 : index === normalizedOptions.length - 1
                   ? `0 ${palette.radius.control} ${palette.radius.control} 0`
                   : 0,
-              backgroundColor: warningSelected ? palette.warningSoft : selected ? palette.accent : "transparent",
-              border: warningSelected ? `1px solid ${palette.warning}` : "1px solid transparent",
-              color: warningSelected ? palette.warning : selected ? palette.onAccent : palette.muted,
+              backgroundColor: porCobrarSelected ? palette.porCobrarSoft : selected ? palette.accent : "transparent",
+              border: porCobrarSelected ? `1px solid ${palette.porCobrar}` : "1px solid transparent",
+              color: porCobrarSelected ? palette.porCobrar : selected ? palette.onAccent : palette.muted,
               fontSize: "10px",
               fontWeight: 800,
               cursor: "pointer",
@@ -1010,8 +1010,8 @@ export function ChoiceGroup({ value, onChange, options = ["OFICINA", "CLIENTE"],
               boxShadow: selected ? palette.shadowSoft : "none",
               transition: "all .16s ease",
               "&:hover": {
-                color: warningSelected ? palette.warning : selected ? palette.onAccent : palette.text,
-                backgroundColor: warningSelected ? palette.warningSoft : selected ? palette.accent : palette.chip,
+                color: porCobrarSelected ? palette.porCobrar : selected ? palette.onAccent : palette.text,
+                backgroundColor: porCobrarSelected ? palette.porCobrarSoft : selected ? palette.accent : palette.chip,
               },
             }}
           >

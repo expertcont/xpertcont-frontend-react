@@ -11,7 +11,6 @@ import {
   MapPinCheck,
   Package,
   Pencil,
-  ReceiptText,
   Ticket,
   Trash2,
   ArrowRight,
@@ -534,6 +533,29 @@ const nombreDestinoRuta = (item) => {
     .trim() || "-";
 };
 
+function TicketFlatIcon({ size = 22 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M5.25 5.2h13.5c0.9 0 1.65 0.75 1.65 1.65v2.35a2.35 2.35 0 0 0 0 4.6v2.35c0 0.9-0.75 1.65-1.65 1.65H5.25c-0.9 0-1.65-0.75-1.65-1.65V13.8a2.35 2.35 0 0 0 0-4.6V6.85c0-0.9 0.75-1.65 1.65-1.65Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.35"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path
+        d="M13.1 5.55v12.9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.15"
+        strokeLinecap="butt"
+        strokeDasharray="3 2.25"
+      />
+    </svg>
+  );
+}
+
 function TrOperacionRow({
   row,
   onEdit,
@@ -550,6 +572,7 @@ function TrOperacionRow({
   const esEncomienda = row.tipo_operacion === "E";
   const anulada = Number(row.registrado) === 0;
   const mostrarSelloAnulado = mostrarAnuladas && anulada;
+  const esFactura = String(row.r_cod || row.r_cod_ref || "").padStart(2, "0") === "01";
   const puedeImprimirTicket = esEncomienda && !anulada && Boolean(row.r_cod && row.r_serie && row.r_numero);
   const [ticketAnchorEl, setTicketAnchorEl] = useState(null);
   const fechaHoraOperacion = [row.fecha, row.horaGrabacion].filter(Boolean).join(" ");
@@ -589,9 +612,10 @@ function TrOperacionRow({
             pointerEvents: "none",
             px: compact ? 1.6 : 2.1,
             py: compact ? 0.25 : 0.35,
-            border: "2px solid rgba(239,68,68,0.26)",
+            border: `2px solid ${palette.warning}`,
             borderRadius: "7px",
-            color: "rgba(239,68,68,0.22)",
+            color: palette.warning,
+            opacity: 0.28,
             fontSize: compact ? "20px" : "26px",
             fontWeight: 1000,
             lineHeight: 1,
@@ -644,20 +668,32 @@ function TrOperacionRow({
                     }
                   }}
                   sx={{
-                    ...actionButtonSx(false),
-                    width: { xs: 38, sm: 28 },
-                    height: { xs: 38, sm: 28 },
+                    position: "relative",
+                    width: { xs: 34, sm: 28 },
+                    height: { xs: 42, sm: 32 },
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    borderRadius: 0,
+                    backgroundColor: "transparent",
                     color: puedeImprimirTicket ? palette.accent : palette.muted,
                     opacity: puedeImprimirTicket ? 1 : 0.48,
                     cursor: puedeImprimirTicket ? "pointer" : "default",
+                    transition: "color .18s ease, opacity .18s ease, transform .18s ease",
+                    "& svg": {
+                      width: { xs: 25, sm: 20 },
+                      height: { xs: 25, sm: 20 },
+                      transform: "rotate(-42deg)",
+                      filter: puedeImprimirTicket ? "drop-shadow(0 2px 5px rgba(47,111,237,0.16))" : "none",
+                    },
                     "&:hover": puedeImprimirTicket ? {
-                      backgroundColor: palette.accent,
-                      borderColor: palette.accent,
-                      color: palette.onAccent,
+                      color: palette.accent,
+                      transform: "translateY(-1px)",
                     } : undefined,
                   }}
                 >
-                  <ReceiptText size={14} />
+                  <TicketFlatIcon />
                 </Box>
               </Tooltip>
               <Popover
@@ -680,22 +716,7 @@ function TrOperacionRow({
               >
                 <Box sx={{ p: 1.35 }}>
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          width: 42,
-                          height: 42,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          borderRadius: "50%",
-                          backgroundColor: palette.accentSoft,
-                          color: palette.accent,
-                        }}
-                      >
-                        <ReceiptText size={23} strokeWidth={2.25} />
-                      </Box>
+                    <Box sx={{ minWidth: 0 }}>
                       <Box sx={{ minWidth: 0 }}>
                         <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 900, lineHeight: 1.15 }}>
                           Imprimir ticket
@@ -998,7 +1019,7 @@ function TrOperacionRow({
           <Typography sx={{ color: palette.muted, fontSize: "12.5px", minWidth: 0 }} noWrap>
             {row.autor}
           </Typography>
-          {esEncomienda && !anulada && (
+          {esEncomienda && !anulada && esFactura && (
             <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
           )}
         </Box>
