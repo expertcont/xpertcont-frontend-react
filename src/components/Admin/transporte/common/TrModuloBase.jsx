@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import SummarizeIcon from "@mui/icons-material/Summarize";
 import { Search, Truck } from "lucide-react";
 import swal2 from "sweetalert2";
@@ -19,6 +20,7 @@ import { createColumns, customStyles, customStylesEncomienda, customStylesEncomi
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
 import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
+import { consultarTicketRdiSunat, normalizarRdiResponse } from "../../venta/common/rdiSunatActions";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
 // Tema oscuro propio de las tablas del modulo transporte.
@@ -81,6 +83,17 @@ const resumenSunatIconSx = {
   },
 };
 
+const swalSobreModal = (options) => swal2.fire({
+  ...options,
+  didOpen: () => {
+    const container = swal2.getContainer();
+    if (container) {
+      container.style.zIndex = "20000";
+    }
+    options?.didOpen?.();
+  },
+});
+
 const fechaHoyLima = () => {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Lima",
@@ -97,6 +110,21 @@ const TICKET_ENCOMIENDA_MODO_KEY = "xpertcont.transporte.encomienda.ticketPredet
 const normalizarModoTicketEncomienda = (value) => (
   ["completo", "admin", "cliente"].includes(value) ? value : "completo"
 );
+
+const esRdiReprocesado = (item = {}) => {
+  const estado = String(item.estado || "").toUpperCase();
+  const estadoReproceso = String(item.estado_reproceso || "").toUpperCase();
+  const cantidadVinculada = Number(item.cantidad_boletas ?? item.cantidad ?? 0);
+  const detalle = [
+    item.respuesta_desc,
+    item.detalle,
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return estadoReproceso === "REPROCESADO"
+    || (estado === "RECHAZADO" && cantidadVinculada <= 0)
+    || detalle.includes("reprocesado")
+    || detalle.includes("liberado manualmente para regenerar rdi");
+};
 
 const porCobrarRowStyles = [
   {
@@ -155,6 +183,7 @@ export default function TrModuloBase({
   const [contabilidadTrabajo, setContabilidadTrabajo] = useState("");
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
   const [colaResumenEncomiendas, setColaResumenEncomiendas] = useState([]);
+  const [pendientesResumenEmpresa, setPendientesResumenEmpresa] = useState([]);
   // Cola de resumenes a enviar: un paso por dia, del mas antiguo al mas nuevo.
   const [pasosResumenEnvio, setPasosResumenEnvio] = useState([]);
   const [modalResumenOpen, setModalResumenOpen] = useState(false);
@@ -236,9 +265,25 @@ export default function TrModuloBase({
     return hoy.startsWith(periodoTrabajo) ? hoy : `${periodoTrabajo}-01`;
   }, [diaSel, periodoTrabajo]);
 
-  const pendientesResumen = useMemo(() => {
+  const fechaResumenSeleccionada = useMemo(() => {
     if (!diaSel || diaSel === "*") {
+      return "";
+    }
+
+    return `${periodoTrabajo}-${String(diaSel).padStart(2, "0")}`;
+  }, [diaSel, periodoTrabajo]);
+
+  const pendientesResumen = useMemo(() => {
+    if (!fechaResumenSeleccionada) {
       return 0;
+    }
+
+    const pendientesEmpresa = pendientesResumenEmpresa.find((item) => (
+      String(item.fecha || "").substring(0, 10) === fechaResumenSeleccionada
+    ));
+
+    if (pendientesEmpresa) {
+      return Number(pendientesEmpresa.cantidad || 0);
     }
 
     return data.filter((item) => {
@@ -246,10 +291,10 @@ export default function TrModuloBase({
 
       return codigo === "03" && !item.numero_rdi && !item.r_vfirmado;
     }).length;
-  }, [data, diaSel]);
+  }, [data, fechaResumenSeleccionada, pendientesResumenEmpresa]);
 
   const estadosRdiAbiertos = useMemo(() => (
-    ["PENDIENTE", "GENERADO", "ENVIADO", "INCIERTO", "ERROR"]
+    ["PENDIENTE", "GENERADO", "INCIERTO", "ERROR", "RECHAZADO"]
   ), []);
 
   // Rubro del Resumen Diario. El alcance es siempre toda la empresa: lo unico que
@@ -264,7 +309,9 @@ export default function TrModuloBase({
     [rubroResumen]
   );
   const resumenesAbiertos = useMemo(() => (
-    colaResumenEncomiendas.filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()))
+    colaResumenEncomiendas
+      .filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()))
+      .filter((item) => !esRdiReprocesado(item))
   ), [colaResumenEncomiendas, estadosRdiAbiertos]);
   const totalPendienteResumen = pendientesResumen + resumenesAbiertos.length;
   const resumenDiaOk = Boolean(diaSel && diaSel !== "*") && totalPendienteResumen === 0;
@@ -300,11 +347,14 @@ export default function TrModuloBase({
       const response = await fetch(`${back_host}/mve_transventa/cpe/resumen/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?origen=${origenResumen}`);
       const result = await response.json();
       const dataResumen = Array.isArray(result?.data) ? result.data : [];
+      const pendientes = Array.isArray(result?.pendientes) ? result.pendientes : [];
       setColaResumenEncomiendas(dataResumen);
+      setPendientesResumenEmpresa(pendientes);
       return dataResumen;
     } catch (error) {
       console.log("No se pudo cargar cola RDI de encomiendas:", error);
       setColaResumenEncomiendas([]);
+      setPendientesResumenEmpresa([]);
       return [];
     }
   }, [back_host, contabilidadTrabajo, origenResumen, params.id_anfitrion, periodoTrabajo]);
@@ -712,11 +762,35 @@ export default function TrModuloBase({
     // Del mas antiguo al mas nuevo: el backend envia siempre el primero pendiente.
     const abiertosCola = cola
       .filter((item) => estadosRdiAbiertos.includes(String(item.estado || "").toUpperCase()))
+      .filter((item) => !esRdiReprocesado(item))
+      .filter((item) => String(item.fecha || "").substring(0, 10) <= fechaResumen)
       .sort((a, b) => (
         String(a.fecha || "").localeCompare(String(b.fecha || ""))
         || Number(a.secuencia || 0) - Number(b.secuencia || 0)
       ));
-    const totalPendienteActual = pendientesResumen + abiertosCola.length;
+    const aceptadosDia = cola
+      .filter((item) => String(item.fecha || "").substring(0, 10) === fechaResumen)
+      .filter((item) => String(item.estado || "").toUpperCase() === "ACEPTADO")
+      .filter((item) => !esRdiReprocesado(item))
+      .sort((a, b) => Number(a.secuencia || 0) - Number(b.secuencia || 0));
+    const enviadosSoloConsulta = cola
+      .filter((item) => String(item.fecha || "").substring(0, 10) <= fechaResumen)
+      .filter((item) => String(item.estado || "").toUpperCase() === "ENVIADO")
+      .filter((item) => !esRdiReprocesado(item))
+      .sort((a, b) => (
+        String(a.fecha || "").localeCompare(String(b.fecha || ""))
+        || Number(a.secuencia || 0) - Number(b.secuencia || 0)
+      ));
+    const pendientesNuevosCola = pendientesResumenEmpresa
+      .filter((item) => String(item.fecha || "").substring(0, 10) <= fechaResumen)
+      .sort((a, b) => String(a.fecha || "").localeCompare(String(b.fecha || "")));
+    if (pendientesNuevosCola.length === 0 && pendientesResumen > 0) {
+      pendientesNuevosCola.push({
+        fecha: fechaResumen,
+        cantidad: pendientesResumen,
+      });
+    }
+    const totalPendienteActual = pendientesNuevosCola.length + abiertosCola.length;
     // Un paso por dia, del mas antiguo al mas nuevo. El ultimo paso es el del dia
     // seleccionado cuando todavia quedan boletas sin RDI: ese resumen todavia no
     // existe, se crea en el momento.
@@ -732,45 +806,215 @@ export default function TrModuloBase({
       detalle: item.respuesta_desc || item.respuesta_codigo || "",
     }));
 
-    if (pendientesResumen > 0) {
+    aceptadosDia.forEach((item) => {
+      if (pasos.some((paso) => paso.numeroRdi === item.numero_rdi)) {
+        return;
+      }
+
       pasos.push({
-        clave: `nuevo-${fechaResumen}`,
-        fecha: fechaResumen,
+        clave: `aceptado-${item.numero_rdi}`,
+        fecha: String(item.fecha || "").substring(0, 10),
+        numeroRdi: item.numero_rdi,
+        estado: item.estado || "ACEPTADO",
+        cantidad: item.cantidad_boletas || 0,
+        ticket: item.ticket || "",
+        nombreArchivo: item.nombre_archivo || "",
+        rutaCdr: item.ruta_cdr || "",
+        detalle: item.respuesta_desc || item.respuesta_codigo || "RDI aceptado por SUNAT.",
+        soloConsulta: true,
+      });
+    });
+
+    enviadosSoloConsulta.forEach((item) => {
+      if (pasos.some((paso) => paso.numeroRdi === item.numero_rdi)) {
+        return;
+      }
+
+      pasos.push({
+        clave: `enviado-${item.numero_rdi}`,
+        fecha: String(item.fecha || "").substring(0, 10),
+        numeroRdi: item.numero_rdi,
+        estado: item.estado || "ENVIADO",
+        cantidad: item.cantidad_boletas || 0,
+        ticket: item.ticket || "",
+        nombreArchivo: item.nombre_archivo || "",
+        rutaCdr: item.ruta_cdr || "",
+        detalle: item.respuesta_desc || item.respuesta_codigo || "RDI enviado a SUNAT, pendiente de consultar CDR.",
+        soloConsulta: true,
+      });
+    });
+
+    pendientesNuevosCola.forEach((item) => {
+      const fechaPendiente = String(item.fecha || "").substring(0, 10);
+      const cantidadPendiente = Number(item.cantidad || 0);
+
+      if (!fechaPendiente || cantidadPendiente <= 0) {
+        return;
+      }
+
+      pasos.push({
+        clave: `nuevo-${fechaPendiente}`,
+        fecha: fechaPendiente,
         numeroRdi: "",
         estado: "SIN RDI",
-        cantidad: pendientesResumen,
+        cantidad: cantidadPendiente,
       });
-    }
-
-    const lineasPasos = pasos.map((paso, indice) => {
-      // La cola puede venir de meses anteriores, asi que el dia va con mes: solo
-      // el dia haria ambiguo un 12/08 anterior a un 05/09.
-      const dia = `${paso.fecha.substring(8, 10)}/${paso.fecha.substring(5, 7)}`;
-      const detalle = paso.numeroRdi
-        ? `${paso.numeroRdi} - ${paso.estado} - ${paso.cantidad} ${nombreRubroPlural}`
-        : `resumen nuevo - ${paso.cantidad} ${nombreRubroPlural} sin RDI`;
-      return `   ${indice + 1}. dia ${dia} | ${detalle}`;
     });
+
+    pasos.sort((a, b) => (
+      String(a.fecha || "").localeCompare(String(b.fecha || ""))
+      || Number(a.secuencia || 0) - Number(b.secuencia || 0)
+    ));
 
     const result = await confirmDialog({
       title: `Enviar RDI de ${nombreRubroPlural}?`,
-      message: [
-        `Empresa: ${contabilidadTrabajo}`,
-        `Periodo: ${periodoTrabajo} (dia por dia)`,
-        `Rubro: ${rubroResumen}`,
-        // El resumen es de toda la empresa. El punto de venta del filtro solo
-        // acota lo que se ve en la tabla, asi que se aclara para que nadie crea
-        // que el alcance del RDI cambia con el filtro.
-        "Alcance del resumen: todas las agencias",
-        puntoVentaTrabajo ? `Filtro de tabla: ${puntoVentaTrabajo} (no limita el resumen)` : null,
-        "",
-        `Se enviaran ${pasos.length} resumen(es) a SUNAT, del dia mas antiguo al dia ${String(diaSel).padStart(2, "0")}:`,
-        ...lineasPasos,
-        "",
-        "Se detiene en el primer error para no saltarse un dia pendiente.",
-      ].filter((linea) => linea !== null && linea !== undefined).join("\n"),
+      content: (
+        <Box sx={{ display: "grid", gap: 1.2, textAlign: "left" }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 0.75,
+              p: 1,
+              borderRadius: 1,
+              backgroundColor: palette.surfaceAlt,
+              border: `1px solid ${palette.borderSoft}`,
+            }}
+          >
+            <InfoLine label="Empresa" value={empresaTrabajo.razon_social || empresaTrabajo.nombre || contabilidadTrabajo} />
+            <InfoLine label="Periodo" value={`${periodoTrabajo} | dia por dia`} />
+            <InfoLine label="Alcance" value="Todas las agencias" />
+          </Box>
+
+          <Typography sx={{ fontSize: 12.5, color: palette.muted }}>
+            {totalPendienteActual > 0
+              ? `Se procesaran ${pasos.length} RDI del mas antiguo al dia ${String(diaSel).padStart(2, "0")}.`
+              : "No hay RDI pendientes para procesar."}
+          </Typography>
+
+          {pasos.length > 0 && (
+            <Box sx={{ display: "grid", gap: 0.65, maxHeight: "34vh", overflowY: "auto", pr: 0.25 }}>
+              {pasos.map((paso, indice) => {
+                const dia = `${paso.fecha.substring(8, 10)}/${paso.fecha.substring(5, 7)}/${paso.fecha.substring(0, 4)}`;
+                const esNuevo = !paso.numeroRdi;
+                const estado = esNuevo ? "SIN RDI" : String(paso.estado || "PENDIENTE").toUpperCase();
+                const requiereCorreccion = estado === "RECHAZADO";
+                const puedeConsultar = Boolean(paso.numeroRdi);
+
+                return (
+                  <Box
+                    key={paso.clave || `${paso.fecha}-${indice}`}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "34px minmax(0, 1fr) auto auto",
+                      gap: 0.9,
+                      alignItems: "center",
+                      p: 0.9,
+                      borderRadius: 1,
+                      backgroundColor: indice === 0 ? palette.accentSoft : palette.bg,
+                      border: `1px solid ${indice === 0 ? palette.accent : palette.borderSoft}`,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        display: "grid",
+                        placeItems: "center",
+                        color: indice === 0 ? palette.onAccent : palette.text,
+                        backgroundColor: indice === 0 ? palette.accent : palette.surfaceAlt,
+                        fontSize: 12,
+                        fontWeight: 900,
+                      }}
+                    >
+                      {indice + 1}
+                    </Box>
+
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: 13, fontWeight: 800, color: palette.text, lineHeight: 1.25 }}>
+                        {`Dia ${dia}`}
+                      </Typography>
+                      <Typography sx={{ fontSize: 11.5, color: palette.muted, overflowWrap: "anywhere" }}>
+                        {paso.numeroRdi || "Resumen nuevo por generar"}
+                      </Typography>
+                      <Typography sx={{ mt: 0.15, fontSize: 11, color: palette.accent, fontWeight: 800 }}>
+                        {requiereCorreccion
+                          ? "Requiere correccion en historial RDI"
+                          : rubroResumen === "BOLETOS" ? "Boletos" : "Encomiendas"}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "grid", justifyItems: "end", gap: 0.35 }}>
+                      <Box
+                        sx={{
+                          px: 0.8,
+                          py: 0.25,
+                          borderRadius: 1,
+                          fontSize: 10.5,
+                          fontWeight: 900,
+                          color: requiereCorreccion ? palette.danger : esNuevo ? palette.warning : palette.accent,
+                          backgroundColor: requiereCorreccion ? palette.dangerSoft : esNuevo ? palette.warningSoft : palette.accentSoft,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {estado}
+                      </Box>
+                      <Typography sx={{ fontSize: 11.5, color: palette.text, fontWeight: 800, whiteSpace: "nowrap" }}>
+                        {`${paso.cantidad || 0} ${nombreRubroPlural}`}
+                      </Typography>
+                      {puedeConsultar && (
+                        <Tooltip title="Consultar CDR">
+                          <IconButton
+                            size="small"
+                            aria-label="Consultar CDR"
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              try {
+                                const consulta = await consultarTicketResumen(paso);
+                                await swalSobreModal({
+                                  title: String(consulta?.data?.estado || "").toUpperCase() === "ACEPTADO" ? "RDI aceptado" : "Consulta SUNAT",
+                                  text: consulta?.mensaje || "Consulta completada.",
+                                  icon: String(consulta?.data?.estado || "").toUpperCase() === "RECHAZADO" ? "warning" : "success",
+                                  confirmButtonText: "ACEPTAR",
+                                  confirmButtonColor: palette.accent,
+                                  color: palette.text,
+                                  background: palette.surface,
+                                });
+                                cargarColaResumen();
+                                setUpdateTrigger(Date.now());
+                              } catch (error) {
+                                await swalSobreModal({
+                                  title: "No se pudo consultar",
+                                  text: error?.response?.data?.mensaje_usuario || error?.response?.data?.message || error?.message || "No se pudo consultar el ticket SUNAT.",
+                                  icon: "error",
+                                  confirmButtonText: "ACEPTAR",
+                                  confirmButtonColor: palette.accent,
+                                  color: palette.text,
+                                  background: palette.surface,
+                                });
+                              }
+                            }}
+                            sx={{ color: estado === "ACEPTADO" ? palette.success : palette.accent, p: 0.35 }}
+                          >
+                            <CloudSyncIcon sx={{ fontSize: 17 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+
+          <Typography sx={{ fontSize: 12, color: palette.warning, fontWeight: 700 }}>
+            Los RDI rechazados apareceran como pendientes de atencion, pero no se reenviaran hasta corregirlos desde Historial RDI.
+          </Typography>
+        </Box>
+      ),
       icon: totalPendienteActual > 0 ? "success" : "info",
-      confirmText: totalPendienteActual > 0 ? `ENVIAR ${pasos.length}` : "ACEPTAR",
+      confirmText: totalPendienteActual > 0 ? `ENVIAR ${totalPendienteActual}` : "ACEPTAR",
       cancelText: "CANCELAR",
     });
 
@@ -786,6 +1030,37 @@ export default function TrModuloBase({
   // Un envio por paso: periodo + dia. El periodo es siempre el del filtro y el dia
   // es el del paso, que es lo que espera el backend para armar el payload.
   const enviarPasoResumen = async (paso) => {
+    if (paso.soloConsulta) {
+      return {
+        ok: true,
+        mensaje: paso.detalle || `${paso.numeroRdi || "RDI"} ya fue aceptado por SUNAT.`,
+        data: {
+          numero_rdi: paso.numeroRdi,
+          estado: paso.estado || "ACEPTADO",
+          ticket: paso.ticket,
+          nombre_archivo: paso.nombreArchivo,
+          ruta_cdr: paso.rutaCdr,
+          total_documentos: paso.cantidad || 0,
+          respuesta_sunat_descripcion: paso.detalle,
+        },
+      };
+    }
+
+    if (String(paso.estado || "").toUpperCase() === "RECHAZADO") {
+      return {
+        ok: false,
+        mensaje: [
+          `${paso.numeroRdi || "El RDI"} esta rechazado y aun tiene comprobantes vinculados.`,
+          "Primero usa Historial RDI > Liberar comprobantes y regenerar.",
+        ].join(" "),
+        data: {
+          numero_rdi: paso.numeroRdi,
+          estado: "RECHAZADO",
+          total_documentos: paso.cantidad || 0,
+        },
+      };
+    }
+
     const controlador = new AbortController();
     const temporizador = setTimeout(() => controlador.abort(), 120000);
 
@@ -810,6 +1085,7 @@ export default function TrModuloBase({
         }),
       });
       const dataResponse = await response.json();
+      const dataRdi = normalizarRdiResponse(dataResponse);
 
       if (!response.ok || dataResponse.success === false) {
         return {
@@ -818,18 +1094,18 @@ export default function TrModuloBase({
             || dataResponse.respuesta_sunat_descripcion
             || dataResponse.message
             || `No se pudo enviar el RDI de ${nombreRubroPlural}.`,
-          data: dataResponse.data || dataResponse,
+          data: dataRdi,
         };
       }
 
       return {
         ok: true,
         mensaje: [
-          `${dataResponse.cantidad || dataResponse.total_documentos || 0} ${nombreRubroPlural} enviadas`,
-          dataResponse.ticket ? `ticket ${dataResponse.ticket}` : null,
-          dataResponse.mensaje_usuario || dataResponse.respuesta_sunat_descripcion || null,
+          `${dataRdi.cantidad || dataRdi.total_documentos || 0} ${nombreRubroPlural} enviadas`,
+          dataRdi.ticket ? `ticket ${dataRdi.ticket}` : null,
+          dataRdi.mensaje_usuario || dataRdi.respuesta_sunat_descripcion || null,
         ].filter(Boolean).join(" - "),
-        data: dataResponse.data || dataResponse,
+        data: dataRdi,
       };
     } catch (error) {
       return {
@@ -841,6 +1117,34 @@ export default function TrModuloBase({
     } finally {
       clearTimeout(temporizador);
     }
+  };
+
+  const consultarTicketResumen = async (paso) => {
+    const numeroRdi = paso.numero_rdi || paso.numeroRdi;
+
+    if (!numeroRdi) {
+      return {
+        ok: false,
+        mensaje: "Este paso aun no tiene numero RDI para consultar.",
+      };
+    }
+
+    const consulta = await consultarTicketRdiSunat({
+      backHost: back_host,
+      resumenEndpoint: "mve_transventa/cpe/resumen",
+      periodo: periodoTrabajo,
+      idAnfitrion: params.id_anfitrion,
+      idInvitado: params.id_invitado,
+      documentoId: contabilidadTrabajo,
+      numeroRdi,
+      ctrlModUs: params.id_invitado,
+    });
+
+    return {
+      ok: true,
+      mensaje: consulta.message,
+      data: consulta.data,
+    };
   };
 
   const handleTicketEncomiendaModoChange = (modo) => {
@@ -1046,6 +1350,7 @@ export default function TrModuloBase({
           nombreRubroPlural={nombreRubroPlural}
           periodo={periodoTrabajo}
           enviarPaso={enviarPasoResumen}
+          consultarTicket={consultarTicketResumen}
           alCerrar={() => {
             setModalResumenOpen(false);
             setPasosResumenEnvio([]);
@@ -1063,6 +1368,19 @@ export default function TrModuloBase({
           </Box>
         )}
       </Box>
+    </Box>
+  );
+}
+
+function InfoLine({ label, value }) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography sx={{ fontSize: 10.5, fontWeight: 900, color: palette.muted, textTransform: "uppercase" }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: palette.text, overflowWrap: "anywhere" }}>
+        {value || "-"}
+      </Typography>
     </Box>
   );
 }

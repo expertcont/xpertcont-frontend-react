@@ -56,24 +56,23 @@ test("muestra una fila por dia mientras corre, del mas antiguo al mas nuevo", as
     liberar();
   });
 
-  await screen.findByText(/Se detuvo/);
+  await screen.findByText(/Proceso terminado con observaciones/);
 
-  // Se detiene en el primer error: el cuarto nunca se intenta.
-  expect(enviarPaso).toHaveBeenCalledTimes(3);
-  expect(enviarPaso.mock.calls.map((c) => c[0].clave)).toEqual(["a", "b", "c"]);
+  // Continua con el resto aunque uno falle.
+  expect(enviarPaso).toHaveBeenCalledTimes(4);
+  expect(enviarPaso.mock.calls.map((c) => c[0].clave)).toEqual(["a", "b", "c", "d"]);
 
-  // Estados por fila: enviado, enviado, error, no se intento.
-  expect(screen.getAllByText("enviado")).toHaveLength(2);
+  // Estados por fila: enviado, enviado, error, enviado.
+  expect(screen.getAllByText("enviado")).toHaveLength(3);
   expect(screen.getByText("error")).toBeTruthy();
-  expect(screen.getByText("no se intento")).toBeTruthy();
   expect(screen.getByText("rechazado por SUNAT")).toBeTruthy();
   expect(screen.getAllByText("Estado").length).toBeGreaterThan(0);
   expect(screen.getAllByText("Docs").length).toBeGreaterThan(0);
   expect(screen.getByText("REINTENTAR")).toBeTruthy();
 
   // Resumen y cierre habilitado al terminar.
-  expect(screen.getByText("2 de 4 enviados")).toBeTruthy();
-  expect(screen.getByText(/2 enviado\(s\), 1 con error y 1 sin intentar/)).toBeTruthy();
+  expect(screen.getByText("3 de 4 enviados")).toBeTruthy();
+  expect(screen.getByText(/3 enviado\(s\) y 1 con error/)).toBeTruthy();
 
   fireEvent.click(screen.getByText("CERRAR"));
   expect(alCerrar).toHaveBeenCalledTimes(1);

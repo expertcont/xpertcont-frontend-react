@@ -19,9 +19,9 @@ const icons = {
   error: <ErrorIcon sx={{ fontSize: 34, color: "#ff9f7a" }} />,
 };
 
-const paperSx = {
+const paperSx = (wide = false) => ({
   m: { xs: 1.5, sm: 2 },
-  width: { xs: "calc(100vw - 24px)", sm: 380 },
+  width: wide ? { xs: "calc(100vw - 24px)", sm: 560 } : { xs: "calc(100vw - 24px)", sm: 380 },
   maxWidth: "calc(100vw - 24px)",
   backgroundColor: palette.surface,
   color: palette.text,
@@ -29,7 +29,7 @@ const paperSx = {
   borderRadius: 2,
   boxShadow: "0 18px 48px rgba(0,0,0,0.34)",
   overflow: "hidden",
-};
+});
 
 const confirmButtonSx = {
   minWidth: 118,
@@ -69,7 +69,7 @@ const AdminConfirmDialog = ({ open, options, onClose }) => {
     <Dialog
       open={open}
       onClose={() => onClose(false)}
-      PaperProps={{ sx: paperSx }}
+      PaperProps={{ sx: paperSx(Boolean(options.content)) }}
     >
       <DialogTitle
         sx={{
@@ -113,6 +113,12 @@ const AdminConfirmDialog = ({ open, options, onClose }) => {
           }}
         >
           {options.message}
+        </DialogContent>
+      )}
+
+      {options.content && (
+        <DialogContent sx={{ px: 2, py: 1.5 }}>
+          {options.content}
         </DialogContent>
       )}
 

@@ -162,6 +162,10 @@ export const applyDefaultThemeForRubro = (rubro) => {
   applyTheme(getDefaultThemeIdForRubro(rubro));
 };
 
+// color-mix(in srgb, acento p%, color) = el acento del tema en peso p.
+const acento = "var(--app-accent, #a5a5b0)";
+const menu = (peso, color) => `color-mix(in srgb, ${acento} ${peso}%, ${color})`;
+
 const palette = {
   bg: "var(--app-bg, #17171a)",
   navBg: "var(--app-nav-bg, #1d1d21)",
@@ -175,6 +179,16 @@ const palette = {
   text: "var(--app-text, #d7d7dc)",
   muted: "var(--app-muted, #8f8f99)",
   accent: "var(--app-accent, #a5a5b0)",
+  // Menu lateral: se deriva del acento del tema, sin un color por tema que
+  // mantener. El fondo es el acento oscurecido un 50% y el texto sale de
+  // aclararlo; hover y activo son pasos hacia la luz desde ese fondo. Al quedar
+  // oscuro en los dos temas, el texto no puede derivarse de onAccent, que
+  // cambia con el tema y dejaria texto claro sobre fondo claro.
+  menuBg: menu(50, "#000000"),
+  menuText: menu(8, "#ffffff"),
+  menuMuted: menu(45, "#ffffff"),
+  menuHover: menu(58, "#000000"),
+  menuActive: menu(66, "#000000"),
   accentSoft: "var(--app-accent-soft, rgba(165,165,176,0.14))",
   onAccent: "var(--app-on-accent, #151518)",
   overlaySoft: "var(--app-overlay-soft, rgba(255,255,255,0.02))",

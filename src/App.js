@@ -192,6 +192,7 @@ function AppLayout(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} panoramicMode={panoramicMode} />} />
+              <Route path="/ad_transporterdiencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaResumenSunatList modo="transporte" origen="TRANS_ENCOMIENDA" titulo="RDI SUNAT - Encomiendas - Boletos" rutaBase="/ad_transporterdiencomienda" />} />
               <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList />} />
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} panoramicMode={panoramicMode} />} />
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />

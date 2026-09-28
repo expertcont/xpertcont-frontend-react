@@ -34,21 +34,25 @@ import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import logo from '../Logo04small-retocado-teal.png';
 import palette from '../theme/palette';
+import SunatMenuIcon from '../assets/images/sunat0.png';
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
+// El lateral usa los tokens menu*, derivados del acento del tema (ver
+// theme/palette.js): fondo con el acento oscurecido y texto aclarado. Antes el
+// hover y el activo se pintaban del mismo color que el fondo y no se veian.
 const sidebarColors = {
-  bg: palette.navBg,
-  surface: palette.navBg,
-  surfaceSoft: palette.surfaceAlt,
-  border: palette.borderSoft,
-  text: palette.text,
-  muted: palette.muted,
-  accent: palette.accent,
-  accentSoft: palette.accentSoft,
+  bg: palette.menuBg,
+  surface: palette.menuBg,
+  surfaceSoft: palette.menuBg,
+  border: palette.menuBg,
+  text: palette.menuText,
+  muted: palette.menuMuted,
+  accent: palette.menuText,
+  accentSoft: palette.menuActive,
+  overlaySoft: palette.menuHover,
   danger: palette.danger,
-  onAccent: palette.onAccent,
-  overlaySoft: palette.overlaySoft,
+  onAccent: palette.menuBg,
   shadowSoft: palette.shadowSoft,
 };
 
@@ -312,6 +316,20 @@ export default function NavSideBar(props) {
   const itemLabelVisible = isMobile || (isExpanded && !panoramicMode);
   const menuIconSize = itemLabelVisible ? 20 : 25;
   const submenuIconSize = itemLabelVisible ? 16 : 21;
+  const renderSunatMenuIcon = (active = false) => (
+    <Box
+      component="img"
+      src={SunatMenuIcon}
+      alt=""
+      sx={{
+        width: submenuIconSize + 2,
+        height: submenuIconSize + 2,
+        objectFit: 'contain',
+        opacity: active ? 1 : 0.9,
+        filter: active ? `drop-shadow(0 0 5px ${sidebarColors.accentSoft})` : 'none',
+      }}
+    />
+  );
   const rubroTrabajo = String(props.rubro || sessionStorage.getItem('rubro_trabajo') || 'COMERCIAL').trim().toUpperCase();
   const esRubroTransporte = rubroTrabajo === 'TRANSPORTE' || rubroTrabajo === 'TRANSPORTES';
   const esRubroProyectos = rubroTrabajo === 'PROYECTO' || rubroTrabajo === 'PROYECTOS';
@@ -363,6 +381,7 @@ export default function NavSideBar(props) {
             borderBottom: '1px solid transparent',
           },
           '&:hover': {
+            color: sidebarColors.text,
             backgroundColor: isActive ? sidebarColors.accentSoft : sidebarColors.overlaySoft,
           },
           borderRadius: '10px',
@@ -417,7 +436,6 @@ export default function NavSideBar(props) {
                 fontWeight: 200,
                 fontVariationSettings: '"wght" 200',
                 color: isActive ? sidebarColors.text : sidebarColors.muted,
-                opacity: isActive ? 0.74 : 0.5,
               }}
             />
             {hasSubmenu && (isSubmenuOpen ? <ExpandLess sx={{ color: sidebarColors.muted }} /> : <ExpandMore sx={{ color: sidebarColors.muted }} />)}
@@ -463,6 +481,7 @@ export default function NavSideBar(props) {
           borderRight: 'none',
           boxShadow: toneShadow,
           '&:hover': {
+            color: sidebarColors.text,
             backgroundColor: isActive
               ? (compactTone ? tone.soft : sidebarColors.accentSoft)
               : (compactTone ? 'transparent' : sidebarColors.overlaySoft),
@@ -511,7 +530,6 @@ export default function NavSideBar(props) {
               fontWeight: 200,
               fontVariationSettings: '"wght" 200',
               color: isActive ? sidebarColors.text : sidebarColors.muted,
-              opacity: isActive ? 0.7 : 0.46,
             }}
           />
         )}
@@ -532,6 +550,7 @@ export default function NavSideBar(props) {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: sidebarColors.bg,
+        background: sidebarColors.bg,
         borderRight: 'none',
         boxShadow: 'none',
       }}
@@ -549,6 +568,7 @@ export default function NavSideBar(props) {
           minHeight: itemLabelVisible ? 66 : 78,
           position: 'relative',
           backgroundColor: sidebarColors.bg,
+          background: sidebarColors.bg,
           borderBottom: 'none',
         }}
       >
@@ -566,7 +586,7 @@ export default function NavSideBar(props) {
                 objectFit: 'contain',
               }}
             />
-            <Typography sx={{ color: sidebarColors.muted, fontWeight: 200, fontVariationSettings: '"wght" 200', opacity: 0.58, fontSize: '.66rem', mt: 0.35, fontFamily: sidebarFont, textAlign: 'center' }}>
+            <Typography sx={{ color: sidebarColors.muted, fontWeight: 200, fontVariationSettings: '"wght" 200', fontSize: '.66rem', mt: 0.35, fontFamily: sidebarFont, textAlign: 'center' }}>
               {subtituloRubro}
             </Typography>
           </Box>
@@ -683,8 +703,8 @@ export default function NavSideBar(props) {
                   }}
                 />
                 <SubMenuItem
-                  icon={<SummarizeIcon />}
-                  label="Resumenes SUNAT"
+                  icon={renderSunatMenuIcon(selectedButton === 'icono02-5')}
+                  label="RDI SUNAT"
                   isActive={selectedButton === 'icono02-5'}
                   onClick={() => {
                     navigate(`/ad_ventaresumensunat/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
@@ -740,7 +760,7 @@ export default function NavSideBar(props) {
                 />
                 <SubMenuItem
                   icon={<AssignmentTurnedInIcon />}
-                  label="Encomiendas por Entregar"
+                  label="Entregas"
                    iconTone="entregas"
                   isActive={selectedButton === 'icono11-8'}
                   onClick={() => {
@@ -771,6 +791,15 @@ export default function NavSideBar(props) {
                   onClick={() => {
                     navigate(`/ad_transportesboletos/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                     handleClick('icono11-2');
+                  }}
+                />
+                <SubMenuItem
+                  icon={renderSunatMenuIcon(selectedButton === 'icono11-rdi')}
+                  label="RDI SUNAT"
+                  isActive={selectedButton === 'icono11-rdi'}
+                  onClick={() => {
+                    navigate(`/ad_transporterdiencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-rdi');
                   }}
                 />
               </List>
@@ -1048,6 +1077,7 @@ export default function NavSideBar(props) {
               border: 'none',
               borderRight: 'none',
               backgroundColor: sidebarColors.bg,
+              background: sidebarColors.bg,
               top: 16,
               left: 16,
               height: 'calc(100vh - 32px)',
@@ -1075,6 +1105,7 @@ export default function NavSideBar(props) {
               border: 'none',
               borderRight: 'none',
               backgroundColor: sidebarColors.bg,
+              background: sidebarColors.bg,
               borderRadius: '0 12px 12px 0',
             },
           }}

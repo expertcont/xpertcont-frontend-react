@@ -573,6 +573,7 @@ function TrOperacionRow({
   const anulada = Number(row.registrado) === 0;
   const mostrarSelloAnulado = mostrarAnuladas && anulada;
   const esFactura = String(row.r_cod || row.r_cod_ref || "").padStart(2, "0") === "01";
+  const mostrarSunatFactura = esEncomienda && !anulada && esFactura;
   const puedeImprimirTicket = esEncomienda && !anulada && Boolean(row.r_cod && row.r_serie && row.r_numero);
   const [ticketAnchorEl, setTicketAnchorEl] = useState(null);
   const fechaHoraOperacion = [row.fecha, row.horaGrabacion].filter(Boolean).join(" ");
@@ -807,6 +808,10 @@ function TrOperacionRow({
             {row.numero}
           </Typography>
 
+          {mostrarSunatFactura && (
+            <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
+          )}
+
           {row.placa && <PlacaStatusChip placa={row.placa} llegadaReal={row.llegada_real} />}
 
           {row.tipo_operacion !== "E" && <AppChip>{row.tipoLabel}</AppChip>}
@@ -1019,9 +1024,6 @@ function TrOperacionRow({
           <Typography sx={{ color: palette.muted, fontSize: "12.5px", minWidth: 0 }} noWrap>
             {row.autor}
           </Typography>
-          {esEncomienda && !anulada && esFactura && (
-            <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
-          )}
         </Box>
       </Box>
     </Box>

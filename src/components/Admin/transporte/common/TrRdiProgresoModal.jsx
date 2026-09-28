@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Dialog, LinearProgress, Typography } from "@mui/material";
+import { Box, Dialog, IconButton, LinearProgress, Tooltip, Typography } from "@mui/material";
+import CloudSyncIcon from "@mui/icons-material/CloudSync";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { Check, CircleAlert, Loader2, MinusCircle, X } from "lucide-react";
 
 import palette from "../../../../theme/palette";
@@ -48,6 +50,7 @@ export default function TrRdiProgresoModal({
   nombreRubroPlural = "encomiendas",
   periodo = "",
   enviarPaso,
+  consultarTicket,
   alCerrar,
   alTerminar,
 }) {
@@ -60,6 +63,7 @@ export default function TrRdiProgresoModal({
   const vivoRef = useRef(true);
   const alTerminarRef = useRef(alTerminar);
   const enviarPasoRef = useRef(enviarPaso);
+  const consultarTicketRef = useRef(consultarTicket);
   const pasosRef = useRef(pasos);
 
   useEffect(() => {
@@ -69,6 +73,10 @@ export default function TrRdiProgresoModal({
   useEffect(() => {
     enviarPasoRef.current = enviarPaso;
   }, [enviarPaso]);
+
+  useEffect(() => {
+    consultarTicketRef.current = consultarTicket;
+  }, [consultarTicket]);
 
   useEffect(() => {
     pasosRef.current = pasos;
@@ -114,16 +122,8 @@ export default function TrRdiProgresoModal({
         if (k === i) {
           return estadoFinal;
         }
-        // Con el primer error, lo que sigue queda pendiente de reintento.
-        if (estadoFinal === ESTADO_PASO.ERROR && k > i) {
-          return ESTADO_PASO.OMITIDO;
-        }
         return estado;
       }));
-
-      if (!resultado.ok) {
-        break;
-      }
     }
 
     if (vivoRef.current) {
@@ -178,6 +178,11 @@ export default function TrRdiProgresoModal({
     }
   }, [alCerrar, ejecutando, terminado]);
 
+  const abrirRuta = useCallback((url) => {
+    if (!url || url === "error") return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, []);
+
   const reintentarDesdeError = useCallback(() => {
     const indice = indiceFallo(estadoPasos, pasos);
     setEstadoPasos((prev) => prev.map((estado, k) => (
@@ -190,12 +195,44 @@ export default function TrRdiProgresoModal({
     procesarDesde(indice);
   }, [estadoPasos, pasos, procesarDesde]);
 
+  const consultarTicketFila = useCallback(async (paso, indice) => {
+    if (!consultarTicketRef.current) return;
+
+    setMensajes((prev) => prev.map((mensaje, k) => (
+      k === indice ? "Consultando ticket / CDR..." : mensaje
+    )));
+
+    try {
+      const resultado = await consultarTicketRef.current({
+        ...paso,
+        ...(resultados[indice] || {}),
+      });
+
+      setResultados((prev) => prev.map((item, k) => (
+        k === indice ? { ...(item || {}), ...(resultado?.data || resultado || {}) } : item
+      )));
+      setMensajes((prev) => prev.map((mensaje, k) => (
+        k === indice ? (resultado?.mensaje || "Consulta completada.") : mensaje
+      )));
+    } catch (error) {
+      setMensajes((prev) => prev.map((mensaje, k) => (
+        k === indice
+          ? (
+            error?.response?.data?.mensaje_usuario
+            || error?.response?.data?.respuesta_sunat_descripcion
+            || error?.response?.data?.message
+            || error?.message
+            || "No se pudo consultar el ticket."
+          )
+          : mensaje
+      )));
+    }
+  }, [resultados]);
+
   const mensajeFinal = terminado
     ? (
       resumen.fallidos > 0
-        ? `Se detuvo en ${nombreRubroPlural} del dia ${diaCorto(pasos[indiceFallo(estadoPasos, pasos)]?.fecha)}. `
-          + `${resumen.enviados} enviado(s), ${resumen.fallidos} con error`
-          + (resumen.omitidos > 0 ? ` y ${resumen.omitidos} sin intentar.` : ".")
+        ? `Proceso terminado con observaciones: ${resumen.enviados} enviado(s) y ${resumen.fallidos} con error.`
         : `Listo: ${resumen.enviados} resumen(es) enviado(s) a SUNAT.`
     )
     : `Enviando ${nombreRubroPlural} del mas antiguo al mas nuevo...`;
@@ -282,12 +319,20 @@ export default function TrRdiProgresoModal({
           const estilo = ESTILO_ICONO[estado] || ESTILO_ICONO.PENDIENTE;
           const ultimo = indice === pasos.length - 1;
           const resultado = resultados[indice] || {};
-          const numeroRdi = resultado.numero_rdi || paso.numeroRdi;
+          const numeroRdi = resultado.numero_rdi || resultado.numeroRdi || paso.numeroRdi || paso.numero_rdi;
           const estadoSunat = resultado.nivel || resultado.estado || paso.estado || "PENDIENTE";
+          const requiereCorreccion = String(estadoSunat || "").toUpperCase() === "RECHAZADO";
           const ticket = resultado.ticket || paso.ticket;
           const nombreArchivo = resultado.nombre_archivo || paso.nombreArchivo;
           const rutaCdr = resultado.ruta_cdr || paso.rutaCdr;
           const respuesta = resultado.respuesta_sunat_descripcion || resultado.respuesta_desc;
+          const estadoSunatTexto = String(estadoSunat || "").toUpperCase();
+          const cdrDisponible = Boolean(rutaCdr && rutaCdr !== "error");
+          const puedeConsultarCdr = Boolean(numeroRdi) && !activo && estadoSunatTexto !== "SIN RDI";
+          const mostrarBotonConsultarCdr = puedeConsultarCdr && (
+            estado === ESTADO_PASO.ENVIADO ||
+            ["ACEPTADO", "ENVIADO", "PENDIENTE", "TICKET"].includes(estadoSunatTexto)
+          );
 
           return (
             <Box key={paso.clave || `${paso.fecha}-${indice}`} sx={{ display: "flex", gap: 1.25 }}>
@@ -344,6 +389,18 @@ export default function TrRdiProgresoModal({
                       ? numeroRdi
                       : `resumen nuevo (${paso.cantidad || 0} ${nombreRubroPlural} sin RDI)`}
                   </Typography>
+                  {cdrDisponible && (
+                    <Tooltip title="Abrir CDR">
+                      <IconButton
+                        size="small"
+                        aria-label="Abrir CDR"
+                        onClick={() => abrirRuta(rutaCdr)}
+                        sx={{ color: palette.success, p: 0.35 }}
+                      >
+                        <OpenInNewIcon sx={{ fontSize: 17 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {activo && (
                     <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: palette.accent }}>
                       procesando...
@@ -351,7 +408,7 @@ export default function TrRdiProgresoModal({
                   )}
                   {estado === ESTADO_PASO.ERROR && (
                     <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: palette.danger }}>
-                      error
+                      {requiereCorreccion ? "requiere correccion" : "error"}
                     </Typography>
                   )}
                   {estado === ESTADO_PASO.OMITIDO && (
@@ -363,6 +420,37 @@ export default function TrRdiProgresoModal({
                     <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: palette.success }}>
                       enviado
                     </Typography>
+                  )}
+                  {consultarTicketRef.current && mostrarBotonConsultarCdr && (
+                    <Box
+                      onClick={() => consultarTicketFila({ ...paso, numeroRdi }, indice)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          consultarTicketFila({ ...paso, numeroRdi }, indice);
+                        }
+                      }}
+                      sx={{
+                        height: 26,
+                        px: 0.9,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.45,
+                        borderRadius: 1,
+                        border: `1px solid ${cdrDisponible ? palette.success : palette.accent}`,
+                        backgroundColor: cdrDisponible ? palette.successSoft : palette.accentSoft,
+                        color: cdrDisponible ? palette.success : palette.accent,
+                        fontSize: 11,
+                        fontWeight: 850,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <CloudSyncIcon sx={{ fontSize: 15 }} />
+                      Consultar CDR
+                    </Box>
                   )}
                 </Box>
 
@@ -378,7 +466,9 @@ export default function TrRdiProgresoModal({
                   {mensajes[indice]
                     || respuesta
                     || paso.detalle
-                    || `${paso.cantidad || 0} ${nombreRubroPlural} | estado ${paso.estado || "PENDIENTE"}`}
+                    || (requiereCorreccion
+                      ? "Pendiente de correccion: libera este RDI desde Historial RDI antes de reenviar el dia."
+                      : `${paso.cantidad || 0} ${nombreRubroPlural} | estado ${paso.estado || "PENDIENTE"}`)}
                 </Typography>
               </Box>
             </Box>
