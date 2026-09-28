@@ -1,9 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import palette from "../../theme/palette";
 
 const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
+
+const getTodayLimaParts = () => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    date: Number(values.day),
+  };
+};
 
 const AdminDias = ({ period, onDaySelect }) => {
   const theme = useTheme();
@@ -11,15 +27,17 @@ const AdminDias = ({ period, onDaySelect }) => {
 
   const [days, setDays] = useState([]);
   const [selectedDay, setSelectedDay] = useState("");
+  const onDaySelectRef = useRef(onDaySelect);
+
+  useEffect(() => {
+    onDaySelectRef.current = onDaySelect;
+  }, [onDaySelect]);
 
   useEffect(() => {
     if (!period) return;
 
     const [year, month] = period.split("-").map(Number);
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1;
-    const currentDate = today.getDate();
+    const { year: currentYear, month: currentMonth, date: currentDate } = getTodayLimaParts();
 
     const daysInMonth = getDaysInMonth(year, month);
     const maxDay = year === currentYear && month === currentMonth ? currentDate : daysInMonth;
@@ -34,12 +52,12 @@ const AdminDias = ({ period, onDaySelect }) => {
     setDays(dayList);
 
     // Evitar que el estado se sobrescriba con cada render
-    if (!selectedDay) {
+    if (!selectedDay || !dayList.includes(selectedDay)) {
       const defaultDay = maxDay.toString();
       setSelectedDay(defaultDay);
-      onDaySelect(defaultDay);
+      onDaySelectRef.current(defaultDay);
     }
-  }, [period]); // Solo depende de `period`
+  }, [period, selectedDay]);
 
   const handleDayChange = (event, newDay) => {
     if (newDay) {

@@ -106,6 +106,19 @@ const fechaHoyLima = () => {
   return `${values.year}-${values.month}-${values.day}`;
 };
 
+const resolverFechaOperacion = (periodoTrabajo, diaSel) => {
+  if (!periodoTrabajo) {
+    return "";
+  }
+
+  if (diaSel && diaSel !== "*") {
+    return `${periodoTrabajo}-${String(diaSel).padStart(2, "0")}`;
+  }
+
+  const hoy = fechaHoyLima();
+  return hoy.startsWith(periodoTrabajo) ? hoy : `${periodoTrabajo}-01`;
+};
+
 const TICKET_ENCOMIENDA_MODO_KEY = "xpertcont.transporte.encomienda.ticketPredeterminado";
 const normalizarModoTicketEncomienda = (value) => (
   ["completo", "admin", "cliente"].includes(value) ? value : "completo"
@@ -253,16 +266,7 @@ export default function TrModuloBase({
 
   // Fecha enviada al modal. Si el filtro esta en "todos", usa hoy cuando pertenece al periodo.
   const fechaOperacion = useMemo(() => {
-    if (!periodoTrabajo) {
-      return "";
-    }
-
-    if (diaSel !== "*") {
-      return `${periodoTrabajo}-${diaSel}`;
-    }
-
-    const hoy = fechaHoyLima();
-    return hoy.startsWith(periodoTrabajo) ? hoy : `${periodoTrabajo}-01`;
+    return resolverFechaOperacion(periodoTrabajo, diaSel);
   }, [diaSel, periodoTrabajo]);
 
   const fechaResumenSeleccionada = useMemo(() => {
@@ -520,6 +524,7 @@ export default function TrModuloBase({
       return;
     }
 
+    const fechaOperacionGuardar = resolverFechaOperacion(periodoTrabajo, diaSel);
     const payload = {
       ...datosOperacion,
       id_usuario: params.id_anfitrion,
@@ -527,6 +532,7 @@ export default function TrModuloBase({
       id_invitado: params.id_invitado,
       documento_id: contabilidadTrabajo,
       periodo: periodoTrabajo,
+      r_fecemi: tipoOperacionFijo === "E" && !esEdicion ? fechaOperacionGuardar : datosOperacion.r_fecemi,
       r_cod: esEdicion ? operacionEditando.r_cod : datosOperacion.r_cod,
       r_serie: esEdicion ? operacionEditando.r_serie : datosOperacion.r_serie,
       r_numero: esEdicion ? operacionEditando.r_numero : datosOperacion.r_numero,
