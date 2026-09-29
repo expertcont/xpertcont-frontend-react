@@ -149,7 +149,7 @@ export function Field({ label, icon, children, labelWidth = "auto", tall = false
           component="span"
           sx={{
             color: palette.muted,
-            fontSize: "9px",
+            fontSize: "10px",
             fontWeight: 800,
             textTransform: "uppercase",
             whiteSpace: "nowrap",

@@ -151,7 +151,7 @@ export default function TrEncomiendaModalSections({
             </Field>
           </Grid>
           <Grid item xs={12}>
-            <Field label="Nombres / R.Social" labelWidth={104}>
+            <Field label="Nombres / Razon" labelWidth={104}>
               <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
             </Field>
           </Grid>
@@ -262,7 +262,7 @@ export default function TrEncomiendaModalSections({
             </Field>
           </Grid>
           <Grid item xs={12}>
-            <Field label="NOMBRES APELLIDOS" labelWidth={104}>
+            <Field label="NOMBRES AP." labelWidth={104}>
               <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
             </Field>
           </Grid>
@@ -340,13 +340,15 @@ export default function TrEncomiendaModalSections({
       <Box sx={compactSectionSx}>
         <Grid container columnSpacing={0.65} rowSpacing={0.35}>
           <Grid item xs={12}>
-            <Field label="Descripcion" labelWidth={82}>
+            <Field label="DESC" labelWidth={32} controlHeight={40}>
               <CaptureInput
                 value={draft.descripcion}
                 onChange={(value) => updateDraft("descripcion", String(value || "").toUpperCase())}
                 inputRef={refs.descripcionRef}
                 nextRef={refs.totalRef}
                 placeholder="Paquete, sobre, caja..."
+                prominent
+                align="right"
               />
             </Field>
           </Grid>
