@@ -88,6 +88,10 @@ const ALERT = rgb(0.82, 0.12, 0.12);
 
 const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
+const money = (value) => Number(value || 0).toLocaleString("es-PE", {
+  maximumFractionDigits: 0,
+});
+
 const ticketPayloadDesdeFormulario = ({ encomienda = {}, empresa = {} }) => ({
   empresa: {
     ruc: empresa.ruc || empresa.documento_id || encomienda.documento_id || "",
@@ -244,6 +248,7 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   const displayNumber = [serie, number].filter(Boolean).join("-") || fullNumber;
   const issueDate = venta.fecha_emision || encomienda.r_fecemi;
   const issueTime = venta.hora_emision || encomienda.ctrl_crea || encomienda.hora_grabacion;
+  const total = venta.total || venta.r_monto_total || encomienda.r_monto_total || encomienda.precio_neto;
   const arrivalApprox = timePe(encomienda.llegada_aprox || venta.llegada_aprox);
   const payment = clean(encomienda.condicion_pago || venta.forma_pago_id || "PAGADO").toUpperCase();
   const paymentNormalized = payment.replace(/[^A-Z]/g, "");
@@ -374,7 +379,13 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   page.drawImage(qrImage, { x: (W - qrSize) / 2, y: qrY, width: qrSize, height: qrSize });
   centered(page, `REM: ${senderName}`, qrY - 8, 7.5, regular, MUTED, CW - 12);
   centered(page, `TEL: ${senderPhone || "-"}`, qrY - 18, 9, semibold, INK, CW - 12);
-  centered(page, paymentLabel, qrY - 33, 16.5, semibold, isPaymentPending ? ALERT : INK, CW);
+  if (isPaymentPending) {
+    text(page, paymentLabel, M + 17, qrY - 33.5, 18.5, semibold, ALERT, 116);
+    text(page, "S/", 147, qrY - 30.5, 9.5, semibold, ALERT, 16);
+    text(page, money(total), 164, qrY - 35.5, 24, semibold, ALERT, W - 170);
+  } else {
+    centered(page, paymentLabel, qrY - 33, 16.5, semibold, INK, CW);
+  }
   centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, qrY - 49, 8.8, semibold, INK, CW);
   if (registeredByEmail) {
     centered(page, `REGISTRADO POR: ${registeredByEmail}`, qrY - 58, 6.8, regular, MUTED, CW);

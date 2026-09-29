@@ -11,6 +11,7 @@ import SystemSecurityUpdateGoodIcon from '@mui/icons-material/SystemSecurityUpda
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import SummarizeIcon from '@mui/icons-material/Summarize';
 import TableRowsIcon from '@mui/icons-material/TableRows';
+import SecurityIcon from '@mui/icons-material/Security';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
@@ -335,6 +336,7 @@ export default function NavSideBar(props) {
   const esRubroProyectos = rubroTrabajo === 'PROYECTO' || rubroTrabajo === 'PROYECTOS';
   const esRubroContable = rubroTrabajo === 'CONTABLE' || rubroTrabajo === 'CONTABILIDAD';
   const esRubroComercial = !esRubroTransporte && !esRubroProyectos && !esRubroContable;
+  const puedeConfigurarMenus = props.idAnfitrion === props.idInvitado || props.super === true || String(props.super) === '1';
   const etiquetaPuntosVenta = esRubroTransporte ? 'Agencias' : 'Puntos venta';
   const subtituloRubro = esRubroTransporte
     ? 'Gestion transportes'
@@ -882,6 +884,29 @@ export default function NavSideBar(props) {
               handleClick('icono11');
             }}
           />
+        )}
+
+        {puedeConfigurarMenus && (
+          <>
+            <MenuItem
+              icon={<TableRowsIcon />}
+              label="Menu config"
+              isActive={selectedButton === 'icono-menu-config'}
+              onClick={() => {
+                navigate(`/ad_menuconfig/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono-menu-config');
+              }}
+            />
+            <MenuItem
+              icon={<SecurityIcon />}
+              label="Menu permisos"
+              isActive={selectedButton === 'icono-menu-permisos'}
+              onClick={() => {
+                navigate(`/ad_menupermisos/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono-menu-permisos');
+              }}
+            />
+          </>
         )}
 
         {accesoAdmin && (esRubroComercial || esRubroProyectos) && (

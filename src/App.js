@@ -61,6 +61,8 @@ import AdminPuntoVentaList from "./components/Admin/AdminPuntoVentaList";
 import TrRutaList from "./components/Admin/transporte/TrRutaList";
 import TrEncomiendaDashboardMockup from "./components/Admin/transporte/dashboard/TrEncomiendaDashboardMockup";
 import TrCajaMovimientoList from "./components/Admin/transporte/caja/TrCajaMovimientoList";
+import AdminMenuConfigList from "./components/Admin/menu/AdminMenuConfigList";
+import AdminMenuPermisosList from "./components/Admin/menu/AdminMenuPermisosList";
 import palette from "./theme/palette";
 
 function AppLayout(props) {
@@ -205,6 +207,8 @@ function AppLayout(props) {
               <Route path="/ad_transporteplacas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrPlacaList />} />
               <Route path="/ad_transportelicencias/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrLicenciaList />} />
               <Route path="/ad_transportezonas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrZonaList />} />
+              <Route path="/ad_menuconfig/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminMenuConfigList super={props.super} />} />
+              <Route path="/ad_menupermisos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminMenuPermisosList super={props.super} />} />
 
               <Route path="/ad_ventarepref/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepRef />} />
               <Route path="/ad_correntistahabitual/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminCorrentistaHabitualList />} />

@@ -1216,7 +1216,10 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
         throw new Error(dataResponse.message || "No se pudo registrar la llegada real.");
       }
 
-      const llegadaRealConfirmada = dataResponse.data?.llegada_real || new Date().toISOString();
+      const llegadaRealConfirmada = dataResponse.data?.llegada_real;
+      if (!llegadaRealConfirmada) {
+        throw new Error("El servidor no devolvio la hora de llegada confirmada.");
+      }
       setLlegadasLocales((prev) => {
         const next = new Set(prev);
         next.add(claveEncomienda(item));
