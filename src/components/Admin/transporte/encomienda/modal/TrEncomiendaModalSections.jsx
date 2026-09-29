@@ -377,15 +377,28 @@ export default function TrEncomiendaModalSections({
               />
             </Field>
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={6}>
             <Field label="" labelWidth={0} plain>
               <TimeWheelPicker
                 value={draft.llegada_aprox}
                 onChange={(value) => updateDraft("llegada_aprox", value)}
                 inputRef={refs.llegadaRef}
-                nextRef={refs.placaRef}
+                nextRef={refs.contraRef}
                 minuteStep={5}
-                label="Hora de llegada"
+                label="Llegada"
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={6}>
+            <Field label="" labelWidth={0} controlHeight={34}>
+              <CaptureInput
+                value={draft.contra}
+                onChange={(value) => updateDraft("contra", String(value || "").toUpperCase())}
+                inputRef={refs.contraRef}
+                nextRef={refs.placaRef}
+                placeholder="Contraseña"
+                type="password"
+                align="center"
               />
             </Field>
           </Grid>

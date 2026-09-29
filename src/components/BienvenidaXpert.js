@@ -79,13 +79,35 @@ const BienvenidaXpert = ({ onStartClick }) => {
     }
   };
 
-    const handleChange = e => {
-      setAnfitrionSeleccionado(e.target.value);
-      const estudio = estudios_select.find((item) => item.id_usuario === e.target.value);
+    const cargarNivelInvitado = async (idAnfitrion) => {
+      if (!idAnfitrion || !user?.email) {
+        sessionStorage.setItem('supervisor', '0');
+        return '0';
+      }
+
+      try {
+        const anfitrionParam = encodeURIComponent(idAnfitrion);
+        const invitadoParam = encodeURIComponent(user.email);
+        const response = await axios.get(`${back_host}/usuario/invitado/nivel/${anfitrionParam}/${invitadoParam}`);
+        const supervisor = response.data?.supervisor || '0';
+        sessionStorage.setItem('supervisor', supervisor);
+        return supervisor;
+      } catch (error) {
+        console.log('Error cargando nivel del invitado:', error);
+        sessionStorage.setItem('supervisor', '0');
+        return '0';
+      }
+    };
+
+    const handleChange = async e => {
+      const idAnfitrion = e.target.value;
+      setAnfitrionSeleccionado(idAnfitrion);
+      const estudio = estudios_select.find((item) => item.id_usuario === idAnfitrion);
       if (estudio?.rubro) {
         sessionStorage.setItem('rubro_trabajo', estudio.rubro);
       }
       sessionStorage.setItem('super', estudio?.super || '0');
+      await cargarNivelInvitado(idAnfitrion);
     }
   
     const cargaEstudiosAnfitrion = () =>{
@@ -100,6 +122,7 @@ const BienvenidaXpert = ({ onStartClick }) => {
           setAnfitrionSeleccionado(response.data[0].id_usuario); 
           sessionStorage.setItem('rubro_trabajo', response.data[0].rubro || 'COMERCIAL');
           sessionStorage.setItem('super', response.data[0].super || '0');
+          cargarNivelInvitado(response.data[0].id_usuario);
         }
       })
       .catch((error) => {
@@ -272,14 +295,16 @@ const BienvenidaXpert = ({ onStartClick }) => {
 
                       <Button variant='contained' 
                                               color='primary' 
-                                              onClick={() => {
+                                              onClick={async () => {
                                                 // Devolvemos los props actualizados
                                                 const estudio = estudios_select.find((item) => item.id_usuario === idAnfitrionSeleccionado);
                                                 const rubro = estudio?.rubro || sessionStorage.getItem('rubro_trabajo') || 'COMERCIAL';
                                                 const superAcceso = estudio?.super || sessionStorage.getItem('super') || '0';
+                                                const supervisorAcceso = await cargarNivelInvitado(idAnfitrionSeleccionado);
                                                 sessionStorage.setItem('rubro_trabajo', rubro);
                                                 sessionStorage.setItem('super', superAcceso);
-                                                onStartClick(idAnfitrionSeleccionado, user.email, rubro, superAcceso);
+                                                sessionStorage.setItem('supervisor', supervisorAcceso);
+                                                onStartClick(idAnfitrionSeleccionado, user.email, rubro, superAcceso, supervisorAcceso);
                                               }}                                              
                                               fullWidth
                                               sx={{

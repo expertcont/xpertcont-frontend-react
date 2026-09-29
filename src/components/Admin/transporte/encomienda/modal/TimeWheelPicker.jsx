@@ -543,21 +543,6 @@ export default function TimeWheelPicker({
 
   return (
     <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 0.35 }}>
-      {label && (
-        <Typography
-          component="span"
-          sx={{
-            color: palette.muted,
-            fontSize: "9px",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            lineHeight: 1,
-            ml: 0.25,
-          }}
-        >
-          {label}
-        </Typography>
-      )}
       <Box
         ref={rootRef}
         tabIndex={0}

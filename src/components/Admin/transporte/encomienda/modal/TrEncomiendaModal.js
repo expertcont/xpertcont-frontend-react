@@ -208,6 +208,7 @@ export default function TrEncomiendaModal({
   const precioChoferRef = useRef(null);
   const condicionPagoRef = useRef(null);
   const llegadaRef = useRef(null);
+  const contraRef = useRef(null);
   const grabarRef = useRef(null);
   const ticketButtonRef = useRef(null);
   const ticketAdminRef = useRef(null);
@@ -285,6 +286,7 @@ export default function TrEncomiendaModal({
     totalRef,
     condicionPagoRef,
     llegadaRef,
+    contraRef,
     placaRef,
     precioChoferRef,
     grabarRef,
@@ -388,6 +390,7 @@ export default function TrEncomiendaModal({
       descripcion: String(item.descripcion || "").toUpperCase(),
       r_monto_total: item.r_monto_total || item.precio_neto || "",
       condicion_pago: normalizarCondicionPago(item.condicion_pago || item.numero_rdi),
+      contra: item.contra || "",
       llegada_aprox: prev.llegada_aprox || toTimePlusHours(2),
     }));
     setClonePickerOpen(false);
@@ -1278,6 +1281,7 @@ export default function TrEncomiendaModal({
             precioChoferRef,
             condicionPagoRef,
             llegadaRef,
+            contraRef,
             grabarRef,
           }}
         />

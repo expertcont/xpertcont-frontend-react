@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { Calendar, CalendarPlus, Camera, Check, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
+import { Calendar, CalendarPlus, Camera, Check, Lock, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
 import {
   generarConstanciaEntregaPdfBlob,
   generarConstanciaEntregaPngFallback,
@@ -427,10 +427,14 @@ function SelectFiltro({ label, value, options, onChange, compact = false }) {
   );
 }
 
-export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
+export default function TrEncomiendaEntregaList({ panoramicMode = false, supervisor }) {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const params = useParams();
   const navigate = useNavigate();
+  const supervisorActual = supervisor ?? sessionStorage.getItem("supervisor") ?? "0";
+  const superActual = sessionStorage.getItem("super") ?? "0";
+  const esValorActivo = (value) => ["1", "s", "si", "true"].includes(String(value || "").toLowerCase());
+  const puedeLiberarContra = params.id_anfitrion === params.id_invitado || esValorActivo(superActual) || esValorActivo(supervisorActual);
 
   const [periodoTrabajo, setPeriodoTrabajo] = useState("");
   const [contabilidadTrabajo, setContabilidadTrabajo] = useState("");
@@ -1051,6 +1055,53 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
     const contenido = item.descripcion || "Sin descripcion";
     const porCobrar = esPorCobrar(item.condicion_pago || item.numero_rdi);
     const monto = formatMoney(item.r_monto_total || item.precio_neto);
+    const contraEncomienda = String(item.contra || "").trim().toUpperCase();
+    const requiereContra = Boolean(contraEncomienda);
+    let contraLiberada = false;
+
+    const liberarContra = async () => {
+      const response = await fetch(`${back_host}/mve_transventa/encomienda/liberar-contra`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodo: item.periodo_origen || periodoTrabajo,
+          id_usuario: params.id_anfitrion,
+          id_anfitrion: params.id_anfitrion,
+          id_invitado: params.id_invitado,
+          documento_id: contabilidadTrabajo,
+          r_cod: item.r_cod,
+          r_serie: item.r_serie,
+          r_numero: item.r_numero,
+          elemento: item.elemento || 1,
+          ctrl_mod_us: params.id_invitado,
+        }),
+      });
+      const dataResponse = await response.json();
+
+      if (!response.ok || !dataResponse.success) {
+        throw new Error(dataResponse.message || "No se pudo liberar la contraseña.");
+      }
+
+      const rowActualizada = {
+        ...item,
+        ...(dataResponse.data || {}),
+        contra: "",
+        _textoBusqueda: crearIndiceBusqueda({ ...item, ...(dataResponse.data || {}), contra: "" }),
+        _textoBusquedaFonica: crearIndiceBusquedaFonica({ ...item, ...(dataResponse.data || {}), contra: "" }),
+      };
+
+      setTablaBase((prev) => prev.map((row) => (
+        row.r_cod === item.r_cod &&
+        row.r_serie === item.r_serie &&
+        row.r_numero === item.r_numero &&
+        Number(row.elemento || 1) === Number(item.elemento || 1)
+          ? { ...row, ...rowActualizada }
+          : row
+      )));
+
+      contraLiberada = true;
+      return true;
+    };
 
     if (porCobrar && navigator.vibrate) {
       navigator.vibrate([180, 90, 180, 90, 180]);
@@ -1096,6 +1147,46 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
             <span style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:${palette.muted};font-weight:800">Contenido</span>
             <span style="color:${palette.muted};font-size:13px;line-height:1.35">${escapeHtml(contenido)}</span>
           </div>
+          ${requiereContra ? `
+            <div style="display:grid;gap:6px">
+              <label for="entrega-contra" style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:${palette.muted};font-weight:800">Contraseña de entrega</label>
+              <div style="position:relative">
+                <input
+                  id="entrega-contra"
+                  type="password"
+                  autocomplete="off"
+                  placeholder="Confirmar contraseña"
+                  style="width:100%;box-sizing:border-box;height:38px;border:1px solid ${palette.border};border-radius:8px;background:${palette.bg};color:${palette.text};font-size:15px;font-weight:800;text-align:center;outline:none;padding:0 ${puedeLiberarContra ? "42px" : "10px"} 0 10px;text-transform:uppercase"
+                />
+                ${puedeLiberarContra ? `
+                  <button
+                    id="liberar-contra"
+                    type="button"
+                    title="Liberar contraseña"
+                    aria-label="Liberar contraseña"
+                    style="position:absolute;right:4px;top:4px;width:30px;height:30px;border:1px solid ${palette.border};border-radius:8px;background:${palette.surface};color:${palette.warning || palette.porCobrar};display:grid;place-items:center;cursor:pointer;padding:0"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 9.5-2.2"></path>
+                    </svg>
+                  </button>
+                ` : ""}
+              </div>
+              ${puedeLiberarContra ? `
+                <div id="liberar-contra-aviso" style="display:none;border:1px solid ${palette.warning};background:${palette.warningSoft};border-radius:8px;padding:10px;margin-top:2px">
+                  <div style="color:${palette.text};font-size:12.5px;font-weight:800;line-height:1.35;text-align:left">
+                    Se quitara la contraseña de esta encomienda. La entrega no se registrara todavia; despues deberas presionar el boton normal de registro.
+                  </div>
+                  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+                    <button id="cancelar-liberar-contra" type="button" style="height:30px;border:1px solid ${palette.border};border-radius:8px;background:${palette.surface};color:${palette.text};font-size:12px;font-weight:800;padding:0 10px;cursor:pointer">Cancelar</button>
+                    <button id="confirmar-liberar-contra" type="button" style="height:30px;border:1px solid ${palette.warning};border-radius:8px;background:${palette.warning};color:${palette.bg};font-size:12px;font-weight:900;padding:0 10px;cursor:pointer">Liberar contraseña</button>
+                  </div>
+                </div>
+              ` : ""}
+              <div id="entrega-contra-liberada" style="display:none;color:${palette.success};font-size:12px;font-weight:800;text-align:center">Contraseña liberada</div>
+            </div>
+          ` : ""}
         </div>
       `,
       icon: "question",
@@ -1106,6 +1197,96 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
       background: palette.surface,
       confirmButtonColor: porCobrar ? palette.porCobrar : palette.accent,
       cancelButtonColor: palette.border,
+      didOpen: () => {
+        if (requiereContra) {
+          const input = document.getElementById("entrega-contra");
+          const unlockButton = document.getElementById("liberar-contra");
+          const unlockNotice = document.getElementById("liberar-contra-aviso");
+          const confirmUnlockButton = document.getElementById("confirmar-liberar-contra");
+          const cancelUnlockButton = document.getElementById("cancelar-liberar-contra");
+          const liberadaLabel = document.getElementById("entrega-contra-liberada");
+          input?.focus();
+          input?.addEventListener("input", () => {
+            input.value = String(input.value || "").toUpperCase();
+          });
+          unlockButton?.addEventListener("click", () => {
+            if (unlockNotice) {
+              unlockNotice.style.display = "block";
+            }
+            unlockButton.style.display = "none";
+            confirmUnlockButton?.focus?.();
+          });
+          cancelUnlockButton?.addEventListener("click", () => {
+            if (unlockNotice) {
+              unlockNotice.style.display = "none";
+            }
+            if (unlockButton) {
+              unlockButton.style.display = "grid";
+              unlockButton.disabled = false;
+              unlockButton.style.opacity = "1";
+            }
+            input?.focus();
+          });
+          confirmUnlockButton?.addEventListener("click", async () => {
+            try {
+              confirmUnlockButton.disabled = true;
+              cancelUnlockButton.disabled = true;
+              confirmUnlockButton.style.opacity = ".65";
+              const liberada = await liberarContra();
+              if (liberada) {
+                input.value = "";
+                input.disabled = true;
+                input.placeholder = "Contraseña liberada";
+                input.style.color = palette.success;
+                input.style.borderColor = palette.success;
+                if (unlockNotice) {
+                  unlockNotice.style.display = "none";
+                }
+                if (liberadaLabel) {
+                  liberadaLabel.style.display = "block";
+                }
+                swal2.resetValidationMessage();
+              } else {
+                confirmUnlockButton.disabled = false;
+                cancelUnlockButton.disabled = false;
+                confirmUnlockButton.style.opacity = "1";
+              }
+            } catch (error) {
+              swal2.showValidationMessage(error.message || "No se pudo liberar la contraseña.");
+              confirmUnlockButton.disabled = false;
+              cancelUnlockButton.disabled = false;
+              confirmUnlockButton.style.opacity = "1";
+            }
+          });
+        }
+      },
+      preConfirm: () => {
+        if (!requiereContra) {
+          return { entregaContra: "" };
+        }
+
+        if (contraLiberada) {
+          return { entregaContra: "" };
+        }
+
+        const input = document.getElementById("entrega-contra");
+        const entregaContra = String(input?.value || "").trim().toUpperCase();
+
+        if (!entregaContra) {
+          swal2.showValidationMessage("Ingresa la contraseña de entrega.");
+          input?.focus();
+          return false;
+        }
+
+        if (entregaContra !== contraEncomienda) {
+          swal2.showValidationMessage("La contraseña no coincide.");
+          input?.focus();
+          input?.select?.();
+          return false;
+        }
+
+        return { entregaContra };
+      },
     });
 
     if (!result.isConfirmed) {
@@ -1127,6 +1308,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
           r_numero: item.r_numero,
           elemento: item.elemento || 1,
           entrega_ctrl_us: params.id_invitado,
+          entrega_contra: result.value?.entregaContra || "",
         }),
       });
       const dataResponse = await response.json();
@@ -1290,12 +1472,28 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
       selector: (row) => numeroOperacion(row),
       cell: (row) => {
         const porCobrar = esPorCobrar(row.condicion_pago || row.numero_rdi);
+        const protegida = Boolean(String(row.contra || "").trim());
+        const entregaColor = porCobrar
+          ? palette.porCobrar
+          : protegida && !mostrarEntregadas
+            ? (palette.warning || palette.accent)
+            : mostrarEntregadas
+              ? palette.success
+              : palette.accent;
+        const entregaSoftColor = porCobrar
+          ? palette.porCobrarSoft
+          : protegida && !mostrarEntregadas
+            ? (palette.warningSoft || palette.accentSoft)
+            : mostrarEntregadas
+              ? palette.successSoft
+              : palette.accentSoft;
+        const EntregaBadgeIcon = protegida && !mostrarEntregadas ? Lock : Check;
 
         return (
           <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) auto", columnGap: 0.85, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
-            <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"} arrow>
+            <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : protegida ? "Registrar entrega con contraseña" : "Registrar entrega"} arrow>
               <IconButton
-                aria-label={mostrarEntregadas ? "Enviar constancia por WhatsApp" : "Registrar entrega"}
+                aria-label={mostrarEntregadas ? "Enviar constancia por WhatsApp" : protegida ? "Registrar entrega protegida" : "Registrar entrega"}
                 onClick={(event) => {
                   event.stopPropagation();
                   mostrarEntregadas ? mostrarEntregaRegistrada(row) : marcarEntregado(row);
@@ -1306,12 +1504,12 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                   height: 38,
                   borderRadius: palette.radius.control,
                   backgroundColor: palette.surfaceAlt,
-                  border: `1px solid ${porCobrar ? palette.porCobrarSoft : mostrarEntregadas ? palette.successSoft : palette.accentSoft}`,
-                  color: porCobrar ? palette.porCobrar : mostrarEntregadas ? palette.success : palette.accent,
+                  border: `1px solid ${entregaSoftColor}`,
+                  color: entregaColor,
                   gridRow: "1 / span 3",
                   transition: "background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease",
                   "&:hover": {
-                    backgroundColor: porCobrar ? palette.porCobrarSoft : mostrarEntregadas ? palette.successSoft : palette.accentSoft,
+                    backgroundColor: entregaSoftColor,
                     transform: "scale(1.22)",
                   },
                   "&:active": {
@@ -1321,14 +1519,14 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
               >
                 <Box sx={{ position: "relative", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Package size={22} strokeWidth={2.1} />
-                  <Check
+                  <EntregaBadgeIcon
                     size={13}
-                    strokeWidth={3}
+                    strokeWidth={protegida ? 2.8 : 3}
                     style={{
                       position: "absolute",
                       right: -2,
                       bottom: -1,
-                      color: porCobrar ? palette.porCobrar : mostrarEntregadas ? palette.success : palette.accent,
+                      color: entregaColor,
                     }}
                   />
                 </Box>
@@ -1344,11 +1542,11 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false }) {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: mostrarEntregadas ? palette.successSoft : "transparent",
-                    color: porCobrar ? palette.porCobrar : mostrarEntregadas ? palette.success : palette.accent,
+                    color: entregaColor,
                     border: mostrarEntregadas ? `1px solid ${palette.success}` : "none",
                   }}
                 >
-                  {mostrarEntregadas ? <MessageCircle size={10} /> : <Check size={13} strokeWidth={3} />}
+                  {mostrarEntregadas ? <MessageCircle size={10} /> : <EntregaBadgeIcon size={13} strokeWidth={protegida ? 2.8 : 3} />}
                 </Box>
               </IconButton>
             </Tooltip>

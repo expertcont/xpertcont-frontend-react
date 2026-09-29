@@ -97,6 +97,7 @@ export const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => {
     r_monto_total: operacion?.r_monto_total || operacion?.precio_neto || "",
     precio_chofer: operacion?.precio_chofer || "",
     condicion_pago: normalizarCondicionPago(operacion?.condicion_pago || operacion?.numero_rdi),
+    contra: operacion?.contra || "",
     celulares: false,
     clave: "",
     llegada_aprox: operacion?.llegada_aprox || operacion?.estado_sunat || toTimePlusHours(2),
