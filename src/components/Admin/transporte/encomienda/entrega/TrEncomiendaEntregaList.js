@@ -14,6 +14,7 @@ import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
+import useMenuRuntimePermissions from "../../../menu/useMenuRuntimePermissions";
 import palette from "../../../../../theme/palette";
 
 import "../../common/trDataTableTheme";
@@ -132,6 +133,8 @@ const claveEncomienda = (item = {}) => [
   item.r_numero,
   item.elemento || 1,
 ].join("|");
+
+const periodoEncomienda = (item = {}, fallback = "") => item.periodo_origen || item.periodo || fallback;
 
 const numeroTicketAdmin = (item) => [
   item.r_serie,
@@ -435,6 +438,15 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
   const superActual = sessionStorage.getItem("super") ?? "0";
   const esValorActivo = (value) => ["1", "s", "si", "true"].includes(String(value || "").toLowerCase());
   const puedeLiberarContra = params.id_anfitrion === params.id_invitado || esValorActivo(superActual) || esValorActivo(supervisorActual);
+  const permisosTransporte = useMenuRuntimePermissions({
+    backHost: back_host,
+    idAnfitrion: params.id_anfitrion,
+    idInvitado: params.id_invitado,
+    rubro: "TRANSPORTE",
+    enabled: true,
+  });
+  const puedeMarcarLlegada = permisosTransporte.puedeAccion("transporte.entregas.marcar_llegada");
+  const puedeRegistrarEntrega = permisosTransporte.puedeAccion("transporte.entregas.registrar_entrega");
 
   const [periodoTrabajo, setPeriodoTrabajo] = useState("");
   const [contabilidadTrabajo, setContabilidadTrabajo] = useState("");
@@ -1049,6 +1061,18 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
   };
 
   const marcarEntregado = async (item) => {
+    if (!puedeRegistrarEntrega) {
+      swal2.fire({
+        title: "Acceso no autorizado",
+        text: "Tu usuario no tiene permiso para registrar entregas.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
     const operacion = numeroOperacion(item);
     const destinatario = item.destinatario || "Sin destinatario";
     const documentoDestinatario = item.destinatario_documento || item.destinatario_documento_id || "";
@@ -1064,7 +1088,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          periodo: item.periodo_origen || periodoTrabajo,
+          periodo: periodoEncomienda(item, periodoTrabajo),
           id_usuario: params.id_anfitrion,
           id_anfitrion: params.id_anfitrion,
           id_invitado: params.id_invitado,
@@ -1298,7 +1322,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          periodo: periodoTrabajo,
+          periodo: periodoEncomienda(item, periodoTrabajo),
           id_usuario: params.id_anfitrion,
           id_anfitrion: params.id_anfitrion,
           id_invitado: params.id_invitado,
@@ -1345,6 +1369,18 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
   };
 
   const marcarLlegadaReal = async (item) => {
+    if (!puedeMarcarLlegada) {
+      swal2.fire({
+        title: "Acceso no autorizado",
+        text: "Tu usuario no tiene permiso para marcar llegada de chofer.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
     if (item.llegada_real) {
       return;
     }
@@ -1380,7 +1416,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          periodo: item.periodo_origen || periodoTrabajo,
+          periodo: periodoEncomienda(item, periodoTrabajo),
           id_usuario: params.id_anfitrion,
           id_anfitrion: params.id_anfitrion,
           id_invitado: params.id_invitado,
@@ -1491,9 +1527,11 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
 
         return (
           <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "38px minmax(0, 1fr) auto", columnGap: 0.85, rowGap: 0.15, alignItems: "center", minWidth: 0, width: "100%" }}>
-            <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : protegida ? "Registrar entrega con contraseña" : "Registrar entrega"} arrow>
+            <Tooltip title={mostrarEntregadas ? "Enviar constancia por WhatsApp" : !puedeRegistrarEntrega ? "Sin permiso para registrar entrega" : protegida ? "Registrar entrega con contraseña" : "Registrar entrega"} arrow>
               <IconButton
+                data-action-id={mostrarEntregadas ? undefined : "transporte.entregas.registrar_entrega"}
                 aria-label={mostrarEntregadas ? "Enviar constancia por WhatsApp" : protegida ? "Registrar entrega protegida" : "Registrar entrega"}
+                disabled={!mostrarEntregadas && !puedeRegistrarEntrega}
                 onClick={(event) => {
                   event.stopPropagation();
                   mostrarEntregadas ? mostrarEntregaRegistrada(row) : marcarEntregado(row);
@@ -1508,6 +1546,12 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
                   color: entregaColor,
                   gridRow: "1 / span 3",
                   transition: "background-color 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease",
+                  "&.Mui-disabled": {
+                    color: palette.muted,
+                    borderColor: palette.border,
+                    backgroundColor: palette.bg,
+                    opacity: 0.52,
+                  },
                   "&:hover": {
                     backgroundColor: entregaSoftColor,
                     transform: "scale(1.22)",
@@ -1603,9 +1647,11 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
                 alignSelf: "center",
               }}
             >
-              <Tooltip title={tieneLlegadaReal(row) ? `Llegada de Chofer: ${fechaLlegadaVisible(row)}` : 'Marcar "Llegada de Chofer"'} arrow>
+              <Tooltip title={tieneLlegadaReal(row) ? `Llegada de Chofer: ${fechaLlegadaVisible(row)}` : !puedeMarcarLlegada ? 'Sin permiso para marcar "Llegada de Chofer"' : 'Marcar "Llegada de Chofer"'} arrow>
                 <IconButton
+                  data-action-id="transporte.entregas.marcar_llegada"
                   aria-label={tieneLlegadaReal(row) ? "Llegada de Chofer registrada" : 'Marcar "Llegada de Chofer"'}
+                  disabled={!tieneLlegadaReal(row) && !puedeMarcarLlegada}
                   onClick={(event) => {
                     event.stopPropagation();
                     marcarLlegadaReal(row);
@@ -1620,6 +1666,11 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
                     border: "none",
                     color: tieneLlegadaReal(row) ? palette.success : palette.muted,
                     transition: "background-color 140ms ease, color 140ms ease, transform 140ms ease",
+                    "&.Mui-disabled": {
+                      color: palette.muted,
+                      backgroundColor: "transparent",
+                      opacity: 0.5,
+                    },
                     "&:hover": {
                       backgroundColor: tieneLlegadaReal(row) ? palette.successSoft : palette.surfaceAlt,
                       color: tieneLlegadaReal(row) ? palette.success : palette.accent,

@@ -202,7 +202,10 @@ export const focusByArrow = (event, inputRef) => {
   return false;
 };
 
-export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, placeholderSx, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
+export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, placeholderSx, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, prominentSize = "16px", highlight = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
+  const inputFontSize = prominent ? prominentSize : inputSx.fontSize;
+  const inputFontWeight = undefined;
+
   return (
     <InputBase
       inputRef={inputRef}
@@ -248,10 +251,12 @@ export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, 
       }}
       sx={{
         ...inputSx,
-        fontSize: prominent ? "18px" : inputSx.fontSize,
+        fontSize: inputFontSize,
+        fontWeight: inputFontWeight,
         "& input": {
           textAlign: align,
-          fontSize: prominent ? "18px" : undefined,
+          fontSize: inputFontSize,
+          fontWeight: inputFontWeight,
         },
         "& textarea": {
           textAlign: align,

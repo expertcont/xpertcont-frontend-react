@@ -21,6 +21,7 @@ export default function TrHeader({
   onBuscar,
   compactControles = false,
   headerExtra = null,
+  nuevoActionId,
 }) {
   const ticketOptions = [
     { value: "completo", label: "Completo", icon: Layers },
@@ -128,6 +129,7 @@ export default function TrHeader({
 
         <AppButton
           icon={<Plus size={18} />}
+          data-action-id={nuevoActionId}
           onClick={onNuevo}
           disabled={nuevoDeshabilitado}
           sx={{

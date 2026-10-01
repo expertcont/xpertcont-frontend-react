@@ -8,11 +8,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   FormControl,
   IconButton,
   InputLabel,
   MenuItem,
   Select,
+  Switch,
   TextField,
   Tooltip,
   Typography,
@@ -259,6 +261,8 @@ export default function AdminMenuConfigList({ super: esSuper = false }) {
   const [accionEditando, setAccionEditando] = useState(null);
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [accionDialogOpen, setAccionDialogOpen] = useState(false);
+  const [seguridadActiva, setSeguridadActiva] = useState(false);
+  const [guardandoConfig, setGuardandoConfig] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
   const itemsOrdenados = useMemo(
@@ -289,16 +293,20 @@ export default function AdminMenuConfigList({ super: esSuper = false }) {
     if (!puedeConfigurar) return;
     setMensaje("");
     const query = new URLSearchParams({ rubro }).toString();
-    const [itemsResp, accionesResp] = await Promise.all([
+    const [itemsResp, accionesResp, configResp] = await Promise.all([
       fetch(`${backHost}/mad_menu_item/${params.id_anfitrion}/${params.id_invitado}?${query}`),
       fetch(`${backHost}/mad_menu_accion/${params.id_anfitrion}/${params.id_invitado}`),
+      fetch(`${backHost}/mad_menu_config/${params.id_anfitrion}/${params.id_invitado}?${query}`),
     ]);
     const itemsJson = await itemsResp.json();
     const accionesJson = await accionesResp.json();
+    const configJson = await configResp.json();
     if (!itemsResp.ok || !itemsJson.success) throw new Error(itemsJson.message || "No se pudo cargar menu.");
     if (!accionesResp.ok || !accionesJson.success) throw new Error(accionesJson.message || "No se pudo cargar acciones.");
+    if (!configResp.ok || !configJson.success) throw new Error(configJson.message || "No se pudo cargar configuracion.");
     setItems(itemsJson.data || []);
     setAcciones(accionesJson.data || []);
+    setSeguridadActiva(boolValue(configJson.data?.seguridad_activa));
   }, [backHost, params.id_anfitrion, params.id_invitado, puedeConfigurar, rubro]);
 
   useEffect(() => {
@@ -329,6 +337,29 @@ export default function AdminMenuConfigList({ super: esSuper = false }) {
     setAccionDialogOpen(false);
     setAccionEditando(null);
     await cargar();
+  };
+
+  const guardarSeguridadActiva = async (activa) => {
+    setGuardandoConfig(true);
+    try {
+      const response = await fetch(`${backHost}/mad_menu_config`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_anfitrion: params.id_anfitrion,
+          id_invitado: params.id_invitado,
+          usuario_registro: params.id_invitado,
+          rubro,
+          seguridad_activa: activa,
+        }),
+      });
+      const json = await response.json();
+      if (!response.ok || !json.success) throw new Error(json.message || "No se pudo guardar configuracion.");
+      setSeguridadActiva(boolValue(json.data?.seguridad_activa));
+      setMensaje(activa ? "Seguridad por menu activada para el rubro." : "Seguridad por menu desactivada para el rubro.");
+    } finally {
+      setGuardandoConfig(false);
+    }
   };
 
   const desactivarItem = async (idItem) => {
@@ -395,16 +426,33 @@ export default function AdminMenuConfigList({ super: esSuper = false }) {
               <Badge color={palette.accent} background={palette.accentSoft}>Vista previa</Badge>
             </Box>
             <Typography sx={{ color: palette.muted, fontSize: 12.5, fontWeight: 700, maxWidth: 720 }}>
-              Organiza el arbol de navegacion y sus acciones. Esta pantalla solo administra el catalogo; el menu principal aun no se renderiza desde aqui.
+              Organiza el arbol de navegacion y sus acciones. Los permisos solo se aplican cuando la llave general del rubro esta activa.
             </Typography>
             <Box sx={{ display: "flex", gap: 0.8, flexWrap: "wrap", mt: 0.2 }}>
               <Badge>{itemsOrdenados.length} opciones</Badge>
               <Badge>{acciones.length} acciones</Badge>
               <Badge>{rubro}</Badge>
+              <Badge color={seguridadActiva ? palette.success : palette.muted} background={seguridadActiva ? palette.successSoft : palette.surfaceAlt}>
+                {seguridadActiva ? "Seguridad activa" : "Seguridad apagada"}
+              </Badge>
             </Box>
           </Box>
 
           <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap", justifyContent: { xs: "flex-start", md: "flex-end" } }}>
+            <Box sx={{ border: `1px solid ${seguridadActiva ? palette.success : palette.border}`, backgroundColor: seguridadActiva ? palette.successSoft : palette.surface, borderRadius: palette.radius.panel, px: 1.1, minHeight: 38, display: "flex", alignItems: "center" }}>
+              <FormControlLabel
+                sx={{ m: 0, "& .MuiFormControlLabel-label": { color: palette.text, fontSize: 12, fontWeight: 900 } }}
+                control={
+                  <Switch
+                    size="small"
+                    checked={seguridadActiva}
+                    disabled={guardandoConfig}
+                    onChange={(event) => guardarSeguridadActiva(event.target.checked).catch((error) => setMensaje(error.message))}
+                  />
+                }
+                label="Aplicar seguridad"
+              />
+            </Box>
             <TextField size="small" label="Rubro" value={rubro} onChange={(e) => setRubro(e.target.value.toUpperCase())} sx={{ width: 170, ...controlSx }} />
             <Tooltip title="Recargar">
               <IconButton

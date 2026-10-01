@@ -2,7 +2,7 @@
 import { Box } from "@mui/material";
 import palette from "../../theme/palette";
 
-export default function AppIconBox({ children }) {
+export default function AppIconBox({ children, sx }) {
     return (
       <Box
         sx={{
@@ -14,6 +14,7 @@ export default function AppIconBox({ children }) {
           justifyContent: "center",
           backgroundColor: palette.accentSoft,
           color: palette.accent,
+          ...sx,
         }}
       >
         {children}

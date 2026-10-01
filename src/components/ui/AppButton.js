@@ -11,9 +11,11 @@ export default function AppButton({
   sx = {},
   buttonRef,
   disabled = false,
+  ...props
 }) {
   return (
     <Box
+      {...props}
       ref={buttonRef}
       role="button"
       aria-disabled={disabled}

@@ -191,6 +191,7 @@ function SunatActionButton({ row, onEnviarSunat, sunatContext }) {
   return (
     <Tooltip title={estado.title} arrow>
       <Box
+        data-action-id="transporte.encomiendas.enviar_sunat"
         onClick={() => {
           if (!bloqueadoPorRdi && !puedeUsarAdminSunatIcon) {
             onEnviarSunat(row);
@@ -565,8 +566,12 @@ function TrOperacionRow({
   onImprimirTicket,
   sunatContext,
   canDelete = false,
+  canEdit = true,
+  canCancel = true,
+  canSendSunat = true,
   compact = false,
   mostrarAnuladas = false,
+  menuItemId = "transporte.encomiendas",
 }) {
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
   const esEncomienda = row.tipo_operacion === "E";
@@ -808,7 +813,7 @@ function TrOperacionRow({
             {row.numero}
           </Typography>
 
-          {mostrarSunatFactura && (
+          {mostrarSunatFactura && canSendSunat && (
             <SunatActionButton row={row} onEnviarSunat={onEnviarSunat} sunatContext={sunatContext} />
           )}
 
@@ -816,7 +821,7 @@ function TrOperacionRow({
 
           {row.tipo_operacion !== "E" && <AppChip>{row.tipoLabel}</AppChip>}
 
-          {esEncomienda && (
+          {esEncomienda && canEdit && (
             <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.85, minWidth: 0, flex: "1 1 360px" }}>
               <Box sx={{ minWidth: 0, flex: "1 1 180px" }}>
                 <PersonaOperacionLine
@@ -858,7 +863,7 @@ function TrOperacionRow({
           {esEncomienda && <DeliveryStatusBadge entregada={row.entregada} fechaEntrega={row.entrega_fecha} usuarioEntrega={row.entrega_ctrl_us} />}
           {esEncomienda && (
             <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
-              <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
+              <Box data-action-id={`${menuItemId}.editar`} onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
                 {protegidaSunat || anulada ? <Eye size={14} /> : <Pencil size={14} />}
               </Box>
             </Tooltip>
@@ -866,17 +871,17 @@ function TrOperacionRow({
 
           {esEncomienda && TotalOperacion}
 
-          {!esEncomienda && (
+          {!esEncomienda && canEdit && (
             <Tooltip title={protegidaSunat || anulada ? "Ver operacion" : "Editar operacion"} arrow>
-              <Box onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
+              <Box data-action-id={`${menuItemId}.editar`} onClick={() => onEdit(row)} sx={protegidaSunat || anulada ? protectedActionButtonSx : actionButtonSx(false)}>
                 {protegidaSunat || anulada ? <Eye size={14} /> : <Pencil size={14} />}
               </Box>
             </Tooltip>
           )}
 
-          {!protegidaSunat && !anulada && (
+          {!protegidaSunat && !anulada && canCancel && (
             <Tooltip title="Anular operacion" arrow>
-              <Box onClick={() => onCancel(row)} sx={actionButtonSx(true)}>
+              <Box data-action-id={`${menuItemId}.anular_local`} onClick={() => onCancel(row)} sx={actionButtonSx(true)}>
                 <Ban size={14} />
               </Box>
             </Tooltip>
@@ -884,7 +889,7 @@ function TrOperacionRow({
 
           {!protegidaSunat && !anulada && canDelete && (
             <Tooltip title="Eliminar operacion" arrow>
-              <Box onClick={() => onDelete(row)} sx={actionButtonSx(true)}>
+              <Box data-action-id={`${menuItemId}.eliminar`} onClick={() => onDelete(row)} sx={actionButtonSx(true)}>
                 <Trash2 size={14} />
               </Box>
             </Tooltip>
@@ -1039,8 +1044,12 @@ export const createColumns = ({
   onImprimirTicket,
   sunatContext,
   canDelete,
+  canEdit,
+  canCancel,
+  canSendSunat,
   compact = false,
   mostrarAnuladas = false,
+  menuItemId = "transporte.encomiendas",
 }) => [
   {
     name: "",
@@ -1055,8 +1064,12 @@ export const createColumns = ({
         onImprimirTicket={onImprimirTicket}
         sunatContext={sunatContext}
         canDelete={canDelete}
+        canEdit={canEdit}
+        canCancel={canCancel}
+        canSendSunat={canSendSunat}
         compact={compact}
         mostrarAnuladas={mostrarAnuladas}
+        menuItemId={menuItemId}
       />
     ),
   },

@@ -20,6 +20,7 @@ import { createColumns, customStyles, customStylesEncomienda, customStylesEncomi
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
 import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
+import useMenuRuntimePermissions from "../../menu/useMenuRuntimePermissions";
 import { consultarTicketRdiSunat, normalizarRdiResponse } from "../../venta/common/rdiSunatActions";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
@@ -308,6 +309,27 @@ export default function TrModuloBase({
     () => (tipoOperacionFijo === "B" ? "TRANS_BOLETO" : "TRANS_ENCOMIENDA"),
     [tipoOperacionFijo]
   );
+  const menuItemId = useMemo(
+    () => (tipoOperacionFijo === "B" ? "transporte.boletos" : "transporte.encomiendas"),
+    [tipoOperacionFijo]
+  );
+  const crearActionId = useMemo(
+    () => (tipoOperacionFijo === "B" ? "transporte.boletos.crear" : "transporte.encomiendas.crear"),
+    [tipoOperacionFijo]
+  );
+  const permisosTransporte = useMenuRuntimePermissions({
+    backHost: back_host,
+    idAnfitrion: params.id_anfitrion,
+    idInvitado: params.id_invitado,
+    rubro: "TRANSPORTE",
+    enabled: true,
+  });
+  const puedeAccion = permisosTransporte.puedeAccion;
+  const puedeCrearOperacion = puedeAccion(crearActionId);
+  const puedeEditarOperacion = puedeAccion(`${menuItemId}.editar`);
+  const puedeAnularOperacion = puedeAccion(`${menuItemId}.anular_local`);
+  const puedeEliminarOperacionPermiso = puedeAccion(`${menuItemId}.eliminar`);
+  const puedeEnviarSunatOperacion = puedeAccion("transporte.encomiendas.enviar_sunat");
   const nombreRubroPlural = useMemo(
     () => (rubroResumen === "BOLETOS" ? "boletos" : "encomiendas"),
     [rubroResumen]
@@ -464,6 +486,26 @@ export default function TrModuloBase({
 
   // Abre el modal en modo nuevo o edicion. Para encomiendas exige punto operativo.
   const solicitarOperacion = (operacion = null) => {
+    if (!operacion && !puedeCrearOperacion) {
+      swal2.fire({
+        title: "Acceso no autorizado",
+        text: "Tu usuario no tiene permiso para registrar esta operacion.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+      });
+      return;
+    }
+
+    if (operacion && !puedeEditarOperacion) {
+      swal2.fire({
+        title: "Acceso no autorizado",
+        text: "Tu usuario no tiene permiso para editar esta operacion.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+      });
+      return;
+    }
+
     if (!operacion && tipoOperacionFijo === "E" && !puntoVentaTrabajo) {
       swal2.fire({
         title: "Selecciona punto de venta",
@@ -497,6 +539,18 @@ export default function TrModuloBase({
     setGuardandoOperacion(true);
 
     const esEdicion = Boolean(operacionEditando);
+
+    if ((esEdicion && !puedeEditarOperacion) || (!esEdicion && !puedeCrearOperacion)) {
+      guardandoOperacionRef.current = false;
+      setGuardandoOperacion(false);
+      swal2.fire({
+        title: "Acceso no autorizado",
+        text: "Tu usuario no tiene permiso para guardar esta operacion.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+      });
+      return;
+    }
 
     if (esEdicion && tipoOperacionFijo === "E" && operacionProtegidaSunat(operacionEditando)) {
       guardandoOperacionRef.current = false;
@@ -1211,9 +1265,10 @@ export default function TrModuloBase({
           nuevoTexto={nuevoTexto}
           buscarTexto={buscarTexto}
           valorBusqueda={valorBusqueda}
-          nuevoDeshabilitado={tipoOperacionFijo === "E" && !puntoVentaTrabajo}
+          nuevoDeshabilitado={!puedeCrearOperacion || (tipoOperacionFijo === "E" && !puntoVentaTrabajo)}
           ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : undefined}
           onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : undefined}
+          nuevoActionId={crearActionId}
           onNuevo={() => solicitarOperacion()}
           onBuscar={actualizaValorFiltro}
           compactControles={tipoOperacionFijo === "E" || panoramicMode}
@@ -1269,8 +1324,12 @@ export default function TrModuloBase({
             onCancel: handleCancel,
             onEnviarSunat: handleEnviarSunat,
             onImprimirTicket: handleImprimirTicketRapido,
-            canDelete: puedeEliminarOperacion,
+            canDelete: puedeEliminarOperacion && puedeEliminarOperacionPermiso,
             compact: tipoOperacionFijo === "E" && panoramicMode,
+            menuItemId,
+            canEdit: puedeEditarOperacion,
+            canCancel: puedeAnularOperacion,
+            canSendSunat: puedeEnviarSunatOperacion,
             sunatContext: {
               backHost: back_host,
               documentoId: contabilidadTrabajo,
@@ -1327,7 +1386,8 @@ export default function TrModuloBase({
             }}
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
-            soloLectura={operacionProtegidaSunat(operacionEditando) || Number(operacionEditando?.registrado) === 0}
+            soloLectura={!puedeEditarOperacion || operacionProtegidaSunat(operacionEditando) || Number(operacionEditando?.registrado) === 0}
+            guardarActionId={operacionEditando ? `${menuItemId}.editar` : crearActionId}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
             guardando={guardandoOperacion}
@@ -1344,6 +1404,7 @@ export default function TrModuloBase({
             rutasDisponibles={rutasDisponibles}
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
+            guardarActionId={operacionEditando ? `${menuItemId}.editar` : crearActionId}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
             guardando={guardandoOperacion}

@@ -144,6 +144,7 @@ export default function TrEncomiendaModalSections({
                   pattern="[0-9]*"
                   align="right"
                   prominent
+                  prominentSize="17px"
                   onPlus={buscarRemitente}
                   onF3={abrirClonePicker}
                 />
@@ -152,12 +153,12 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12}>
             <Field label="Nombres / Razon" labelWidth={104}>
-              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" />
+              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", String(value || "").toUpperCase())} inputRef={refs.remitenteNombreRef} nextRef={refs.remitenteTelefonoRef} placeholder="Remitente" highlight align="left" />
             </Field>
           </Grid>
           <Grid item xs={12}>
             <Field label="Telefono" labelWidth={104}>
-              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.remitenteEntregaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
+              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} inputRef={refs.remitenteTelefonoRef} nextRef={remitenteEsEmpresa ? refs.clienteDireccionFactRef : refs.remitenteEntregaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" highlight align="left" />
             </Field>
           </Grid>
           {remitenteEsEmpresa && (
@@ -169,6 +170,7 @@ export default function TrEncomiendaModalSections({
                   inputRef={refs.clienteDireccionFactRef}
                   nextRef={refs.remitenteEntregaRef}
                   placeholder="Direccion fiscal del RUC"
+                  align="left"
                 />
               </Field>
             </Grid>
@@ -220,6 +222,7 @@ export default function TrEncomiendaModalSections({
                     inputRef={refs.remitenteDireccionRef}
                     nextRef={refs.destinatarioDocRef}
                     placeholder="Direccion si envia desde casa"
+                    align="left"
                   />
                 </Field>
               </Grid>
@@ -256,6 +259,7 @@ export default function TrEncomiendaModalSections({
                   pattern="[0-9]*"
                   align="right"
                   prominent
+                  prominentSize="17px"
                   onPlus={buscarDestinatario}
                 />
               </Box>
@@ -263,12 +267,12 @@ export default function TrEncomiendaModalSections({
           </Grid>
           <Grid item xs={12}>
             <Field label="NOMBRES AP." labelWidth={104}>
-              <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" />
+              <CaptureInput value={draft.destinatario} onChange={(value) => updateDraft("destinatario", String(value || "").toUpperCase())} inputRef={refs.destinatarioNombreRef} nextRef={refs.destinatarioTelefonoRef} placeholder="Destinatario" highlight align="left" />
             </Field>
           </Grid>
           <Grid item xs={12}>
             <Field label="Telefono" labelWidth={104}>
-              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.rutaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" />
+              <CaptureInput value={draft.destinatario_telefono} onChange={(value) => updateDraft("destinatario_telefono", value)} inputRef={refs.destinatarioTelefonoRef} nextRef={refs.rutaRef} placeholder="Celular" inputMode="numeric" pattern="[0-9]*" highlight align="left" />
             </Field>
           </Grid>
           <Grid item xs={12}>
@@ -328,6 +332,7 @@ export default function TrEncomiendaModalSections({
                     inputRef={refs.destinatarioDireccionRef}
                     nextRef={refs.descripcionRef}
                     placeholder="Direccion si recibe en casa"
+                    align="left"
                   />
                 </Field>
               </Grid>

@@ -3,7 +3,7 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Popover, Typography } from "@mui/material";
-import { CalendarDays, CheckCircle, ClipboardCopy, MessageCircle, Package, Save, Ticket, X } from "lucide-react";
+import { CheckCircle, ClipboardCopy, MessageCircle, Package, Save, Ticket, X } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
@@ -34,6 +34,19 @@ import {
 const DESCARGAS_TICKET_BASE_URL = "https://xpertcont-backend-js-production-50e6.up.railway.app/descargas/";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+const swalSobreModal = (options) => swal2.fire({
+  ...options,
+  didOpen: () => {
+    const container = swal2.getContainer();
+    if (container) {
+      container.style.zIndex = "20000";
+    }
+    options?.didOpen?.();
+  },
+});
+
+const tieneValor = (value) => String(value || "").trim() !== "";
 
 const direccionEmpresa = (datos = {}) => (
   datos.direccion ||
@@ -164,6 +177,7 @@ export default function TrEncomiendaModal({
   onClose,
   onSubmit,
   guardando = false,
+  guardarActionId,
 }) {
   const esEdicion = Boolean(operacion);
   const [draft, setDraft] = useState(() => crearDraft(operacion, periodoTrabajo, fechaOperacion));
@@ -412,6 +426,9 @@ export default function TrEncomiendaModal({
     .filter(Boolean)
     .join("-") || "Sin numero";
   const fechaEmisionTexto = String(draft.r_fecemi || "").slice(0, 10).split("-").reverse().join("/") || "-";
+  const tituloModal = soloLectura ? "Visualizar encomienda" : `Encomienda ${esEdicion ? "EDITAR" : "NUEVA"}`;
+  const tonoModo = esEdicion ? palette.warning : palette.accent;
+  const fondoModo = esEdicion ? palette.warningSoft : palette.accentSoft;
   const textoBotonGuardarCorto = esEdicion ? "Guardar" : encomiendaGrabada ? "Grabada" : esFactura ? "Grabar" : "Guardar";
   const accionSecundariaSx = {
     height: 42,
@@ -615,20 +632,36 @@ export default function TrEncomiendaModal({
     }
   };
 
+  const enfocarValidacion = (focusRef) => {
+    const aplicarFoco = () => {
+      const control = focusRef?.current;
+      if (!control) {
+        return;
+      }
+      control.focus?.({ preventScroll: true });
+      control.select?.();
+    };
+
+    window.requestAnimationFrame(() => {
+      aplicarFoco();
+      window.setTimeout(aplicarFoco, 80);
+      window.setTimeout(aplicarFoco, 180);
+    });
+  };
+
   const mostrarValidacion = (message, focusRef) => {
     setError(message);
-    swal2.fire({
+    swalSobreModal({
       title: "Validacion",
       text: message,
       icon: "warning",
       confirmButtonText: "ACEPTAR",
       color: palette.text,
       background: palette.surface,
-    }).then(() => {
-      window.setTimeout(() => {
-        focusRef?.current?.focus();
-        focusRef?.current?.select?.();
-      }, 40);
+      returnFocus: false,
+      didClose: () => {
+        enfocarValidacion(focusRef);
+      },
     });
   };
 
@@ -744,23 +777,13 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    if (!draft.id_ruta) {
-      mostrarValidacion("Indica la ruta.", rutaRef);
-      return;
-    }
-
-    if (puntoVentaOrigen && idPuntoVentaOrigen !== puntoVentaOrigen) {
-      mostrarValidacion("La ruta debe iniciar en el punto de venta operativo.", rutaRef);
-      return;
-    }
-
-    if (!draft.id_punto_venta_dest) {
-      mostrarValidacion("La ruta seleccionada no tiene punto de venta destino.", rutaRef);
-      return;
-    }
-
-    if (!draft.cliente_documento) {
+    if (!tieneValor(draft.cliente_documento)) {
       mostrarValidacion("Indica DNI/RUC del remitente.", remitenteDocRef);
+      return;
+    }
+
+    if (!tieneValor(draft.cliente)) {
+      mostrarValidacion("Indica el nombre del remitente.", remitenteNombreRef);
       return;
     }
 
@@ -771,22 +794,63 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    if (!draft.destinatario_documento || !draft.destinatario) {
-      mostrarValidacion("Indica DNI y nombre del destinatario.", destinatarioDocRef);
+    if (draft.remitente_entrega === "CLIENTE" && !tieneValor(draft.remitente_zona)) {
+      mostrarValidacion("Indica la zona del remitente.", remitenteZonaRef);
       return;
     }
 
-    if (!draft.descripcion) {
-      mostrarValidacion("Describe la encomienda.", descripcionRef);
+    if (draft.remitente_entrega === "CLIENTE" && !tieneValor(draft.remitente_direccion)) {
+      mostrarValidacion("Indica la direccion del remitente.", remitenteDireccionRef);
       return;
     }
 
-    if (!draft.placa) {
-      mostrarValidacion("Indica la placa.", placaRef);
+    if (!tieneValor(draft.destinatario_documento)) {
+      mostrarValidacion("Indica DNI del destinatario.", destinatarioDocRef);
+      return;
+    }
+
+    if (!tieneValor(draft.destinatario)) {
+      mostrarValidacion("Indica el nombre del destinatario.", destinatarioNombreRef);
+      return;
+    }
+
+    if (!tieneValor(draft.id_ruta)) {
+      mostrarValidacion("Indica la ruta.", rutaRef);
       return;
     }
 
     const total = Math.round(Number(draft.r_monto_total || 0));
+
+    if (puntoVentaOrigen && idPuntoVentaOrigen !== puntoVentaOrigen) {
+      mostrarValidacion("La ruta debe iniciar en el punto de venta operativo.", rutaRef);
+      return;
+    }
+
+    if (!tieneValor(draft.id_punto_venta_dest)) {
+      mostrarValidacion("La ruta seleccionada no tiene punto de venta destino.", rutaRef);
+      return;
+    }
+
+    if (draft.destinatario_entrega === "CLIENTE" && !tieneValor(draft.destinatario_zona)) {
+      mostrarValidacion("Indica la zona del destinatario.", destinatarioZonaRef);
+      return;
+    }
+
+    if (draft.destinatario_entrega === "CLIENTE" && !tieneValor(draft.destinatario_direccion)) {
+      mostrarValidacion("Indica la direccion del destinatario.", destinatarioDireccionRef);
+      return;
+    }
+
+    if (!tieneValor(draft.descripcion)) {
+      mostrarValidacion("Describe la encomienda.", descripcionRef);
+      return;
+    }
+
+    if (!tieneValor(draft.placa)) {
+      mostrarValidacion("Indica la placa.", placaRef);
+      return;
+    }
+
     const precioChofer = Number(draft.precio_chofer || 0);
     const entregaRemitenteEnOficina = draft.remitente_entrega === "OFICINA";
     const entregaDestinatarioEnOficina = draft.destinatario_entrega === "OFICINA";
@@ -823,8 +887,22 @@ export default function TrEncomiendaModal({
       asiento: null,
     }, { mantenerModalAbierto: true });
 
-    if (!operacionGuardadaResponse || esEdicion) {
+    if (!operacionGuardadaResponse) {
       ticketAdminWindow?.close();
+      return;
+    }
+
+    if (esEdicion) {
+      ticketAdminWindow?.close();
+      await swalSobreModal({
+        title: "Operacion modificada",
+        text: "La encomienda fue modificada correctamente.",
+        icon: "success",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      onClose?.();
       return;
     }
 
@@ -945,7 +1023,7 @@ export default function TrEncomiendaModal({
     }
 
     if (!tieneComprobanteReal(ticketBase)) {
-      swal2.fire({
+      swalSobreModal({
         title: "Primero graba la encomienda",
         text: "El ticket con logo y QR necesita serie y numero real del comprobante.",
         icon: "warning",
@@ -979,7 +1057,7 @@ export default function TrEncomiendaModal({
       }
     } catch (error) {
       ticketWindow?.close();
-      swal2.fire({
+      swalSobreModal({
         title: "No se pudo generar el ticket",
         text: error.message || "Revisa los datos de la encomienda e intenta nuevamente.",
         icon: "error",
@@ -1000,7 +1078,7 @@ export default function TrEncomiendaModal({
     const telefono = normalizarTelefonoWhatsapp(whatsappNumero);
 
     if (!telefono) {
-      swal2.fire({
+      swalSobreModal({
         title: "Indica celular",
         text: "Necesitamos el numero para enviar el ticket por WhatsApp.",
         icon: "warning",
@@ -1018,7 +1096,7 @@ export default function TrEncomiendaModal({
       abrirWhatsappNativo(telefono, mensaje);
       cerrarFlujoWhatsapp();
     } catch (error) {
-      swal2.fire({
+      swalSobreModal({
         title: "No se pudo generar el ticket",
         text: error.message || "Revisa los datos de la encomienda e intenta nuevamente.",
         icon: "error",
@@ -1039,7 +1117,7 @@ export default function TrEncomiendaModal({
     const telefono = normalizarTelefonoWhatsapp(whatsappNumero);
 
     if (!telefono) {
-      swal2.fire({
+      swalSobreModal({
         title: "Indica celular",
         text: "Necesitamos el numero para abrir WhatsApp con el mensaje del ticket.",
         icon: "warning",
@@ -1051,7 +1129,7 @@ export default function TrEncomiendaModal({
     }
 
     if (!navigator.clipboard?.write || typeof window.ClipboardItem === "undefined") {
-      swal2.fire({
+      swalSobreModal({
         title: "Portapapeles no disponible",
         text: "Tu navegador no permite copiar imagenes al portapapeles. Prueba en Chrome o Edge con HTTPS/localhost.",
         icon: "warning",
@@ -1093,7 +1171,7 @@ export default function TrEncomiendaModal({
       abrirWhatsappNativo(telefono, mensaje);
       cerrarFlujoWhatsapp();
     } catch (error) {
-      swal2.fire({
+      swalSobreModal({
         title: "No se pudo copiar",
         text: error.message || "No se pudo convertir el ticket a imagen.",
         icon: "error",
@@ -1155,16 +1233,18 @@ export default function TrEncomiendaModal({
     >
       <Box sx={{ p: { xs: 0.8, md: 1 }, pb: 0, flexShrink: 0 }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 0.75, mb: 0.7, flexWrap: "wrap" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
-            <AppIconBox>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0, flex: "1 1 auto" }}>
+            <AppIconBox sx={{ backgroundColor: fondoModo, border: `1px solid ${tonoModo}`, color: tonoModo }}>
               <Package size={16} />
             </AppIconBox>
             <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: "15px", lineHeight: 1.15 }}>
-                {soloLectura ? "Visualizar encomienda" : esEdicion ? modalEditarTitulo : modalNuevoTitulo}
-              </Typography>
-              <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.2 }} noWrap>
-                {origenVisual} · {numeroEncomiendaCabecera}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, minWidth: 0, flexWrap: "wrap" }}>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: "18px", sm: "20px" }, lineHeight: 1.05, color: tonoModo }}>
+                  {tituloModal}
+                </Typography>
+              </Box>
+              <Typography sx={{ color: palette.muted, fontSize: "11px", mt: 0.35 }} noWrap>
+                {origenVisual} - {numeroEncomiendaCabecera}
               </Typography>
             </Box>
           </Box>
@@ -1197,11 +1277,7 @@ export default function TrEncomiendaModal({
                   flex: "1 1 auto",
                 }}
               >
-                <CalendarDays size={14} color={palette.muted} />
-                <Typography sx={{ color: palette.muted, fontSize: "10px", fontWeight: 800, textTransform: "uppercase" }}>
-                  Fecha
-                </Typography>
-                <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800, whiteSpace: "nowrap" }}>
+                <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 900, whiteSpace: "nowrap" }}>
                   {fechaEmisionTexto}
                 </Typography>
               </Box>
@@ -1311,7 +1387,7 @@ export default function TrEncomiendaModal({
             Ticket
           </AppButton>
           {!soloLectura && (
-            <AppButton buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ ...accionPrincipalSx, justifySelf: "end" }}>
+            <AppButton data-action-id={guardarActionId} buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ ...accionPrincipalSx, justifySelf: "end" }}>
               {guardando ? "Guardando..." : textoBotonGuardarCorto}
             </AppButton>
           )}

@@ -36,6 +36,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import logo from '../Logo04small-retocado-teal.png';
 import palette from '../theme/palette';
 import SunatMenuIcon from '../assets/images/sunat0.png';
+import useMenuRuntimePermissions from './Admin/menu/useMenuRuntimePermissions';
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
@@ -337,6 +338,23 @@ export default function NavSideBar(props) {
   const esRubroContable = rubroTrabajo === 'CONTABLE' || rubroTrabajo === 'CONTABILIDAD';
   const esRubroComercial = !esRubroTransporte && !esRubroProyectos && !esRubroContable;
   const puedeConfigurarMenus = props.idAnfitrion === props.idInvitado || props.super === true || String(props.super) === '1';
+  const permisosTransporte = useMenuRuntimePermissions({
+    backHost: back_host,
+    idAnfitrion: props.idAnfitrion,
+    idInvitado: props.idInvitado,
+    rubro: 'TRANSPORTE',
+    enabled: esRubroTransporte,
+  });
+  const puedeMenuTransporte = permisosTransporte.puedeItem;
+  const puedeVerOperacionesTransporte = permisosTransporte.puedeAlguno([
+    'transporte.dashboard',
+    'transporte.encomiendas',
+    'transporte.grem',
+    'transporte.entregas',
+    'transporte.caja',
+    'transporte.boletos',
+    'transporte.sunat.rdi',
+  ]);
   const etiquetaPuntosVenta = esRubroTransporte ? 'Agencias' : 'Puntos venta';
   const subtituloRubro = esRubroTransporte
     ? 'Gestion transportes'
@@ -356,10 +374,11 @@ export default function NavSideBar(props) {
     permisoCentroCosto
   );
 
-  const MenuItem = ({ icon, label, isActive, onClick, badge, hasSubmenu, isSubmenuOpen }) => {
+  const MenuItem = ({ icon, label, isActive, onClick, badge, hasSubmenu, isSubmenuOpen, menuId }) => {
     const item = (
       <ListItem
         button
+        data-menu-id={menuId}
         onClick={onClick}
         sx={{
           position: 'relative',
@@ -453,7 +472,7 @@ export default function NavSideBar(props) {
     );
   };
 
-  const SubMenuItem = ({ icon, label, isActive, onClick, watermarkIcon = null, iconTone = null }) => {
+  const SubMenuItem = ({ icon, label, isActive, onClick, watermarkIcon = null, iconTone = null, menuId }) => {
     const tone = iconTone ? operationalIconTones[iconTone] : null;
     const compactTone = Boolean(tone && !itemLabelVisible);
     const compactToneActive = Boolean(compactTone && isActive);
@@ -468,6 +487,7 @@ export default function NavSideBar(props) {
     const item = (
       <ListItem
         button
+        data-menu-id={menuId}
         onClick={onClick}
         sx={{
           position: 'relative',
@@ -718,92 +738,114 @@ export default function NavSideBar(props) {
           </>
         )}
 
-        {accesoAdmin && esRubroTransporte && (
+        {accesoAdmin && esRubroTransporte && puedeVerOperacionesTransporte && (
           <>
             <MenuItem
               icon={<SummarizeIcon />}
               label="Operaciones"
+              menuId="transporte"
               onClick={handleTransportesClick}
               hasSubmenu={true}
               isSubmenuOpen={openTransportes}
             />
             <Collapse in={openTransportes} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
-                <SubMenuItem
-                  icon={<DashboardCustomizeIcon />}
-                  label="Dashboard"
-                  isActive={selectedButton === 'icono11-0'}
-                  onClick={() => {
-                    navigate(`/ad_transportedashboard/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-0');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<Inventory2Icon />}
-                  label="Encomiendas"
-                   iconTone="encomiendas"
-                  isActive={selectedButton === 'icono11-1'}
-                  onClick={() => {
-                    if (typeof props.onNavigatePanoramic === 'function') {
-                      props.onNavigatePanoramic('encomiendas');
-                    }
-                    navigate(`/ad_transportesencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-1');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<GremShuttleIcon />}
-                  label="GREM"
-                  isActive={selectedButton === 'icono11-grem'}
-                  onClick={() => {
-                    navigate(`/ad_transportegrem/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-grem');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<AssignmentTurnedInIcon />}
-                  label="Entregas"
-                   iconTone="entregas"
-                  isActive={selectedButton === 'icono11-8'}
-                  onClick={() => {
-                    if (typeof props.onNavigatePanoramic === 'function') {
-                      props.onNavigatePanoramic('entregas');
-                    }
-                    navigate(`/ad_transporteentregas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-8');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<AccountBalanceWalletIcon />}
-                  label="Caja"
-                   iconTone="caja"
-                  isActive={selectedButton === 'icono11-9'}
-                  onClick={() => {
-                    if (typeof props.onNavigatePanoramic === 'function') {
-                      props.onNavigatePanoramic('caja');
-                    }
-                    navigate(`/ad_transportecaja/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-9');
-                  }}
-                />
-                <SubMenuItem
-                  icon={<PersonIcon />}
-                  label="Boletos"
-                  isActive={selectedButton === 'icono11-2'}
-                  onClick={() => {
-                    navigate(`/ad_transportesboletos/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-2');
-                  }}
-                />
-                <SubMenuItem
-                  icon={renderSunatMenuIcon(selectedButton === 'icono11-rdi')}
-                  label="RDI SUNAT"
-                  isActive={selectedButton === 'icono11-rdi'}
-                  onClick={() => {
-                    navigate(`/ad_transporterdiencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-rdi');
-                  }}
-                />
+                {puedeMenuTransporte('transporte.dashboard') && (
+                  <SubMenuItem
+                    icon={<DashboardCustomizeIcon />}
+                    label="Dashboard"
+                    menuId="transporte.dashboard"
+                    isActive={selectedButton === 'icono11-0'}
+                    onClick={() => {
+                      navigate(`/ad_transportedashboard/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-0');
+                    }}
+                  />
+                )}
+                {puedeMenuTransporte('transporte.encomiendas') && (
+                  <SubMenuItem
+                    icon={<Inventory2Icon />}
+                    label="Encomiendas"
+                    menuId="transporte.encomiendas"
+                    iconTone="encomiendas"
+                    isActive={selectedButton === 'icono11-1'}
+                    onClick={() => {
+                      if (typeof props.onNavigatePanoramic === 'function') {
+                        props.onNavigatePanoramic('encomiendas');
+                      }
+                      navigate(`/ad_transportesencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-1');
+                    }}
+                  />
+                )}
+                {puedeMenuTransporte('transporte.grem') && (
+                  <SubMenuItem
+                    icon={<GremShuttleIcon />}
+                    label="GREM"
+                    menuId="transporte.grem"
+                    isActive={selectedButton === 'icono11-grem'}
+                    onClick={() => {
+                      navigate(`/ad_transportegrem/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-grem');
+                    }}
+                  />
+                )}
+                {puedeMenuTransporte('transporte.entregas') && (
+                  <SubMenuItem
+                    icon={<AssignmentTurnedInIcon />}
+                    label="Entregas"
+                    menuId="transporte.entregas"
+                    iconTone="entregas"
+                    isActive={selectedButton === 'icono11-8'}
+                    onClick={() => {
+                      if (typeof props.onNavigatePanoramic === 'function') {
+                        props.onNavigatePanoramic('entregas');
+                      }
+                      navigate(`/ad_transporteentregas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-8');
+                    }}
+                  />
+                )}
+                {puedeMenuTransporte('transporte.caja') && (
+                  <SubMenuItem
+                    icon={<AccountBalanceWalletIcon />}
+                    label="Caja"
+                    menuId="transporte.caja"
+                    iconTone="caja"
+                    isActive={selectedButton === 'icono11-9'}
+                    onClick={() => {
+                      if (typeof props.onNavigatePanoramic === 'function') {
+                        props.onNavigatePanoramic('caja');
+                      }
+                      navigate(`/ad_transportecaja/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-9');
+                    }}
+                  />
+                )}
+                {puedeMenuTransporte('transporte.boletos') && (
+                  <SubMenuItem
+                    icon={<PersonIcon />}
+                    label="Boletos"
+                    menuId="transporte.boletos"
+                    isActive={selectedButton === 'icono11-2'}
+                    onClick={() => {
+                      navigate(`/ad_transportesboletos/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-2');
+                    }}
+                  />
+                )}
+                {puedeMenuTransporte('transporte.sunat.rdi') && (
+                  <SubMenuItem
+                    icon={renderSunatMenuIcon(selectedButton === 'icono11-rdi')}
+                    label="RDI SUNAT"
+                    menuId="transporte.sunat.rdi"
+                    isActive={selectedButton === 'icono11-rdi'}
+                    onClick={() => {
+                      navigate(`/ad_transporterdiencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                      handleClick('icono11-rdi');
+                    }}
+                  />
+                )}
               </List>
             </Collapse>
           </>
@@ -821,10 +863,11 @@ export default function NavSideBar(props) {
           />
         )}
 
-        {accesoAdmin && (
+        {accesoAdmin && (!esRubroTransporte || puedeMenuTransporte('transporte.puntos')) && (
           <MenuItem
             icon={<HolidayVillageIcon />}
             label={etiquetaPuntosVenta}
+            menuId={esRubroTransporte ? "transporte.puntos" : undefined}
             isActive={selectedButton === 'icono11-3'}
             onClick={() => {
               navigate(`/ad_puntoventa/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
@@ -835,49 +878,62 @@ export default function NavSideBar(props) {
 
         {accesoAdmin && esRubroTransporte && (
           <>
-            <MenuItem
-              icon={<CompareArrowsIcon />}
-              label="Rutas"
-              isActive={selectedButton === 'icono11-4'}
-              onClick={() => {
-                navigate(`/ad_transporterutas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                handleClick('icono11-4');
-              }}
-            />
-            <MenuItem
-              icon={<DirectionsBusIcon />}
-              label="Placas"
-              isActive={selectedButton === 'icono11-5'}
-              onClick={() => {
-                navigate(`/ad_transporteplacas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                handleClick('icono11-5');
-              }}
-            />
-            <MenuItem
-              icon={<BadgeIcon />}
-              label="Licencias"
-              isActive={selectedButton === 'icono11-6'}
-              onClick={() => {
-                navigate(`/ad_transportelicencias/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                handleClick('icono11-6');
-              }}
-            />
-            <MenuItem
-              icon={<HolidayVillageIcon />}
-              label="Zonas"
-              isActive={selectedButton === 'icono11-7'}
-              onClick={() => {
-                navigate(`/ad_transportezonas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                handleClick('icono11-7');
-              }}
-            />
+            {puedeMenuTransporte('transporte.rutas') && (
+              <MenuItem
+                icon={<CompareArrowsIcon />}
+                label="Rutas"
+                menuId="transporte.rutas"
+                isActive={selectedButton === 'icono11-4'}
+                onClick={() => {
+                  navigate(`/ad_transporterutas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  handleClick('icono11-4');
+                }}
+              />
+            )}
+            {puedeMenuTransporte('transporte.placas') && (
+              <MenuItem
+                icon={<DirectionsBusIcon />}
+                label="Placas"
+                menuId="transporte.placas"
+                isActive={selectedButton === 'icono11-5'}
+                onClick={() => {
+                  navigate(`/ad_transporteplacas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  handleClick('icono11-5');
+                }}
+              />
+            )}
+            {puedeMenuTransporte('transporte.licencias') && (
+              <MenuItem
+                icon={<BadgeIcon />}
+                label="Licencias"
+                menuId="transporte.licencias"
+                isActive={selectedButton === 'icono11-6'}
+                onClick={() => {
+                  navigate(`/ad_transportelicencias/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  handleClick('icono11-6');
+                }}
+              />
+            )}
+            {puedeMenuTransporte('transporte.zonas') && (
+              <MenuItem
+                icon={<HolidayVillageIcon />}
+                label="Zonas"
+                menuId="transporte.zonas"
+                isActive={selectedButton === 'icono11-7'}
+                onClick={() => {
+                  navigate(`/ad_transportezonas/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  handleClick('icono11-7');
+                }}
+              />
+            )}
           </>
         )}
 
-        {accesoAdmin && (
+        {accesoAdmin && (!esRubroTransporte || puedeMenuTransporte('transporte.usuarios_turnos')) && (
           <MenuItem
             icon={<SystemSecurityUpdateGoodIcon />}
             label="Usuarios turnos"
+            menuId={esRubroTransporte ? "transporte.usuarios_turnos" : undefined}
             isActive={selectedButton === 'icono11'}
             onClick={() => {
               navigate(`/ad_puntoventausuario/${props.idAnfitrion}/${props.idInvitado}`);

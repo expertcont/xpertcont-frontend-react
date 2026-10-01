@@ -8,6 +8,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import ReplayIcon from "@mui/icons-material/Replay";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SummarizeIcon from "@mui/icons-material/Summarize";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import Datatable from "react-data-table-component";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
@@ -86,24 +87,55 @@ const formatDateTime = (value) => {
   return String(value).replace("T", " ").substring(0, 19);
 };
 
+// Host de descargas. El API lo toma del env CPE_HOST y guarda el XML firmado
+// en descargas/{ruc}/{ruc}-RC-{fecha}-{correlativo}.xml, que es el mismo
+// nombre que la lista ya recibe en nombre_archivo.
+const DESCARGAS_HOST = "http://74.208.184.113:8080";
+
+// El API guarda en descargas/{ruc}/ el XML firmado como {ruc}-RC-{fecha}-{corr}.xml
+// y el CDR del mismo resumen como R-{ruc}-RC-{fecha}-{corr}.xml (prefijo R-).
+// El correlativo va de 3 digitos y numero_rdi ya viene asi, asi que no hay
+// que pedirle nada al backend para armar los dos links.
+const rutaArchivoRdi = (row, prefijo = "") => {
+  const ruc = String(row?.documento_id || "").trim();
+  if (!ruc) return "";
+
+  const numeroRdi = String(row?.numero_rdi || "").trim();
+  if (numeroRdi) {
+    const nombre = `${prefijo}${ruc}-${numeroRdi}`;
+    return `${DESCARGAS_HOST}/descargas/${encodeURIComponent(ruc)}/${encodeURIComponent(nombre)}.xml`;
+  }
+
+  // nombre_archivo lo arma el backend con la secuencia sin rellenar
+  // (20539579356-RC-20260928-1), asi que se completa con ceros a la izquierda.
+  const nombreArchivo = String(row?.nombre_archivo || "").trim();
+  if (nombreArchivo) {
+    const relleno = nombreArchivo.replace(/-(\d+)$/, (_, s) => `-${String(Number(s)).padStart(3, "0")}`);
+    return `${DESCARGAS_HOST}/descargas/${encodeURIComponent(ruc)}/${encodeURIComponent(`${prefijo}${relleno}`)}.xml`;
+  }
+
+  // Ultimo recurso: armarlo desde la fecha y la secuencia de la fila.
+  const fecha = String(row?.fecha || "").trim().replace(/-/g, "");
+  const secuencia = String(row?.secuencia ?? "").trim();
+  if (!/^\d{8}$/.test(fecha) || !/^\d+$/.test(secuencia)) return "";
+  const nombre = `${prefijo}${ruc}-RC-${fecha}-${secuencia.padStart(3, "0")}`;
+  return `${DESCARGAS_HOST}/descargas/${encodeURIComponent(ruc)}/${encodeURIComponent(nombre)}.xml`;
+};
+
+const rutaXmlRdi = (row) => rutaArchivoRdi(row);
+const rutaCdrRdi = (row) => rutaArchivoRdi(row, "R-");
+
 const esRechazoCorregibleRdi = (row) => {
   const estado = String(row?.estado || "").toUpperCase();
   const estadoReproceso = String(row?.estado_reproceso || "").toUpperCase();
-  const texto = [
-    row?.respuesta_codigo,
-    row?.respuesta_desc,
-  ].filter(Boolean).join(" ").toLowerCase();
 
-  return estado === "RECHAZADO"
-    && estadoReproceso !== "REPROCESADO"
-    && (
-      texto.includes("documento indicado no existe")
-      || texto.includes("comprobante a eliminar")
-      || texto.includes("2223")
-      || texto.includes("ya fue enviado")
-      || texto.includes("ya fue presentado")
-      || texto.includes("no existe")
-    );
+  // Si SUNAT lo rechazo y ya no esta en reproceso, hay que liberarlo.
+  // No se mantiene una lista de mensajes: cada rechazo nuevo de SUNAT
+  // (por ejemplo el codigo 2346 de fecha de generacion contra fecha del
+  // nombre del archivo) dejaba el boton escondido sin poder corregir.
+  // La regla de fondo la aplica el backend, que responde 409 cuando el
+  // rechazo no es corregible.
+  return estado === "RECHAZADO" && estadoReproceso !== "REPROCESADO";
 };
 
 const rdiOrigenLabel = (origen) => {
@@ -143,6 +175,9 @@ export default function AdminVentaResumenSunatList({
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(false);
   const [procesando, setProcesando] = useState("");
+  // Que fila tiene la respuesta SUNAT desplegada. Una sola a la vez: si se
+  // desplegaran todas, volveria el problema que se quiere evitar.
+  const [filaRespuestaAbierta, setFilaRespuestaAbierta] = useState("");
   const esTransporte = modo === "transporte";
   const resumenEndpoint = esTransporte ? "mve_transventa/cpe/resumen" : "ad_ventacpe/resumen";
 
@@ -256,7 +291,9 @@ export default function AdminVentaResumenSunatList({
 
       await confirmDialog({
         title: consulta.data?.estado === "ACEPTADO" ? "RDI aceptado" : "Consulta SUNAT",
-        message: consulta.message,
+        message: [
+          consulta.message,
+        ].filter(Boolean).join("\n"),
         icon: consulta.data?.estado === "RECHAZADO" ? "warning" : "success",
         confirmText: "ACEPTAR",
       });
@@ -383,6 +420,32 @@ export default function AdminVentaResumenSunatList({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  // El XML firmado se guarda con el nombre que la lista ya trae, asi que la
+  // ruta se arma sin pedirla al backend. El CDR no: esa ruta solo existe en la
+  // respuesta de SUNAT y no queda persistida, asi que no hay link que dar.
+  const rutaXml = rutaXmlRdi;
+
+  const descargarXml = async (row) => {
+    const url = rutaXml(row);
+    if (!url) return;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(String(response.status));
+      const blob = await response.blob();
+      const objetoUrl = URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      enlace.href = objetoUrl;
+      enlace.download = `${row.nombre_archivo}.xml`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+      URL.revokeObjectURL(objetoUrl);
+    } catch {
+      // Si el servidor no permite la descarga directa, se abre en otra pestana.
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const mostrarDetalle = async (row) => {
     await confirmDialog({
       title: `${row.estado || "PENDIENTE"} - ${row.numero_rdi}`,
@@ -391,9 +454,11 @@ export default function AdminVentaResumenSunatList({
         row.ticket ? `Ticket: ${row.ticket}` : "Sin ticket registrado",
         row.estado_reproceso ? `Reproceso: ${row.estado_reproceso}` : null,
         row.rdi_reproceso_numero ? `Reprocesado con RDI: ${rdiReprocesadoLabel(row)}` : null,
+        row.cantidad_boletas !== undefined ? `Comprobantes: ${row.cantidad_boletas || 0}` : null,
         row.intentos !== undefined ? `Intentos: ${row.intentos || 0}` : null,
         row.ultimo_intento ? `Ultimo intento: ${formatDateTime(row.ultimo_intento)}` : null,
         row.respuesta_desc || "Sin detalle SUNAT registrado.",
+        rutaXml(row) ? `\nXML firmado: ${rutaXml(row)}` : "\nXML firmado: no disponible todavia.",
       ].filter(Boolean).join("\n"),
       icon: ["ERROR", "INCIERTO", "RECHAZADO"].includes(String(row.estado || "").toUpperCase()) ? "warning" : "info",
       confirmText: "ACEPTAR",
@@ -473,9 +538,51 @@ export default function AdminVentaResumenSunatList({
       name: "Respuesta SUNAT",
       selector: (row) => row.respuesta_desc,
       sortable: true,
-      minWidth: "280px",
+      minWidth: "220px",
       wrap: true,
-      cell: (row) => <Typography sx={{ fontSize: 12, color: palette.muted }}>{row.respuesta_desc || "-"}</Typography>,
+      cell: (row) => {
+        const texto = String(row.respuesta_desc || "").trim();
+        const abierto = filaRespuestaAbierta === row.numero_rdi;
+        // Los rechazos de SUNAT traen textos largos; sin esto la fila crece y
+        // se come la pantalla entera.
+        if (!texto) {
+          return <Typography sx={{ fontSize: 12, color: palette.muted }}>-</Typography>;
+        }
+        return (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.2, alignItems: "flex-start" }}>
+            <Typography
+              sx={{
+                fontSize: 12,
+                color: palette.muted,
+                whiteSpace: "pre-line",
+                display: abierto ? "block" : "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: abierto ? "unset" : 2,
+                overflow: abierto ? "visible" : "hidden",
+                wordBreak: "break-word",
+              }}
+            >
+              {texto}
+            </Typography>
+            {texto.length > 90 && (
+              <Button
+                size="small"
+                onClick={() => setFilaRespuestaAbierta(abierto ? "" : row.numero_rdi)}
+                sx={{
+                  minWidth: 0,
+                  padding: "1px 4px",
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  color: palette.accent,
+                  textTransform: "none",
+                }}
+              >
+                {abierto ? "Ver menos" : "Ver más"}
+              </Button>
+            )}
+          </Box>
+        );
+      },
     },
     {
       name: "Ultimo intento",
@@ -492,7 +599,11 @@ export default function AdminVentaResumenSunatList({
         const estaProcesando = procesando === row.numero_rdi;
         const puedeReenviar = ["PENDIENTE", "GENERADO", "ERROR", "INCIERTO"].includes(estado) && !row.ticket;
         const puedeConsultar = Boolean(row.ticket);
-        const puedeAbrirCdr = Boolean(row.ruta_cdr) && estado === "ACEPTADO";
+        // El CDR queda en disco como R-{nombre}.xml. Aparece en cuanto SUNAT
+        // devolvio el CDR, o sea en ACEPTADO y en RECHAZADO; en PENDIENTE todavia
+        // no existe el archivo. Se prefiere ruta_cdr si el backend la trae.
+        const rutaCdr = row.ruta_cdr || rutaCdrRdi(row);
+        const puedeAbrirCdr = Boolean(rutaCdr) && ["ACEPTADO", "RECHAZADO"].includes(estado);
         const puedeCorregir = esTransporte && esRechazoCorregibleRdi(row);
 
         return (
@@ -525,8 +636,25 @@ export default function AdminVentaResumenSunatList({
             )}
             {puedeAbrirCdr && (
               <Tooltip title="Abrir CDR">
-                <IconButton size="small" onClick={() => abrirRuta(row.ruta_cdr)} sx={{ color: palette.success }}>
+                <IconButton
+                  size="small"
+                  data-action-id="transporte.rdi.descargar_cdr"
+                  onClick={() => abrirRuta(rutaCdr)}
+                  sx={{ color: palette.success }}
+                >
                   <OpenInNewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {rutaXml(row) && (
+              <Tooltip title="Descargar XML firmado">
+                <IconButton
+                  size="small"
+                  data-action-id="transporte.rdi.descargar_xml"
+                  onClick={() => descargarXml(row)}
+                  sx={{ color: palette.accent }}
+                >
+                  <DownloadRoundedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}

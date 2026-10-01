@@ -13,9 +13,16 @@ import TrHeader from "../common/components/TrHeader";
 import TrFiltros from "../common/components/TrFiltros";
 import TrHeaderMenuPicker from "../common/components/TrHeaderMenuPicker";
 import useTrCatalogos from "../common/hooks/useTrCatalogos";
+import useMenuRuntimePermissions from "../../menu/useMenuRuntimePermissions";
 import crearCierreCajaMovimientoPdf from "./TrCajaMovimientoCierrePdf";
 
 import "../common/trDataTableTheme";
+
+const CAJA_ACTIONS = {
+  crearMovimiento: "transporte.caja.crear_movimiento",
+  anularMovimiento: "transporte.caja.anular_movimiento",
+  cerrar: "transporte.caja.cerrar",
+};
 
 const formatFechaCaja = (value) => {
   const raw = String(value || "").trim();
@@ -233,7 +240,7 @@ function FieldLabel({ children }) {
   );
 }
 
-function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre, extraContent = null, maxWidth = "100%" }) {
+function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre, puedeImprimirCierre = true, extraContent = null, maxWidth = "100%" }) {
   const items = [
     {
       key: "ingresos",
@@ -262,8 +269,9 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre, extraC
       value: money(resumen.neto),
       tone: Number(resumen.neto) >= 0 ? "success" : "danger",
       icon: <Printer size={14} />,
-      ariaLabel: "Imprimir cierre de caja",
-      onClick: onImprimirCierre,
+      ariaLabel: puedeImprimirCierre ? "Imprimir cierre de caja" : "Sin permiso para cerrar caja",
+      actionId: CAJA_ACTIONS.cerrar,
+      onClick: puedeImprimirCierre ? onImprimirCierre : undefined,
     },
   ];
 
@@ -300,6 +308,7 @@ function ResumenCajaStrip({ resumen, onDetalleIngresos, onImprimirCierre, extraC
             key={item.key}
             role={clickable ? "button" : undefined}
             tabIndex={clickable ? 0 : undefined}
+            data-action-id={item.actionId}
             onClick={item.onClick}
             onKeyDown={(event) => {
               if (clickable && (event.key === "Enter" || event.key === " ")) {
@@ -782,6 +791,7 @@ function TrCajaMovimientoModal({
   puntosVenta,
   guardando,
   esEdicion,
+  guardarActionId,
   onClose,
   onSubmit,
 }) {
@@ -1014,7 +1024,7 @@ function TrCajaMovimientoModal({
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}>
           <AppButton onClick={onClose}>Cancelar</AppButton>
-          <AppButton buttonRef={guardarRef} onClick={onSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 900 }}>
+          <AppButton data-action-id={guardarActionId} buttonRef={guardarRef} onClick={onSubmit} disabled={guardando} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.onAccent, fontWeight: 900 }}>
             {guardando ? "Guardando..." : `Guardar ${nombreMovimiento}`}
           </AppButton>
         </Box>
@@ -1079,8 +1089,24 @@ export default function TrCajaMovimientoList() {
   });
 
   const superUsuario = sessionStorage.getItem("super") || "0";
-  const accesoTotalCaja = params.id_anfitrion === params.id_invitado || superUsuario === "1";
+  const supervisorUsuario = sessionStorage.getItem("supervisor") || "0";
+  // Anfitrion, super usuario y supervisor entran sin seguridad. El backend solo
+  // exime a los dos primeros, asi que el supervisor se resuelve aqui.
+  const accesoTotalCaja = params.id_anfitrion === params.id_invitado
+    || superUsuario === "1"
+    || supervisorUsuario === "1";
   const usuarioTieneVariasAgencias = puntosVentaAsignados.length > 1;
+  const permisosTransporte = useMenuRuntimePermissions({
+    backHost: back_host,
+    idAnfitrion: params.id_anfitrion,
+    idInvitado: params.id_invitado,
+    rubro: "TRANSPORTE",
+    aplicarPermisosSuper: true,
+  });
+  const puedeCrearCaja = permisosTransporte.puedeAccion(CAJA_ACTIONS.crearMovimiento);
+  const puedeEditarCaja = accesoTotalCaja;
+  const puedeAnularCaja = permisosTransporte.puedeAccion(CAJA_ACTIONS.anularMovimiento);
+  const puedeCerrarCaja = permisosTransporte.puedeAccion(CAJA_ACTIONS.cerrar);
   const usuarioPuedeVerTodosCorreos = accesoTotalCaja && usuarioTieneVariasAgencias;
 
   const fechaFiltro = useMemo(() => (
@@ -1235,6 +1261,10 @@ export default function TrCajaMovimientoList() {
     if (!periodoTrabajo || !contabilidadTrabajo || imprimiendoCierre) {
       return;
     }
+    if (!puedeCerrarCaja) {
+      swal2.fire({ title: "Permiso requerido", text: "Tu usuario no tiene permiso para cerrar caja.", icon: "warning", confirmButtonText: "ACEPTAR" });
+      return;
+    }
 
     const cierreWindow = window.open("about:blank", "_blank");
     setImprimiendoCierre(true);
@@ -1366,6 +1396,10 @@ export default function TrCajaMovimientoList() {
   };
 
   const abrirNuevo = () => {
+    if (!puedeCrearCaja) {
+      swal2.fire({ title: "Permiso requerido", text: "Tu usuario no tiene permiso para crear movimientos de caja.", icon: "warning", confirmButtonText: "ACEPTAR" });
+      return;
+    }
     setEditando(null);
     setDraft({
       ...emptyDraft,
@@ -1378,6 +1412,10 @@ export default function TrCajaMovimientoList() {
 
   const abrirEdicion = (row) => {
     if (Number(row.registrado) !== 1) return;
+    if (!puedeEditarCaja) {
+      swal2.fire({ title: "Permiso requerido", text: "Tu usuario no tiene permiso para editar movimientos de caja.", icon: "warning", confirmButtonText: "ACEPTAR" });
+      return;
+    }
     setEditando(row);
     setDraft({
       tipo_movimiento: String(row.tipo_movimiento || "S").trim(),
@@ -1412,6 +1450,17 @@ export default function TrCajaMovimientoList() {
 
   const guardarCajaMovimiento = async () => {
     if (guardandoRef.current) return;
+    if ((editando && !puedeEditarCaja) || (!editando && !puedeCrearCaja)) {
+      swal2.fire({
+        title: "Permiso requerido",
+        text: editando
+          ? "Tu usuario no tiene permiso para editar movimientos de caja."
+          : "Tu usuario no tiene permiso para crear movimientos de caja.",
+        icon: "warning",
+        confirmButtonText: "ACEPTAR",
+      });
+      return;
+    }
     const tipoMovimiento = draft.tipo_movimiento || "S";
     const nombreMovimiento = tipoMovimiento === "I" ? "ingreso" : "salida";
     const error = validarDraft();
@@ -1462,6 +1511,10 @@ export default function TrCajaMovimientoList() {
   };
 
   const anularCajaMovimiento = async (row) => {
+    if (!puedeAnularCaja) {
+      swal2.fire({ title: "Permiso requerido", text: "Tu usuario no tiene permiso para anular movimientos de caja.", icon: "warning", confirmButtonText: "ACEPTAR" });
+      return;
+    }
     const nombreMovimiento = String(row.tipo_movimiento || "").trim() === "I" ? "ingreso" : "salida";
     const result = await confirmDialog({
       title: `Anular ${nombreMovimiento}?`,
@@ -1582,13 +1635,13 @@ export default function TrCajaMovimientoList() {
         const activa = Number(row.registrado) === 1;
         return (
           <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 0.6, width: "100%" }}>
-            <Tooltip title={activa ? "Editar movimiento" : "Movimiento anulado"} arrow>
-              <Box onClick={activa ? () => abrirEdicion(row) : undefined} sx={activa ? actionButtonSx(false) : actionButtonDisabledSx}>
+            <Tooltip title={!activa ? "Movimiento anulado" : puedeEditarCaja ? "Editar movimiento" : "Sin permiso para editar"} arrow>
+              <Box data-action-id="transporte.caja.editar" onClick={activa && puedeEditarCaja ? () => abrirEdicion(row) : undefined} sx={activa && puedeEditarCaja ? actionButtonSx(false) : actionButtonDisabledSx}>
                 <Pencil size={14} />
               </Box>
             </Tooltip>
-            <Tooltip title={activa ? "Anular movimiento" : "Movimiento anulado"} arrow>
-              <Box onClick={activa ? () => anularCajaMovimiento(row) : undefined} sx={activa ? actionButtonSx(true) : actionButtonDisabledSx}>
+            <Tooltip title={!activa ? "Movimiento anulado" : puedeAnularCaja ? "Anular movimiento" : "Sin permiso para anular"} arrow>
+              <Box data-action-id={CAJA_ACTIONS.anularMovimiento} onClick={activa && puedeAnularCaja ? () => anularCajaMovimiento(row) : undefined} sx={activa && puedeAnularCaja ? actionButtonSx(true) : actionButtonDisabledSx}>
                 <Trash2 size={14} />
               </Box>
             </Tooltip>
@@ -1702,7 +1755,8 @@ export default function TrCajaMovimientoList() {
           nuevoTexto="Nuevo movimiento"
           buscarTexto="Buscar movimiento..."
           valorBusqueda={valorBusqueda}
-          nuevoDeshabilitado={!puntoVentaTrabajo && puntosVentaAsignados.length === 0}
+          nuevoActionId={CAJA_ACTIONS.crearMovimiento}
+          nuevoDeshabilitado={!puedeCrearCaja || (!puntoVentaTrabajo && puntosVentaAsignados.length === 0)}
           onNuevo={abrirNuevo}
           onBuscar={(event) => setValorBusqueda(event.target.value)}
         />
@@ -1764,6 +1818,7 @@ export default function TrCajaMovimientoList() {
           resumen={resumen}
           onDetalleIngresos={abrirDetalleIngresos}
           onImprimirCierre={imprimirCierreCaja}
+          puedeImprimirCierre={puedeCerrarCaja}
           maxWidth={resumenCajaMaxWidth}
           extraContent={(
             <Box sx={{ width: "100%", minWidth: 0 }}>
@@ -1829,6 +1884,7 @@ export default function TrCajaMovimientoList() {
         puntosVenta={puntosVentaAsignados}
         guardando={guardando}
         esEdicion={Boolean(editando)}
+        guardarActionId={editando ? "transporte.caja.editar" : CAJA_ACTIONS.crearMovimiento}
         onClose={cerrarModal}
         onSubmit={guardarCajaMovimiento}
       />

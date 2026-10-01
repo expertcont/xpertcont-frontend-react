@@ -118,6 +118,7 @@ export default function TrBoletoModal({
   modalEditarTitulo = "Editar boleto",
   onClose,
   onSubmit,
+  guardarActionId,
 }) {
   const esEdicion = Boolean(operacion);
   const [draft, setDraft] = useState(() => crearDraft(operacion, periodoTrabajo, fechaOperacion));
@@ -269,7 +270,7 @@ export default function TrBoletoModal({
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.75, mt: 1.2, flexWrap: "wrap" }}>
           <AppButton onClick={onClose}>Cancelar</AppButton>
-          <AppButton icon={<Save size={16} />} onClick={handleSubmit} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
+          <AppButton data-action-id={guardarActionId} icon={<Save size={16} />} onClick={handleSubmit} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
             Grabar boleto
           </AppButton>
         </Box>
