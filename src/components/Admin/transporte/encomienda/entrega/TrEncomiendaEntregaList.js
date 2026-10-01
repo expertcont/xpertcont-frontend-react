@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { Calendar, CalendarPlus, Camera, Check, Lock, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
+import { Calendar, CalendarPlus, Camera, Check, FileSpreadsheet, Lock, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   generarConstanciaEntregaPdfBlob,
   generarConstanciaEntregaPngFallback,
@@ -755,6 +756,78 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
     const modoNormalizado = normalizarTicketEntregaModo(modo);
     setTicketEntregaModo(modoNormalizado);
     window.localStorage.setItem(TICKET_ENTREGA_MODO_KEY, modoNormalizado);
+  };
+
+  const exportarEncomiendasExcel = () => {
+    if (!registros.length) {
+      swal2.fire({
+        title: "Sin datos para exportar",
+        text: "No hay encomiendas con el filtro actual.",
+        icon: "info",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
+    const estadoListado = mostrarEntregadas ? "Entregadas" : "Pendientes";
+    const filas = registros.map((row, index) => ({
+      "#": index + 1,
+      Estado: row.entrega_fecha ? "Entregada" : "Pendiente",
+      Periodo: periodoEncomienda(row, periodoTrabajo),
+      Fecha: formatFecha(row.r_fecemi),
+      Encomienda: numeroOperacion(row),
+      Serie: row.r_serie || "",
+      Numero: row.r_numero || "",
+      Elemento: row.elemento || 1,
+      Origen: nombreOrigenRuta(row),
+      Destino: row.id_punto_venta_dest || "",
+      Ruta: row.nombre_ruta || "",
+      Remitente: row.cliente || "",
+      "Doc. remitente": row.cliente_documento || row.cliente_documento_id || "",
+      "Tel. remitente": row.cliente_telefono || "",
+      Destinatario: row.destinatario || "",
+      "Doc. destinatario": row.destinatario_documento || row.destinatario_documento_id || "",
+      "Tel. destinatario": row.destinatario_telefono || "",
+      Zona: row.destinatario_zona || "",
+      Direccion: row.destinatario_direccion || "",
+      Contenido: row.descripcion || "",
+      Placa: row.placa || "",
+      Licencia: row.licencia || "",
+      "Condicion pago": row.condicion_pago || "",
+      "Nro. RDI": row.numero_rdi || "",
+      "Por cobrar": esPorCobrar(row.condicion_pago || row.numero_rdi) ? "Si" : "No",
+      "Monto total": Number(row.r_monto_total || row.precio_neto || 0),
+      "Precio chofer": Number(row.precio_chofer || 0),
+      "Protegida con clave": String(row.contra || "").trim() ? "Si" : "No",
+      "Llegada chofer": row.llegada_real ? formatFechaHoraMinuto(row.llegada_real) : "",
+      "Fecha entrega": row.entrega_fecha ? formatFechaHoraEntrega(row.entrega_fecha) : "",
+      "Usuario entrega": row.entrega_ctrl_us || "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(filas);
+    worksheet["!cols"] = Object.keys(filas[0]).map((key) => ({
+      wch: Math.min(Math.max(key.length + 2, ...filas.map((fila) => String(fila[key] ?? "").length + 2)), 42),
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Encomiendas");
+
+    const filtroSuffix = normalizarTexto(valorBusqueda).trim() ? "_filtradas" : "";
+    const periodoArchivo = String(periodoTrabajo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
+    const estadoArchivo = mostrarEntregadas ? "entregadas" : "pendientes";
+    XLSX.writeFile(workbook, `encomiendas_${estadoArchivo}_${periodoArchivo}${filtroSuffix}.xlsx`);
+
+    swal2.fire({
+      title: "Excel generado",
+      text: `${filas.length} encomienda${filas.length === 1 ? "" : "s"} ${estadoListado.toLowerCase()} exportada${filas.length === 1 ? "" : "s"}.`,
+      icon: "success",
+      timer: 1400,
+      showConfirmButton: false,
+      color: palette.text,
+      background: palette.surface,
+    });
   };
 
   const mostrarEntregaRegistrada = async (encomiendaConfirmada, opciones = {}) => {
@@ -1926,7 +1999,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
           </Box>
           <Box sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "minmax(0, 1fr) 40px 40px", md: "260px 40px 40px" },
+            gridTemplateColumns: { xs: "minmax(0, 1fr) 40px 40px 40px", md: "260px 40px 40px 40px" },
             gap: 1,
             alignItems: "center",
             width: { xs: "100%", md: "auto" },
@@ -1960,6 +2033,16 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
                     backgroundColor: escuchandoCodigo ? palette.accent : palette.surface,
                     borderColor: escuchandoCodigo ? palette.accent : palette.border,
                   }}
+                />
+              </Box>
+            </Tooltip>
+            <Tooltip title="Exportar Excel" arrow>
+              <Box>
+                <AppButton
+                  icon={<FileSpreadsheet size={17} />}
+                  onClick={exportarEncomiendasExcel}
+                  disabled={!registros.length}
+                  sx={{ width: 40, height: 40, minWidth: 40, p: 0, color: palette.success }}
                 />
               </Box>
             </Tooltip>

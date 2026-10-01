@@ -5,7 +5,8 @@ import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import SummarizeIcon from "@mui/icons-material/Summarize";
-import { Search, Truck } from "lucide-react";
+import { FileSpreadsheet, Search, Truck } from "lucide-react";
+import * as XLSX from "xlsx";
 import swal2 from "sweetalert2";
 
 import DaySelector from "../../AdminDias";
@@ -22,6 +23,7 @@ import useTrOperaciones from "./hooks/useTrOperaciones";
 import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
 import useMenuRuntimePermissions from "../../menu/useMenuRuntimePermissions";
 import { consultarTicketRdiSunat, normalizarRdiResponse } from "../../venta/common/rdiSunatActions";
+import { formatFecha, formatHora, normalizarTextoBusqueda } from "./utils/trUtils";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
 // Tema oscuro propio de las tablas del modulo transporte.
@@ -46,6 +48,28 @@ const resumenSunatButtonSx = (ok = false, pending = false) => ({
     color: ok ? palette.success : pending ? palette.warning : palette.accent,
   },
 });
+
+const exportExcelButtonSx = {
+  width: 42,
+  height: 42,
+  flexShrink: 0,
+  p: 0,
+  borderRadius: palette.radius.control,
+  border: `1px solid ${palette.border}`,
+  backgroundColor: palette.chip,
+  color: palette.success,
+  transition: "background-color .18s ease, color .18s ease, border-color .18s ease",
+  "&:hover": {
+    backgroundColor: palette.successSoft,
+    borderColor: palette.success,
+    color: palette.success,
+  },
+  "&.Mui-disabled": {
+    borderColor: palette.borderSoft,
+    color: palette.muted,
+    opacity: 0.55,
+  },
+};
 
 const resumenSunatIconSx = {
   position: "relative",
@@ -124,6 +148,8 @@ const TICKET_ENCOMIENDA_MODO_KEY = "xpertcont.transporte.encomienda.ticketPredet
 const normalizarModoTicketEncomienda = (value) => (
   ["completo", "admin", "cliente"].includes(value) ? value : "completo"
 );
+
+const textoSiNo = (value) => value ? "Si" : "No";
 
 const esRdiReprocesado = (item = {}) => {
   const estado = String(item.estado || "").toUpperCase();
@@ -1213,6 +1239,82 @@ export default function TrModuloBase({
     window.localStorage.setItem(TICKET_ENCOMIENDA_MODO_KEY, modoNormalizado);
   };
 
+  const exportarEncomiendasExcel = () => {
+    if (tipoOperacionFijo !== "E") {
+      return;
+    }
+
+    if (!data.length) {
+      swal2.fire({
+        title: "Sin datos para exportar",
+        text: "No hay encomiendas con el filtro actual.",
+        icon: "info",
+        confirmButtonText: "ACEPTAR",
+        color: palette.text,
+        background: palette.surface,
+      });
+      return;
+    }
+
+    const filas = data.map((row, index) => ({
+      "#": index + 1,
+      Estado: Number(row.registrado ?? 1) === 0 ? "Anulada" : row.entregada ? "Entregada" : "Registrada",
+      Periodo: row.periodo || periodoTrabajo,
+      Fecha: row.fecha || formatFecha(row.r_fecemi),
+      Hora: formatHora(row.ctrl_crea),
+      Encomienda: row.numero || [row.r_serie, row.r_numero].filter(Boolean).join("-"),
+      Serie: row.r_serie || "",
+      Numero: row.r_numero || "",
+      Elemento: row.elemento || 1,
+      Origen: row.id_punto_venta || "",
+      Destino: row.id_punto_venta_dest || "",
+      Ruta: row.rutaLabel || row.nombre_ruta || row.id_ruta || "",
+      Remitente: row.cliente || "",
+      "Doc. remitente": row.cliente_documento || row.cliente_documento_id || "",
+      "Tel. remitente": row.cliente_telefono || "",
+      Destinatario: row.destinatario || "",
+      "Doc. destinatario": row.destinatario_documento || row.destinatario_documento_id || "",
+      "Tel. destinatario": row.destinatario_telefono || "",
+      "Zona destino": row.destinatario_zona || "",
+      "Direccion destino": row.destinatario_direccion || "",
+      Contenido: row.descripcion || "",
+      Placa: row.placa || "",
+      Licencia: row.licencia || "",
+      "Condicion pago": row.condicion_pago || row.condicionPagoLabel || "",
+      "Nro. RDI": row.numero_rdi || "",
+      "Enviada SUNAT": textoSiNo(row.r_vfirmado || row.numero_rdi),
+      "Monto total": Number(row.total || row.r_monto_total || row.precio_neto || 0),
+      "Precio chofer": Number(row.precio_chofer || 0),
+      "Protegida con clave": textoSiNo(String(row.contra || "").trim()),
+      "Llegada chofer": row.llegada_real ? [formatFecha(row.llegada_real), formatHora(row.llegada_real)].filter(Boolean).join(" ") : "",
+      "Fecha entrega": row.entrega_fecha ? [formatFecha(row.entrega_fecha), formatHora(row.entrega_fecha)].filter(Boolean).join(" ") : "",
+      "Usuario entrega": row.entrega_ctrl_us || "",
+      "Usuario registro": row.ctrl_crea_us || row.autor || "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(filas);
+    worksheet["!cols"] = Object.keys(filas[0]).map((key) => ({
+      wch: Math.min(Math.max(key.length + 2, ...filas.map((fila) => String(fila[key] ?? "").length + 2)), 42),
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Encomiendas");
+
+    const filtroSuffix = normalizarTextoBusqueda(valorBusqueda).trim() ? "_filtradas" : "";
+    const periodoArchivo = String(periodoTrabajo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
+    XLSX.writeFile(workbook, `control_encomiendas_${periodoArchivo}${filtroSuffix}.xlsx`);
+
+    swal2.fire({
+      title: "Excel generado",
+      text: `${filas.length} encomienda${filas.length === 1 ? "" : "s"} exportada${filas.length === 1 ? "" : "s"}.`,
+      icon: "success",
+      timer: 1400,
+      showConfirmButton: false,
+      color: palette.text,
+      background: palette.surface,
+    });
+  };
+
   const handleImprimirTicketRapido = async (operacion, modo = ticketEncomiendaModo) => {
     if (imprimiendoTicketRapidoRef.current) {
       return;
@@ -1273,29 +1375,45 @@ export default function TrModuloBase({
           onBuscar={actualizaValorFiltro}
           compactControles={tipoOperacionFijo === "E" || panoramicMode}
           headerExtra={(
-            <Tooltip
-              title={resumenDiaOk ? `Todo OK: sin ${nombreRubroPlural} pendientes` : `ENVIAR RDI DE ${rubroResumen} (${totalPendienteResumen})`}
-              arrow
-            >
-              <IconButton
-                color="inherit"
-                onClick={handleEnviarResumen}
-                sx={resumenSunatButtonSx(resumenDiaOk, totalPendienteResumen > 0)}
+            <>
+              {tipoOperacionFijo === "E" && (
+                <Tooltip title="Exportar Excel" arrow>
+                  <span>
+                    <IconButton
+                      color="inherit"
+                      onClick={exportarEncomiendasExcel}
+                      disabled={!data.length}
+                      sx={exportExcelButtonSx}
+                    >
+                      <FileSpreadsheet size={20} />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
+              <Tooltip
+                title={resumenDiaOk ? `Todo OK: sin ${nombreRubroPlural} pendientes` : `ENVIAR RDI DE ${rubroResumen} (${totalPendienteResumen})`}
+                arrow
               >
-                <Box sx={resumenSunatIconSx}>
-                  <img src={SunatResumenIcon} alt="Resumen SUNAT" />
-                  <Box
-                    className={`resumen-badge ${resumenDiaOk ? "ok" : totalPendienteResumen > 0 ? "warn" : ""}`}
-                  >
-                    {resumenDiaOk ? (
-                      <CheckCircleOutlineIcon sx={{ fontSize: 9 }} />
-                    ) : (
-                      <SummarizeIcon sx={{ fontSize: 9 }} />
-                    )}
+                <IconButton
+                  color="inherit"
+                  onClick={handleEnviarResumen}
+                  sx={resumenSunatButtonSx(resumenDiaOk, totalPendienteResumen > 0)}
+                >
+                  <Box sx={resumenSunatIconSx}>
+                    <img src={SunatResumenIcon} alt="Resumen SUNAT" />
+                    <Box
+                      className={`resumen-badge ${resumenDiaOk ? "ok" : totalPendienteResumen > 0 ? "warn" : ""}`}
+                    >
+                      {resumenDiaOk ? (
+                        <CheckCircleOutlineIcon sx={{ fontSize: 9 }} />
+                      ) : (
+                        <SummarizeIcon sx={{ fontSize: 9 }} />
+                      )}
+                    </Box>
                   </Box>
-                </Box>
-              </IconButton>
-            </Tooltip>
+                </IconButton>
+              </Tooltip>
+            </>
           )}
         />
 
