@@ -63,7 +63,7 @@ export default function TrEncomiendaModalSections({
     id_punto_venta_dest: draft.id_punto_venta_dest,
     punto_venta_dest_nombre: draft.punto_venta_dest_nombre,
   } : null;
-  const rutaVisual = esEdicion ? (rutaEdicion || rutaSeleccionada) : (rutaSeleccionada || rutaEdicion);
+  const rutaVisual = rutaSeleccionada || rutaEdicion;
 
   return (
     <Box

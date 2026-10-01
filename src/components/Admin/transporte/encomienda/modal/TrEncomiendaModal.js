@@ -469,6 +469,8 @@ export default function TrEncomiendaModal({
     setDraft((prev) => ({
       ...prev,
       id_ruta: ruta.id_ruta,
+      nombre_ruta: ruta.nombre || ruta.nombre_ruta || "",
+      rutaLabel: ruta.nombre || ruta.nombre_ruta || "",
       id_punto_venta: ruta.id_punto_venta,
       id_punto_venta_dest: ruta.id_punto_venta_dest,
       punto_venta_dest_nombre: ruta.punto_venta_dest_nombre || ruta.punto_venta_destino_nombre || ruta.destino_nombre || "",

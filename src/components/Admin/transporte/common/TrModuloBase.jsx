@@ -151,6 +151,27 @@ const normalizarModoTicketEncomienda = (value) => (
 
 const textoSiNo = (value) => value ? "Si" : "No";
 
+const slugArchivo = (value, fallback = "sin-agencia") => {
+  const slug = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || fallback;
+};
+
+const nombreAgenciaExport = (item = {}, fallback = "Agencia") => (
+  item.nombre ||
+  item.punto_venta_nombre ||
+  item.nombre_punto_venta ||
+  item.descripcion ||
+  item.agencia ||
+  item.sede ||
+  fallback
+);
+
 const esRdiReprocesado = (item = {}) => {
   const estado = String(item.estado || "").toUpperCase();
   const estadoReproceso = String(item.estado_reproceso || "").toUpperCase();
@@ -1256,6 +1277,10 @@ export default function TrModuloBase({
       return;
     }
 
+    const puntoVentaSeleccionado = puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo) || {};
+    const agenciaNombre = nombreAgenciaExport(puntoVentaSeleccionado, puntoVentaTrabajo || "Agencia");
+    const agenciaArchivo = slugArchivo(agenciaNombre || puntoVentaTrabajo, "agencia");
+    const tituloExcel = `CONTROL DE ENCOMIENDAS - ${String(agenciaNombre).toUpperCase()} ${periodoTrabajo}`;
     const filas = data.map((row, index) => ({
       "#": index + 1,
       Estado: Number(row.registrado ?? 1) === 0 ? "Anulada" : row.entregada ? "Entregada" : "Registrada",
@@ -1292,17 +1317,23 @@ export default function TrModuloBase({
       "Usuario registro": row.ctrl_crea_us || row.autor || "",
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(filas);
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      [tituloExcel],
+      [`Agencia: ${agenciaNombre}`, `Periodo: ${periodoTrabajo}`, `Filas: ${filas.length}`, normalizarTextoBusqueda(valorBusqueda).trim() ? "Filtro: aplicado" : "Filtro: todos"],
+      [],
+    ]);
+    XLSX.utils.sheet_add_json(worksheet, filas, { origin: "A4" });
     worksheet["!cols"] = Object.keys(filas[0]).map((key) => ({
       wch: Math.min(Math.max(key.length + 2, ...filas.map((fila) => String(fila[key] ?? "").length + 2)), 42),
     }));
+    worksheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(Object.keys(filas[0]).length - 1, 0) } }];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Encomiendas");
 
     const filtroSuffix = normalizarTextoBusqueda(valorBusqueda).trim() ? "_filtradas" : "";
     const periodoArchivo = String(periodoTrabajo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
-    XLSX.writeFile(workbook, `control_encomiendas_${periodoArchivo}${filtroSuffix}.xlsx`);
+    XLSX.writeFile(workbook, `control_encomiendas_${agenciaArchivo}-${periodoArchivo}${filtroSuffix}.xlsx`);
 
     swal2.fire({
       title: "Excel generado",
@@ -1467,7 +1498,7 @@ export default function TrModuloBase({
           progressPending={loading}
           pagination
           paginationPerPage={tipoOperacionFijo === "E" ? 100 : 10}
-          paginationRowsPerPageOptions={tipoOperacionFijo === "E" ? [25, 50, 100, 150, 200, 300] : undefined}
+          paginationRowsPerPageOptions={tipoOperacionFijo === "E" ? [25, 50, 100, 150, 200, 300, 500, 1000] : undefined}
           highlightOnHover
           responsive
           customStyles={tipoOperacionFijo === "E"

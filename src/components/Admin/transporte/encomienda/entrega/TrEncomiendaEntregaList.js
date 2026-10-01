@@ -137,6 +137,27 @@ const claveEncomienda = (item = {}) => [
 
 const periodoEncomienda = (item = {}, fallback = "") => item.periodo_origen || item.periodo || fallback;
 
+const slugArchivo = (value, fallback = "sin-agencia") => {
+  const slug = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || fallback;
+};
+
+const nombreAgenciaExport = (item = {}, fallback = "Agencia") => (
+  item.nombre ||
+  item.punto_venta_nombre ||
+  item.nombre_punto_venta ||
+  item.descripcion ||
+  item.agencia ||
+  item.sede ||
+  fallback
+);
+
 const numeroTicketAdmin = (item) => [
   item.r_serie,
   item.r_numero,
@@ -174,7 +195,7 @@ const formatMoney = (value) => `S/ ${Number(value || 0).toLocaleString("es-PE", 
 })}`;
 
 const rowsPerPage = 100;
-const rowsPerPageOptions = [25, 50, 100, 150, 200, 300];
+const rowsPerPageOptions = [25, 50, 100, 150, 200, 300, 500, 1000];
 const TICKET_ENTREGA_MODO_KEY = "xpertcont.transporte.entrega.ticketPredeterminado";
 const normalizarTicketEntregaModo = (value) => (
   ["fisico", "whatsapp"].includes(value) ? value : "fisico"
@@ -771,7 +792,11 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
       return;
     }
 
+    const puntoVentaSeleccionado = puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo) || {};
+    const agenciaNombre = nombreAgenciaExport(puntoVentaSeleccionado, puntoVentaTrabajo || "Agencia");
+    const agenciaArchivo = slugArchivo(agenciaNombre || puntoVentaTrabajo, "agencia");
     const estadoListado = mostrarEntregadas ? "Entregadas" : "Pendientes";
+    const tituloExcel = `${mostrarEntregadas ? "ENCOMIENDAS ENTREGADAS" : "ENCOMIENDAS POR ENTREGAR"} - ${String(agenciaNombre).toUpperCase()} ${periodoTrabajo}`;
     const filas = registros.map((row, index) => ({
       "#": index + 1,
       Estado: row.entrega_fecha ? "Entregada" : "Pendiente",
@@ -806,10 +831,16 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
       "Usuario entrega": row.entrega_ctrl_us || "",
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(filas);
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      [tituloExcel],
+      [`Agencia: ${agenciaNombre}`, `Periodo: ${periodoTrabajo}`, `Filas: ${filas.length}`, normalizarTexto(valorBusqueda).trim() ? "Filtro: aplicado" : "Filtro: todos"],
+      [],
+    ]);
+    XLSX.utils.sheet_add_json(worksheet, filas, { origin: "A4" });
     worksheet["!cols"] = Object.keys(filas[0]).map((key) => ({
       wch: Math.min(Math.max(key.length + 2, ...filas.map((fila) => String(fila[key] ?? "").length + 2)), 42),
     }));
+    worksheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(Object.keys(filas[0]).length - 1, 0) } }];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Encomiendas");
@@ -817,7 +848,7 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
     const filtroSuffix = normalizarTexto(valorBusqueda).trim() ? "_filtradas" : "";
     const periodoArchivo = String(periodoTrabajo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
     const estadoArchivo = mostrarEntregadas ? "entregadas" : "pendientes";
-    XLSX.writeFile(workbook, `encomiendas_${estadoArchivo}_${periodoArchivo}${filtroSuffix}.xlsx`);
+    XLSX.writeFile(workbook, `${estadoArchivo}_${agenciaArchivo}-${periodoArchivo}${filtroSuffix}.xlsx`);
 
     swal2.fire({
       title: "Excel generado",

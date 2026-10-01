@@ -12,19 +12,20 @@ import {
   searchIconButtonSxColgado,
 } from "./TrEncomiendaModalInputs";
 
-export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
+export function RutaField({ ruta, onChange, onOpen, inputRef }) {
   // Destino visual; internamente se conserva id_ruta para el contrato de mve_transventa.
   const textoRuta = ruta ? destinoDesdeRuta(ruta) : "";
 
   return (
-    <Box sx={{ position: "relative", flex: 1, minWidth: 0, width: "100%", display: "flex", alignItems: "center", cursor: "text" }}>
-      <IconButton size="small" onClick={onOpen} sx={searchIconButtonSxColgado}>
+    <Box sx={{ position: "relative", flex: 1, minWidth: 0, width: "100%", display: "flex", alignItems: "center", cursor: "pointer" }}>
+      <IconButton size="small" onClick={onOpen} title="Cambiar destino" sx={searchIconButtonSxColgado}>
         <MapPin />
       </IconButton>
       <InputBase
         inputRef={inputRef}
         value={textoRuta}
         placeholder="Escoger destino"
+        onClick={onOpen}
         onChange={(event) => {
           if (!event.target.value) {
             onChange("");
@@ -52,15 +53,10 @@ export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
             onChange("");
             return;
           }
-          if (event.key === "+" || (event.key === "Enter" && !textoRuta)) {
+          if (event.key === "+" || event.key === "Enter") {
             event.preventDefault();
             onOpen();
             return;
-          }
-          if (event.key === "Enter" && nextRef?.current) {
-            event.preventDefault();
-            nextRef.current.focus();
-            nextRef.current.select?.();
           }
         }}
         sx={{
@@ -69,10 +65,10 @@ export function RutaField({ ruta, onChange, onOpen, inputRef, nextRef }) {
           // el largo del input sea el mismo que en los demas campos del formulario.
           flex: 1,
           minWidth: 0,
-          cursor: "text",
+          cursor: "pointer",
           "& input": {
-            cursor: "text",
-            caretColor: palette.text,
+            cursor: "pointer",
+            caretColor: "transparent",
           },
         }}
       />
