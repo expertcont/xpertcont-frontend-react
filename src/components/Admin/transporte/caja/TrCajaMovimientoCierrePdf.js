@@ -1,7 +1,8 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { getStoredThemeId, getThemeValues } from "../../../../theme/palette";
 
-const A4 = [595.28, 841.89];
+const A4_PORTRAIT = [595.28, 841.89];
+const A4 = [A4_PORTRAIT[1], A4_PORTRAIT[0]];
 const MARGIN = 34;
 const PAGE_WIDTH = A4[0];
 const PAGE_HEIGHT = A4[1];
@@ -16,16 +17,17 @@ const CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2);
 const LAYOUT = {
   summaryHeight: 46,        // Alto de cada chip superior: ingresos, salidas, resumen bancario y saldo.
   summaryGap: 8,            // Separacion horizontal entre chips superiores.
-  summaryBottomGap: 18,     // Aire debajo de los chips antes de la cabecera de tabla.
+  summaryBottomGap: 12,     // Aire debajo de los chips antes de la cabecera de tabla.
   tableHeaderHeight: 20,    // Alto del chip/cabecera de tabla.
-  tableHeaderBottomGap: 7,  // Aire debajo de la cabecera antes de iniciar las filas.
-  rowMinHeight: 22,         // Alto minimo de una fila del detalle.
-  rowBaseHeight: 12,        // Alto base de fila antes de sumar lineas de detalle.
-  rowLineHeight: 8,         // Alto que suma cada linea de detalle envuelta.
-  bottomReserved: 76,       // Espacio reservado para firmas antes de saltar pagina.
-  beforeSignatureGap: 28,   // Separacion entre la ultima fila y las lineas de firma.
-  signatureWidth: 180,      // Largo de cada linea de firma.
-  signatureInset: 34,       // Separacion lateral de las lineas de firma.
+  tableHeaderBottomGap: 3,  // Aire debajo de la cabecera antes de iniciar las filas.
+  subtotalHeight: 18,       // Alto de la fila final de subtotales referenciales.
+  rowMinHeight: 18,         // Alto minimo de una fila del detalle.
+  rowBaseHeight: 8,         // Alto base de fila antes de sumar lineas de detalle.
+  rowLineHeight: 6.8,       // Alto que suma cada linea de detalle envuelta.
+  bottomReserved: 42,       // Espacio reservado para firmas antes de saltar pagina.
+  beforeSignatureGap: 14,   // Separacion entre la ultima fila y las lineas de firma.
+  signatureWidth: 150,      // Largo de cada linea de firma.
+  signatureInset: 52,       // Separacion lateral de las lineas de firma.
   summaryAccentWidth: 3,    // Barra lateral del total; evita bordes redondeados que se cortan al hacer zoom.
 };
 
@@ -36,19 +38,23 @@ const LAYOUT = {
 const COLUMNS = {
   fechaX: MARGIN + 6,
   // Sin columna de iconos: el detalle arranca donde estaba el icono.
-  detailX: MARGIN + 72,
-  // Montos: bordes derechos separados para que no se sientan apretados.
-  ingresoRight: PAGE_WIDTH - MARGIN - 92,
-  salidaRight: PAGE_WIDTH - MARGIN,
+  detailX: MARGIN + 90,
+  // Montos: bordes derechos separados para el cierre horizontal.
+  ingresoOrigenRight: PAGE_WIDTH - MARGIN - 280,
+  ingresoDestinoRight: PAGE_WIDTH - MARGIN - 210,
+  ingresoOtrosRight: PAGE_WIDTH - MARGIN - 140,
+  salidaDirectaRight: PAGE_WIDTH - MARGIN - 70,
+  salidaChoferRight: PAGE_WIDTH - MARGIN,
 };
 
-const DETAIL_WIDTH = COLUMNS.ingresoRight - COLUMNS.detailX - 14;
+const DETAIL_WIDTH = COLUMNS.ingresoOrigenRight - COLUMNS.detailX - 14;
 
 // Monto de referencia de las encomiendas por cobrar. Va en la columna de detalle,
 // a la derecha del destino, y no en las de montos: junto a los importes reales se
 // leia como un importe mas y hacia dudar del cuadre.
 const REFERENCIA_SIZE = 6.8;
 const REFERENCIA_GAP = 7;
+const ROW_TEXT_OFFSET = 6.5;
 
 // Cajita de encomienda, misma ruta que usa el ticket. Solo se dibuja en filas que
 // son encomiendas: los ingresos manuales y las salidas de dinero no llevan icono.
@@ -140,6 +146,8 @@ const drawRight = (page, text, xRight, y, size, font, color = rgb(0.1, 0.12, 0.1
   page.drawText(text, { x: xRight - width, y, size, font, color });
 };
 
+const moneyOrDash = (value) => Number(value || 0) ? money(value) : "-";
+
 const getSummaryMetrics = (count = 3) => {
   const totalGap = LAYOUT.summaryGap * (count - 1);
   const width = (CONTENT_WIDTH - totalGap) / count;
@@ -186,6 +194,16 @@ const tipoIngresoTexto = (row) => {
   return "Cobrado en destino";
 };
 
+const columnaIngreso = (row) => {
+  if (
+    row.tipo_ingreso === "DESTINO_POR_COBRAR" ||
+    row.tipo_ingreso === "DESTINO_POR_COBRAR_PENDIENTE"
+  ) {
+    return "ingresoDestino";
+  }
+  return "ingresoOrigen";
+};
+
 const ingresoReferenciaTexto = (row, contabiliza) => {
   if (contabiliza) return "";
   if (Number(row.registrado ?? 1) === 0) return "Anulado";
@@ -221,6 +239,12 @@ const normalizarIngreso = (row) => {
     detalle: primeraLinea,
     ingreso: contabiliza ? Number(row.r_monto_total || 0) : 0,
     salida: 0,
+    ingresoOrigen: contabiliza && columnaIngreso(row) === "ingresoOrigen" ? Number(row.r_monto_total || 0) : 0,
+    ingresoDestino: contabiliza && columnaIngreso(row) === "ingresoDestino" ? Number(row.r_monto_total || 0) : 0,
+    ingresoOtros: 0,
+    salidaDirecta: 0,
+    salidaChofer: 0,
+    ingresoTextoColumna: columnaIngreso(row),
     informativo: !contabiliza,
     ingresoTexto,
     // Monto de la encomienda por cobrar, solo como referencia visual junto al
@@ -255,6 +279,11 @@ const normalizarPagoChofer = (row) => {
     detalle,
     ingreso: 0,
     salida: precioChofer,
+    ingresoOrigen: 0,
+    ingresoDestino: 0,
+    ingresoOtros: 0,
+    salidaDirecta: 0,
+    salidaChofer: precioChofer,
     informativo: false,
   };
 };
@@ -275,6 +304,11 @@ const normalizarSalida = (row) => {
     ].filter(Boolean).join(" | "),
     ingreso: 0,
     salida: contabiliza ? Number(row.importe || 0) : 0,
+    ingresoOrigen: 0,
+    ingresoDestino: 0,
+    ingresoOtros: 0,
+    salidaDirecta: contabiliza ? Number(row.importe || 0) : 0,
+    salidaChofer: 0,
     bancario: esBancario(row.bancario),
     informativo: !contabiliza,
   };
@@ -293,6 +327,11 @@ const normalizarIngresoManual = (row) => {
     ].filter(Boolean).join(" | "),
     ingreso: contabiliza ? Number(row.importe || 0) : 0,
     salida: 0,
+    ingresoOrigen: 0,
+    ingresoDestino: 0,
+    ingresoOtros: contabiliza ? Number(row.importe || 0) : 0,
+    salidaDirecta: 0,
+    salidaChofer: 0,
     informativo: !contabiliza,
   };
 };
@@ -328,6 +367,19 @@ export default async function crearCierreCajaMovimientoPdf({
   }, 0);
   const totalSalidasNoBancarias = Math.max(0, totalSalidas - totalSalidasBancarias);
   const saldoFinal = totalIngresos - totalSalidas;
+  const subtotales = movimientos.reduce((acc, item) => ({
+    ingresoOrigen: acc.ingresoOrigen + Number(item.ingresoOrigen || 0),
+    ingresoDestino: acc.ingresoDestino + Number(item.ingresoDestino || 0),
+    ingresoOtros: acc.ingresoOtros + Number(item.ingresoOtros || 0),
+    salidaDirecta: acc.salidaDirecta + Number(item.salidaDirecta || 0),
+    salidaChofer: acc.salidaChofer + Number(item.salidaChofer || 0),
+  }), {
+    ingresoOrigen: 0,
+    ingresoDestino: 0,
+    ingresoOtros: 0,
+    salidaDirecta: 0,
+    salidaChofer: 0,
+  });
 
   // Encabezado del filtro Usuario. Si no hay filtro disponible (el usuario solo
   // ve su propia caja) se cae al correo de sesion, como antes.
@@ -383,8 +435,11 @@ export default async function crearCierreCajaMovimientoPdf({
     page.drawRectangle({ x: MARGIN, y: y - tableHeader.height + 2, width: tableHeader.width, height: tableHeader.height, color: SOFT });
     page.drawText("Fecha hora", { x: COLUMNS.fechaX, y: y - 11, size: 7.2, font: bold, color: MUTED });
     page.drawText("Detalle", { x: COLUMNS.detailX, y: y - 11, size: 7.2, font: bold, color: MUTED });
-    drawRight(page, "Ingreso", COLUMNS.ingresoRight, y - 11, 7.2, bold, MUTED);
-    drawRight(page, "Salida", COLUMNS.salidaRight, y - 11, 7.2, bold, MUTED);
+    drawRight(page, "IN origen", COLUMNS.ingresoOrigenRight, y - 11, 7.2, bold, MUTED);
+    drawRight(page, "IN destino", COLUMNS.ingresoDestinoRight, y - 11, 7.2, bold, MUTED);
+    drawRight(page, "IN otros", COLUMNS.ingresoOtrosRight, y - 11, 7.2, bold, MUTED);
+    drawRight(page, "SA directa", COLUMNS.salidaDirectaRight, y - 11, 7.2, bold, MUTED);
+    drawRight(page, "SA chofer", COLUMNS.salidaChoferRight, y - 11, 7.2, bold, MUTED);
     y -= tableHeader.advance;
   };
 
@@ -410,7 +465,7 @@ export default async function crearCierreCajaMovimientoPdf({
 
     const ingresoPorCobrar = esIngresoPorCobrar(item);
     const ingresoAnulado = esIngresoAnulado(item);
-    const ingresoTexto = item.ingresoTexto || (item.ingreso ? money(item.ingreso) : "-");
+    const ingresoTexto = item.ingresoTexto || "";
     const salidaFont = item.bancario && item.salida ? bold : regular;
     // Fila por cobrar: se pinta TODO el renglon del mismo rojo, no solo el monto.
     // Es el mismo rojo que ya usaba la columna Ingreso, para que el reporte no
@@ -424,9 +479,9 @@ export default async function crearCierreCajaMovimientoPdf({
     // La linea divisoria se queda en su color normal: el rojo es solo para el
     // texto de la fila, las guias del reporte se mantienen discretas.
     page.drawLine({ start: { x: MARGIN, y: y + 5 }, end: { x: PAGE_WIDTH - MARGIN, y: y + 5 }, thickness: 0.4, color: LINE });
-    page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - 8, size: 7.1, font: regular, color: colorTexto });
+    page.drawText(fechaTexto(item.fecha), { x: COLUMNS.fechaX, y: y - ROW_TEXT_OFFSET, size: 7.1, font: regular, color: colorTexto });
     detailLines.forEach((line, index) => {
-      page.drawText(line, { x: COLUMNS.detailX, y: y - 8 - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: colorTexto });
+      page.drawText(line, { x: COLUMNS.detailX, y: y - ROW_TEXT_OFFSET - (index * LAYOUT.rowLineHeight), size: 7.1, font: regular, color: colorTexto });
     });
 
     // Monto de referencia del por cobrar, en la 1era linea a la derecha del
@@ -459,7 +514,7 @@ export default async function crearCierreCajaMovimientoPdf({
       if (cursor + anchoReferencia <= limiteDerecho) {
         page.drawText(referencia, {
           x: cursor,
-          y: y - 8 - (linea * LAYOUT.rowLineHeight),
+          y: y - ROW_TEXT_OFFSET - (linea * LAYOUT.rowLineHeight),
           size: REFERENCIA_SIZE,
           font: regular,
           color: colorApunte,
@@ -470,7 +525,7 @@ export default async function crearCierreCajaMovimientoPdf({
     // Cajita + descripcion de la encomienda, en una 3ra linea propia debajo del
     // detalle. Solo en encomiendas: las salidas y los ingresos manuales no llevan.
     if (tieneLineaEncomienda) {
-      const yDescripcion = y - 8 - (detailLines.length * LAYOUT.rowLineHeight);
+      const yDescripcion = y - ROW_TEXT_OFFSET - (detailLines.length * LAYOUT.rowLineHeight);
       page.drawSvgPath(ICONO_ENCOMIENDA, {
         x: COLUMNS.detailX,
         y: yDescripcion + ICONO_OFFSET_Y,
@@ -493,10 +548,33 @@ export default async function crearCierreCajaMovimientoPdf({
         });
       }
     }
-    drawRight(page, ingresoTexto, COLUMNS.ingresoRight, y - 8, 7.1, ingresoPorCobrar || ingresoAnulado ? bold : regular, ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : item.ingreso ? INK : MUTED);
-    drawRight(page, item.salida ? money(item.salida) : "-", COLUMNS.salidaRight, y - 8, 7.1, salidaFont, salidaColor);
+    const ingresoEstadoColor = ingresoPorCobrar ? DANGER : ingresoAnulado ? WARNING : MUTED;
+    const ingresoEstadoFont = ingresoPorCobrar || ingresoAnulado ? bold : regular;
+    const ingresoOrigenTexto = ingresoTexto && item.ingresoTextoColumna === "ingresoOrigen"
+      ? ingresoTexto
+      : moneyOrDash(item.ingresoOrigen);
+    const ingresoDestinoTexto = ingresoTexto && item.ingresoTextoColumna === "ingresoDestino"
+      ? ingresoTexto
+      : moneyOrDash(item.ingresoDestino);
+    drawRight(page, ingresoOrigenTexto, COLUMNS.ingresoOrigenRight, y - ROW_TEXT_OFFSET, 7.1, ingresoOrigenTexto === ingresoTexto ? ingresoEstadoFont : regular, colorFila || (ingresoOrigenTexto === ingresoTexto ? ingresoEstadoColor : item.ingresoOrigen ? INK : MUTED));
+    drawRight(page, ingresoDestinoTexto, COLUMNS.ingresoDestinoRight, y - ROW_TEXT_OFFSET, 7.1, ingresoDestinoTexto === ingresoTexto ? ingresoEstadoFont : regular, colorFila || (ingresoDestinoTexto === ingresoTexto ? ingresoEstadoColor : item.ingresoDestino ? INK : MUTED));
+    drawRight(page, moneyOrDash(item.ingresoOtros), COLUMNS.ingresoOtrosRight, y - ROW_TEXT_OFFSET, 7.1, regular, colorFila || (item.ingresoOtros ? INK : MUTED));
+    drawRight(page, moneyOrDash(item.salidaDirecta), COLUMNS.salidaDirectaRight, y - ROW_TEXT_OFFSET, 7.1, salidaFont, colorFila || (item.salidaDirecta ? salidaColor : MUTED));
+    drawRight(page, moneyOrDash(item.salidaChofer), COLUMNS.salidaChoferRight, y - ROW_TEXT_OFFSET, 7.1, regular, colorFila || (item.salidaChofer ? INK : MUTED));
     y -= rowHeight;
   });
+
+  if (y - LAYOUT.subtotalHeight < LAYOUT.bottomReserved) addPage();
+
+  page.drawLine({ start: { x: MARGIN, y: y + 5 }, end: { x: PAGE_WIDTH - MARGIN, y: y + 5 }, thickness: 0.7, color: LINE });
+  page.drawRectangle({ x: MARGIN, y: y - LAYOUT.subtotalHeight + 2, width: CONTENT_WIDTH, height: LAYOUT.subtotalHeight, color: SOFT });
+  page.drawText("Subtotales referenciales", { x: COLUMNS.detailX, y: y - 11, size: 7.4, font: bold, color: MUTED });
+  drawRight(page, money(subtotales.ingresoOrigen), COLUMNS.ingresoOrigenRight, y - 11, 7.4, bold, INK);
+  drawRight(page, money(subtotales.ingresoDestino), COLUMNS.ingresoDestinoRight, y - 11, 7.4, bold, INK);
+  drawRight(page, money(subtotales.ingresoOtros), COLUMNS.ingresoOtrosRight, y - 11, 7.4, bold, INK);
+  drawRight(page, money(subtotales.salidaDirecta), COLUMNS.salidaDirectaRight, y - 11, 7.4, bold, DANGER);
+  drawRight(page, money(subtotales.salidaChofer), COLUMNS.salidaChoferRight, y - 11, 7.4, bold, DANGER);
+  y -= LAYOUT.subtotalHeight;
 
   if (y < LAYOUT.bottomReserved) addPage();
 
@@ -506,8 +584,8 @@ export default async function crearCierreCajaMovimientoPdf({
   y -= LAYOUT.beforeSignatureGap;
   page.drawLine({ start: { x: MARGIN + LAYOUT.signatureInset, y }, end: { x: MARGIN + LAYOUT.signatureInset + LAYOUT.signatureWidth, y }, thickness: 0.7, color: LINE });
   page.drawLine({ start: { x: PAGE_WIDTH - MARGIN - LAYOUT.signatureInset - LAYOUT.signatureWidth, y }, end: { x: PAGE_WIDTH - MARGIN - LAYOUT.signatureInset, y }, thickness: 0.7, color: LINE });
-  page.drawText("Encargado de caja", { x: MARGIN + 76, y: y - 14, size: 8, font: regular, color: MUTED });
-  page.drawText("Recibido por", { x: A4[0] - MARGIN - 150, y: y - 14, size: 8, font: regular, color: MUTED });
+  page.drawText("Encargado de caja", { x: MARGIN + LAYOUT.signatureInset + 39, y: y - 10, size: 7.2, font: regular, color: MUTED });
+  page.drawText("Recibido por", { x: A4[0] - MARGIN - LAYOUT.signatureInset - 100, y: y - 10, size: 7.2, font: regular, color: MUTED });
 
   const pdfBytes = await pdfDoc.save();
   const blob = new Blob([pdfBytes], { type: "application/pdf" });

@@ -120,7 +120,7 @@ test("la fila por cobrar se dibuja completa en rojo", async () => {
   expect(finPorCobrar).toBeGreaterThan(iniPorCobrar);
 
   // Todo lo que se dibuja en la fila por cobrar tiene que ir en rojo: fecha,
-  // numero, detalle, monto de referencia, cajita + descripcion, ingreso y salida.
+  // numero, detalle, monto de referencia, cajita + descripcion y sus columnas.
   const fila = textos.slice(iniPorCobrar, finPorCobrar);
   expect(fila.map((t) => t.texto)).toEqual([
     "2026-09-20 10:30",
@@ -129,6 +129,9 @@ test("la fila por cobrar se dibuja completa en rojo", async () => {
     "S/ 150.50",
     "CAJA CON DOCUMENTOS",
     "Por cobrar",
+    "-",
+    "-",
+    "-",
     "-",
   ]);
 
