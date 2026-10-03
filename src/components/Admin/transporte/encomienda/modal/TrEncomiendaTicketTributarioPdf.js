@@ -5,8 +5,6 @@ import barlowRegularUrl from "../../../../../assets/fonts/cpe/BarlowCondensed-Re
 import barlowSemiBoldUrl from "../../../../../assets/fonts/cpe/BarlowCondensed-SemiBold.ttf";
 import barlowBoldUrl from "../../../../../assets/fonts/cpe/BarlowCondensed-Bold.ttf";
 
-const logoEmisorContext = require.context("../../../../../assets/images", false, /-logo\.(png|jpe?g)$/i);
-
 const W = 226.77;
 const H = 610;
 const M = 12;
@@ -15,16 +13,10 @@ const CW = W - (M * 2);
 // Antes ese recorte lo hacia el modal con un 160pt fijo, que se llevaba
 // TERMINOS Y CONDICIONES, GRACIAS POR CONFIAR, HORA LLEGADA y REGISTRADO POR.
 const TICKET_TRAILING_MARGIN = 10;
-// Caja maxima del logo del emisor. Antes 170 x 56 pt, que ocupaba el 75% del ancho
-// del ticket; reducido ~30% para que no se coma la cabecera.
-const LOGO_MAX_WIDTH = 119;
-const LOGO_MAX_HEIGHT = 39.2;
-
 const INK = rgb(0.03, 0.035, 0.045);
 const MUTED = rgb(0.34, 0.35, 0.37);
 const LINE = rgb(0.7, 0.71, 0.73);
 const LIGHT_LINE = rgb(0.82, 0.83, 0.85);
-const SOFT = rgb(0.94, 0.945, 0.955);
 const ALERT = rgb(0.82, 0.12, 0.12);
 const ICON_MUTED = rgb(0.48, 0.5, 0.53);
 const WHITE = rgb(1, 1, 1);
@@ -113,39 +105,6 @@ const base64ToBytes = (base64) => {
   return bytes;
 };
 
-const obtenerLogoEmisorUrl = (documentoId) => {
-  const ruc = clean(documentoId);
-  if (!ruc) return null;
-
-  try {
-    return logoEmisorContext(`./${ruc}-logo.png`);
-  } catch (error) {
-    try {
-      return logoEmisorContext(`./${ruc}-logo.jpg`);
-    } catch (jpgError) {
-      return null;
-    }
-  }
-};
-
-const embedLogoEmisor = async (pdfDoc, documentoId) => {
-  const logoUrl = obtenerLogoEmisorUrl(documentoId);
-  if (!logoUrl) return null;
-
-  const response = await fetch(logoUrl);
-  const logoBytes = await response.arrayBuffer();
-
-  try {
-    return await pdfDoc.embedPng(logoBytes);
-  } catch (error) {
-    try {
-      return await pdfDoc.embedJpg(logoBytes);
-    } catch (jpgError) {
-      return null;
-    }
-  }
-};
-
 const fit = (value, font, size, maxWidth) => {
   const textValue = clean(value);
   if (!textValue) return "";
@@ -208,10 +167,6 @@ const right = (page, value, y, size, font, color = INK, rightX = W - M, maxWidth
   page.drawText(label, { x: rightX - width, y, size, font, color });
 };
 
-const line = (page, y, x1 = M, x2 = W - M, thickness = 0.55, color = LINE) => {
-  page.drawLine({ start: { x: x1, y }, end: { x: x2, y }, thickness, color });
-};
-
 const dotted = (page, y, x1 = M, x2 = W - M) => {
   for (let x = x1; x < x2; x += 5) {
     page.drawCircle({ x, y, size: 0.65, color: LINE });
@@ -231,29 +186,25 @@ const ICONS = {
   package: "M20 8.69V18c0 .72-.38 1.38-1 1.73l-6 3.46c-.62.36-1.38.36-2 0l-6-3.46A2 2 0 0 1 4 18V8.69c0-.72.38-1.38 1-1.73l6-3.46c.62-.36 1.38-.36 2 0l6 3.46c.62.35 1 1.01 1 1.73zM12 5.23 6.74 8.26 12 11.29l5.26-3.03L12 5.23zm-6 4.76V18l5 2.88v-7.86L6 9.99zm12 0-5 3.03v7.86L18 18V9.99z",
 };
 
-const drawTrackingText = (page, value, x, y, size, font, color = INK, tracking = 0.5, maxWidth = null) => {
-  const label = maxWidth ? fit(value, font, size, maxWidth) : clean(value);
-  let cursor = x;
-
-  for (const character of label) {
-    page.drawText(character, { x: cursor, y, size, font, color });
-    cursor += font.widthOfTextAtSize(character, size) + tracking;
-  }
-};
-
-const centeredTracking = (page, value, y, size, font, color = INK, tracking = 0.5, maxWidth = CW) => {
-  const label = fit(value, font, size, maxWidth);
-  const width = label
-    .split("")
-    .reduce((total, character) => total + font.widthOfTextAtSize(character, size) + tracking, 0) - tracking;
-
-  drawTrackingText(page, label, (W - width) / 2, y, size, font, color, tracking);
-};
-
 const centeredIn = (page, value, x, y, width, size, font, color = INK) => {
   const label = fit(value, font, size, width - 4);
   const textWidth = font.widthOfTextAtSize(label, size);
   page.drawText(label, { x: x + ((width - textWidth) / 2), y, size, font, color });
+};
+
+const mixedLine = (page, parts, x, y, maxRight = W - M) => {
+  const cleanedParts = parts
+    .map((part) => ({ ...part, value: clean(part.value) }))
+    .filter((part) => part.value);
+  let cursor = x;
+
+  cleanedParts.forEach((part, index) => {
+    if (index > 0) cursor += part.gap || 0;
+    const availableWidth = Math.max(10, maxRight - cursor);
+    const label = fit(part.value, part.font, part.size, availableWidth);
+    page.drawText(label, { x: cursor, y, size: part.size, font: part.font, color: part.color || INK });
+    cursor += part.font.widthOfTextAtSize(label, part.size);
+  });
 };
 
 const drawPaymentStatusLarge = (page, { isPending, label, x, y, width, bold, semibold, scale = 1 }) => {
@@ -317,7 +268,10 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const senderName = encomienda.cliente || cliente.razon_social_nombres || "-";
   const senderDoc = encomienda.cliente_documento || encomienda.cliente_documento_id || cliente.documento_identidad || "-";
   const senderOriginZone = clean(encomienda.remitente_zona || encomienda.cliente_zona);
-  const senderPickupAddress = clean(encomienda.remitente_direccion || encomienda.cliente_direccion || cliente.cliente_direccion || cliente.cliente_direccion_fact || cliente.direccion || "");
+  const isInvoice = code === "01";
+  const senderBillingAddress = clean(encomienda.cliente_direccion_fact || cliente.cliente_direccion_fact || cliente.direccion || "");
+  const senderPickupAddressRaw = clean(encomienda.remitente_direccion || (!isInvoice ? encomienda.cliente_direccion || cliente.cliente_direccion : ""));
+  const senderPickupAddress = isInvoice && senderPickupAddressRaw === senderBillingAddress ? "" : senderPickupAddressRaw;
   const receiverName = encomienda.destinatario || "-";
   const receiverDoc = encomienda.destinatario_documento || encomienda.destinatario_documento_id || "-";
   const receiverArrivalZone = clean(encomienda.destinatario_zona);
@@ -337,69 +291,63 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   );
   const content = encomienda.descripcion || jsonTicket.items?.[0]?.producto || "SERVICIO DE TRANSPORTE DE ENCOMIENDA";
 
-  const originOptionalLineHeight = 6.6;
-  const senderZoneLines = senderOriginZone ? wrap(senderOriginZone, regular, 7.1, CW - 65, 2) : [];
-  const senderPickupAddressLines = senderPickupAddress ? wrap(senderPickupAddress, regular, 7.1, CW - 65, 2) : [];
-  const originOptionalLines = senderZoneLines.length + senderPickupAddressLines.length;
-  const originBaseY = originOptionalLines ? 391 - ((originOptionalLines - 1) * originOptionalLineHeight) : 400;
+  const originBlockFontSize = 8.1;
+  const originBlockDataFontSize = 9.2;
+  const originOptionalLineHeight = 9.4;
+  const senderZoneLines = senderOriginZone ? wrap(senderOriginZone, regular, originBlockDataFontSize, CW - 73, 2) : [];
+  const senderBillingAddressLines = isInvoice && senderBillingAddress
+    ? wrap(senderBillingAddress, regular, originBlockDataFontSize, CW - 73, 2)
+    : [];
+  const senderPickupAddressLines = senderPickupAddress ? wrap(senderPickupAddress, regular, originBlockDataFontSize, CW - 73, 2) : [];
+  const originOptionalLines = senderZoneLines.length + senderBillingAddressLines.length + senderPickupAddressLines.length;
+  const originOptionalStartY = 411.5;
 
-  const destinationOptionalLineHeight = 6.6;
-  const receiverZoneLines = receiverArrivalZone ? wrap(receiverArrivalZone, regular, 7.1, CW - 65, 2) : [];
-  const receiverAddressLines = receiverAddress ? wrap(receiverAddress, regular, 7.1, CW - 65, 2) : [];
+  const destinationOptionalLineHeight = 9.4;
+  const receiverZoneLines = receiverArrivalZone ? wrap(receiverArrivalZone, regular, originBlockDataFontSize, CW - 73, 2) : [];
+  const receiverAddressLines = receiverAddress ? wrap(receiverAddress, regular, originBlockDataFontSize, CW - 73, 2) : [];
   const destinationOptionalLines = receiverZoneLines.length + receiverAddressLines.length;
-  const destinationBaseY = destinationOptionalLines ? 294 - ((destinationOptionalLines - 1) * destinationOptionalLineHeight) : 302;
+  const destinationOptionalStartY = 315.5;
+  const destinationBaseY = destinationOptionalLines
+    ? destinationOptionalStartY - ((destinationOptionalLines - 1) * destinationOptionalLineHeight) - 8
+    : 318;
 
-  const descriptionFontSize = 10.2;
-  const descriptionLineHeight = 10;
+  const descriptionFontSize = 11.4;
+  const descriptionLineHeight = 11.2;
   const descriptionLines = wrapPreservingBreaks(String(content).toUpperCase(), regular, descriptionFontSize, CW - 16, 8);
   const descriptionLineCount = Math.max(1, descriptionLines.length);
   const encomiendaTopY = 264;
-  const encomiendaBaseY = 232 - ((descriptionLineCount - 1) * descriptionLineHeight) - 12;
-  const encomiendaHeight = encomiendaTopY - encomiendaBaseY;
+  const encomiendaBaseY = 232 - ((descriptionLineCount - 1) * descriptionLineHeight) - 3;
   const dynamicSummaryShift = encomiendaBaseY - 149;
   const qrText = [empresa.ruc, code, serie, number, issueDate, senderDoc, total].map(clean).join("|");
   const qrDataUrl = await QRCode.toDataURL(qrText || displayNumber || empresa.ruc || "XPERTCONT");
-  const logoImage = await embedLogoEmisor(pdfDoc, empresa.ruc || empresa.documento_id);
   const qrImage = await pdfDoc.embedPng(base64ToBytes(qrDataUrl.split(",")[1]));
-
-  if (logoImage) {
-    const scale = Math.min(LOGO_MAX_WIDTH / logoImage.width, LOGO_MAX_HEIGHT / logoImage.height);
-    const logoWidth = logoImage.width * scale;
-    const logoHeight = logoImage.height * scale;
-    page.drawImage(logoImage, {
-      x: (W - logoWidth) / 2,
-      y: H - logoHeight - 12,
-      width: logoWidth,
-      height: logoHeight,
-    });
-  } else {
-    // Sin logo el titulo se dibujaba en y=616 sobre una pagina de 610: quedaba
-    // fuera del papel y no se imprimia. Se alinea con la base del logo.
-    centered(page, "TRANSPORTE DE ENCOMIENDAS", H - 24, 10.5, bold);
-  }
 
   // Desplazamiento vertical de TODO el cuerpo del ticket (razon social, RUC,
   // origen, destino, encomienda, totales, terminos y hora de llegada).
   //
   // Todos los y del ticket se derivan de esta constante a traves de bodyY(),
   // asi que moverla sube el bloque completo y no descuadra nada entre si.
-  // Antes era -54, calibrado cuando el logo ocupaba 56pt de alto y su base caia
-  // en H-56-12 = 542, a 20pt del primer texto. Al reducir el logo a 39.2pt su
-  // base subio a 558.8 y quedaron 36.8pt de blanco debajo (~3 lineas). Con -37
-  // el cuerpo vuelve a quedar a 20pt del logo.
-  const BODY_Y_OFFSET = -37;
+  // Sin logo ni titulo, el cuerpo sube en bloque para ocupar la cabecera y que
+  // el recorte inferior quite mas papel blanco sin descuadrar las secciones.
+  const BODY_Y_OFFSET = 20;
   const bodyY = (value) => value + BODY_Y_OFFSET;
   const HEADER_HEIGHT_REDUCTION = 10;
   const afterHeaderY = (value) => bodyY(value + HEADER_HEIGHT_REDUCTION);
-  const ORIGIN_HEIGHT_REDUCTION = 24 + Math.min(0, originBaseY - 394);
-  const ORIGIN_TO_DATE_SHIFT = 11;
+  const originLastDataY = originOptionalLines
+    ? originOptionalStartY - ((originOptionalLines - 1) * originOptionalLineHeight) - 0.4
+    : 422;
+  const destinationAfterOriginBaseY = originLastDataY - 5;
+  const ORIGIN_HEIGHT_REDUCTION = destinationAfterOriginBaseY - 353;
+  const ORIGIN_TO_DATE_SHIFT = 34;
   const originY = (value) => afterHeaderY(value + ORIGIN_TO_DATE_SHIFT);
   const afterOriginY = (value) => afterHeaderY(value + ORIGIN_HEIGHT_REDUCTION + ORIGIN_TO_DATE_SHIFT);
-  const ENCOMIENDA_Y_SHIFT = destinationBaseY - encomiendaTopY - 12;
+  const ENCOMIENDA_Y_SHIFT = destinationBaseY - encomiendaTopY - 4;
   const SUMMARY_Y_SHIFT = dynamicSummaryShift + ENCOMIENDA_Y_SHIFT - 31;
   const encomiendaY = (value) => afterOriginY(value + ENCOMIENDA_Y_SHIFT);
   const summaryY = (value) => afterOriginY(value + SUMMARY_Y_SHIFT);
   const issuerAddress = empresa.domicilio_fiscal || empresa.direccion || empresa.direccion_fiscal || empresa.domicilio || empresa.direccion_completa || "";
+  const mainValueX = M + 41;
+  const personValueX = M + 47;
 
   wrap(empresa.razon_social || empresa.nombre_comercial || "TRANSPORTE DE ENCOMIENDAS", regular, 7.8, CW, 2)
     .forEach((item, index) => centered(page, item, bodyY(576 - (index * 5.8)), 7.8, regular));
@@ -409,60 +357,61 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
 
   dotted(page, afterHeaderY(525));
   centered(page, documentName(code), afterHeaderY(514), 9.5, regular);
-  centeredTracking(page, displayNumber || "MODELO", afterHeaderY(496), 16.8, regular, INK, 0.55, CW - 8);
-  text(page, "FECHA", 39, afterHeaderY(487), 5.8, regular, MUTED, 29);
-  text(page, datePe(issueDate), 68, afterHeaderY(484.5), 9.2, regular, INK, 52);
-  line(page, afterHeaderY(485), 113, 113, 0.45);
-  text(page, "HORA", 126, afterHeaderY(487), 5.8, regular, MUTED, 26);
-  text(page, timePe(issueTime), 152, afterHeaderY(484.5), 9.2, regular, INK, 58);
+  text(page, "CPE", M + 8, afterHeaderY(496), 8.1, semibold, MUTED, 24);
+  mixedLine(page, [
+    { value: displayNumber || "MODELO", size: 16.8, font: regular },
+    { value: datePe(issueDate), size: 9.2, font: regular, gap: 4 },
+    { value: timePe(issueTime), size: 8.8, font: regular, gap: 4 },
+  ], mainValueX, afterHeaderY(496), W - M);
 
-  drawIcon(page, ICONS.place, M + 8, originY(448), 14, ICON_MUTED);
-  text(page, "ORIGEN", M + 24, originY(440), 8.1, semibold, MUTED, 44);
-  centeredTracking(page, String(origin).toUpperCase(), originY(440), 13.2, regular, INK, 0.12, CW - 18);
-  line(page, originY(433), M + 8, W - M - 8, 0.45, LIGHT_LINE);
-  text(page, "REMITENTE:", M + 8, originY(422), 7.2, semibold, MUTED, 43);
-  text(page, senderName, M + 54, originY(421.4), 8.4, regular, INK, CW - 62);
-  text(page, "DOC:", M + 8, originY(409), 7.2, semibold, MUTED, 20);
-  text(page, senderDoc, M + 32, originY(408), 9.6, regular, INK, 65);
-  text(page, "TEL:", M + 109, originY(409), 7.2, semibold, MUTED, 20);
-  text(page, encomienda.cliente_telefono || "-", M + 132, originY(408), 9.6, regular, INK, 61);
+  drawIcon(page, ICONS.place, M - 5, originY(448), 14, ICON_MUTED);
+  text(page, "ORIGEN", M + 8, originY(440), 8.1, semibold, MUTED, 34);
+  text(page, String(origin).toUpperCase(), mainValueX, originY(439.6), 13.4, regular, INK, W - M - mainValueX);
+  text(page, "REMITENTE:", M + 8, originY(432), originBlockFontSize, semibold, MUTED, 41);
+  text(page, senderName, personValueX, originY(431.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
+  text(page, "DOC:", M + 8, originY(421.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, senderDoc, personValueX, originY(420.8), originBlockDataFontSize, regular, INK, 50);
+  text(page, "TEL:", M + 109, originY(421.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, encomienda.cliente_telefono || "-", M + 132, originY(420.8), originBlockDataFontSize, regular, INK, 61);
   senderZoneLines.forEach((item, index) => {
-    const y = 398 - (index * originOptionalLineHeight);
-    text(page, index === 0 ? "ZONA ORIGEN:" : "", M + 8, originY(y), 6.3, semibold, MUTED, 46);
-    text(page, item, M + 59, originY(y - 0.4), 7.1, regular, INK, CW - 61);
+    const y = originOptionalStartY - (index * originOptionalLineHeight);
+    text(page, index === 0 ? "ZONA:" : "", M + 8, originY(y), originBlockFontSize, semibold, MUTED, 54);
+    text(page, item, personValueX, originY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
+  });
+  senderBillingAddressLines.forEach((item, index) => {
+    const y = originOptionalStartY - ((senderZoneLines.length + index) * originOptionalLineHeight);
+    text(page, index === 0 ? "DIR FACT:" : "", M + 8, originY(y), originBlockFontSize, semibold, MUTED, 54);
+    text(page, item, personValueX, originY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
   senderPickupAddressLines.forEach((item, index) => {
-    const y = 398 - ((senderZoneLines.length + index) * originOptionalLineHeight);
-    text(page, index === 0 ? "DIR RECOJO:" : "", M + 8, originY(y), 6.3, semibold, MUTED, 40);
-    text(page, item, M + 53, originY(y - 0.4), 7.1, regular, INK, CW - 61);
+    const y = originOptionalStartY - ((senderZoneLines.length + senderBillingAddressLines.length + index) * originOptionalLineHeight);
+    text(page, index === 0 ? "DIR RECOJO:" : "", M + 8, originY(y), originBlockFontSize, semibold, MUTED, 54);
+    text(page, item, personValueX, originY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
 
-  drawIcon(page, ICONS.place, M + 8, afterOriginY(353), 14, ICON_MUTED);
-  text(page, "DEST.", M + 25, afterOriginY(346), 8.1, semibold, MUTED, 52);
-  centeredTracking(page, String(destination).toUpperCase(), afterOriginY(342), 17.6, regular, INK, 0.22, CW - 18);
-  line(page, afterOriginY(333), M + 8, W - M - 8, 0.45, LIGHT_LINE);
-  text(page, "DESTINATARIO:", M + 8, afterOriginY(322), 7.1, semibold, MUTED, 52);
-  text(page, receiverName, M + 63, afterOriginY(321.8), 8.4, regular, INK, CW - 71);
-  text(page, "DNI:", M + 8, afterOriginY(311), 7.1, semibold, MUTED, 20);
-  text(page, receiverDoc, M + 32, afterOriginY(310.4), 9.2, regular, INK, 65);
-  text(page, "TEL:", M + 109, afterOriginY(311), 7.1, semibold, MUTED, 20);
-  text(page, encomienda.destinatario_telefono || "-", M + 132, afterOriginY(310.4), 11.2, regular, INK, 61);
+  drawIcon(page, ICONS.place, M - 5, afterOriginY(353), 14, ICON_MUTED);
+  text(page, "DEST.", M + 8, afterOriginY(341.6), 8.1, semibold, MUTED, 34);
+  text(page, String(destination).toUpperCase(), mainValueX, afterOriginY(341.6), 13.4, regular, INK, W - M - mainValueX);
+  text(page, "DESTIN.:", M + 8, afterOriginY(334), originBlockFontSize, semibold, MUTED, 41);
+  text(page, receiverName, personValueX, afterOriginY(333.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
+  text(page, "DNI:", M + 8, afterOriginY(325.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, receiverDoc, personValueX, afterOriginY(325.2), originBlockDataFontSize, regular, INK, 50);
+  text(page, "TEL:", M + 109, afterOriginY(325.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, encomienda.destinatario_telefono || "-", M + 132, afterOriginY(325.2), originBlockDataFontSize, regular, INK, 61);
   receiverZoneLines.forEach((item, index) => {
-    const y = 300 - (index * destinationOptionalLineHeight);
-    text(page, index === 0 ? "ZONA LLEGADA:" : "", M + 8, afterOriginY(y), 6.3, semibold, MUTED, 46);
-    text(page, item, M + 59, afterOriginY(y - 0.4), 7.1, regular, INK, CW - 61);
+    const y = destinationOptionalStartY - (index * destinationOptionalLineHeight);
+    text(page, index === 0 ? "ZONA LLEGADA:" : "", M + 8, afterOriginY(y), originBlockFontSize, semibold, MUTED, 54);
+    text(page, item, personValueX, afterOriginY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
   receiverAddressLines.forEach((item, index) => {
-    const y = 300 - ((receiverZoneLines.length + index) * destinationOptionalLineHeight);
-    text(page, index === 0 ? "DIR LLEGADA:" : "", M + 8, afterOriginY(y), 6.3, semibold, MUTED, 45);
-    text(page, item, M + 57, afterOriginY(y - 0.4), 7.1, regular, INK, CW - 61);
+    const y = destinationOptionalStartY - ((receiverZoneLines.length + index) * destinationOptionalLineHeight);
+    text(page, index === 0 ? "DIR LLEGADA:" : "", M + 8, afterOriginY(y), originBlockFontSize, semibold, MUTED, 54);
+    text(page, item, personValueX, afterOriginY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
 
-  box(page, M, encomiendaY(encomiendaBaseY), CW, encomiendaHeight, SOFT, LIGHT_LINE, 0.45);
-  drawIcon(page, ICONS.package, M + 8, encomiendaY(263), 14, ICON_MUTED);
-  text(page, "ENCOMIENDA", M + 25, encomiendaY(249), 9.2, regular, MUTED, 58);
-  text(page, "UNIDAD", M + 95, encomiendaY(249), 8.2, regular, MUTED, 26);
-  text(page, unit, M + 128, encomiendaY(249.5), 8.2, regular, INK, 74);
+  text(page, "ENCOMIENDA", M + 8, encomiendaY(249), 9.2, regular, MUTED, 58);
+  text(page, unit, M + 62, encomiendaY(249), 9.2, regular, INK, 48);
+  drawIcon(page, ICONS.package, M + 94, encomiendaY(260), 14, ICON_MUTED);
   descriptionLines.forEach((item, index) => {
     text(page, item, M + 8, encomiendaY(232 - (index * descriptionLineHeight)), descriptionFontSize, regular, INK, CW - 16);
   });
@@ -484,21 +433,37 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   centeredIn(page, "S/", W - M - 7 - 67, summaryY(149), 67, 9.8, regular);
   right(page, money(total), summaryY(127), 21, regular, INK, W - M - 7, 67);
 
-  text(page, "TERMINOS Y CONDICIONES", M, summaryY(99), 6.5, regular);
-  wrap("Conserva este ticket para seguimiento y entrega. No se aceptan reclamos por articulos no declarados o embalaje inadecuado.", regular, 6.1, 138, 3)
-    .forEach((item, index) => text(page, item, M, summaryY(89 - (index * 6.8)), 6.1, regular, MUTED, 138));
-  page.drawLine({ start: { x: 160, y: summaryY(72) }, end: { x: 160, y: summaryY(102) }, thickness: 0.45, color: LINE, dashArray: [2, 3] });
-  text(page, "GRACIAS", 176, summaryY(96), 7, semibold, INK, 42);
-  text(page, "POR CONFIAR", 176, summaryY(85), 6, regular, INK, 42);
-  text(page, "EN NOSOTROS", 176, summaryY(77), 6, regular, INK, 42);
+  text(page, "TERMINOS Y CONDICIONES", M, summaryY(99), 6.5, semibold);
+  const termFontSize = 7;
+  const termLineHeight = 7.9;
+  let termsCursor = 89;
+  const drawTerms = (value, { font = regular, color = MUTED, gap = 1.8, maxLines = 8 } = {}) => {
+    wrap(String(value || "").toUpperCase(), font, termFontSize, CW, maxLines).forEach((item) => {
+      text(page, item, M, summaryY(termsCursor), termFontSize, font, color, CW);
+      termsCursor -= termLineHeight;
+    });
+    termsCursor -= gap;
+  };
+
+  drawTerms("EL RECOJO ES PERSONAL, CON DNI.", { font: semibold, color: INK, gap: 1.2, maxLines: 1 });
+  drawTerms("TIEMPO DE RECOJO MAXIMO 05 DIAS. PASADO ESTE PLAZO SE COBRARA UN COSTO ADICIONAL POR ALMACENAMIENTO.", { maxLines: 3 });
+  drawTerms("NOTA: LA EMPRESA NO SE RESPONSABILIZA DE ENCOMIENDAS EN LOS SIGUIENTES PUNTOS:", { font: semibold, color: INK, gap: 1.2, maxLines: 2 });
+  [
+    "1. No se responsabiliza por perecibles, recipientes liquidos, dinero o bienes no declarados, vida de animales y mercancia mal embalada.",
+    "2. La empresa no se responsabiliza si no se declara lo que se envia.",
+    "3. Si declara valor, el usuario pagara 5% de dicho valor mas el flete. Solo en este caso la indemnizacion sera al 100% del valor declarado, previa justificacion de preexistencia.",
+    "4. El servicio de envio y entrega esta sujeto a la demanda y operatividad diaria.",
+    "5. En caso de perdida, la empresa abonara conforme a ley.",
+  ].forEach((item) => drawTerms(item, { gap: 0.8, maxLines: 4 }));
 
   // Ultimo texto del ticket. Se anota su y porque el recorte del papel en blanco
   // se calcula desde ahi: summaryY() ya descuenta las lineas que agrego cada
   // bloque, asi que el valor sube o baja con el contenido real y el recorte
   // nunca se lleva informacion.
-  const ultimaLineaY = summaryY(55);
+  const horaLlegadaY = summaryY(termsCursor - 2);
+  const ultimaLineaY = summaryY(termsCursor - 12);
 
-  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, summaryY(68), 8.8, semibold, INK, CW);
+  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, horaLlegadaY, 8.8, semibold, INK, CW);
   centered(page, `REGISTRADO POR: ${registeredBy || "-"}`, ultimaLineaY, 6.8, regular, MUTED, CW);
 
   // Se recorta solo la cola de papel en blanco (mas el margen de aire) y se
