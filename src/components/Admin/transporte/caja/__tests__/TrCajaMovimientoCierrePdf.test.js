@@ -129,10 +129,6 @@ test("la fila por cobrar se dibuja completa en rojo", async () => {
     "S/ 150.50",
     "CAJA CON DOCUMENTOS",
     "Por cobrar",
-    "-",
-    "-",
-    "-",
-    "-",
   ]);
 
   fila.forEach((t) => {

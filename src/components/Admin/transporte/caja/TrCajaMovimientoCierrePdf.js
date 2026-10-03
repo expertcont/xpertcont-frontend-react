@@ -146,7 +146,9 @@ const drawRight = (page, text, xRight, y, size, font, color = rgb(0.1, 0.12, 0.1
   page.drawText(text, { x: xRight - width, y, size, font, color });
 };
 
-const moneyOrDash = (value) => Number(value || 0) ? money(value) : "-";
+const moneyOrBlank = (value) => Number(value || 0) ? money(value) : "";
+const moneyOutOrBlank = (value) => Number(value || 0) ? money(-Math.abs(Number(value || 0))) : "";
+const moneyOut = (value) => money(-Math.abs(Number(value || 0)));
 
 const getSummaryMetrics = (count = 3) => {
   const totalGap = LAYOUT.summaryGap * (count - 1);
@@ -552,15 +554,15 @@ export default async function crearCierreCajaMovimientoPdf({
     const ingresoEstadoFont = ingresoPorCobrar || ingresoAnulado ? bold : regular;
     const ingresoOrigenTexto = ingresoTexto && item.ingresoTextoColumna === "ingresoOrigen"
       ? ingresoTexto
-      : moneyOrDash(item.ingresoOrigen);
+      : moneyOrBlank(item.ingresoOrigen);
     const ingresoDestinoTexto = ingresoTexto && item.ingresoTextoColumna === "ingresoDestino"
       ? ingresoTexto
-      : moneyOrDash(item.ingresoDestino);
+      : moneyOrBlank(item.ingresoDestino);
     drawRight(page, ingresoOrigenTexto, COLUMNS.ingresoOrigenRight, y - ROW_TEXT_OFFSET, 7.1, ingresoOrigenTexto === ingresoTexto ? ingresoEstadoFont : regular, colorFila || (ingresoOrigenTexto === ingresoTexto ? ingresoEstadoColor : item.ingresoOrigen ? INK : MUTED));
     drawRight(page, ingresoDestinoTexto, COLUMNS.ingresoDestinoRight, y - ROW_TEXT_OFFSET, 7.1, ingresoDestinoTexto === ingresoTexto ? ingresoEstadoFont : regular, colorFila || (ingresoDestinoTexto === ingresoTexto ? ingresoEstadoColor : item.ingresoDestino ? INK : MUTED));
-    drawRight(page, moneyOrDash(item.ingresoOtros), COLUMNS.ingresoOtrosRight, y - ROW_TEXT_OFFSET, 7.1, regular, colorFila || (item.ingresoOtros ? INK : MUTED));
-    drawRight(page, moneyOrDash(item.salidaDirecta), COLUMNS.salidaDirectaRight, y - ROW_TEXT_OFFSET, 7.1, salidaFont, colorFila || (item.salidaDirecta ? salidaColor : MUTED));
-    drawRight(page, moneyOrDash(item.salidaChofer), COLUMNS.salidaChoferRight, y - ROW_TEXT_OFFSET, 7.1, regular, colorFila || (item.salidaChofer ? INK : MUTED));
+    drawRight(page, moneyOrBlank(item.ingresoOtros), COLUMNS.ingresoOtrosRight, y - ROW_TEXT_OFFSET, 7.1, regular, colorFila || (item.ingresoOtros ? INK : MUTED));
+    drawRight(page, moneyOutOrBlank(item.salidaDirecta), COLUMNS.salidaDirectaRight, y - ROW_TEXT_OFFSET, 7.1, salidaFont, colorFila || (item.salidaDirecta ? salidaColor : MUTED));
+    drawRight(page, moneyOutOrBlank(item.salidaChofer), COLUMNS.salidaChoferRight, y - ROW_TEXT_OFFSET, 7.1, regular, colorFila || (item.salidaChofer ? INK : MUTED));
     y -= rowHeight;
   });
 
@@ -572,8 +574,8 @@ export default async function crearCierreCajaMovimientoPdf({
   drawRight(page, money(subtotales.ingresoOrigen), COLUMNS.ingresoOrigenRight, y - 11, 7.4, bold, INK);
   drawRight(page, money(subtotales.ingresoDestino), COLUMNS.ingresoDestinoRight, y - 11, 7.4, bold, INK);
   drawRight(page, money(subtotales.ingresoOtros), COLUMNS.ingresoOtrosRight, y - 11, 7.4, bold, INK);
-  drawRight(page, money(subtotales.salidaDirecta), COLUMNS.salidaDirectaRight, y - 11, 7.4, bold, DANGER);
-  drawRight(page, money(subtotales.salidaChofer), COLUMNS.salidaChoferRight, y - 11, 7.4, bold, DANGER);
+  drawRight(page, moneyOut(subtotales.salidaDirecta), COLUMNS.salidaDirectaRight, y - 11, 7.4, bold, DANGER);
+  drawRight(page, moneyOut(subtotales.salidaChofer), COLUMNS.salidaChoferRight, y - 11, 7.4, bold, DANGER);
   y -= LAYOUT.subtotalHeight;
 
   if (y < LAYOUT.bottomReserved) addPage();
