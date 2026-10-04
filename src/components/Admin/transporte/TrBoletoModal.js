@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Dialog, Grid, IconButton, InputBase, MenuItem, Select, Typography } from "@mui/material";
+import { Box, Dialog, Grid, IconButton, InputBase, Typography } from "@mui/material";
 import { Bus, MapPin, Save, UserRound, X } from "lucide-react";
 
 import AppButton from "../../ui/AppButton";
 import AppIconBox from "../../ui/AppIconBox";
 import palette from "../../../theme/palette";
+import TrRutaSelect from "./common/components/TrRutaSelect";
 
 const documentoTipoDesdeNumero = (documento) => {
   const limpio = String(documento || "").replace(/\D/g, "");
@@ -83,37 +84,7 @@ function ValorInfo({ value, align = "left", vacio = "-" }) {
 }
 
 function RutaSelect({ value, onChange, rutas }) {
-  return (
-    <Select
-      variant="standard"
-      disableUnderline
-      value={value || ""}
-      onChange={(event) => onChange(event.target.value)}
-      sx={{
-        color: palette.text,
-        fontSize: "12.5px",
-        width: "100%",
-        "& .MuiSelect-icon": { color: palette.muted },
-      }}
-      MenuProps={{
-        PaperProps: {
-          sx: {
-            bgcolor: palette.surface,
-            color: palette.text,
-            border: `1px solid ${palette.border}`,
-            "& .MuiMenuItem-root": { fontSize: "12.5px" },
-          },
-        },
-      }}
-    >
-      <MenuItem value="">Selecciona</MenuItem>
-      {rutas.map((ruta) => (
-        <MenuItem key={ruta.id_ruta} value={ruta.id_ruta}>
-          {ruta.nombre || ruta.id_ruta}
-        </MenuItem>
-      ))}
-    </Select>
-  );
+  return <TrRutaSelect value={value} onChange={onChange} rutas={rutas} />;
 }
 
 export default function TrBoletoModal({
@@ -132,12 +103,32 @@ export default function TrBoletoModal({
   const [draft, setDraft] = useState(() => crearDraft(operacion, periodoTrabajo, fechaOperacion));
   const [error, setError] = useState("");
 
+  // Solo hay una ruta de salida de pasajeros: se toma sola y no se pregunta.
+  // `precio_pasaje > 0` ya filtro la lista (el backend lo aplica con
+  // ?solo_pasaje=true), asi que este caso es "esta agencia tiene un solo destino".
+  // Con dos o mas rutas sigue apareciendo el select para elegir.
+  const rutasPasaje = useMemo(
+    () => rutasDisponibles.filter((ruta) => Number(ruta.precio_pasaje || 0) > 0),
+    [rutasDisponibles]
+  );
+
   useEffect(() => {
     if (open) {
-      setDraft(crearDraft(operacion, periodoTrabajo, fechaOperacion));
+      const inicial = crearDraft(operacion, periodoTrabajo, fechaOperacion);
+
+      // Al editar se respeta la ruta ya guardada. Al crear, si hay una sola ruta
+      // de pasaje se preselecciona para no obligar a elegir algo que no tiene
+      // alternativa.
+      if (!operacion && !inicial.id_ruta && rutasPasaje.length === 1) {
+        inicial.id_ruta = rutasPasaje[0].id_ruta;
+        inicial.id_punto_venta = rutasPasaje[0].id_punto_venta || inicial.id_punto_venta;
+        inicial.id_punto_venta_dest = rutasPasaje[0].id_punto_venta_dest || "";
+      }
+
+      setDraft(inicial);
       setError("");
     }
-  }, [open, operacion, periodoTrabajo, fechaOperacion]);
+  }, [open, operacion, periodoTrabajo, fechaOperacion, rutasPasaje]);
 
   const rutaSeleccionada = useMemo(
     () => rutasDisponibles.find((ruta) => ruta.id_ruta === draft.id_ruta),

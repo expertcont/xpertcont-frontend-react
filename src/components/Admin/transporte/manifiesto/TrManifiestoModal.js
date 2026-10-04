@@ -1,15 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Box, Dialog, Grid, IconButton, InputBase, Typography } from "@mui/material";
-import { ClipboardList, MapPin, Search, X } from "lucide-react";
+import { Box, Dialog, Grid, IconButton, Typography } from "@mui/material";
+import { ClipboardList, MapPin, X } from "lucide-react";
 
 import palette from "../../../../theme/palette";
 import AppButton from "../../../ui/AppButton";
+import TrRutaSelect from "../common/components/TrRutaSelect";
 import {
   CaptureInput,
   Field,
   sectionSx,
 } from "../encomienda/modal/TrEncomiendaModalInputs";
-import { PuntoVentaField, RutaField } from "../encomienda/modal/TrEncomiendaModalFields";
+import { PuntoVentaField } from "../encomienda/modal/TrEncomiendaModalFields";
 import {
   FECHA_AAAA_MM_DD,
   emptyManifiesto,
@@ -87,165 +88,6 @@ function SectionHeader({ icon, title }) {
   );
 }
 
-// ===========================================================================
-// Selector de ruta.
-//
-// NO reutiliza RutaPickerModal de encomienda: ese devuelve el objeto ruta completo
-// con el contrato de mve_transventa (nombre_ruta, id_punto_venta_dest, ...), y el
-// manifiesto solo necesita id_ruta, destino y nombre. Arrastrar el resto seria
-// mandar campos que el manifiesto no usa.
-//
-// Mismo comportamiento que el de encomienda: busqueda por texto, flechas para
-// mover el resaltado, Enter para elegir, y el resaltado arranca en 0 al escribir.
-// ===========================================================================
-function DialogoRuta({ open, rutas, onClose, onElegir }) {
-  const [busqueda, setBusqueda] = useState("");
-  const [indice, setIndice] = useState(0);
-  const busquedaRef = useRef(null);
-
-  useEffect(() => {
-    if (open) {
-      setBusqueda("");
-      setIndice(0);
-      window.setTimeout(() => {
-        busquedaRef.current?.focus();
-        busquedaRef.current?.select?.();
-      }, 80);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    setIndice(0);
-  }, [busqueda]);
-
-  const texto = String(busqueda || "").toLowerCase();
-  const filtradas = rutas.filter((ruta) => (
-    [ruta.nombre, ruta.nombre_ruta, ruta.id_punto_venta_dest, ruta.punto_venta_dest_nombre]
-      .some((campo) => String(campo || "").toLowerCase().includes(texto))
-  ));
-
-  const indiceFinal = Math.min(indice, Math.max(0, filtradas.length - 1));
-
-  const alTeclear = (event) => {
-    if (!filtradas.length) {
-      return;
-    }
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      event.stopPropagation();
-      setIndice(Math.min(indiceFinal + 1, filtradas.length - 1));
-      return;
-    }
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      event.stopPropagation();
-      setIndice(Math.max(indiceFinal - 1, 0));
-      return;
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (filtradas[indiceFinal]) {
-        onElegir(filtradas[indiceFinal]);
-      }
-    }
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      onKeyDown={alTeclear}
-      PaperProps={{
-        sx: {
-          backgroundColor: palette.surface,
-          color: palette.text,
-          border: `1px solid ${palette.border}`,
-          borderRadius: palette.radius.modal,
-        },
-      }}
-    >
-      <Box sx={{ p: 1.1 }}>
-        <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 800, mb: 0.2 }}>
-          Ruta del viaje
-        </Typography>
-        <Typography sx={{ color: palette.muted, fontSize: "11px", fontWeight: 700, mb: 0.8 }}>
-          Solo las rutas con pasaje configurado
-        </Typography>
-
-        <Box sx={{
-          minHeight: 30,
-          px: 0.9,
-          display: "flex",
-          alignItems: "center",
-          mb: 0.9,
-          backgroundColor: palette.bg,
-          border: `1px solid ${palette.border}`,
-          borderRadius: palette.radius.control,
-          "&:focus-within": { borderColor: palette.accent, backgroundColor: palette.surfaceAlt },
-        }}>
-          <Box sx={{ color: palette.muted, display: "flex", mr: 0.6 }}>
-            <Search size={15} />
-          </Box>
-          <InputBase
-            inputRef={busquedaRef}
-            value={busqueda}
-            onChange={(event) => setBusqueda(event.target.value)}
-            onKeyDown={alTeclear}
-            placeholder="Buscar por nombre o destino"
-            autoFocus
-            sx={{ color: palette.text, fontSize: "12.5px", width: "100%" }}
-          />
-        </Box>
-
-        <Box sx={{ maxHeight: 360, overflowY: "auto", display: "grid", gap: 0.65 }}>
-          {filtradas.length === 0 && (
-            <Typography sx={{ color: palette.muted, fontSize: "12px", fontWeight: 700, p: 1 }}>
-              Ninguna ruta coincide.
-            </Typography>
-          )}
-
-          {filtradas.map((ruta, i) => {
-            const resaltada = i === indiceFinal;
-            return (
-              <Box
-                key={ruta.id_ruta}
-                onClick={() => onElegir(ruta)}
-                sx={{
-                  p: 0.8,
-                  cursor: "pointer",
-                  borderRadius: palette.radius.listCard,
-                  border: `1px solid ${resaltada ? palette.accent : palette.borderSoft}`,
-                  backgroundColor: resaltada ? palette.accentSoft : palette.bg,
-                  transition: "all .16s ease",
-                  "&:hover": {
-                    borderColor: palette.accent,
-                    backgroundColor: palette.surfaceAlt,
-                  },
-                }}
-              >
-                <Typography sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 800 }}>
-                  {ruta.nombre || ruta.nombre_ruta || ruta.id_punto_venta_dest}
-                </Typography>
-                <Typography sx={{ color: palette.muted, fontSize: "11px", fontWeight: 700 }}>
-                  {[ruta.punto_venta_dest_nombre || ruta.id_punto_venta_dest]
-                    .concat(Number(ruta.precio_pasaje || 0) > 0
-                      ? `  -  S/ ${Number(ruta.precio_pasaje).toFixed(2)}`
-                      : [])
-                    .filter(Boolean)
-                    .join("")}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
-      </Box>
-    </Dialog>
-  );
-}
-
 export default function TrManifiestoModal({
   open,
   onClose,
@@ -259,10 +101,8 @@ export default function TrManifiestoModal({
 }) {
   const [draft, setDraft] = useState(emptyManifiesto);
   const [error, setError] = useState("");
-  const [rutaPickerOpen, setRutaPickerOpen] = useState(false);
 
   const fechaRef = useRef(null);
-  const rutaRef = useRef(null);
   const placaRef = useRef(null);
   const licenciaRef = useRef(null);
   const choferRef = useRef(null);
@@ -273,25 +113,43 @@ export default function TrManifiestoModal({
   // Al abrir: la fecha la pone el servidor (no el reloj del navegador) y el origen
   // viene del filtro del panel. El manifiesto ES un viaje, asi que la fecha es
   // parte de su identidad: dos manifiestos del mismo dia son dos viajes distintos.
+  //
+  // Si la agencia tiene UNA sola ruta de salida de pasajeros, se toma sola y no se
+  // pregunta: no hay alternativa posible. Con dos o mas, el select queda vacio a
+  // proposito para que el manifiesto elija por que destino sale el viaje.
   useEffect(() => {
     if (open) {
-      setDraft({
+      const inicial = {
         ...emptyManifiesto(),
         fecha: fechaServidor,
         id_punto_venta: puntoVentaOrigen || "",
-      });
+      };
+
+      const candidatas = rutasDisponibles.filter((r) => Number(r.precio_pasaje || 0) > 0);
+      if (candidatas.length === 1) {
+        inicial.id_ruta = candidatas[0].id_ruta;
+        inicial.id_punto_venta_dest = candidatas[0].id_punto_venta_dest || "";
+        inicial.ruta_nombre = candidatas[0].nombre || candidatas[0].nombre_ruta || "";
+        inicial.id_punto_venta = candidatas[0].id_punto_venta || inicial.id_punto_venta;
+      }
+
+      setDraft(inicial);
       setError("");
       window.setTimeout(() => {
         fechaRef.current?.focus();
         fechaRef.current?.select?.();
       }, 80);
     }
-  }, [open, fechaServidor, puntoVentaOrigen]);
+  }, [open, fechaServidor, puntoVentaOrigen, rutasDisponibles]);
 
   // Orden de las flechas: arriba/abajo sigue el orden visual del formulario.
   // Ver trManifiestoUtils para por que este array es propio y no el de encomienda.
+  //
+  // El select de ruta NO entra en el registro: es un Select de MUI, no un input, y
+  // el motor de flechas llama a focus() + select() sobre nodos de texto. Se recorre
+  // con Tab como cualquier select, que en un formulario de 6 campos va bien.
   focusableRefsManifiesto.length = 0;
-  focusableRefsManifiesto.push(fechaRef, rutaRef, placaRef, licenciaRef, choferRef, grabarRef);
+  focusableRefsManifiesto.push(fechaRef, placaRef, licenciaRef, choferRef, grabarRef);
 
   const rutaElegida = useMemo(
     () => rutasDisponibles.find((r) => String(r.id_ruta) === String(draft.id_ruta)) || null,
@@ -304,7 +162,6 @@ export default function TrManifiestoModal({
   );
 
   const cerrar = () => {
-    setRutaPickerOpen(false);
     onClose();
   };
 
@@ -326,7 +183,6 @@ export default function TrManifiestoModal({
 
     if (!rutaElegida) {
       setError("Elige la ruta del viaje: de ella salen el destino y el precio.");
-      rutaRef.current?.focus();
       return;
     }
 
@@ -426,7 +282,7 @@ export default function TrManifiestoModal({
                     }
                   }}
                   inputRef={fechaRef}
-                  nextRef={rutaRef}
+                  nextRef={placaRef}
                   placeholder="AAAA-MM-DD"
                   align="center"
                   prominent
@@ -443,12 +299,19 @@ export default function TrManifiestoModal({
 
             <Grid item xs={12}>
               <Field label="Ruta" labelWidth={104}>
-                <RutaField
-                  refs={focusableRefsManifiesto}
-                  ruta={rutaElegida}
-                  inputRef={rutaRef}
-                  onOpen={() => setRutaPickerOpen(true)}
-                  onChange={() => {}}
+                <TrRutaSelect
+                  value={draft.id_ruta}
+                  onChange={(idRuta) => {
+                    actualizar("id_ruta", idRuta);
+                    const elegida = rutasConPasaje.find((r) => String(r.id_ruta) === String(idRuta));
+                    if (elegida) {
+                      actualizar("id_punto_venta", elegida.id_punto_venta || draft.id_punto_venta);
+                    }
+                    setError("");
+                  }}
+                  rutas={rutasConPasaje}
+                  detalle
+                  placeholder="Selecciona"
                 />
               </Field>
             </Grid>
@@ -536,19 +399,6 @@ export default function TrManifiestoModal({
           {guardando ? "Guardando..." : "Crear"}
         </AppButton>
       </Box>
-
-      {rutaPickerOpen && (
-        <DialogoRuta
-          open={rutaPickerOpen}
-          rutas={rutasConPasaje}
-          onClose={() => setRutaPickerOpen(false)}
-          onElegir={(ruta) => {
-            actualizar("id_ruta", ruta.id_ruta);
-            setRutaPickerOpen(false);
-            window.setTimeout(() => placaRef.current?.focus(), 60);
-          }}
-        />
-      )}
     </Dialog>
   );
 }
