@@ -83,6 +83,7 @@ function ValorInfo({ value, align = "left", vacio = "-" }) {
   );
 }
 
+
 function RutaSelect({ value, onChange, rutas }) {
   return <TrRutaSelect value={value} onChange={onChange} rutas={rutas} />;
 }
@@ -180,9 +181,26 @@ export default function TrBoletoModal({
     });
   };
 
+  // Vertical y angosto, como el modal de encomienda: los datos son simples
+  // (documento, nombre, telefono, destino, asiento y total) y entran comodos en
+  // una columna. Un campo por fila.
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { backgroundColor: palette.surface, color: palette.text, border: `1px solid ${palette.border}`, borderRadius: 3 } }}>
-      <Box sx={{ p: { xs: 0.9, md: 1.15 } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      PaperProps={{
+        sx: {
+          width: { xs: "calc(100vw - 12px)", sm: 430 },
+          maxWidth: "calc(100vw - 12px)",
+          backgroundColor: palette.surface,
+          color: palette.text,
+          border: `1px solid ${palette.border}`,
+          borderRadius: palette.radius.modal,
+        },
+      }}
+    >
+      <Box sx={{ p: { xs: 0.9, md: 1.15 }, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, minWidth: 0 }}>
             <AppIconBox><Bus size={16} /></AppIconBox>
@@ -199,7 +217,7 @@ export default function TrBoletoModal({
           <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800 }}>Pasajero</Typography>
         </Box>
         <Grid container spacing={0.85}>
-          <Grid item xs={12} md={2.4}>
+          <Grid item xs={12}>
             <Field label="DNI/RUC">
               <CaptureInput
                 value={draft.cliente_documento}
@@ -212,12 +230,12 @@ export default function TrBoletoModal({
               />
             </Field>
           </Grid>
-          <Grid item xs={12} md={6.6}>
+          <Grid item xs={12}>
             <Field label="Nombres">
               <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", value)} placeholder="Pasajero" />
             </Field>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12}>
             <Field label="Telefono">
               <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", value)} placeholder="Celular" />
             </Field>
@@ -229,12 +247,12 @@ export default function TrBoletoModal({
           <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800 }}>Viaje</Typography>
         </Box>
         <Grid container spacing={0.85}>
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12}>
             <Field label="Destino">
               <RutaSelect value={draft.id_ruta} onChange={seleccionarRuta} rutas={rutasDisponibles} />
             </Field>
           </Grid>
-          <Grid item xs={6} md={2}>
+          <Grid item xs={12}>
             <Field label="Asiento">
               <ValorInfo
                 value={esEdicion ? (draft.asiento || "") : ""}
@@ -243,7 +261,7 @@ export default function TrBoletoModal({
               />
             </Field>
           </Grid>
-          <Grid item xs={6} md={3}>
+          <Grid item xs={12}>
             <Field label="Total S/">
               <ValorInfo
                 value={rutaSeleccionada ? precioPasaje.toFixed(2) : ""}
@@ -254,12 +272,12 @@ export default function TrBoletoModal({
           </Grid>
         </Grid>
 
-        {error && <Typography sx={{ color: "#ff8a65", fontSize: "12px", mt: 1 }}>{error}</Typography>}
+        {error && <Typography sx={{ color: palette.danger, fontSize: "12px", mt: 1 }}>{error}</Typography>}
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.75, mt: 1.2, flexWrap: "wrap" }}>
           <AppButton onClick={onClose}>Cancelar</AppButton>
           <AppButton data-action-id={guardarActionId} icon={<Save size={16} />} onClick={handleSubmit} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
-            Grabar boleto
+            {esEdicion ? "Guardar" : "Grabar boleto"}
           </AppButton>
         </Box>
       </Box>
