@@ -293,23 +293,23 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
 
   const originBlockFontSize = 8.1;
   const originBlockDataFontSize = 9.2;
-  const originOptionalLineHeight = 9.4;
+  const originOptionalLineHeight = 10.6;
   const senderZoneLines = senderOriginZone ? wrap(senderOriginZone, regular, originBlockDataFontSize, CW - 73, 2) : [];
   const senderBillingAddressLines = isInvoice && senderBillingAddress
     ? wrap(senderBillingAddress, regular, originBlockDataFontSize, CW - 73, 2)
     : [];
   const senderPickupAddressLines = senderPickupAddress ? wrap(senderPickupAddress, regular, originBlockDataFontSize, CW - 73, 2) : [];
   const originOptionalLines = senderZoneLines.length + senderBillingAddressLines.length + senderPickupAddressLines.length;
-  const originOptionalStartY = 411.5;
+  const originOptionalStartY = 407.5;
 
-  const destinationOptionalLineHeight = 9.4;
+  const destinationOptionalLineHeight = 11.8;
   const receiverZoneLines = receiverArrivalZone ? wrap(receiverArrivalZone, regular, originBlockDataFontSize, CW - 73, 2) : [];
   const receiverAddressLines = receiverAddress ? wrap(receiverAddress, regular, originBlockDataFontSize, CW - 73, 2) : [];
   const destinationOptionalLines = receiverZoneLines.length + receiverAddressLines.length;
-  const destinationOptionalStartY = 315.5;
+  const destinationOptionalStartY = 307.5;
   const destinationBaseY = destinationOptionalLines
     ? destinationOptionalStartY - ((destinationOptionalLines - 1) * destinationOptionalLineHeight) - 8
-    : 318;
+    : 313;
 
   const descriptionFontSize = 11.4;
   const descriptionLineHeight = 11.2;
@@ -335,8 +335,8 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const afterHeaderY = (value) => bodyY(value + HEADER_HEIGHT_REDUCTION);
   const originLastDataY = originOptionalLines
     ? originOptionalStartY - ((originOptionalLines - 1) * originOptionalLineHeight) - 0.4
-    : 422;
-  const destinationAfterOriginBaseY = originLastDataY - 5;
+    : 420;
+  const destinationAfterOriginBaseY = originLastDataY - 8;
   const ORIGIN_HEIGHT_REDUCTION = destinationAfterOriginBaseY - 353;
   const ORIGIN_TO_DATE_SHIFT = 34;
   const originY = (value) => afterHeaderY(value + ORIGIN_TO_DATE_SHIFT);
@@ -355,7 +355,6 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   wrap(issuerAddress, regular, 7.4, CW, 2)
     .forEach((item, index) => centered(page, item, bodyY(550 - (index * 8.2)), 7.4, regular, MUTED));
 
-  dotted(page, afterHeaderY(525));
   centered(page, documentName(code), afterHeaderY(514), 9.5, regular);
   text(page, "CPE", M + 8, afterHeaderY(496), 8.1, semibold, MUTED, 24);
   mixedLine(page, [
@@ -363,16 +362,17 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
     { value: datePe(issueDate), size: 9.2, font: regular, gap: 4 },
     { value: timePe(issueTime), size: 8.8, font: regular, gap: 4 },
   ], mainValueX, afterHeaderY(496), W - M);
+  dotted(page, afterHeaderY(487));
 
   drawIcon(page, ICONS.place, M - 5, originY(448), 14, ICON_MUTED);
   text(page, "ORIGEN", M + 8, originY(440), 8.1, semibold, MUTED, 34);
   text(page, String(origin).toUpperCase(), mainValueX, originY(439.6), 13.4, regular, INK, W - M - mainValueX);
-  text(page, "REMITENTE:", M + 8, originY(432), originBlockFontSize, semibold, MUTED, 41);
-  text(page, senderName, personValueX, originY(431.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
-  text(page, "DOC:", M + 8, originY(421.8), originBlockFontSize, semibold, MUTED, 20);
-  text(page, senderDoc, personValueX, originY(420.8), originBlockDataFontSize, regular, INK, 50);
-  text(page, "TEL:", M + 109, originY(421.8), originBlockFontSize, semibold, MUTED, 20);
-  text(page, encomienda.cliente_telefono || "-", M + 132, originY(420.8), originBlockDataFontSize, regular, INK, 61);
+  text(page, "REMITENTE:", M + 8, originY(430.8), originBlockFontSize, semibold, MUTED, 41);
+  text(page, senderName, personValueX, originY(430.2), originBlockDataFontSize, regular, INK, W - M - personValueX);
+  text(page, "DOC:", M + 8, originY(419.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, senderDoc, personValueX, originY(418.8), originBlockDataFontSize, regular, INK, 50);
+  text(page, "TEL:", M + 109, originY(419.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, encomienda.cliente_telefono || "-", M + 132, originY(418.8), originBlockDataFontSize, regular, INK, 61);
   senderZoneLines.forEach((item, index) => {
     const y = originOptionalStartY - (index * originOptionalLineHeight);
     text(page, index === 0 ? "ZONA:" : "", M + 8, originY(y), originBlockFontSize, semibold, MUTED, 54);
@@ -388,19 +388,20 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
     text(page, index === 0 ? "DIR RECOJO:" : "", M + 8, originY(y), originBlockFontSize, semibold, MUTED, 54);
     text(page, item, personValueX, originY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
+  dotted(page, afterOriginY(356));
 
   drawIcon(page, ICONS.place, M - 5, afterOriginY(353), 14, ICON_MUTED);
   text(page, "DEST.", M + 8, afterOriginY(341.6), 8.1, semibold, MUTED, 34);
   text(page, String(destination).toUpperCase(), mainValueX, afterOriginY(341.6), 13.4, regular, INK, W - M - mainValueX);
-  text(page, "DESTIN.:", M + 8, afterOriginY(334), originBlockFontSize, semibold, MUTED, 41);
-  text(page, receiverName, personValueX, afterOriginY(333.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
-  text(page, "DNI:", M + 8, afterOriginY(325.8), originBlockFontSize, semibold, MUTED, 20);
-  text(page, receiverDoc, personValueX, afterOriginY(325.2), originBlockDataFontSize, regular, INK, 50);
-  text(page, "TEL:", M + 109, afterOriginY(325.8), originBlockFontSize, semibold, MUTED, 20);
-  text(page, encomienda.destinatario_telefono || "-", M + 132, afterOriginY(325.2), originBlockDataFontSize, regular, INK, 61);
+  text(page, "DESTIN.:", M + 8, afterOriginY(331.4), originBlockFontSize, semibold, MUTED, 41);
+  text(page, receiverName, personValueX, afterOriginY(330.8), originBlockDataFontSize, regular, INK, W - M - personValueX);
+  text(page, "DNI:", M + 8, afterOriginY(320.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, receiverDoc, personValueX, afterOriginY(320.2), originBlockDataFontSize, regular, INK, 50);
+  text(page, "TEL:", M + 109, afterOriginY(320.8), originBlockFontSize, semibold, MUTED, 20);
+  text(page, encomienda.destinatario_telefono || "-", M + 132, afterOriginY(320.2), originBlockDataFontSize, regular, INK, 61);
   receiverZoneLines.forEach((item, index) => {
     const y = destinationOptionalStartY - (index * destinationOptionalLineHeight);
-    text(page, index === 0 ? "ZONA LLEGADA:" : "", M + 8, afterOriginY(y), originBlockFontSize, semibold, MUTED, 54);
+    text(page, index === 0 ? "ZONA:" : "", M + 8, afterOriginY(y), originBlockFontSize, semibold, MUTED, 54);
     text(page, item, personValueX, afterOriginY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
   receiverAddressLines.forEach((item, index) => {
@@ -408,6 +409,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
     text(page, index === 0 ? "DIR LLEGADA:" : "", M + 8, afterOriginY(y), originBlockFontSize, semibold, MUTED, 54);
     text(page, item, personValueX, afterOriginY(y - 0.4), originBlockDataFontSize, regular, INK, W - M - personValueX);
   });
+  dotted(page, afterOriginY(destinationBaseY - 2));
 
   text(page, "ENCOMIENDA", M + 8, encomiendaY(249), 9.2, regular, MUTED, 58);
   text(page, unit, M + 62, encomiendaY(249), 9.2, regular, INK, 48);
@@ -433,9 +435,9 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   centeredIn(page, "S/", W - M - 7 - 67, summaryY(149), 67, 9.8, regular);
   right(page, money(total), summaryY(127), 21, regular, INK, W - M - 7, 67);
 
-  text(page, "TERMINOS Y CONDICIONES", M, summaryY(99), 6.5, semibold);
-  const termFontSize = 7;
-  const termLineHeight = 7.9;
+  text(page, "TERMINOS Y CONDICIONES", M, summaryY(99), 8.2, semibold);
+  const termFontSize = 8.5;
+  const termLineHeight = 9.5;
   let termsCursor = 89;
   const drawTerms = (value, { font = regular, color = MUTED, gap = 1.8, maxLines = 8 } = {}) => {
     wrap(String(value || "").toUpperCase(), font, termFontSize, CW, maxLines).forEach((item) => {

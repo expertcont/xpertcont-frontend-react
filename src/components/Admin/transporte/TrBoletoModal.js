@@ -13,6 +13,9 @@ const documentoTipoDesdeNumero = (documento) => {
   return limpio.length === 11 ? "6" : "1";
 };
 
+// El boleto solo necesita estos datos del pasajero. La agencia, el destino y el
+// total NO se piden: salen de la ruta elegida, y el precio lo aplica el backend
+// desde mve_transruta.precio_pasaje, nunca desde este formulario.
 const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
   tipo_operacion: "B",
   r_fecemi: String(operacion?.r_fecemi || fechaOperacion || `${periodoTrabajo}-01`).slice(0, 10),
@@ -26,12 +29,7 @@ const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
   id_ruta: operacion?.id_ruta || "",
   id_punto_venta: operacion?.id_punto_venta || "",
   id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
-  placa: operacion?.placa || "",
-  licencia: operacion?.licencia || "",
   asiento: operacion?.asiento || "",
-  pasajero_edad: operacion?.pasajero_edad || "",
-  descripcion: operacion?.descripcion || "Pasaje de transporte",
-  r_monto_total: operacion?.r_monto_total || operacion?.precio_neto || "",
 });
 
 const fieldSx = {
@@ -71,6 +69,16 @@ function CaptureInput({ value, onChange, placeholder, type = "text", align = "le
       onChange={(event) => onChange(event.target.value)}
       sx={{ ...inputSx, "& input": { textAlign: align } }}
     />
+  );
+}
+
+// Valor que se muestra pero no se escribe: destino y total salen de la ruta.
+// Comparte la tipografia de los campos editables para que la fila se lea igual.
+function ValorInfo({ value, align = "left", vacio = "-" }) {
+  return (
+    <Box sx={{ ...inputSx, color: value ? palette.text : palette.muted, py: 0.5, textAlign: align, lineHeight: "20px" }}>
+      {value || vacio}
+    </Box>
   );
 }
 
@@ -147,9 +155,16 @@ export default function TrBoletoModal({
       id_ruta: idRuta,
       id_punto_venta: ruta?.id_punto_venta || "",
       id_punto_venta_dest: ruta?.id_punto_venta_dest || "",
-      r_monto_total: prev.r_monto_total || ruta?.precio_pasaje || "",
     }));
   };
+
+  // Destino y total se LEEN de la ruta elegida. No se editan y no se envian:
+  // el backend toma el precio de mve_transruta.precio_pasaje, asi que escribir
+  // un total aqui no cambiaria lo que se guarda.
+  const precioPasaje = Number(rutaSeleccionada?.precio_pasaje || 0);
+  const destinoNombre = rutaSeleccionada?.punto_venta_dest_nombre
+    || rutaSeleccionada?.id_punto_venta_dest
+    || "";
 
   const handleSubmit = () => {
     if (!draft.cliente_documento || !draft.cliente) {
@@ -167,15 +182,13 @@ export default function TrBoletoModal({
       return;
     }
 
-    const total = Number(draft.r_monto_total || rutaSeleccionada?.precio_pasaje || 0);
-
+    // No se envian precios: el total lo aplica el backend desde
+    // mve_transruta.precio_pasaje. condicion_pago se sigue mandando, aunque la
+    // funcion de boleto todavia no lo persiste (no esta en su INSERT).
     onSubmit({
       ...draft,
       tipo_operacion: "B",
-      precio_unitario: total,
-      precio_neto: total,
-      r_monto_total: total,
-      destinatario: null,
+      cantidad: 1,
       condicion_pago: "PAGADO",
     });
   };
@@ -239,29 +252,18 @@ export default function TrBoletoModal({
               <CaptureInput value={draft.asiento} onChange={(value) => updateDraft("asiento", value)} placeholder="Nro" align="right" />
             </Field>
           </Grid>
-          <Grid item xs={6} md={1.5}>
-            <Field label="Edad">
-              <CaptureInput value={draft.pasajero_edad} onChange={(value) => updateDraft("pasajero_edad", value)} type="number" placeholder="Edad" align="right" />
+          <Grid item xs={6} md={4}>
+            <Field label="Destino">
+              <ValorInfo value={destinoNombre} vacio="Elegi una ruta" />
             </Field>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={1.5}>
             <Field label="Total S/">
-              <CaptureInput value={draft.r_monto_total} onChange={(value) => updateDraft("r_monto_total", value)} type="number" placeholder="0.00" align="right" />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <Field label="Placa">
-              <CaptureInput value={draft.placa} onChange={(value) => updateDraft("placa", value)} placeholder="Unidad" />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={7}>
-            <Field label="Chofer">
-              <CaptureInput value={draft.licencia} onChange={(value) => updateDraft("licencia", value)} placeholder="Chofer / licencia" />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={5}>
-            <Field label="Descripcion">
-              <CaptureInput value={draft.descripcion} onChange={(value) => updateDraft("descripcion", value)} placeholder="Pasaje de transporte" />
+              <ValorInfo
+                value={rutaSeleccionada ? precioPasaje.toFixed(2) : ""}
+                align="right"
+                vacio="0.00"
+              />
             </Field>
           </Grid>
         </Grid>
