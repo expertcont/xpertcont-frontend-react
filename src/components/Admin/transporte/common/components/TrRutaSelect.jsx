@@ -11,9 +11,13 @@ import palette from "../../../../../theme/palette";
 // sentido para listas largas (placas, licencias, zonas); las rutas de salida de
 // pasajeros de una agencia son pocas y se eligen de un vistazo.
 //
-// `detalle` suma el destino y el pasaje al lado del nombre, que es lo que
-// necesita el manifiesto (un viaje se identifica por adonde va y cuanto cuesta).
-// El boleto no lo usa: ahi el destino y el total ya se muestran aparte.
+// El texto por defecto es el DESTINO, no el nombre de la ruta: el chofer y el
+// pasajero piensan en "a donde voy", y de donde sale ya se sabe por la agencia en
+// la que esta trabajando. El nombre de la ruta ("Ruta A", "Lima - Cusco") no le
+// dice nada nuevo al que ya conoce su agencia.
+//
+// `detalle` es para el manifiesto: alla el viaje se identifica por nombre de ruta,
+// destino y pasaje, y son datos que todavia no estan en pantalla.
 // ===========================================================================
 export default function TrRutaSelect({ value, onChange, rutas = [], detalle = false, placeholder = "Selecciona" }) {
   return (
@@ -51,7 +55,7 @@ export default function TrRutaSelect({ value, onChange, rutas = [], detalle = fa
                   ? `S/ ${Number(ruta.precio_pasaje).toFixed(2)}`
                   : "",
               ].filter(Boolean).join("  -  ")
-            : (ruta.nombre || ruta.id_ruta)}
+            : (ruta.punto_venta_dest_nombre || ruta.id_punto_venta_dest || ruta.nombre || ruta.id_ruta)}
         </MenuItem>
       ))}
     </Select>

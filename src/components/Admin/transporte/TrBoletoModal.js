@@ -149,13 +149,10 @@ export default function TrBoletoModal({
     }));
   };
 
-  // Destino y total se LEEN de la ruta elegida. No se editan y no se envian:
-  // el backend toma el precio de mve_transruta.precio_pasaje, asi que escribir
-  // un total aqui no cambiaria lo que se guarda.
+  // El total se LEE de la ruta elegida. No se edita y no se envia: el backend toma
+  // el precio de mve_transruta.precio_pasaje, asi que escribir un total aqui no
+  // cambiaria lo que se guarda.
   const precioPasaje = Number(rutaSeleccionada?.precio_pasaje || 0);
-  const destinoNombre = rutaSeleccionada?.punto_venta_dest_nombre
-    || rutaSeleccionada?.id_punto_venta_dest
-    || "";
 
   const handleSubmit = () => {
     if (!draft.cliente_documento || !draft.cliente) {
@@ -233,22 +230,17 @@ export default function TrBoletoModal({
           <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800 }}>Viaje</Typography>
         </Box>
         <Grid container spacing={0.85}>
-          <Grid item xs={12} md={5}>
-            <Field label="Ruta">
+          <Grid item xs={12} md={7}>
+            <Field label="Destino">
               <RutaSelect value={draft.id_ruta} onChange={seleccionarRuta} rutas={rutasDisponibles} />
             </Field>
           </Grid>
-          <Grid item xs={6} md={1.5}>
+          <Grid item xs={6} md={2}>
             <Field label="Asiento">
               <CaptureInput value={draft.asiento} onChange={(value) => updateDraft("asiento", value)} placeholder="Nro" align="right" />
             </Field>
           </Grid>
-          <Grid item xs={6} md={4}>
-            <Field label="Destino">
-              <ValorInfo value={destinoNombre} vacio="Elegi una ruta" />
-            </Field>
-          </Grid>
-          <Grid item xs={12} md={1.5}>
+          <Grid item xs={6} md={3}>
             <Field label="Total S/">
               <ValorInfo
                 value={rutaSeleccionada ? precioPasaje.toFixed(2) : ""}
