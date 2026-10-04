@@ -54,6 +54,7 @@ import TrEncomiendaList from "./components/Admin/transporte/encomienda/TrEncomie
 import TrGremEncomiendaList from "./components/Admin/transporte/encomienda/TrGremEncomiendaList";
 import TrEncomiendaEntregaList from "./components/Admin/transporte/encomienda/entrega/TrEncomiendaEntregaList";
 import TrBoletosList from "./components/Admin/transporte/TrBoletosList";
+import TrManifiestoList from "./components/Admin/transporte/manifiesto/TrManifiestoList";
 import TrPlacaList from "./components/Admin/transporte/TrPlacaList";
 import TrLicenciaList from "./components/Admin/transporte/TrLicenciaList";
 import TrZonaList from "./components/Admin/transporte/TrZonaList";
@@ -201,6 +202,9 @@ function AppLayout(props) {
               <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList panoramicMode={panoramicMode} supervisor={props.supervisor} />} />
               <Route path="/ad_transportecaja/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrCajaMovimientoList />} />
               <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
+              {/* Manifiesto de pasajeros. El punto de venta viaja en el query porque no
+                  forma parte de la ruta y hace falta para crear el manifiesto. */}
+              <Route path="/ad_transportemanifiesto/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrManifiestoList />} />
               <Route path="/ad_puntoventa/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
               <Route path="/ad_transportepuntos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminPuntoVentaList />} />
               <Route path="/ad_transporterutas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrRutaList />} />

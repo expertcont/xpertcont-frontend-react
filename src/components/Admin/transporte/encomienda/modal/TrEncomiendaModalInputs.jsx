@@ -169,8 +169,12 @@ export function Field({ label, icon, children, labelWidth = "auto", tall = false
   );
 }
 
-export const focusByArrow = (event, inputRef) => {
-  const currentIndex = focusableRefs.findIndex((ref) => ref === inputRef);
+// Motor de navegacion por flechas. Recorre `refs`, que por defecto es el registro
+// de la encomienda. Cada formulario que se monte a la vez que otro necesita pasar
+// SU PROPIA lista: focusableRefs es un array de modulo y dos formularios
+// compartiendolo se pisan (el length = 0 de uno borra los campos del otro).
+export const focusByArrow = (event, inputRef, refs = focusableRefs) => {
+  const currentIndex = refs.findIndex((ref) => ref === inputRef);
   if (currentIndex === -1) {
     return false;
   }
@@ -178,8 +182,8 @@ export const focusByArrow = (event, inputRef) => {
   const move = (delta) => {
     let nextIndex = currentIndex + delta;
 
-    while (nextIndex >= 0 && nextIndex < focusableRefs.length) {
-      const nextRef = focusableRefs[nextIndex];
+    while (nextIndex >= 0 && nextIndex < refs.length) {
+      const nextRef = refs[nextIndex];
       if (nextRef?.current) {
         event.preventDefault();
         focusControl(nextRef);
@@ -202,7 +206,7 @@ export const focusByArrow = (event, inputRef) => {
   return false;
 };
 
-export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, placeholderSx, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, prominentSize = "16px", highlight = false, onPlus, onEmptyEnter, onEnter, onF3 }) {
+export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, placeholderSx, type = "text", inputMode, pattern, multiline = false, align = "left", readOnly = false, prominent = false, prominentSize = "16px", highlight = false, onPlus, onEmptyEnter, onEnter, onF3, refs }) {
   const inputFontSize = prominent ? prominentSize : inputSx.fontSize;
   const inputFontWeight = undefined;
 
@@ -226,7 +230,7 @@ export function CaptureInput({ value, onChange, inputRef, nextRef, placeholder, 
           onF3();
           return;
         }
-        if (focusByArrow(event, inputRef)) {
+        if (focusByArrow(event, inputRef, refs)) {
           return;
         }
         if (event.key === "+" && !multiline && onPlus) {

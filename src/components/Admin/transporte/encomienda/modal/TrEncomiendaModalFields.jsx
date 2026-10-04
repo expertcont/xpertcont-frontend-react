@@ -12,7 +12,7 @@ import {
   searchIconButtonSxColgado,
 } from "./TrEncomiendaModalInputs";
 
-export function RutaField({ ruta, onChange, onOpen, inputRef }) {
+export function RutaField({ ruta, onChange, onOpen, inputRef, refs }) {
   // Destino visual; internamente se conserva id_ruta para el contrato de mve_transventa.
   const textoRuta = ruta ? destinoDesdeRuta(ruta) : "";
 
@@ -41,11 +41,11 @@ export function RutaField({ ruta, onChange, onOpen, inputRef }) {
         }}
         onKeyDown={(event) => {
           if (["ArrowUp", "ArrowDown"].includes(event.key)) {
-            if (focusByArrow(event, inputRef)) {
+            if (focusByArrow(event, inputRef, refs)) {
               return;
             }
           }
-          if (focusByArrow(event, inputRef)) {
+          if (focusByArrow(event, inputRef, refs)) {
             return;
           }
           if (event.key === "Backspace" || event.key === "Delete") {
