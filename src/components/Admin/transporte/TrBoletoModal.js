@@ -165,10 +165,9 @@ export default function TrBoletoModal({
       return;
     }
 
-    if (!draft.asiento) {
-      setError("Indica el asiento.");
-      return;
-    }
+    // El asiento NO se pide: lo asigna la funcion como correlativo de los boletos
+    // sueltos del mismo viaje (COUNT(manifiesto_id IS NULL) + 1). Si lo pidiera
+    // aca, dos agentes grabando en el mismo momento podrian elegir el mismo.
 
     // No se envian precios: el total lo aplica el backend desde
     // mve_transruta.precio_pasaje. condicion_pago se sigue mandando, aunque la
@@ -237,7 +236,11 @@ export default function TrBoletoModal({
           </Grid>
           <Grid item xs={6} md={2}>
             <Field label="Asiento">
-              <CaptureInput value={draft.asiento} onChange={(value) => updateDraft("asiento", value)} placeholder="Nro" align="right" />
+              <ValorInfo
+                value={esEdicion ? (draft.asiento || "") : ""}
+                align="right"
+                vacio={esEdicion ? "-" : "automatico"}
+              />
             </Field>
           </Grid>
           <Grid item xs={6} md={3}>
