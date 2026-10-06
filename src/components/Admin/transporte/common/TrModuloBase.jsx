@@ -14,6 +14,7 @@ import { useDialog } from "../../AdminConfirmDialogProvider";
 import palette from "../../../../theme/palette";
 import TrBoletoModal from "../TrBoletoModal";
 import TrEncomiendaModal from "../encomienda/modal/TrEncomiendaModal";
+import TrManifiestoMinivanPanel from "../manifiesto/TrManifiestoMinivanPanel";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
 import TrRdiProgresoModal from "./TrRdiProgresoModal";
@@ -392,7 +393,7 @@ export default function TrModuloBase({
   const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
   const listadoMaxWidth = tipoOperacionFijo === "E"
     ? (panoramicMode ? "100%" : { xs: "100%", lg: 1280, xl: 1440 })
-    : 980;
+    : (panoramicMode ? "100%" : 980);
   const empresaTrabajo = useMemo(() => {
     const seleccionada = contabilidadSelect.find((item) => item.documento_id === contabilidadTrabajo) || {};
 
@@ -585,7 +586,8 @@ export default function TrModuloBase({
     guardandoOperacionRef.current = true;
     setGuardandoOperacion(true);
 
-    const esEdicion = Boolean(operacionEditando);
+    const operacionBase = opciones.operacionEditando || operacionEditando;
+    const esEdicion = Boolean(operacionBase);
 
     if ((esEdicion && !puedeEditarOperacion) || (!esEdicion && !puedeCrearOperacion)) {
       guardandoOperacionRef.current = false;
@@ -599,13 +601,13 @@ export default function TrModuloBase({
       return;
     }
 
-    if (esEdicion && tipoOperacionFijo === "E" && operacionProtegidaSunat(operacionEditando)) {
+    if (esEdicion && tipoOperacionFijo === "E" && operacionProtegidaSunat(operacionBase)) {
       guardandoOperacionRef.current = false;
       setGuardandoOperacion(false);
       swal2.fire({
         title: "Encomienda protegida",
-        text: operacionEditando.numero_rdi
-          ? `Esta encomienda ya fue incluida en el RDI ${operacionEditando.numero_rdi}.`
+        text: operacionBase.numero_rdi
+          ? `Esta encomienda ya fue incluida en el RDI ${operacionBase.numero_rdi}.`
           : "Esta encomienda ya fue enviada a SUNAT.",
         icon: "info",
         confirmButtonText: "ACEPTAR",
@@ -634,10 +636,10 @@ export default function TrModuloBase({
       documento_id: contabilidadTrabajo,
       periodo: periodoTrabajo,
       r_fecemi: tipoOperacionFijo === "E" && !esEdicion ? fechaOperacionGuardar : datosOperacion.r_fecemi,
-      r_cod: esEdicion ? operacionEditando.r_cod : datosOperacion.r_cod,
-      r_serie: esEdicion ? operacionEditando.r_serie : datosOperacion.r_serie,
-      r_numero: esEdicion ? operacionEditando.r_numero : datosOperacion.r_numero,
-      elemento: operacionEditando?.elemento || 1,
+      r_cod: esEdicion ? operacionBase.r_cod : datosOperacion.r_cod,
+      r_serie: esEdicion ? operacionBase.r_serie : datosOperacion.r_serie,
+      r_numero: esEdicion ? operacionBase.r_numero : datosOperacion.r_numero,
+      elemento: operacionBase?.elemento || 1,
       cantidad: 1,
       ctrl_crea_us: params.id_invitado,
       ctrl_mod_us: params.id_invitado,
@@ -1398,11 +1400,17 @@ export default function TrModuloBase({
           nuevoTexto={nuevoTexto}
           buscarTexto={buscarTexto}
           valorBusqueda={valorBusqueda}
-          nuevoDeshabilitado={!puedeCrearOperacion || (tipoOperacionFijo === "E" && !puntoVentaTrabajo)}
+          nuevoDeshabilitado={!puedeCrearOperacion || ((tipoOperacionFijo === "E" || tipoOperacionFijo === "B") && !puntoVentaTrabajo)}
           ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : undefined}
           onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : undefined}
           nuevoActionId={crearActionId}
-          onNuevo={() => solicitarOperacion()}
+          onNuevo={() => {
+            if (tipoOperacionFijo === "B") {
+              window.dispatchEvent(new CustomEvent("transporte:abrir-manifiesto"));
+              return;
+            }
+            solicitarOperacion();
+          }}
           onBuscar={actualizaValorFiltro}
           compactControles={tipoOperacionFijo === "E" || panoramicMode}
           headerExtra={(
@@ -1465,53 +1473,69 @@ export default function TrModuloBase({
 
         <DaySelector period={periodoTrabajo || params.periodo} onDaySelect={handleDayFilter} />
 
-        <DataTable
-          theme="transportesDark"
-          columns={createColumns({
-            onEdit: solicitarOperacion,
-            onDelete: handleDelete,
-            onCancel: handleCancel,
-            onEnviarSunat: handleEnviarSunat,
-            onImprimirTicket: handleImprimirTicketRapido,
-            canDelete: puedeEliminarOperacion && puedeEliminarOperacionPermiso,
-            compact: tipoOperacionFijo === "E" && panoramicMode,
-            menuItemId,
-            canEdit: puedeEditarOperacion,
-            canCancel: puedeAnularOperacion,
-            canSendSunat: puedeEnviarSunatOperacion,
-            sunatContext: {
-              backHost: back_host,
-              documentoId: contabilidadTrabajo,
-              periodoTrabajo,
-              idAnfitrion: params.id_anfitrion,
-              contabilidadTrabajo,
-              cpeRequestExtra: {
-                id_invitado: params.id_invitado,
-                ctrl_mod_us: params.id_invitado,
+        {tipoOperacionFijo === "B" ? (
+          <TrManifiestoMinivanPanel
+            backHost={back_host}
+            idAnfitrion={params.id_anfitrion}
+            idInvitado={params.id_invitado}
+            documentoId={contabilidadTrabajo}
+            periodoTrabajo={periodoTrabajo}
+            fechaOperacion={fechaOperacion}
+            puntoVentaTrabajo={puntoVentaTrabajo}
+            rutasDisponibles={rutasDisponibles}
+            placasDisponibles={placasDisponibles}
+            puedeCrear={puedeCrearOperacion}
+            onGuardarBoleto={guardarOperacion}
+            guardandoBoleto={guardandoOperacion}
+            guardarActionId={crearActionId}
+          />
+        ) : (
+          <DataTable
+            theme="transportesDark"
+            columns={createColumns({
+              onEdit: solicitarOperacion,
+              onDelete: handleDelete,
+              onCancel: handleCancel,
+              onEnviarSunat: handleEnviarSunat,
+              onImprimirTicket: handleImprimirTicketRapido,
+              canDelete: puedeEliminarOperacion && puedeEliminarOperacionPermiso,
+              compact: tipoOperacionFijo === "E" && panoramicMode,
+              menuItemId,
+              canEdit: puedeEditarOperacion,
+              canCancel: puedeAnularOperacion,
+              canSendSunat: puedeEnviarSunatOperacion,
+              sunatContext: {
+                backHost: back_host,
+                documentoId: contabilidadTrabajo,
+                periodoTrabajo,
+                idAnfitrion: params.id_anfitrion,
+                contabilidadTrabajo,
+                cpeRequestExtra: {
+                  id_invitado: params.id_invitado,
+                  ctrl_mod_us: params.id_invitado,
+                },
+                empresa: empresaTrabajo,
+                onRefresh: () => setUpdateTrigger(Date.now()),
               },
-              empresa: empresaTrabajo,
-              onRefresh: () => setUpdateTrigger(Date.now()),
-            },
-            mostrarAnuladas,
-          })}
-          data={data}
-          progressPending={loading}
-          pagination
-          paginationPerPage={tipoOperacionFijo === "E" ? 100 : 10}
-          paginationRowsPerPageOptions={tipoOperacionFijo === "E" ? [25, 50, 100, 150, 200, 300, 500, 1000] : undefined}
-          highlightOnHover
-          responsive
-          customStyles={tipoOperacionFijo === "E"
-            ? (panoramicMode ? customStylesEncomiendaPanoramica : customStylesEncomienda)
-            : customStyles}
-          conditionalRowStyles={tipoOperacionFijo === "E" ? porCobrarRowStyles : undefined}
-          noDataComponent={
-            <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
-              <Search size={16} />
-              {sinDatosTexto}
-            </Box>
-          }
-        />
+              mostrarAnuladas,
+            })}
+            data={data}
+            progressPending={loading}
+            pagination
+            paginationPerPage={100}
+            paginationRowsPerPageOptions={[25, 50, 100, 150, 200, 300, 500, 1000]}
+            highlightOnHover
+            responsive
+            customStyles={panoramicMode ? customStylesEncomiendaPanoramica : customStylesEncomienda}
+            conditionalRowStyles={porCobrarRowStyles}
+            noDataComponent={
+              <Box sx={{ py: 4, color: palette.muted, display: "flex", alignItems: "center", gap: 1 }}>
+                <Search size={16} />
+                {sinDatosTexto}
+              </Box>
+            }
+          />
+        )}
 
         {tipoOperacionFijo === "E" && (
           <TrEncomiendaModal
@@ -1544,10 +1568,11 @@ export default function TrModuloBase({
           />
         )}
 
-        {tipoOperacionFijo === "B" && (
+        {tipoOperacionFijo === "B" && false && (
           <TrBoletoModal
             open={modalOperacionOpen}
             operacion={operacionEditando}
+            back_host={back_host}
             periodoTrabajo={periodoTrabajo}
             fechaOperacion={fechaOperacion}
             rutasDisponibles={rutasDisponibles}

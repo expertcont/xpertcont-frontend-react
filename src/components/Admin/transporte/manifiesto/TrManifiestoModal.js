@@ -10,11 +10,11 @@ import {
   Field,
   sectionSx,
 } from "../encomienda/modal/TrEncomiendaModalInputs";
-import { PuntoVentaField } from "../encomienda/modal/TrEncomiendaModalFields";
 import {
   FECHA_AAAA_MM_DD,
   emptyManifiesto,
   focusableRefsManifiesto,
+  normalizarFechaManifiesto,
   periodoDeFecha,
 } from "./trManifiestoUtils";
 
@@ -92,6 +92,8 @@ export default function TrManifiestoModal({
   open,
   onClose,
   onCrear,
+  manifiesto = null,
+  modoCierre = false,
   id_usuario,
   documento_id,
   puntoVentaOrigen,
@@ -102,10 +104,9 @@ export default function TrManifiestoModal({
   const [draft, setDraft] = useState(emptyManifiesto);
   const [error, setError] = useState("");
 
-  const fechaRef = useRef(null);
   const placaRef = useRef(null);
   const licenciaRef = useRef(null);
-  const choferRef = useRef(null);
+  const observacionRef = useRef(null);
   const grabarRef = useRef(null);
 
   const actualizar = (campo, valor) => setDraft((prev) => ({ ...prev, [campo]: valor }));
@@ -119,9 +120,25 @@ export default function TrManifiestoModal({
   // proposito para que el manifiesto elija por que destino sale el viaje.
   useEffect(() => {
     if (open) {
+      if (manifiesto) {
+        setDraft({
+          ...emptyManifiesto(),
+          fecha: normalizarFechaManifiesto(manifiesto.fecha || fechaServidor),
+          id_punto_venta: manifiesto.id_punto_venta || puntoVentaOrigen || "",
+          id_punto_venta_dest: manifiesto.id_punto_venta_dest || "",
+          id_ruta: manifiesto.id_ruta || "",
+          placa: manifiesto.placa || "",
+          licencia: manifiesto.licencia || "",
+          observacion: manifiesto.observacion || "",
+        });
+        setError("");
+        window.setTimeout(() => placaRef.current?.focus(), 80);
+        return;
+      }
+
       const inicial = {
         ...emptyManifiesto(),
-        fecha: fechaServidor,
+        fecha: normalizarFechaManifiesto(fechaServidor),
         id_punto_venta: puntoVentaOrigen || "",
       };
 
@@ -135,12 +152,9 @@ export default function TrManifiestoModal({
 
       setDraft(inicial);
       setError("");
-      window.setTimeout(() => {
-        fechaRef.current?.focus();
-        fechaRef.current?.select?.();
-      }, 80);
+      window.setTimeout(() => placaRef.current?.focus(), 80);
     }
-  }, [open, fechaServidor, puntoVentaOrigen, rutasDisponibles]);
+  }, [open, fechaServidor, manifiesto, puntoVentaOrigen, rutasDisponibles]);
 
   // Orden de las flechas: arriba/abajo sigue el orden visual del formulario.
   // Ver trManifiestoUtils para por que este array es propio y no el de encomienda.
@@ -149,7 +163,7 @@ export default function TrManifiestoModal({
   // el motor de flechas llama a focus() + select() sobre nodos de texto. Se recorre
   // con Tab como cualquier select, que en un formulario de 6 campos va bien.
   focusableRefsManifiesto.length = 0;
-  focusableRefsManifiesto.push(fechaRef, placaRef, licenciaRef, choferRef, grabarRef);
+  focusableRefsManifiesto.push(placaRef, licenciaRef, observacionRef, grabarRef);
 
   const rutaElegida = useMemo(
     () => rutasDisponibles.find((r) => String(r.id_ruta) === String(draft.id_ruta)) || null,
@@ -170,9 +184,10 @@ export default function TrManifiestoModal({
       return;
     }
 
-    if (!FECHA_AAAA_MM_DD.test(draft.fecha)) {
+    const fechaNormalizada = normalizarFechaManifiesto(draft.fecha);
+
+    if (!FECHA_AAAA_MM_DD.test(fechaNormalizada)) {
       setError("La fecha del viaje debe tener formato AAAA-MM-DD.");
-      fechaRef.current?.focus();
       return;
     }
 
@@ -182,22 +197,33 @@ export default function TrManifiestoModal({
     }
 
     if (!rutaElegida) {
-      setError("Elige la ruta del viaje: de ella salen el destino y el precio.");
+      setError("Elige el destino del viaje.");
+      return;
+    }
+
+    if (modoCierre && (!String(draft.placa || "").trim() || !String(draft.licencia || "").trim())) {
+      setError("Indica placa y licencia para finalizar el manifiesto.");
+      if (!String(draft.placa || "").trim()) {
+        placaRef.current?.focus();
+      } else {
+        licenciaRef.current?.focus();
+      }
       return;
     }
 
     setError("");
     onCrear({
+      id_manifiesto: manifiesto?.id_manifiesto,
       id_usuario,
       documento_id,
-      fecha: draft.fecha,
-      periodo: periodoDeFecha(draft.fecha),
+      fecha: fechaNormalizada,
+      periodo: periodoDeFecha(fechaNormalizada),
+      id_ruta: rutaElegida.id_ruta,
       id_punto_venta: draft.id_punto_venta,
       id_punto_venta_dest: rutaElegida.id_punto_venta_dest || "",
-      ruta_nombre: rutaElegida.nombre || rutaElegida.nombre_ruta || "",
       placa: draft.placa || null,
       licencia: draft.licencia || null,
-      chofer: draft.chofer || null,
+      observacion: draft.observacion || null,
     });
   };
 
@@ -248,10 +274,10 @@ export default function TrManifiestoModal({
             </Box>
             <Box>
               <Typography sx={{ color: palette.text, fontSize: "13px", fontWeight: 800 }}>
-                Manifiesto NUEVO
+                {modoCierre ? `Finalizar manifiesto ${manifiesto?.id_manifiesto || ""}` : "Manifiesto NUEVO"}
               </Typography>
               <Typography sx={{ color: palette.muted, fontSize: "11px", fontWeight: 700 }}>
-                Datos del viaje. Los pasajeros se suman despues.
+                Hora automatica.
               </Typography>
             </Box>
           </Box>
@@ -268,37 +294,10 @@ export default function TrManifiestoModal({
       {/* unico scroller del dialogo */}
       <Box sx={scrollSx}>
         <Box sx={compactSectionSx}>
-          <SectionHeader icon={<MapPin size={15} />} title="1. Viaje" />
+          <SectionHeader icon={<MapPin size={15} />} title={`1. Fecha ${draft.fecha || "-"}`} />
           <Grid container columnSpacing={0.65} rowSpacing={0.35}>
             <Grid item xs={12}>
-              <Field label="Fecha" labelWidth={104} controlHeight={40}>
-                <CaptureInput
-                  refs={focusableRefsManifiesto}
-                  value={draft.fecha}
-                  onChange={(valor) => {
-                    actualizar("fecha", valor);
-                    if (FECHA_AAAA_MM_DD.test(valor)) {
-                      setError("");
-                    }
-                  }}
-                  inputRef={fechaRef}
-                  nextRef={placaRef}
-                  placeholder="AAAA-MM-DD"
-                  align="center"
-                  prominent
-                  prominentSize="17px"
-                />
-              </Field>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Field label="Origen" labelWidth={104}>
-                <PuntoVentaField value={puntoVentaOrigen} />
-              </Field>
-            </Grid>
-
-            <Grid item xs={12}>
-              <Field label="Ruta" labelWidth={104}>
+              <Field label="Destino" labelWidth={104}>
                 <TrRutaSelect
                   value={draft.id_ruta}
                   onChange={(idRuta) => {
@@ -310,7 +309,6 @@ export default function TrManifiestoModal({
                     setError("");
                   }}
                   rutas={rutasConPasaje}
-                  detalle
                   placeholder="Selecciona"
                 />
               </Field>
@@ -342,21 +340,21 @@ export default function TrManifiestoModal({
                   value={draft.licencia}
                   onChange={(valor) => actualizar("licencia", String(valor || "").toUpperCase())}
                   inputRef={licenciaRef}
-                  nextRef={choferRef}
+                  nextRef={observacionRef}
                   placeholder="Licencia del chofer"
                 />
               </Field>
             </Grid>
 
             <Grid item xs={12}>
-              <Field label="Chofer" labelWidth={104}>
+              <Field label="Observacion" labelWidth={104}>
                 <CaptureInput
                   refs={focusableRefsManifiesto}
-                  value={draft.chofer}
-                  onChange={(valor) => actualizar("chofer", String(valor || "").toUpperCase())}
-                  inputRef={choferRef}
+                  value={draft.observacion}
+                  onChange={(valor) => actualizar("observacion", String(valor || "").toUpperCase())}
+                  inputRef={observacionRef}
                   nextRef={grabarRef}
-                  placeholder="Nombre del chofer"
+                  placeholder="Detalle opcional"
                 />
               </Field>
             </Grid>
@@ -396,7 +394,7 @@ export default function TrManifiestoModal({
           disabled={guardando}
           sx={{ ...accionPrincipalSx, justifySelf: "end" }}
         >
-          {guardando ? "Guardando..." : "Crear"}
+          {guardando ? "Guardando..." : modoCierre ? "Finalizar manifiesto" : "Crear"}
         </AppButton>
       </Box>
     </Dialog>

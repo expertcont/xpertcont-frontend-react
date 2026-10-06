@@ -25,9 +25,9 @@ export default function TrFiltros({
   const mostrarControlAnuladas = mostrarPuntoVenta && Boolean(onToggleAnuladas);
   const mostrarFiltroDerecha = Boolean(filtroDerechaPuntoVenta);
   const columnasConPuntoVenta = [
-    compact ? "150px" : "180px",
-    compact ? "minmax(220px, 360px)" : "minmax(280px, 420px)",
-    compact ? "220px" : "260px",
+    compact ? "150px" : "165px",
+    compact ? "minmax(220px, 360px)" : "minmax(260px, 390px)",
+    compact ? "220px" : "235px",
     mostrarControlAnuladas ? (compact ? "170px" : "180px") : null,
     mostrarFiltroDerecha ? (compact ? "220px" : "260px") : null,
   ].filter(Boolean).join(" ");
@@ -40,16 +40,16 @@ export default function TrFiltros({
           xs: "minmax(0, 1fr)",
           md: mostrarPuntoVenta
             ? columnasConPuntoVenta
-            : `${compact ? "150px minmax(220px, 390px)" : "180px minmax(280px, 460px)"}`,
+            : `${compact ? "150px minmax(220px, 390px)" : "165px minmax(260px, 420px)"}`,
         },
-        gap: compact ? { xs: 0.25, md: 0.75 } : { xs: 0.5, md: 2 },
+        gap: compact ? { xs: 0.25, md: 0.75 } : { xs: 0.35, md: 1 },
         alignItems: "end",
         justifyContent: "flex-start",
-        mb: compact ? { xs: 0.5, md: 0.75 } : { xs: 1, md: 2 },
-        p: compact ? { xs: 0.25, md: 0.5 } : { xs: 0.75, md: 2 },
-        borderRadius: compact ? 0 : palette.radius.listCard,
-        backgroundColor: compact ? "transparent" : palette.surface,
-        border: compact ? "none" : `1px solid ${palette.border}`,
+        mb: compact ? { xs: 0.5, md: 0.75 } : { xs: 0.6, md: 1 },
+        p: compact ? { xs: 0.25, md: 0.5 } : { xs: 0.15, md: 0.35 },
+        borderRadius: 0,
+        backgroundColor: "transparent",
+        border: "none",
       }}
     >
       <Box sx={{ width: "100%", minWidth: 0, maxWidth: "100%" }}>

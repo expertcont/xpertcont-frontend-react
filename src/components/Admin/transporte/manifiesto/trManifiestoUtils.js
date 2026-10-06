@@ -11,8 +11,8 @@
 // ref.current queda en null.
 //
 // Orden (de arriba hacia abajo):
-//   1. Viaje  : Fecha, Ruta/Destino
-//   2. Vehiculo: Placa, Licencia, Chofer
+//   1. Viaje  : Fecha, Destino
+//   2. Vehiculo: Placa, Licencia, Observacion
 //   3. Pasajero: Busqueda, Grabar
 export const focusableRefsManifiesto = [];
 
@@ -20,11 +20,10 @@ export const emptyManifiesto = () => ({
   fecha: "",
   id_punto_venta: "",
   id_punto_venta_dest: "",
-  ruta_nombre: "",
   id_ruta: "",
   placa: "",
   licencia: "",
-  chofer: "",
+  observacion: "",
 });
 
 const campo = (v) => String(v ?? "").trim().toUpperCase();
@@ -60,5 +59,11 @@ export const dosDecimales = (valor) => Number(valor || 0).toFixed(2);
 // La fecha se maneja como AAAA-MM-DD porque es lo que espera el backend
 // (el service rechaza cualquier otro formato con 400). Se valida antes de enviar.
 export const FECHA_AAAA_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
+
+export const normalizarFechaManifiesto = (fecha) => {
+  const texto = String(fecha || "").trim();
+  const candidata = texto.slice(0, 10);
+  return FECHA_AAAA_MM_DD.test(candidata) ? candidata : "";
+};
 
 export const periodoDeFecha = (fecha) => String(fecha || "").slice(0, 7);

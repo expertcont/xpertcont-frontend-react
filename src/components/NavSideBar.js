@@ -16,7 +16,6 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import CropFreeIcon from '@mui/icons-material/CropFree';
 import AirportShuttleIcon from '@mui/icons-material/AirportShuttle';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
-import PersonIcon from '@mui/icons-material/Person';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -76,8 +75,8 @@ const operationalIconTones = {
   },
 };
 
-// Icono de transporte (Shuttle con lineas de velocidad), usado en el submenu GREM.
-const GremShuttleIcon = () => (
+// Icono de minivan con lineas de velocidad, usado para el acceso de Boletos.
+const MinivanMenuIcon = () => (
   <Box sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}>
     <Box
       component="span"
@@ -119,6 +118,75 @@ const GremShuttleIcon = () => (
       }}
     />
     <AirportShuttleIcon sx={{ transform: 'skewX(-8deg) translateX(2px)' }} />
+  </Box>
+);
+
+const GremDocumentIcon = () => (
+  <Box
+    sx={{
+      position: 'relative',
+      width: '1em',
+      height: '1.18em',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      lineHeight: 0,
+      transform: 'rotate(-3deg)',
+    }}
+  >
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        inset: '0.06em 0.13em 0.02em 0.08em',
+        border: '0.11em solid currentColor',
+        borderRadius: '0.16em',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+      }}
+    />
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        top: '0.06em',
+        right: '0.13em',
+        width: '0.34em',
+        height: '0.34em',
+        borderLeft: '0.11em solid currentColor',
+        borderBottom: '0.11em solid currentColor',
+        borderBottomLeftRadius: '0.08em',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+      }}
+    />
+    {[0.38, 0.58, 0.78].map((top, index) => (
+      <Box
+        key={top}
+        component="span"
+        sx={{
+          position: 'absolute',
+          left: '0.28em',
+          top: `${top}em`,
+          width: index === 1 ? '0.52em' : '0.42em',
+          height: '0.08em',
+          borderRadius: 2,
+          backgroundColor: 'currentColor',
+          opacity: index === 1 ? 0.82 : 0.58,
+        }}
+      />
+    ))}
+    <Box
+      component="span"
+      sx={{
+        position: 'absolute',
+        right: '-0.02em',
+        bottom: '0.03em',
+        width: '0.28em',
+        height: '0.28em',
+        borderRadius: '50%',
+        backgroundColor: 'currentColor',
+        opacity: 0.28,
+      }}
+    />
   </Box>
 );
 
@@ -780,11 +848,14 @@ export default function NavSideBar(props) {
                 )}
                 {puedeMenuTransporte('transporte.grem') && (
                   <SubMenuItem
-                    icon={<GremShuttleIcon />}
+                    icon={<GremDocumentIcon />}
                     label="GREM"
                     menuId="transporte.grem"
                     isActive={selectedButton === 'icono11-grem'}
                     onClick={() => {
+                      if (typeof props.onNavigatePanoramic === 'function') {
+                        props.onNavigatePanoramic('grem');
+                      }
                       navigate(`/ad_transportegrem/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                       handleClick('icono11-grem');
                     }}
@@ -824,11 +895,14 @@ export default function NavSideBar(props) {
                 )}
                 {puedeMenuTransporte('transporte.boletos') && (
                   <SubMenuItem
-                    icon={<PersonIcon />}
+                    icon={<MinivanMenuIcon />}
                     label="Boletos"
                     menuId="transporte.boletos"
                     isActive={selectedButton === 'icono11-2'}
                     onClick={() => {
+                      if (typeof props.onNavigatePanoramic === 'function') {
+                        props.onNavigatePanoramic('boletos');
+                      }
                       navigate(`/ad_transportesboletos/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
                       handleClick('icono11-2');
                     }}

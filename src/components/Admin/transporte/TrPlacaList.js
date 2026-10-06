@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Box, Dialog, Grid, IconButton, InputBase, Tooltip, Typography } from "@mui/material";
-import { BadgeCheck, Hash, Pencil, Plus, Save, Search, ShieldCheck, Trash2, Truck, X } from "lucide-react";
+import { BadgeCheck, Hash, Pencil, Plus, Save, Search, ShieldCheck, Trash2, Truck, Users, X } from "lucide-react";
 import swal2 from "sweetalert2";
 
 import { useDialog } from "../AdminConfirmDialogProvider";
@@ -98,14 +98,16 @@ function Field({ label, icon, children }) {
   );
 }
 
-function CaptureInput({ value, onChange, placeholder, readOnly = false }) {
+function CaptureInput({ value, onChange, placeholder, readOnly = false, type = "text", inputMode, align = "left" }) {
   return (
     <InputBase
+      type={type}
       value={value || ""}
       readOnly={readOnly}
       placeholder={placeholder}
+      inputProps={{ inputMode }}
       onChange={(event) => onChange(event.target.value)}
-      sx={inputSx}
+      sx={{ ...inputSx, "& input": { textAlign: align } }}
     />
   );
 }
@@ -115,6 +117,7 @@ function PlacaModal({ open, placa, onClose, onSubmit }) {
     placa: "",
     marca: "",
     certificado: "",
+    asientos: "",
   });
   const [error, setError] = useState("");
 
@@ -124,6 +127,7 @@ function PlacaModal({ open, placa, onClose, onSubmit }) {
         placa: placa?.placa || "",
         marca: placa?.marca || "",
         certificado: placa?.certificado || "",
+        asientos: placa?.asientos ?? "",
       });
       setError("");
     }
@@ -141,6 +145,7 @@ function PlacaModal({ open, placa, onClose, onSubmit }) {
       placa: String(draft.placa || "").trim().toUpperCase(),
       marca: String(draft.marca || "").trim().toUpperCase(),
       certificado: String(draft.certificado || "").trim().toUpperCase(),
+      asientos: draft.asientos === "" || draft.asientos === null || draft.asientos === undefined ? null : Number(draft.asientos),
     });
   };
 
@@ -212,6 +217,18 @@ function PlacaModal({ open, placa, onClose, onSubmit }) {
               <CaptureInput value={draft.certificado} onChange={(value) => updateDraft("certificado", value.toUpperCase())} placeholder="CERT-001" />
             </Field>
           </Grid>
+          <Grid item xs={12} md={4}>
+            <Field label="Asientos" icon={<Users size={15} />}>
+              <CaptureInput
+                value={draft.asientos}
+                onChange={(value) => updateDraft("asientos", value.replace(/\D/g, ""))}
+                placeholder="18"
+                type="number"
+                inputMode="numeric"
+                align="right"
+              />
+            </Field>
+          </Grid>
         </Grid>
 
         {error && <Typography sx={{ color: "#ff8a65", fontSize: "12px", mt: 1 }}>{error}</Typography>}
@@ -265,6 +282,7 @@ export default function TrPlacaList() {
       item.placa,
       item.marca,
       item.certificado,
+      item.asientos,
     ].some((field) => String(field || "").toLowerCase().includes(value))));
   };
 
@@ -328,6 +346,18 @@ export default function TrPlacaList() {
     },
     { name: "Marca", selector: row => row.marca || "-", grow: 1 },
     { name: "Certificado", selector: row => row.certificado || "-", grow: 1 },
+    {
+      name: "Asientos",
+      selector: row => row.asientos ?? "-",
+      width: "120px",
+      right: true,
+      cell: row => (
+        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 0.5, width: "100%", fontWeight: 800 }}>
+          <Users size={14} color={palette.muted} />
+          {row.asientos ?? "-"}
+        </Box>
+      ),
+    },
     {
       name: "",
       width: "90px",

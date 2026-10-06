@@ -19,13 +19,15 @@ import palette from "../../../../../theme/palette";
 // `detalle` es para el manifiesto: alla el viaje se identifica por nombre de ruta,
 // destino y pasaje, y son datos que todavia no estan en pantalla.
 // ===========================================================================
-export default function TrRutaSelect({ value, onChange, rutas = [], detalle = false, placeholder = "Selecciona" }) {
+export default function TrRutaSelect({ value, onChange, rutas = [], detalle = false, placeholder = "Selecciona", selectRef, onKeyDown }) {
   return (
     <Select
+      ref={selectRef}
       variant="standard"
       disableUnderline
       value={value || ""}
       onChange={(event) => onChange(event.target.value)}
+      onKeyDown={onKeyDown}
       sx={{
         color: palette.text,
         fontSize: "12.5px",

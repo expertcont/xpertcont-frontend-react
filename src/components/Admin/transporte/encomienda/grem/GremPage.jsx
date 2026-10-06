@@ -12,7 +12,7 @@ import GremEditorDialog, { cargarUbigeosGrem } from "./GremEditorDialog";
 import GremList from "./GremList";
 import { fechaHoyLima } from "./gremUtils";
 
-export default function GremPage() {
+export default function GremPage({ panoramicMode = false }) {
   const backHost = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   const params = useParams();
   const navigate = useNavigate();
@@ -178,8 +178,8 @@ export default function GremPage() {
   };
 
   return (
-    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: 4 } }}>
-      <Box sx={{ width: "100%", maxWidth: { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto", display: "grid", gap: 1.4 }}>
+    <Box sx={{ minHeight: "100%", backgroundColor: "transparent", p: { xs: 1, md: panoramicMode ? 1.5 : 4, xl: panoramicMode ? 2 : 4 } }}>
+      <Box sx={{ width: "100%", maxWidth: panoramicMode ? "100%" : { xs: "100%", lg: 1280, xl: 1440 }, mx: "auto", display: "grid", gap: panoramicMode ? 1 : 1.4 }}>
         <Box
           sx={{
             display: "flex",
@@ -187,7 +187,7 @@ export default function GremPage() {
             justifyContent: "space-between",
             alignItems: { xs: "flex-start", sm: "center" },
             gap: { xs: 1, sm: 2 },
-            mb: { xs: 0, md: 1.6 },
+            mb: { xs: 0, md: panoramicMode ? 0.5 : 1.6 },
           }}
         >
           <Box>
@@ -210,6 +210,7 @@ export default function GremPage() {
           onPeriodoSelect={handlePeriodoSelect}
           onContabilidadSelect={handleContabilidadSelect}
           onPuntoVentaSelect={handlePuntoVentaSelect}
+          compact={panoramicMode}
         />
 
         <DaySelector period={periodoTrabajo || params.periodo} onDaySelect={(day) => setDiaSel(day === "*" ? "*" : day.toString().padStart(2, "0"))} />

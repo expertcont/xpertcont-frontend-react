@@ -466,7 +466,7 @@ export default function TrManifiestoPasajeros({
 
           {abierto && (
             <AppButton icon={<Lock size={18} />} onClick={onCerrar} sx={botonPrincipalSx}>
-              Cerrar manifiesto
+              Finalizar manifiesto
             </AppButton>
           )}
         </Box>

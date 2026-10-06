@@ -71,13 +71,17 @@ function AppLayout(props) {
   const location = useLocation();
   const isEntregasRoute = location.pathname.startsWith("/ad_transporteentregas");
   const isEncomiendaRoute = location.pathname.startsWith("/ad_transportesencomienda") || location.pathname.startsWith("/ad_transporte/");
+  const isGremRoute = location.pathname.startsWith("/ad_transportegrem");
+  const isBoletosRoute = location.pathname.startsWith("/ad_transportesboletos");
   const isCajaRoute = location.pathname.startsWith("/ad_transportecaja");
-  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isCajaRoute;
+  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isGremRoute || isBoletosRoute || isCajaRoute;
   const [panoramicMode, setPanoramicMode] = useState(() => (
     typeof window !== "undefined" && (
       window.location.pathname.startsWith("/ad_transporteentregas") ||
       window.location.pathname.startsWith("/ad_transportesencomienda") ||
       window.location.pathname.startsWith("/ad_transporte/") ||
+      window.location.pathname.startsWith("/ad_transportegrem") ||
+      window.location.pathname.startsWith("/ad_transportesboletos") ||
       window.location.pathname.startsWith("/ad_transportecaja")
     )
   ));
@@ -86,6 +90,8 @@ function AppLayout(props) {
   const claveMenuPanoramico = (pathname) => {
     if (pathname.startsWith("/ad_transporteentregas")) return "entregas";
     if (pathname.startsWith("/ad_transportesencomienda") || pathname.startsWith("/ad_transporte/")) return "encomiendas";
+    if (pathname.startsWith("/ad_transportegrem")) return "grem";
+    if (pathname.startsWith("/ad_transportesboletos")) return "boletos";
     if (pathname.startsWith("/ad_transportecaja")) return "caja";
     return "";
   };
@@ -196,12 +202,12 @@ function AppLayout(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} panoramicMode={panoramicMode} />} />
               <Route path="/ad_transporterdiencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaResumenSunatList modo="transporte" origen="TRANS_ENCOMIENDA" titulo="RDI SUNAT - Encomiendas - Boletos" rutaBase="/ad_transporterdiencomienda" />} />
-              <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList />} />
+              <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList panoramicMode={panoramicMode} />} />
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList super={props.super} panoramicMode={panoramicMode} />} />
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />
               <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList panoramicMode={panoramicMode} supervisor={props.supervisor} />} />
               <Route path="/ad_transportecaja/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrCajaMovimientoList />} />
-              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList />} />
+              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList panoramicMode={panoramicMode} />} />
               {/* Manifiesto de pasajeros. El punto de venta viaja en el query porque no
                   forma parte de la ruta y hace falta para crear el manifiesto. */}
               <Route path="/ad_transportemanifiesto/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrManifiestoList />} />
