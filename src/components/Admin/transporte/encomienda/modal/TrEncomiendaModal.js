@@ -48,6 +48,16 @@ const swalSobreModal = (options) => swal2.fire({
 
 const tieneValor = (value) => String(value || "").trim() !== "";
 const esPermisoActivo = (value) => ["1", "true", "s", "si", "yes"].includes(String(value || "").trim().toLowerCase());
+const sumarMesesPeriodo = (periodo, offset) => {
+  const match = String(periodo || "").match(/^(\d{4})-(\d{2})$/);
+
+  if (!match) {
+    return periodo || "";
+  }
+
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1 + offset, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+};
 
 const direccionEmpresa = (datos = {}) => (
   datos.direccion ||
@@ -192,6 +202,7 @@ export default function TrEncomiendaModal({
   const [clonePickerOpen, setClonePickerOpen] = useState(false);
   const [cloneLoading, setCloneLoading] = useState(false);
   const [cloneRows, setCloneRows] = useState([]);
+  const [clonePeriodosBusqueda, setClonePeriodosBusqueda] = useState(6);
   const [buscandoRemitente, setBuscandoRemitente] = useState(false);
   const [buscandoDestinatario, setBuscandoDestinatario] = useState(false);
   const [imprimiendoTicket, setImprimiendoTicket] = useState(false);
@@ -334,23 +345,50 @@ export default function TrEncomiendaModal({
     }));
   };
 
-  const cargarEncomiendasClonables = async () => {
+  const cargarEncomiendasClonables = async (periodosBusqueda = clonePeriodosBusqueda) => {
     if (!idAnfitrion || !documentoId) {
       setCloneRows([]);
+      return;
+    }
+
+    const documentoRemitente = String(draft.cliente_documento || "").replace(/\D/g, "");
+    if (!documentoRemitente) {
+      setCloneRows([]);
+      setError("Indica DNI/RUC del remitente para buscar encomiendas anteriores.");
+      remitenteDocRef.current?.focus();
       return;
     }
 
     setCloneLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set("limit", "80");
-      if (puntoVentaOrigen) {
-        params.set("id_punto_venta", puntoVentaOrigen);
-      }
+      params.set("periodos", String(Math.max(periodosBusqueda, 6)));
+      params.set("cliente_documento", documentoRemitente);
 
       const response = await fetch(`${back_host}/mve_transventa/encomienda/clonar/${periodoTrabajo}/${idAnfitrion}/${documentoId}?${params.toString()}`);
       const result = await response.json();
+      const seen = new Set();
       const rows = (Array.isArray(result?.data) ? result.data : [])
+        .filter((item) => {
+          const documentoItem = String(item.cliente_documento || item.cliente_documento_id || "").replace(/\D/g, "");
+          return documentoItem === documentoRemitente;
+        })
+        .filter((item) => {
+          const key = [
+            item.periodo_origen || item.periodo || "",
+            item.r_cod,
+            item.r_serie,
+            item.r_numero,
+            item.elemento || 1,
+          ].join("|");
+
+          if (seen.has(key)) {
+            return false;
+          }
+
+          seen.add(key);
+          return true;
+        })
         .sort((a, b) => String(b.r_fecemi || "").localeCompare(String(a.r_fecemi || "")))
         .map((item) => ({
           ...item,
@@ -373,6 +411,16 @@ export default function TrEncomiendaModal({
 
     setClonePickerOpen(true);
     cargarEncomiendasClonables();
+  };
+
+  const ampliarClonePeriodos = () => {
+    setClonePeriodosBusqueda((prev) => {
+      const next = Math.min(prev + 1, 12);
+      if (next !== prev) {
+        cargarEncomiendasClonables(next);
+      }
+      return next;
+    });
   };
 
   const clonarEncomienda = (item) => {
@@ -1609,6 +1657,9 @@ export default function TrEncomiendaModal({
         loading={cloneLoading}
         rows={cloneRows}
         initialSearch={draft.cliente_documento}
+        periodosBusqueda={clonePeriodosBusqueda}
+        periodoLimiteBusqueda={sumarMesesPeriodo(periodoTrabajo, -(clonePeriodosBusqueda - 1))}
+        onAmpliarPeriodos={ampliarClonePeriodos}
         onClose={() => setClonePickerOpen(false)}
         onSelect={clonarEncomienda}
       />

@@ -1442,7 +1442,7 @@ export default function TrModuloBase({
           nuevoTexto={nuevoTexto}
           buscarTexto={buscarTexto}
           valorBusqueda={valorBusqueda}
-          nuevoDeshabilitado={!puedeCrearOperacion || ((tipoOperacionFijo === "E" || tipoOperacionFijo === "B") && !puntoVentaTrabajo)}
+          nuevoDeshabilitado={tipoOperacionFijo === "B" ? !puntoVentaTrabajo : (!puedeCrearOperacion || (tipoOperacionFijo === "E" && !puntoVentaTrabajo))}
           ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : ticketBoletoModo}
           ticketOpciones={tipoOperacionFijo === "B" ? [
             { value: "ticket", label: "Ticket", icon: Ticket },
@@ -1533,7 +1533,7 @@ export default function TrModuloBase({
             placasDisponibles={placasDisponibles}
             licenciasDisponibles={licenciasDisponibles}
             empresa={empresaTrabajo}
-            puedeCrear={puedeCrearOperacion}
+            puedeCrear
             onGuardarBoleto={guardarOperacion}
             onLiberarBoleto={handleCancel}
             puedeLiberarBoleto

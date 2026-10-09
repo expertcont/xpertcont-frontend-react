@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Dialog, IconButton, InputBase, Typography } from "@mui/material";
-import { Search, X } from "lucide-react";
+import { Box, Dialog, IconButton, InputBase, Tooltip, Typography } from "@mui/material";
+import { CalendarPlus, Search, X } from "lucide-react";
 
+import AppButton from "../../../../ui/AppButton";
 import palette from "../../../../../theme/palette";
 import { fieldSx, inputSx } from "./TrEncomiendaModalInputs";
 import {
@@ -10,7 +11,17 @@ import {
   numeroOperacionClone,
 } from "./trEncomiendaModalUtils";
 
-export default function TrEncomiendaModalClone({ open, loading, rows, initialSearch, onClose, onSelect }) {
+export default function TrEncomiendaModalClone({
+  open,
+  loading,
+  rows,
+  initialSearch,
+  periodosBusqueda = 6,
+  periodoLimiteBusqueda = "",
+  onAmpliarPeriodos,
+  onClose,
+  onSelect,
+}) {
   const [busqueda, setBusqueda] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const busquedaRef = useRef(null);
@@ -50,11 +61,29 @@ export default function TrEncomiendaModalClone({ open, loading, rows, initialSea
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography sx={{ fontWeight: 800, fontSize: "15px" }}>Clonar encomienda</Typography>
-            <Typography sx={{ color: palette.muted, fontSize: "11px" }}>Ultimas encomiendas de los 3 ultimos periodos</Typography>
+            <Typography sx={{ color: palette.muted, fontSize: "11px" }}>
+              Ultimas encomiendas de {periodosBusqueda} periodo{periodosBusqueda === 1 ? "" : "s"}
+            </Typography>
           </Box>
           <IconButton onClick={onClose} sx={{ color: palette.muted }}>
             <X size={18} />
           </IconButton>
+        </Box>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 0, alignItems: "center", mb: 0.9 }}>
+          <Box sx={{ height: 36, px: 1.15, display: "flex", alignItems: "center", borderRadius: palette.radius.control, backgroundColor: palette.bg, border: `1px solid ${palette.border}`, color: palette.muted, fontSize: "12px", fontWeight: 700, whiteSpace: "nowrap", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {periodoLimiteBusqueda ? `${periodoLimiteBusqueda} -> Hasta Hoy` : "Rango de busqueda"}
+          </Box>
+          <Tooltip title="Ampliar periodo" arrow>
+            <Box>
+              <AppButton
+                icon={<CalendarPlus size={16} />}
+                onClick={onAmpliarPeriodos}
+                disabled={loading || periodosBusqueda >= 12}
+                sx={{ width: 36, height: 36, minWidth: 36, p: 0, color: palette.accent }}
+              />
+            </Box>
+          </Tooltip>
         </Box>
 
         <Box sx={{ ...fieldSx, mb: 0.9 }}>
