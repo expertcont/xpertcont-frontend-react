@@ -5,7 +5,7 @@ import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import SummarizeIcon from "@mui/icons-material/Summarize";
-import { FileSpreadsheet, Search, Truck } from "lucide-react";
+import { Bluetooth, FileSpreadsheet, MessageCircle, Search, Ticket, Truck } from "lucide-react";
 import * as XLSX from "xlsx";
 import swal2 from "sweetalert2";
 
@@ -18,7 +18,7 @@ import TrManifiestoMinivanPanel from "../manifiesto/TrManifiestoMinivanPanel";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
 import TrRdiProgresoModal from "./TrRdiProgresoModal";
-import { createColumns, customStyles, customStylesEncomienda, customStylesEncomiendaPanoramica, operacionProtegidaSunat } from "./components/TrOperacionRow";
+import { createColumns, customStylesEncomienda, customStylesEncomiendaPanoramica, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
 import useTrOperaciones from "./hooks/useTrOperaciones";
 import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
@@ -149,8 +149,27 @@ const TICKET_ENCOMIENDA_MODO_KEY = "xpertcont.transporte.encomienda.ticketPredet
 const normalizarModoTicketEncomienda = (value) => (
   ["completo", "admin", "cliente"].includes(value) ? value : "completo"
 );
+const TICKET_BOLETO_MODO_KEY = "xpertcont.transporte.boleto.ticketPredeterminado";
+const normalizarModoTicketBoleto = (value) => (
+  ["ticket", "whatsapp", "bluetooth"].includes(value) ? value : "ticket"
+);
+
+const boolSesion = (value) => ["1", "true", "s", "si", "yes"].includes(String(value || "").trim().toLowerCase());
 
 const textoSiNo = (value) => value ? "Si" : "No";
+
+const textoOperacionConfirmacion = (operacion = {}) => {
+  const numero = operacion.numero
+    || [operacion.r_serie, operacion.r_numero].filter(Boolean).join("-")
+    || (operacion.asiento ? `Asiento ${operacion.asiento}` : "");
+  const cliente = operacion.clienteLabel
+    || operacion.cliente
+    || operacion.pasajero_nombre
+    || operacion.nombre_pasajero
+    || "";
+
+  return [numero, cliente].filter(Boolean).join(" - ") || "Operacion seleccionada";
+};
 
 const slugArchivo = (value, fallback = "sin-agencia") => {
   const slug = String(value || "")
@@ -216,6 +235,7 @@ export default function TrModuloBase({
   footerTexto = "Encomiendas de transporte registradas en mve_transventa.",
   basePath = "/ad_transportesencomienda",
   superUsuario = "0",
+  supervisorUsuario = "0",
   panoramicMode = false,
 }) {
   /*
@@ -253,6 +273,10 @@ export default function TrModuloBase({
   const [ticketEncomiendaModo, setTicketEncomiendaModo] = useState(() => {
     if (typeof window === "undefined") return "completo";
     return normalizarModoTicketEncomienda(window.localStorage.getItem(TICKET_ENCOMIENDA_MODO_KEY));
+  });
+  const [ticketBoletoModo, setTicketBoletoModo] = useState(() => {
+    if (typeof window === "undefined") return "ticket";
+    return normalizarModoTicketBoleto(window.localStorage.getItem(TICKET_BOLETO_MODO_KEY));
   });
 
   // updateTrigger fuerza recarga luego de guardar, eliminar o enviar a SUNAT.
@@ -390,7 +414,10 @@ export default function TrModuloBase({
   const totalPendienteResumen = pendientesResumen + resumenesAbiertos.length;
   const resumenDiaOk = Boolean(diaSel && diaSel !== "*") && totalPendienteResumen === 0;
   const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
-  const puedeEliminarOperacion = params.id_anfitrion === params.id_invitado || ["1", "true", "s", "si"].includes(String(superUsuarioActual).toLowerCase());
+  const supervisorUsuarioActual = supervisorUsuario ?? sessionStorage.getItem("supervisor") ?? "0";
+  const esUsuarioAnfitrion = String(params.id_anfitrion) === String(params.id_invitado);
+  const puedeEliminarOperacion = esUsuarioAnfitrion || boolSesion(superUsuarioActual);
+  const puedeEliminarManifiesto = esUsuarioAnfitrion || boolSesion(superUsuarioActual) || boolSesion(supervisorUsuarioActual);
   const listadoMaxWidth = tipoOperacionFijo === "E"
     ? (panoramicMode ? "100%" : { xs: "100%", lg: 1280, xl: 1440 })
     : (panoramicMode ? "100%" : 980);
@@ -541,7 +568,7 @@ export default function TrModuloBase({
         icon: "warning",
         confirmButtonText: "ACEPTAR",
       });
-      return;
+      return false;
     }
 
     if (operacion && !puedeEditarOperacion) {
@@ -551,7 +578,7 @@ export default function TrModuloBase({
         icon: "warning",
         confirmButtonText: "ACEPTAR",
       });
-      return;
+      return false;
     }
 
     if (!operacion && tipoOperacionFijo === "E" && !puntoVentaTrabajo) {
@@ -689,19 +716,19 @@ export default function TrModuloBase({
         icon: "info",
         confirmText: "ACEPTAR",
       });
-      return;
+      return false;
     }
 
     const result = await confirmDialog({
       title: "Eliminar operacion?",
-      message: `${operacion.numero} - ${operacion.clienteLabel}`,
+      message: textoOperacionConfirmacion(operacion),
       icon: "warning",
       confirmText: "ELIMINAR",
       cancelText: "Cancelar",
     });
 
     if (!result.isConfirmed) {
-      return;
+      return false;
     }
 
     try {
@@ -738,16 +765,17 @@ export default function TrModuloBase({
       return;
     }
 
+    const esLiberacionBoleto = tipoOperacionFijo === "B";
     const result = await confirmDialog({
-      title: "Anular operacion?",
-      message: `${operacion.numero} - ${operacion.clienteLabel}`,
+      title: esLiberacionBoleto ? "Liberar asiento?" : "Anular operacion?",
+      message: textoOperacionConfirmacion(operacion),
       icon: "warning",
-      confirmText: "ANULAR",
+      confirmText: esLiberacionBoleto ? "LIBERAR" : "ANULAR",
       cancelText: "Cancelar",
     });
 
     if (!result.isConfirmed) {
-      return;
+      return false;
     }
 
     try {
@@ -759,17 +787,21 @@ export default function TrModuloBase({
       const dataResponse = await response.json();
 
       if (!response.ok || !dataResponse.success) {
-        throw new Error(dataResponse.message || "No se pudo anular la operacion.");
+        throw new Error(dataResponse.message || (esLiberacionBoleto ? "No se pudo liberar el asiento." : "No se pudo anular la operacion."));
       }
 
+      // En boletos, esta anulacion logica deja registrado = 0 dentro del mismo
+      // manifiesto; backend solo lo recupera si entra otro pasajero en ese viaje.
       quitarOperacionLocal(operacion);
+      return true;
     } catch (error) {
       swal2.fire({
-        title: "No se pudo anular",
+        title: esLiberacionBoleto ? "No se pudo liberar" : "No se pudo anular",
         text: error.message || "Error interno.",
         icon: "error",
         confirmButtonText: "ACEPTAR",
       });
+      return false;
     }
   };
 
@@ -790,7 +822,7 @@ export default function TrModuloBase({
 
     const result = await confirmDialog({
       title: "Enviar encomienda a SUNAT?",
-      message: `${operacion.numero} - ${operacion.clienteLabel}`,
+      message: textoOperacionConfirmacion(operacion),
       icon: "warning",
       confirmText: "ENVIAR",
       cancelText: "CANCELAR",
@@ -1262,6 +1294,12 @@ export default function TrModuloBase({
     window.localStorage.setItem(TICKET_ENCOMIENDA_MODO_KEY, modoNormalizado);
   };
 
+  const handleTicketBoletoModoChange = (modo) => {
+    const modoNormalizado = normalizarModoTicketBoleto(modo);
+    setTicketBoletoModo(modoNormalizado);
+    window.localStorage.setItem(TICKET_BOLETO_MODO_KEY, modoNormalizado);
+  };
+
   const exportarEncomiendasExcel = () => {
     if (tipoOperacionFijo !== "E") {
       return;
@@ -1401,8 +1439,13 @@ export default function TrModuloBase({
           buscarTexto={buscarTexto}
           valorBusqueda={valorBusqueda}
           nuevoDeshabilitado={!puedeCrearOperacion || ((tipoOperacionFijo === "E" || tipoOperacionFijo === "B") && !puntoVentaTrabajo)}
-          ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : undefined}
-          onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : undefined}
+          ticketModo={tipoOperacionFijo === "E" ? ticketEncomiendaModo : ticketBoletoModo}
+          ticketOpciones={tipoOperacionFijo === "B" ? [
+            { value: "ticket", label: "Ticket", icon: Ticket },
+            { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+            { value: "bluetooth", label: "Bluetooth", icon: Bluetooth },
+          ] : undefined}
+          onTicketModoChange={tipoOperacionFijo === "E" ? handleTicketEncomiendaModoChange : handleTicketBoletoModoChange}
           nuevoActionId={crearActionId}
           onNuevo={() => {
             if (tipoOperacionFijo === "B") {
@@ -1484,10 +1527,16 @@ export default function TrModuloBase({
             puntoVentaTrabajo={puntoVentaTrabajo}
             rutasDisponibles={rutasDisponibles}
             placasDisponibles={placasDisponibles}
+            licenciasDisponibles={licenciasDisponibles}
+            empresa={empresaTrabajo}
             puedeCrear={puedeCrearOperacion}
             onGuardarBoleto={guardarOperacion}
+            onLiberarBoleto={handleCancel}
+            puedeLiberarBoleto={puedeAnularOperacion}
+            puedeEliminarManifiesto={puedeEliminarManifiesto}
             guardandoBoleto={guardandoOperacion}
             guardarActionId={crearActionId}
+            ticketPredeterminado={ticketBoletoModo}
           />
         ) : (
           <DataTable

@@ -11,6 +11,11 @@ body {
   color: var(--app-text, #f4f8fb);
 }
 
+.swal2-container,
+.swal-overlay {
+  z-index: 20000 !important;
+}
+
 button,
 input,
 textarea,

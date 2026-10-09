@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Dialog, Grid, IconButton, InputBase, Typography } from "@mui/material";
-import { Bus, Save, ScanBarcode, Search, UserRound, X } from "lucide-react";
+import { Box, Dialog, Grid, IconButton, InputBase, Popover, Typography } from "@mui/material";
+import { Bus, MessageCircle, Save, ScanBarcode, Search, Ticket, UserRound, X } from "lucide-react";
+import swal2 from "sweetalert2";
 
 import AppButton from "../../ui/AppButton";
 import AppIconBox from "../../ui/AppIconBox";
 import palette from "../../../theme/palette";
+import crearTicketBoletoPdfUrl from "./boleto/TrBoletoTicketPdf";
 
 const documentoTipoDesdeNumero = (documento) => {
   const limpio = String(documento || "").replace(/\D/g, "");
@@ -14,6 +16,7 @@ const documentoTipoDesdeNumero = (documento) => {
 };
 
 const soloDigitos = (value) => String(value || "").replace(/\D/g, "");
+const esRuc = (value) => soloDigitos(value).length === 11;
 
 const extraerDocumentoDesdeCodigo = (codigo) => {
   const texto = String(codigo || "").trim();
@@ -40,6 +43,9 @@ const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
   cliente: operacion?.cliente || "",
   cliente_documento: operacion?.cliente_documento || "",
   cliente_telefono: operacion?.cliente_telefono || "",
+  cliente_direccion_fact: operacion?.cliente_direccion_fact || "",
+  ref_pasajero_dni: operacion?.ref_pasajero_dni || "",
+  ref_pasajero_nombres: operacion?.ref_pasajero_nombres || "",
   id_ruta: operacion?.id_ruta || "",
   id_punto_venta: operacion?.id_punto_venta || "",
   id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
@@ -131,10 +137,14 @@ export default function TrBoletoModal({
   periodoTrabajo,
   fechaOperacion,
   rutasDisponibles = [],
+  empresa = {},
   modalNuevoTitulo = "Nuevo boleto",
   modalEditarTitulo = "Editar boleto",
   onClose,
   onSubmit,
+  onTicket,
+  guardando = false,
+  ticketPredeterminado = "ticket",
   guardarActionId,
 }) {
   const esEdicion = Boolean(operacion);
@@ -146,10 +156,15 @@ export default function TrBoletoModal({
   const documentoRef = useRef(null);
   const nombreRef = useRef(null);
   const telefonoRef = useRef(null);
+  const direccionFactRef = useRef(null);
+  const pasajeroDniRef = useRef(null);
+  const pasajeroNombreRef = useRef(null);
   const guardarRef = useRef(null);
+  const ticketButtonRef = useRef(null);
   const scannerVideoRef = useRef(null);
   const scannerStreamRef = useRef(null);
   const scannerFrameRef = useRef(null);
+  const [ticketPickerOpen, setTicketPickerOpen] = useState(false);
 
   // Solo hay una ruta de salida de pasajeros: se toma sola y no se pregunta.
   // `precio_pasaje > 0` ya filtro la lista (el backend lo aplica con
@@ -198,11 +213,13 @@ export default function TrBoletoModal({
     draft.id_ruta ||
     "Destino"
   );
+  const facturaRuc = esRuc(draft.cliente_documento);
   const tituloBoleto = esEdicion
     ? modalEditarTitulo
     : draft.asiento
       ? `Boleto #${draft.asiento}`
       : modalNuevoTitulo || "Boleto";
+  const numeroBoletoGenerado = [operacion?.r_serie, operacion?.r_numero].filter(Boolean).join("-");
 
   const updateDraft = (name, value) => {
     setDraft((prev) => ({ ...prev, [name]: value }));
@@ -238,16 +255,21 @@ export default function TrBoletoModal({
       }
 
       const data = await response.json();
-      const { nombre_o_razon_social, r_id_doc } = data || {};
+      const { nombre_o_razon_social, r_id_doc, direccion_completa, direccion } = data || {};
 
       setDraft((prev) => ({
         ...prev,
         id_documento: r_id_doc || documentoTipoDesdeNumero(documento),
         cliente: nombre_o_razon_social || prev.cliente,
+        cliente_direccion_fact: esRuc(documento)
+          ? (direccion_completa || direccion || prev.cliente_direccion_fact)
+          : prev.cliente_direccion_fact,
       }));
 
       window.setTimeout(() => {
-        const nextRef = nombre_o_razon_social ? telefonoRef : nombreRef;
+        const nextRef = esRuc(documento)
+          ? (direccion_completa || direccion ? pasajeroDniRef : direccionFactRef)
+          : (nombre_o_razon_social ? telefonoRef : nombreRef);
         nextRef.current?.focus();
         nextRef.current?.select?.();
       }, 60);
@@ -261,15 +283,82 @@ export default function TrBoletoModal({
     }
   }, [back_host, draft.cliente_documento]);
 
+  const buscarPasajeroReferencia = useCallback(async () => {
+    const documento = String(draft.ref_pasajero_dni || "").trim();
+
+    if (!documento) {
+      setError("Indica DNI del pasajero.");
+      pasajeroDniRef.current?.focus();
+      return;
+    }
+
+    if (!back_host) {
+      setError("No se encontro la configuracion para consultar el DNI.");
+      pasajeroNombreRef.current?.focus();
+      return;
+    }
+
+    setBuscandoPasajero(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${back_host}/correntistagenera`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ruc: documento }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Consulta DNI fallo con estado ${response.status}`);
+      }
+
+      const data = await response.json();
+      const { nombre_o_razon_social } = data || {};
+
+      setDraft((prev) => ({
+        ...prev,
+        ref_pasajero_nombres: nombre_o_razon_social || prev.ref_pasajero_nombres,
+      }));
+
+      window.setTimeout(() => {
+        pasajeroNombreRef.current?.focus();
+        pasajeroNombreRef.current?.select?.();
+      }, 60);
+    } catch (err) {
+      console.log(err);
+      setError("No se pudo consultar el DNI del pasajero.");
+      pasajeroNombreRef.current?.focus();
+      pasajeroNombreRef.current?.select?.();
+    } finally {
+      setBuscandoPasajero(false);
+    }
+  }, [back_host, draft.ref_pasajero_dni]);
+
   // El total se LEE de la ruta elegida. No se edita y no se envia: el backend toma
   // el precio de mve_transruta.precio_pasaje, asi que escribir un total aqui no
   // cambiaria lo que se guarda.
   const precioPasaje = Number(rutaSeleccionada?.precio_pasaje || 0);
   const precioLabel = rutaSeleccionada ? `S/ ${precioPasaje.toFixed(2)}` : "S/ 0.00";
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (guardando) {
+      return;
+    }
+
     if (!draft.cliente_documento || !draft.cliente) {
-      setError("Indica documento y nombres del pasajero.");
+      setError(facturaRuc ? "Indica RUC y razon social." : "Indica documento y nombres del pasajero.");
+      return;
+    }
+
+    if (facturaRuc && !draft.cliente_direccion_fact) {
+      setError("Indica la direccion de facturacion.");
+      direccionFactRef.current?.focus();
+      return;
+    }
+
+    if (facturaRuc && (!draft.ref_pasajero_dni || !draft.ref_pasajero_nombres)) {
+      setError("Indica DNI y nombres del pasajero.");
+      (!draft.ref_pasajero_dni ? pasajeroDniRef : pasajeroNombreRef).current?.focus();
       return;
     }
 
@@ -282,12 +371,99 @@ export default function TrBoletoModal({
     // sueltos del mismo viaje (COUNT(manifiesto_id IS NULL) + 1). Si lo pidiera
     // aca, dos agentes grabando en el mismo momento podrian elegir el mismo.
 
-    onSubmit({
+    const modoTicket = ["ticket", "whatsapp", "bluetooth"].includes(ticketPredeterminado)
+      ? ticketPredeterminado
+      : "ticket";
+    const ticketWindow = !esEdicion && modoTicket !== "whatsapp" ? window.open("about:blank", "_blank") : null;
+    ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Grabando boleto...</p>`);
+
+    const boletoGuardado = await onSubmit({
       ...draft,
+      r_cod: facturaRuc ? "01" : "03",
+      r_serie: facturaRuc ? "F001" : "B001",
+      id_documento: facturaRuc ? "6" : documentoTipoDesdeNumero(draft.cliente_documento),
+      ref_pasajero_dni: facturaRuc ? draft.ref_pasajero_dni : "",
+      ref_pasajero_nombres: facturaRuc ? draft.ref_pasajero_nombres : "",
       tipo_operacion: "B",
       cantidad: 1,
       condicion_pago: "PAGADO",
     });
+
+    if (!boletoGuardado) {
+      ticketWindow?.close();
+      return;
+    }
+
+    await swal2.fire({
+      title: esEdicion ? "Boleto modificado" : "Boleto grabado",
+      text: esEdicion ? "El boleto fue modificado correctamente." : "El boleto fue grabado correctamente.",
+      icon: "success",
+      timer: esEdicion ? undefined : 1100,
+      showConfirmButton: esEdicion,
+      confirmButtonText: "ACEPTAR",
+      confirmButtonColor: palette.accent,
+      color: palette.text,
+      background: palette.surface,
+    });
+
+    if (!esEdicion) {
+      await onTicket?.({ ...draft, ...boletoGuardado }, 80, { modo: modoTicket, ticketWindow });
+    }
+  };
+
+  const boletoConDatosRuta = (boleto) => {
+    const ruta = rutasDisponibles.find((item) => String(item.id_ruta) === String(boleto?.id_ruta || draft.id_ruta));
+    return {
+      ...boleto,
+      id_ruta: boleto?.id_ruta || draft.id_ruta,
+      punto_venta_nombre: boleto?.punto_venta_nombre || ruta?.punto_venta_nombre || ruta?.origen_nombre || "",
+      punto_venta_dest_nombre: (
+        boleto?.punto_venta_dest_nombre ||
+        boleto?.punto_venta_destino_nombre ||
+        boleto?.destino_nombre ||
+        ruta?.punto_venta_dest_nombre ||
+        ruta?.punto_venta_destino_nombre ||
+        ruta?.destino_nombre ||
+        ""
+      ),
+    };
+  };
+
+  const imprimirTicketManual = async (anchoMm) => {
+    if (!operacion) {
+      return;
+    }
+
+    const ticketWindow = window.open("about:blank", "_blank");
+    ticketWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Generando ticket...</p>`);
+
+    try {
+      const pdfUrl = await crearTicketBoletoPdfUrl({
+        boleto: boletoConDatosRuta(operacion),
+        empresa,
+        anchoMm,
+      });
+
+      if (ticketWindow) {
+        ticketWindow.location.href = pdfUrl;
+      } else {
+        window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+    } catch (err) {
+      ticketWindow?.close();
+      console.error("No se pudo generar ticket de boleto:", err);
+      setError("No se pudo generar el ticket del boleto.");
+    }
+  };
+
+  const enviarWhatsappManual = async () => {
+    if (!operacion) {
+      return;
+    }
+
+    await onTicket?.(operacion, 80, { modo: "whatsapp" });
   };
 
   useEffect(() => {
@@ -426,8 +602,15 @@ export default function TrBoletoModal({
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, minWidth: 0 }}>
             <AppIconBox><Bus size={16} /></AppIconBox>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: "15px" }}>{tituloBoleto}</Typography>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.8, minWidth: 0 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: "15px", minWidth: 0 }} noWrap>{tituloBoleto}</Typography>
+                {esEdicion && numeroBoletoGenerado && (
+                  <Typography sx={{ color: palette.accent, fontSize: "11px", fontWeight: 900, whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {numeroBoletoGenerado}
+                  </Typography>
+                )}
+              </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, minWidth: 0 }}>
                 <Typography sx={{ color: palette.muted, fontSize: "11px", fontWeight: 700, minWidth: 0 }} noWrap>
                   {`Destino: ${destinoLabel}`}
@@ -449,12 +632,12 @@ export default function TrBoletoModal({
               </Box>
             </Box>
           </Box>
-          <IconButton onClick={onClose} sx={{ color: palette.muted }}><X size={18} /></IconButton>
+          <IconButton onClick={onClose} sx={{ color: palette.muted, width: 38, height: 38 }}><X size={20} /></IconButton>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5, mb: 0.55 }}>
           <UserRound size={15} color={palette.accent} />
-          <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800 }}>Pasajero</Typography>
+          <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800 }}>{facturaRuc ? "Facturacion" : "Pasajero"}</Typography>
         </Box>
         <Grid container spacing={0.85}>
           <Grid item xs={12}>
@@ -475,9 +658,11 @@ export default function TrBoletoModal({
                     const limpio = soloDigitos(value);
                     updateDraft("cliente_documento", limpio);
                     updateDraft("id_documento", documentoTipoDesdeNumero(limpio));
+                    updateDraft("r_cod", esRuc(limpio) ? "01" : "03");
+                    updateDraft("r_serie", esRuc(limpio) ? "F001" : "B001");
                   }}
                   inputRef={documentoRef}
-                  nextRef={draft.cliente ? telefonoRef : nombreRef}
+                  nextRef={draft.cliente ? (esRuc(draft.cliente_documento) ? direccionFactRef : telefonoRef) : nombreRef}
                   placeholder="Documento"
                   type="tel"
                   inputMode="numeric"
@@ -497,26 +682,126 @@ export default function TrBoletoModal({
             </Field>
           </Grid>
           <Grid item xs={12}>
-            <Field label="Nombres">
-              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", value)} inputRef={nombreRef} prevRef={documentoRef} nextRef={telefonoRef} placeholder="Pasajero" />
+            <Field label={facturaRuc ? "Razon social" : "Nombres"}>
+              <CaptureInput value={draft.cliente} onChange={(value) => updateDraft("cliente", value)} inputRef={nombreRef} prevRef={documentoRef} nextRef={facturaRuc ? direccionFactRef : telefonoRef} placeholder={facturaRuc ? "Razon social" : "Pasajero"} />
             </Field>
           </Grid>
-          <Grid item xs={12}>
-            <Field label="Telefono">
-              <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", soloDigitos(value))} inputRef={telefonoRef} prevRef={nombreRef} nextRef={guardarRef} placeholder="Celular" type="tel" inputMode="numeric" pattern="[0-9]*" />
-            </Field>
-          </Grid>
+          {facturaRuc && (
+            <Grid item xs={12}>
+              <Field label="Direccion">
+                <CaptureInput value={draft.cliente_direccion_fact} onChange={(value) => updateDraft("cliente_direccion_fact", value)} inputRef={direccionFactRef} prevRef={nombreRef} nextRef={pasajeroDniRef} placeholder="Direccion de facturacion" />
+              </Field>
+            </Grid>
+          )}
+          {!facturaRuc && (
+            <Grid item xs={12}>
+              <Field label="Telefono">
+                <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", soloDigitos(value))} inputRef={telefonoRef} prevRef={nombreRef} nextRef={guardarRef} placeholder="Celular" type="tel" inputMode="numeric" pattern="[0-9]*" />
+              </Field>
+            </Grid>
+          )}
+          {facturaRuc && (
+            <>
+              <Grid item xs={12}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.35, mb: 0.1 }}>
+                  <UserRound size={15} color={palette.accent} />
+                  <Typography sx={{ color: palette.text, fontSize: "12px", fontWeight: 800 }}>Pasajero</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="DNI">
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, minWidth: 0 }}>
+                    <IconButton
+                      size="small"
+                      onClick={buscarPasajeroReferencia}
+                      disabled={buscandoPasajero}
+                      title="Buscar pasajero por DNI"
+                      sx={{ color: buscandoPasajero ? palette.border : palette.muted, p: 0.35 }}
+                    >
+                      <Search size={15} />
+                    </IconButton>
+                    <CaptureInput value={draft.ref_pasajero_dni} onChange={(value) => updateDraft("ref_pasajero_dni", soloDigitos(value))} inputRef={pasajeroDniRef} prevRef={direccionFactRef} nextRef={pasajeroNombreRef} placeholder="DNI pasajero" type="tel" inputMode="numeric" pattern="[0-9]*" align="right" onPlus={buscarPasajeroReferencia} />
+                  </Box>
+                </Field>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="Nombres">
+                  <CaptureInput value={draft.ref_pasajero_nombres} onChange={(value) => updateDraft("ref_pasajero_nombres", value)} inputRef={pasajeroNombreRef} prevRef={pasajeroDniRef} nextRef={telefonoRef} placeholder="Nombres del pasajero" />
+                </Field>
+              </Grid>
+              <Grid item xs={12}>
+                <Field label="Telefono">
+                  <CaptureInput value={draft.cliente_telefono} onChange={(value) => updateDraft("cliente_telefono", soloDigitos(value))} inputRef={telefonoRef} prevRef={pasajeroNombreRef} nextRef={guardarRef} placeholder="Celular" type="tel" inputMode="numeric" pattern="[0-9]*" />
+                </Field>
+              </Grid>
+            </>
+          )}
         </Grid>
 
         {error && <Typography sx={{ color: palette.danger, fontSize: "12px", mt: 1 }}>{error}</Typography>}
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.75, mt: 1.2, flexWrap: "wrap" }}>
-          <AppButton onClick={onClose}>Cancelar</AppButton>
-          <AppButton data-action-id={guardarActionId} buttonRef={guardarRef} icon={<Save size={16} />} onClick={handleSubmit} sx={{ backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
-            {esEdicion ? "Guardar" : "Grabar boleto"}
-          </AppButton>
+        <Box sx={{ display: "grid", gap: 0.8, mt: 1.2 }}>
+          {operacion && (
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "auto auto" }, justifyContent: { sm: "end" }, gap: 0.65 }}>
+              <AppButton icon={<MessageCircle size={16} />} onClick={enviarWhatsappManual} sx={{ minHeight: 38 }}>
+                WhatsApp
+              </AppButton>
+              <AppButton buttonRef={ticketButtonRef} icon={<Ticket size={16} />} onClick={() => setTicketPickerOpen(true)} sx={{ minHeight: 38 }}>
+                Ticket
+              </AppButton>
+            </Box>
+          )}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "auto auto" }, justifyContent: { sm: "end" }, gap: 0.75 }}>
+            <AppButton icon={<X size={16} />} onClick={onClose} sx={{ minHeight: 40 }}>
+              Cerrar
+            </AppButton>
+            <AppButton data-action-id={guardarActionId} buttonRef={guardarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando} sx={{ minHeight: 40, backgroundColor: palette.accent, borderColor: palette.accent, color: palette.surface, fontWeight: 800 }}>
+              {guardando ? "Guardando..." : esEdicion ? "Guardar" : "Grabar boleto"}
+            </AppButton>
+          </Box>
         </Box>
       </Box>
+
+      <Popover
+        open={ticketPickerOpen}
+        onClose={() => setTicketPickerOpen(false)}
+        anchorEl={ticketButtonRef.current}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            backgroundColor: palette.surface,
+            border: `1px solid ${palette.border}`,
+            borderRadius: palette.radius.control,
+            color: palette.text,
+            p: 0.75,
+            minWidth: 150,
+          },
+        }}
+      >
+        <Box sx={{ display: "grid", gap: 0.55 }}>
+          <AppButton
+            icon={<Ticket size={16} />}
+            onClick={() => {
+              setTicketPickerOpen(false);
+              imprimirTicketManual(80);
+            }}
+            sx={{ justifyContent: "flex-start", minHeight: 36 }}
+          >
+            Ticket 80mm
+          </AppButton>
+          <AppButton
+            icon={<Ticket size={16} />}
+            onClick={() => {
+              setTicketPickerOpen(false);
+              imprimirTicketManual(56);
+            }}
+            sx={{ justifyContent: "flex-start", minHeight: 36 }}
+          >
+            Ticket 56mm
+          </AppButton>
+        </Box>
+      </Popover>
 
       <Dialog
         open={scannerOpen}

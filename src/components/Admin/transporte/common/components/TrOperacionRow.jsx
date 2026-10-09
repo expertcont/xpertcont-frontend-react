@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, Popover, Tooltip, Typography } from "@mui/material";
 import {
+  Armchair,
   Bus,
   Calendar,
   CheckCircle2,
@@ -575,6 +576,8 @@ function TrOperacionRow({
 }) {
   const protegidaSunat = row.tipo_operacion === "E" && operacionProtegidaSunat(row);
   const esEncomienda = row.tipo_operacion === "E";
+  const esBoleto = row.tipo_operacion === "B";
+  const cancelActionTitle = row.tipo_operacion === "B" ? "Liberar asiento" : "Anular operacion";
   const anulada = Number(row.registrado) === 0;
   const mostrarSelloAnulado = mostrarAnuladas && anulada;
   const esFactura = String(row.r_cod || row.r_cod_ref || "").padStart(2, "0") === "01";
@@ -880,9 +883,13 @@ function TrOperacionRow({
           )}
 
           {!protegidaSunat && !anulada && canCancel && (
-            <Tooltip title="Anular operacion" arrow>
-              <Box data-action-id={`${menuItemId}.anular_local`} onClick={() => onCancel(row)} sx={actionButtonSx(true)}>
-                <Ban size={14} />
+            <Tooltip title={cancelActionTitle} arrow>
+              <Box
+                data-action-id={`${menuItemId}.anular_local`}
+                onClick={() => onCancel(row)}
+                sx={actionButtonSx(!esBoleto)}
+              >
+                {esBoleto ? <Armchair size={14} /> : <Ban size={14} />}
               </Box>
             </Tooltip>
           )}

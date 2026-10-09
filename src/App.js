@@ -207,7 +207,7 @@ function AppLayout(props) {
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />
               <Route path="/ad_transporteentregas/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaEntregaList panoramicMode={panoramicMode} supervisor={props.supervisor} />} />
               <Route path="/ad_transportecaja/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrCajaMovimientoList />} />
-              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList panoramicMode={panoramicMode} />} />
+              <Route path="/ad_transportesboletos/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrBoletosList panoramicMode={panoramicMode} super={props.super} supervisor={props.supervisor} />} />
               {/* Manifiesto de pasajeros. El punto de venta viaja en el query porque no
                   forma parte de la ruta y hace falta para crear el manifiesto. */}
               <Route path="/ad_transportemanifiesto/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrManifiestoList />} />

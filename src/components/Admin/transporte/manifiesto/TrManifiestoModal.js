@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Dialog, Grid, IconButton, Typography } from "@mui/material";
-import { ClipboardList, MapPin, X } from "lucide-react";
+import { ClipboardList, MapPin, Truck, UserRound, X } from "lucide-react";
 
 import palette from "../../../../theme/palette";
 import AppButton from "../../../ui/AppButton";
@@ -10,6 +10,10 @@ import {
   Field,
   sectionSx,
 } from "../encomienda/modal/TrEncomiendaModalInputs";
+import {
+  LicenciaPickerModal,
+  PlacaPickerModal,
+} from "../encomienda/modal/TrEncomiendaModalPickers";
 import {
   FECHA_AAAA_MM_DD,
   emptyManifiesto,
@@ -79,6 +83,23 @@ const accionPrincipalSx = {
   fontWeight: 800,
 };
 
+const pickerIconSx = {
+  width: 32,
+  height: 32,
+  p: 0,
+  mr: 0.45,
+  flexShrink: 0,
+  borderRadius: palette.radius.control,
+  border: `1px solid ${palette.accent}`,
+  backgroundColor: palette.accentSoft,
+  color: palette.accent,
+  "& svg": { width: 17, height: 17 },
+  "&:hover": {
+    backgroundColor: palette.accentSoft,
+    color: palette.accent,
+  },
+};
+
 function SectionHeader({ icon, title }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.55, mb: 0.32 }}>
@@ -98,11 +119,15 @@ export default function TrManifiestoModal({
   documento_id,
   puntoVentaOrigen,
   rutasDisponibles = [],
+  placasDisponibles = [],
+  licenciasDisponibles = [],
   fechaServidor = "",
   guardando = false,
 }) {
   const [draft, setDraft] = useState(emptyManifiesto);
   const [error, setError] = useState("");
+  const [placaPickerOpen, setPlacaPickerOpen] = useState(false);
+  const [licenciaPickerOpen, setLicenciaPickerOpen] = useState(false);
 
   const placaRef = useRef(null);
   const licenciaRef = useRef(null);
@@ -110,6 +135,26 @@ export default function TrManifiestoModal({
   const grabarRef = useRef(null);
 
   const actualizar = (campo, valor) => setDraft((prev) => ({ ...prev, [campo]: valor }));
+
+  const seleccionarPlaca = (item) => {
+    setDraft((prev) => ({
+      ...prev,
+      placa: item?.placa || "",
+    }));
+    setPlacaPickerOpen(false);
+    window.setTimeout(() => licenciaRef.current?.focus(), 60);
+  };
+
+  const seleccionarLicencia = (item) => {
+    const nombre = String(item?.nombre || `${item?.nombres || ""} ${item?.apellidos || ""}`.trim()).trim();
+    setDraft((prev) => ({
+      ...prev,
+      licencia: item?.licencia || "",
+      observacion: prev.observacion || (nombre ? `CHOFER: ${nombre}` : prev.observacion),
+    }));
+    setLicenciaPickerOpen(false);
+    window.setTimeout(() => observacionRef.current?.focus(), 60);
+  };
 
   // Al abrir: la fecha la pone el servidor (no el reloj del navegador) y el origen
   // viene del filtro del panel. El manifiesto ES un viaje, asi que la fecha es
@@ -321,28 +366,52 @@ export default function TrManifiestoModal({
           <Grid container columnSpacing={0.65} rowSpacing={0.35}>
             <Grid item xs={12}>
               <Field label="Placa" labelWidth={104}>
-                <CaptureInput
-                  refs={focusableRefsManifiesto}
-                  value={draft.placa}
-                  onChange={(valor) => actualizar("placa", String(valor || "").toUpperCase())}
-                  inputRef={placaRef}
-                  nextRef={licenciaRef}
-                  placeholder="ABC-123"
-                  align="center"
-                />
+                <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setPlacaPickerOpen(true)}
+                    title="Buscar placa"
+                    sx={pickerIconSx}
+                  >
+                    <Truck />
+                  </IconButton>
+                  <CaptureInput
+                    refs={focusableRefsManifiesto}
+                    value={draft.placa}
+                    onChange={(valor) => actualizar("placa", String(valor || "").toUpperCase())}
+                    inputRef={placaRef}
+                    nextRef={licenciaRef}
+                    placeholder="ABC-123"
+                    align="center"
+                    onPlus={() => setPlacaPickerOpen(true)}
+                    onEmptyEnter={() => setPlacaPickerOpen(true)}
+                  />
+                </Box>
               </Field>
             </Grid>
 
             <Grid item xs={12}>
               <Field label="Licencia" labelWidth={104}>
-                <CaptureInput
-                  refs={focusableRefsManifiesto}
-                  value={draft.licencia}
-                  onChange={(valor) => actualizar("licencia", String(valor || "").toUpperCase())}
-                  inputRef={licenciaRef}
-                  nextRef={observacionRef}
-                  placeholder="Licencia del chofer"
-                />
+                <Box sx={{ display: "flex", alignItems: "center", width: "100%", minWidth: 0 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setLicenciaPickerOpen(true)}
+                    title="Buscar licencia"
+                    sx={pickerIconSx}
+                  >
+                    <UserRound />
+                  </IconButton>
+                  <CaptureInput
+                    refs={focusableRefsManifiesto}
+                    value={draft.licencia}
+                    onChange={(valor) => actualizar("licencia", String(valor || "").toUpperCase())}
+                    inputRef={licenciaRef}
+                    nextRef={observacionRef}
+                    placeholder="Licencia del chofer"
+                    onPlus={() => setLicenciaPickerOpen(true)}
+                    onEmptyEnter={() => setLicenciaPickerOpen(true)}
+                  />
+                </Box>
               </Field>
             </Grid>
 
@@ -397,6 +466,19 @@ export default function TrManifiestoModal({
           {guardando ? "Guardando..." : modoCierre ? "Finalizar manifiesto" : "Crear"}
         </AppButton>
       </Box>
+
+      <PlacaPickerModal
+        open={placaPickerOpen}
+        placas={placasDisponibles}
+        onClose={() => setPlacaPickerOpen(false)}
+        onSelect={seleccionarPlaca}
+      />
+      <LicenciaPickerModal
+        open={licenciaPickerOpen}
+        licencias={licenciasDisponibles}
+        onClose={() => setLicenciaPickerOpen(false)}
+        onSelect={seleccionarLicencia}
+      />
     </Dialog>
   );
 }

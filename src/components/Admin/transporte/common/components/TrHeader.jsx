@@ -16,6 +16,7 @@ export default function TrHeader({
   valorBusqueda,
   nuevoDeshabilitado,
   ticketModo,
+  ticketOpciones,
   onTicketModoChange,
   onNuevo,
   onBuscar,
@@ -23,7 +24,7 @@ export default function TrHeader({
   headerExtra = null,
   nuevoActionId,
 }) {
-  const ticketOptions = [
+  const ticketOptions = ticketOpciones || [
     { value: "completo", label: "Completo", icon: Layers },
     { value: "admin", label: "Paquete", icon: ShieldCheck },
     { value: "cliente", label: "Cliente", icon: ReceiptText },
