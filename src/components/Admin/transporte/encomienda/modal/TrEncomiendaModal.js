@@ -47,6 +47,7 @@ const swalSobreModal = (options) => swal2.fire({
 });
 
 const tieneValor = (value) => String(value || "").trim() !== "";
+const esPermisoActivo = (value) => ["1", "true", "s", "si", "yes"].includes(String(value || "").trim().toLowerCase());
 
 const direccionEmpresa = (datos = {}) => (
   datos.direccion ||
@@ -173,6 +174,7 @@ export default function TrEncomiendaModal({
   modalNuevoTitulo = "Nueva encomienda",
   modalEditarTitulo = "Editar encomienda",
   soloLectura = false,
+  puedeEditarMontosEncomienda = false,
   ticketPredeterminado = "completo",
   onClose,
   onSubmit,
@@ -180,6 +182,8 @@ export default function TrEncomiendaModal({
   guardarActionId,
 }) {
   const esEdicion = Boolean(operacion);
+  const puedeEditarMontosFinal = esPermisoActivo(puedeEditarMontosEncomienda);
+  const montosBloqueados = esEdicion && !puedeEditarMontosFinal;
   const [draft, setDraft] = useState(() => crearDraft(operacion, periodoTrabajo, fechaOperacion));
   const [error, setError] = useState("");
   const [rutaPickerOpen, setRutaPickerOpen] = useState(false);
@@ -297,12 +301,12 @@ export default function TrEncomiendaModal({
     destinatarioDireccionRef,
     // 3. Encomienda
     descripcionRef,
-    totalRef,
+    ...(montosBloqueados ? [] : [totalRef]),
     condicionPagoRef,
     llegadaRef,
     contraRef,
     placaRef,
-    precioChoferRef,
+    ...(montosBloqueados ? [] : [precioChoferRef]),
     grabarRef,
   );
 
@@ -821,7 +825,7 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    const total = Math.round(Number(draft.r_monto_total || 0));
+    const total = Math.round(Number(montosBloqueados ? operacion?.r_monto_total || operacion?.precio_neto || 0 : draft.r_monto_total || 0));
 
     if (puntoVentaOrigen && idPuntoVentaOrigen !== puntoVentaOrigen) {
       mostrarValidacion("La ruta debe iniciar en el punto de venta operativo.", rutaRef);
@@ -853,7 +857,7 @@ export default function TrEncomiendaModal({
       return;
     }
 
-    const precioChofer = Number(draft.precio_chofer || 0);
+    const precioChofer = Number(montosBloqueados ? operacion?.precio_chofer || 0 : draft.precio_chofer || 0);
     const entregaRemitenteEnOficina = draft.remitente_entrega === "OFICINA";
     const entregaDestinatarioEnOficina = draft.destinatario_entrega === "OFICINA";
     const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
@@ -1338,6 +1342,7 @@ export default function TrEncomiendaModal({
           buscandoRemitente={buscandoRemitente}
           buscandoDestinatario={buscandoDestinatario}
           soloLectura={soloLectura}
+          puedeEditarMontos={!montosBloqueados}
           refs={{
             remitenteDocRef,
             remitenteNombreRef,

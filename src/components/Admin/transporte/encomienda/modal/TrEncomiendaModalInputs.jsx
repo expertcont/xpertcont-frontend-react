@@ -321,16 +321,22 @@ export function MultilineCapture({ value, onChange, inputRef, nextRef, placehold
   );
 }
 
-export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = false, align = "right", tone = "default" }) {
+export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = false, align = "right", tone = "default", disabled = false }) {
   const toneColor = tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : palette.text;
   const formatMoneyValue = (rawValue) => {
     const numericValue = Number(String(rawValue || "0").replace(",", "."));
     return Number.isFinite(numericValue) ? Math.max(0, numericValue).toFixed(2) : "0.00";
   };
   const commitMoneyValue = () => {
+    if (disabled) {
+      return;
+    }
     onChange(formatMoneyValue(value));
   };
   const updateValue = (delta) => {
+    if (disabled) {
+      return;
+    }
     const current = Number(value || 0);
     const next = Math.max(0, current + delta);
     onChange(next.toFixed(2));
@@ -366,10 +372,18 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
       <InputBase
         inputRef={inputRef}
         type="number"
+        disabled={disabled}
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          if (!disabled) {
+            onChange(event.target.value);
+          }
+        }}
         onBlur={commitMoneyValue}
         onKeyDown={(event) => {
+          if (disabled) {
+            return;
+          }
           if (event.key === "+" || event.key === "=") {
             event.preventDefault();
             updateValue(1);
@@ -397,17 +411,26 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
           minWidth: 0,
           px: 1,
           backgroundColor: palette.bg,
-          color: tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : prominent ? palette.accent : palette.text,
+          color: disabled ? palette.muted : tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : prominent ? palette.accent : palette.text,
+          opacity: disabled ? 0.62 : 1,
+          cursor: disabled ? "not-allowed" : "text",
           "& input": {
             textAlign: align,
             fontSize: prominent ? "20px" : undefined,
             fontWeight: prominent ? 950 : 800,
-            color: tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : prominent ? palette.accent : toneColor,
+            color: disabled ? palette.muted : tone === "porCobrar" ? palette.porCobrar : tone === "warning" ? palette.warning : prominent ? palette.accent : toneColor,
             MozAppearance: "textfield",
+            cursor: disabled ? "not-allowed" : "text",
           },
           "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
             WebkitAppearance: "none",
             margin: 0,
+          },
+          "&.Mui-disabled": {
+            WebkitTextFillColor: disabled ? palette.muted : "inherit",
+          },
+          "& .MuiInputBase-input.Mui-disabled": {
+            WebkitTextFillColor: palette.muted,
           },
         }}
       />
@@ -420,12 +443,13 @@ export function MoneyStepper({ value, onChange, inputRef, nextRef, prominent = f
           borderLeft: `1px solid ${palette.border}`,
           backgroundColor: palette.bg,
           flexShrink: 0,
+          opacity: disabled ? 0.55 : 1,
         }}
       >
-        <Box onClick={() => updateValue(-1)} sx={{ ...buttonSx, borderRight: `1px solid ${palette.borderSoft}` }}>
+        <Box onClick={() => updateValue(-1)} sx={{ ...buttonSx, borderRight: `1px solid ${palette.borderSoft}`, cursor: disabled ? "not-allowed" : "pointer", pointerEvents: disabled ? "none" : "auto" }}>
           <ChevronDown size={15} />
         </Box>
-        <Box onClick={() => updateValue(1)} sx={buttonSx}>
+        <Box onClick={() => updateValue(1)} sx={{ ...buttonSx, cursor: disabled ? "not-allowed" : "pointer", pointerEvents: disabled ? "none" : "auto" }}>
           <ChevronUp size={15} />
         </Box>
       </Box>

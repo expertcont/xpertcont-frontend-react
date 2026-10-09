@@ -53,6 +53,7 @@ export default function TrEncomiendaModalSections({
   buscandoRemitente,
   buscandoDestinatario,
   soloLectura = false,
+  puedeEditarMontos = true,
   refs,
 }) {
   const remitenteEsEmpresa = String(draft.cliente_documento || "").replace(/\D/g, "").length === 11;
@@ -64,6 +65,9 @@ export default function TrEncomiendaModalSections({
     punto_venta_dest_nombre: draft.punto_venta_dest_nombre,
   } : null;
   const rutaVisual = rutaSeleccionada || rutaEdicion;
+  const montosBloqueados = !puedeEditarMontos;
+  const nextRefDesdeDescripcion = montosBloqueados ? refs.condicionPagoRef : refs.totalRef;
+  const nextRefDesdePlaca = montosBloqueados ? refs.grabarRef : refs.precioChoferRef;
 
   return (
     <Box
@@ -108,6 +112,23 @@ export default function TrEncomiendaModalSections({
           }}
         >
           Encomienda protegida: puedes visualizar e imprimir, pero no modificar los datos.
+        </Typography>
+      )}
+      {esEdicion && montosBloqueados && !soloLectura && (
+        <Typography
+          sx={{
+            color: palette.muted,
+            backgroundColor: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: palette.radius.control,
+            px: 1,
+            py: 0.55,
+            mb: 0.75,
+            fontSize: "11px",
+            fontWeight: 700,
+          }}
+        >
+          Los montos de la encomienda y del chofer no se pueden modificar con tu usuario.
         </Typography>
       )}
       <Box sx={soloLectura ? { pointerEvents: "none", opacity: 0.82 } : undefined}>
@@ -350,7 +371,7 @@ export default function TrEncomiendaModalSections({
                 value={draft.descripcion}
                 onChange={(value) => updateDraft("descripcion", String(value || "").toUpperCase())}
                 inputRef={refs.descripcionRef}
-                nextRef={refs.totalRef}
+                nextRef={nextRefDesdeDescripcion}
                 placeholder="Paquete, sobre, caja..."
                 prominent
                 align="right"
@@ -367,6 +388,7 @@ export default function TrEncomiendaModalSections({
                 prominent
                 align="center"
                 tone={draft.condicion_pago === "POR_COBRAR" ? "porCobrar" : "default"}
+                disabled={montosBloqueados}
               />
             </Field>
           </Grid>
@@ -417,7 +439,7 @@ export default function TrEncomiendaModalSections({
                 onChange={(value) => updateDraft("placa", value)}
                 onOpen={() => setPlacaPickerOpen(true)}
                 inputRef={refs.placaRef}
-                nextRef={refs.precioChoferRef}
+                nextRef={nextRefDesdePlaca}
               />
             </Field>
           </Grid>
@@ -436,6 +458,7 @@ export default function TrEncomiendaModalSections({
                 inputRef={refs.precioChoferRef}
                 nextRef={refs.grabarRef}
                 align="center"
+                disabled={montosBloqueados}
               />
             </Field>
           </Grid>

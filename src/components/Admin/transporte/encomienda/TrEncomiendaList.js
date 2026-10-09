@@ -24,7 +24,10 @@ export default function TrEncomiendaList(props) {
       sinDatosTexto="Sin encomiendas para el filtro actual"
       footerTexto=""
       basePath="/ad_transportesencomienda"
+      idAnfitrionSesion={props.idAnfitrion}
+      idInvitadoSesion={props.idInvitado}
       superUsuario={props.super}
+      supervisorUsuario={props.supervisor}
       panoramicMode={props.panoramicMode}
     />
   );

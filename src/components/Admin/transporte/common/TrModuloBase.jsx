@@ -234,6 +234,8 @@ export default function TrModuloBase({
   sinDatosTexto = "Sin encomiendas para el filtro actual",
   footerTexto = "Encomiendas de transporte registradas en mve_transventa.",
   basePath = "/ad_transportesencomienda",
+  idAnfitrionSesion,
+  idInvitadoSesion,
   superUsuario = "0",
   supervisorUsuario = "0",
   panoramicMode = false,
@@ -413,11 +415,12 @@ export default function TrModuloBase({
   ), [colaResumenEncomiendas, estadosRdiAbiertos]);
   const totalPendienteResumen = pendientesResumen + resumenesAbiertos.length;
   const resumenDiaOk = Boolean(diaSel && diaSel !== "*") && totalPendienteResumen === 0;
-  const superUsuarioActual = superUsuario ?? sessionStorage.getItem("super") ?? "0";
-  const supervisorUsuarioActual = supervisorUsuario ?? sessionStorage.getItem("supervisor") ?? "0";
-  const esUsuarioAnfitrion = String(params.id_anfitrion) === String(params.id_invitado);
+  const superUsuarioActual = superUsuario !== undefined && superUsuario !== null ? superUsuario : sessionStorage.getItem("super") ?? "0";
+  const supervisorUsuarioActual = supervisorUsuario !== undefined && supervisorUsuario !== null ? supervisorUsuario : sessionStorage.getItem("supervisor") ?? "0";
+  const esUsuarioAnfitrion = String(idAnfitrionSesion || params.id_anfitrion) === String(idInvitadoSesion || params.id_invitado);
   const puedeEliminarOperacion = esUsuarioAnfitrion || boolSesion(superUsuarioActual);
   const puedeEliminarManifiesto = esUsuarioAnfitrion || boolSesion(superUsuarioActual) || boolSesion(supervisorUsuarioActual);
+  const puedeEditarMontosEncomienda = esUsuarioAnfitrion || boolSesion(superUsuarioActual) || boolSesion(supervisorUsuarioActual);
   const listadoMaxWidth = tipoOperacionFijo === "E"
     ? (panoramicMode ? "100%" : { xs: "100%", lg: 1280, xl: 1440 })
     : (panoramicMode ? "100%" : 980);
@@ -615,8 +618,9 @@ export default function TrModuloBase({
 
     const operacionBase = opciones.operacionEditando || operacionEditando;
     const esEdicion = Boolean(operacionBase);
+    const esBoletoLibre = tipoOperacionFijo === "B";
 
-    if ((esEdicion && !puedeEditarOperacion) || (!esEdicion && !puedeCrearOperacion)) {
+    if (!esBoletoLibre && ((esEdicion && !puedeEditarOperacion) || (!esEdicion && !puedeCrearOperacion))) {
       guardandoOperacionRef.current = false;
       setGuardandoOperacion(false);
       swal2.fire({
@@ -1532,10 +1536,10 @@ export default function TrModuloBase({
             puedeCrear={puedeCrearOperacion}
             onGuardarBoleto={guardarOperacion}
             onLiberarBoleto={handleCancel}
-            puedeLiberarBoleto={puedeAnularOperacion}
+            puedeLiberarBoleto
             puedeEliminarManifiesto={puedeEliminarManifiesto}
             guardandoBoleto={guardandoOperacion}
-            guardarActionId={crearActionId}
+            guardarActionId={undefined}
             ticketPredeterminado={ticketBoletoModo}
           />
         ) : (
@@ -1609,6 +1613,7 @@ export default function TrModuloBase({
             modalNuevoTitulo={modalNuevoTitulo}
             modalEditarTitulo={modalEditarTitulo}
             soloLectura={!puedeEditarOperacion || operacionProtegidaSunat(operacionEditando) || Number(operacionEditando?.registrado) === 0}
+            puedeEditarMontosEncomienda={puedeEditarMontosEncomienda}
             guardarActionId={operacionEditando ? `${menuItemId}.editar` : crearActionId}
             onClose={cerrarModalOperacion}
             onSubmit={guardarOperacion}
