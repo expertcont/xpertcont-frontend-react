@@ -18,6 +18,14 @@ const ACCENT_SOFT = rgb(0.95, 0.965, 0.975);
 
 const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
+const separarRutaDescripcion = (descripcion) => {
+  const partes = clean(descripcion).split(/\s*-\s*/);
+  return {
+    origen: partes[0] || "",
+    destino: partes.length > 1 ? partes.slice(1).join(" - ") : "",
+  };
+};
+
 const money = (value) => Number(value || 0).toLocaleString("es-PE", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -189,6 +197,9 @@ const montoLetras = (value) => {
 };
 
 const nombreOrigen = (boleto = {}) => (
+  separarRutaDescripcion(boleto.descripcion).origen ||
+  boleto.ticket_origen ||
+  boleto.origen_ticket ||
   boleto.partida_agencia_nombre ||
   boleto.agencia_origen_nombre ||
   boleto.punto_venta_nombre ||
@@ -198,6 +209,9 @@ const nombreOrigen = (boleto = {}) => (
 );
 
 const nombreDestino = (boleto = {}) => (
+  separarRutaDescripcion(boleto.descripcion).destino ||
+  boleto.ticket_destino ||
+  boleto.destino_ticket ||
   boleto.llegada_agencia_nombre ||
   boleto.agencia_destino_nombre ||
   boleto.punto_venta_dest_nombre ||
@@ -289,7 +303,7 @@ export async function crearTicketBoletoPdfUrl({ boleto = {}, empresa = {}, ancho
   const comprobante = numeroComprobante(boleto);
   const clienteDocumento = boleto.cliente_documento || boleto.cliente_documento_id || "";
   const esFactura = boleto.r_cod === "01" || clean(clienteDocumento).replace(/\D/g, "").length === 11;
-  const total = Number(boleto.r_monto_total || boleto.precio_neto || 0);
+  const total = Number(boleto.precio_neto || boleto.r_monto_total || boleto.ticket_precio || boleto.precio_ticket || 0);
   const fecha = boleto.r_fecemi || boleto.fecha || "";
   const hora = boleto.ctrl_crea || boleto.hora_grabacion || "";
   const pasajero = esFactura ? (boleto.ref_pasajero_nombres || "PASAJERO") : (boleto.cliente || "PASAJERO");
@@ -368,7 +382,7 @@ export async function crearTicketBoletoPdfUrl({ boleto = {}, empresa = {}, ancho
     }
   }
   drawText(page, "BASE EXONERADO", margin, y, 8.2, regular, INK, 80);
-  rightText(page, `S/ ${money(boleto.r_exonerado || total)}`, taxAmountRightX, y, taxAmountSize, regular, INK, 76);
+  rightText(page, `S/ ${money(total)}`, taxAmountRightX, y, taxAmountSize, regular, INK, 76);
   y -= 10;
   drawText(page, "IGV", margin, y, 8.2, regular, INK, 80);
   rightText(page, `S/ ${money(boleto.r_igv || 0)}`, taxAmountRightX, y, taxAmountSize, regular, INK, 76);

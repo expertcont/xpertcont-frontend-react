@@ -1012,6 +1012,53 @@ export default function TrManifiestoMinivanPanel({
               </Tooltip>
             );
           };
+          const renderComprobantesSunat = (sx = {}) => (
+            boletosSunat.length > 0 && (
+              <Box sx={{ ...comprobantesManifiestoSx, ...sx }}>
+                {boletosSunat.map(({ pasajero, asiento, comprobante }) => (
+                  <Tooltip key={`${asiento}-${comprobante}`} title={`Asiento ${asiento}: ${pasajero.cliente || "Pasajero"}`} arrow>
+                    <Box sx={comprobanteBoletoSx}>
+                      <Box sx={{ lineHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <AdminSunatIcon
+                          comprobante_key={[pasajero.r_cod, pasajero.r_serie, pasajero.r_numero].filter(Boolean).join("-")}
+                          comprobante={[pasajero.r_cod_ref || pasajero.r_cod, pasajero.r_serie_ref || pasajero.r_serie, pasajero.r_numero_ref || pasajero.r_numero].filter(Boolean).join("-")}
+                          cdr_pendiente={pasajero.cdr_pendiente}
+                          elemento={pasajero.elemento || 1}
+                          firma={pasajero.r_vfirmado}
+                          cdr_nivel={pasajero.cdr_nivel}
+                          cdr_descripcion={pasajero.cdr_descripcion}
+                          documentoId={documentoId}
+                          periodoTrabajo={pasajero.periodo || periodoTrabajo}
+                          idAnfitrion={idAnfitrion}
+                          contabilidadTrabajo={documentoId}
+                          backHost={backHost}
+                          cpeEndpoint="/mve_transventa/cpe"
+                          cpeRequestExtra={{
+                            id_invitado: idInvitado,
+                            ctrl_mod_us: idInvitado,
+                            tipo_operacion: "B",
+                          }}
+                          generarPdfLocal={() => crearTicketBoletoPdfUrl({
+                            boleto: boletoConDatosRuta(pasajero),
+                            empresa: {
+                              ...empresa,
+                              documento_id: documentoId,
+                            },
+                            anchoMm: "auto",
+                          })}
+                          onRefresh={cargarManifiestos}
+                          size={26}
+                        />
+                      </Box>
+                      <Typography sx={{ fontSize: "12px", fontWeight: 900, lineHeight: 1.1 }} noWrap>
+                        {comprobante}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                ))}
+              </Box>
+            )
+          );
 
           if (cerrado) {
             return (
@@ -1120,6 +1167,7 @@ export default function TrManifiestoMinivanPanel({
                     Reabrir manifiesto
                   </AppButton>
                 </Box>
+                {renderComprobantesSunat({ mt: 0.7, maxHeight: 150 })}
               </Box>
             );
           }
@@ -1271,51 +1319,7 @@ export default function TrManifiestoMinivanPanel({
                   </Box>
                 </Box>
 
-                {boletosSunat.length > 0 && (
-                  <Box sx={comprobantesManifiestoSx}>
-                    {boletosSunat.map(({ pasajero, asiento, comprobante }) => (
-                      <Tooltip key={`${asiento}-${comprobante}`} title={`Asiento ${asiento}: ${pasajero.cliente || "Pasajero"}`} arrow>
-                        <Box sx={comprobanteBoletoSx}>
-                          <Box sx={{ lineHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <AdminSunatIcon
-                              comprobante_key={[pasajero.r_cod, pasajero.r_serie, pasajero.r_numero].filter(Boolean).join("-")}
-                              comprobante={[pasajero.r_cod_ref || pasajero.r_cod, pasajero.r_serie_ref || pasajero.r_serie, pasajero.r_numero_ref || pasajero.r_numero].filter(Boolean).join("-")}
-                              cdr_pendiente={pasajero.cdr_pendiente}
-                              elemento={pasajero.elemento || 1}
-                              firma={pasajero.r_vfirmado}
-                              cdr_nivel={pasajero.cdr_nivel}
-                              cdr_descripcion={pasajero.cdr_descripcion}
-                              documentoId={documentoId}
-                              periodoTrabajo={pasajero.periodo || periodoTrabajo}
-                              idAnfitrion={idAnfitrion}
-                              contabilidadTrabajo={documentoId}
-                              backHost={backHost}
-                              cpeEndpoint="/mve_transventa/cpe"
-                              cpeRequestExtra={{
-                                id_invitado: idInvitado,
-                                ctrl_mod_us: idInvitado,
-                                tipo_operacion: "B",
-                              }}
-                              generarPdfLocal={() => crearTicketBoletoPdfUrl({
-                                boleto: boletoConDatosRuta(pasajero),
-                                empresa: {
-                                  ...empresa,
-                                  documento_id: documentoId,
-                                },
-                                anchoMm: "auto",
-                              })}
-                              onRefresh={cargarManifiestos}
-                              size={26}
-                            />
-                          </Box>
-                          <Typography sx={{ fontSize: "12px", fontWeight: 900, lineHeight: 1.1 }} noWrap>
-                            {comprobante}
-                          </Typography>
-                        </Box>
-                      </Tooltip>
-                    ))}
-                  </Box>
-                )}
+                {renderComprobantesSunat()}
               </Box>
 
               <Box sx={{ mt: 0.8, display: "flex", alignItems: "center", gap: 0.8 }}>

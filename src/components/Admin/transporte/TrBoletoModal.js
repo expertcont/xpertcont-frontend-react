@@ -17,6 +17,65 @@ const documentoTipoDesdeNumero = (documento) => {
 
 const soloDigitos = (value) => String(value || "").replace(/\D/g, "");
 const esRuc = (value) => soloDigitos(value).length === 11;
+const normalizarTexto = (value) => String(value || "").replace(/\s+/g, " ").trim();
+const normalizarMonto = (value) => String(value || "").replace(/[^\d.,]/g, "").replace(",", ".");
+const numeroMonto = (value) => {
+  const numero = Number(normalizarMonto(value));
+  return Number.isFinite(numero) ? numero : 0;
+};
+const codigoComprobante = (value) => String(value || "").replace(/\D/g, "").padStart(2, "0").slice(-2);
+
+const separarRutaDescripcion = (descripcion) => {
+  const partes = normalizarTexto(descripcion).split(/\s*-\s*/);
+  return {
+    origen: partes[0] || "",
+    destino: partes.length > 1 ? partes.slice(1).join(" - ") : "",
+  };
+};
+
+const origenDesdeRuta = (ruta = {}) => {
+  const rutaSegura = ruta || {};
+  return (
+  rutaSegura.punto_venta_nombre ||
+  rutaSegura.punto_venta_origen_nombre ||
+  rutaSegura.origen_nombre ||
+  rutaSegura.id_punto_venta ||
+  ""
+  );
+};
+
+const destinoDesdeRuta = (ruta = {}) => {
+  const rutaSegura = ruta || {};
+  return (
+  rutaSegura.punto_venta_dest_nombre ||
+  rutaSegura.punto_venta_destino_nombre ||
+  rutaSegura.destino_nombre ||
+  rutaSegura.nombre ||
+  rutaSegura.id_punto_venta_dest ||
+  ""
+  );
+};
+
+const datosImpresionDesde = (operacion = {}, ruta = {}) => {
+  const operacionSegura = operacion || {};
+  const rutaSegura = ruta || {};
+  const descripcionSeparada = separarRutaDescripcion(operacionSegura.descripcion);
+  const precio = operacionSegura.precio_neto || operacionSegura.r_monto_total || rutaSegura.precio_pasaje || "";
+  const precioNumero = numeroMonto(precio);
+
+  return {
+    ticket_origen: normalizarTexto(descripcionSeparada.origen || origenDesdeRuta(rutaSegura)),
+    ticket_destino: normalizarTexto(descripcionSeparada.destino || destinoDesdeRuta(rutaSegura)),
+    ticket_precio: precio === "" || precio === null || precio === undefined ? "" : precioNumero.toFixed(2),
+  };
+};
+
+const descripcionDesdeDraft = (draft = {}) => (
+  [draft.ticket_origen, draft.ticket_destino]
+    .map(normalizarTexto)
+    .filter(Boolean)
+    .join(" - ")
+);
 
 const extraerDocumentoDesdeCodigo = (codigo) => {
   const texto = String(codigo || "").trim();
@@ -30,10 +89,7 @@ const extraerDocumentoDesdeCodigo = (codigo) => {
   return coincidencia?.[0] || "";
 };
 
-// El boleto solo necesita estos datos del pasajero. La agencia, el destino y el
-// total NO se piden: salen de la ruta elegida, y el precio lo aplica el backend
-// desde mve_transruta.precio_pasaje, nunca desde este formulario.
-const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
+const crearDraft = (operacion, periodoTrabajo, fechaOperacion, ruta = {}) => ({
   tipo_operacion: "B",
   r_fecemi: String(operacion?.r_fecemi || fechaOperacion || `${periodoTrabajo}-01`).slice(0, 10),
   r_cod: operacion?.r_cod || "03",
@@ -50,6 +106,7 @@ const crearDraft = (operacion, periodoTrabajo, fechaOperacion) => ({
   id_punto_venta: operacion?.id_punto_venta || "",
   id_punto_venta_dest: operacion?.id_punto_venta_dest || "",
   asiento: operacion?.asiento || "",
+  ...datosImpresionDesde(operacion, ruta),
 });
 
 const fieldSx = {
@@ -91,6 +148,7 @@ function CaptureInput({
   inputMode,
   pattern,
   align = "left",
+  fontSize,
   onPlus,
 }) {
   const focusControl = (ref) => {
@@ -125,7 +183,7 @@ function CaptureInput({
           focusControl(prevRef);
         }
       }}
-      sx={{ ...inputSx, "& input": { textAlign: align } }}
+      sx={{ ...inputSx, fontSize: fontSize || inputSx.fontSize, "& input": { textAlign: align, fontSize: fontSize || inputSx.fontSize } }}
     />
   );
 }
@@ -153,6 +211,9 @@ export default function TrBoletoModal({
   const [buscandoPasajero, setBuscandoPasajero] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerError, setScannerError] = useState("");
+  const origenRef = useRef(null);
+  const destinoRef = useRef(null);
+  const precioRef = useRef(null);
   const documentoRef = useRef(null);
   const nombreRef = useRef(null);
   const telefonoRef = useRef(null);
@@ -177,7 +238,10 @@ export default function TrBoletoModal({
 
   useEffect(() => {
     if (open) {
-      const inicial = crearDraft(operacion, periodoTrabajo, fechaOperacion);
+      const rutaInicial = operacion?.id_ruta
+        ? rutasDisponibles.find((ruta) => String(ruta.id_ruta) === String(operacion.id_ruta))
+        : null;
+      const inicial = crearDraft(operacion, periodoTrabajo, fechaOperacion, rutaInicial);
 
       // Al editar se respeta la ruta ya guardada. Al crear, si hay una sola ruta
       // de pasaje se preselecciona para no obligar a elegir algo que no tiene
@@ -186,6 +250,7 @@ export default function TrBoletoModal({
         inicial.id_ruta = rutasPasaje[0].id_ruta;
         inicial.id_punto_venta = rutasPasaje[0].id_punto_venta || inicial.id_punto_venta;
         inicial.id_punto_venta_dest = rutasPasaje[0].id_punto_venta_dest || "";
+        Object.assign(inicial, datosImpresionDesde(null, rutasPasaje[0]));
       }
 
       setDraft(inicial);
@@ -195,7 +260,7 @@ export default function TrBoletoModal({
         documentoRef.current?.select?.();
       }, 60);
     }
-  }, [open, operacion, periodoTrabajo, fechaOperacion, rutasPasaje]);
+  }, [open, operacion, periodoTrabajo, fechaOperacion, rutasDisponibles, rutasPasaje]);
 
   const rutaSeleccionada = useMemo(
     () => rutasDisponibles.find((ruta) => ruta.id_ruta === draft.id_ruta),
@@ -213,7 +278,15 @@ export default function TrBoletoModal({
     draft.id_ruta ||
     "Destino"
   );
-  const facturaRuc = esRuc(draft.cliente_documento);
+  const documentoOriginal = operacion?.cliente_documento || operacion?.cliente_documento_id || "";
+  const documentoEdicionRuc = esEdicion
+    ? (codigoComprobante(operacion?.r_cod) === "01" || esRuc(documentoOriginal))
+    : false;
+  const facturaRuc = esEdicion ? documentoEdicionRuc : esRuc(draft.cliente_documento);
+  const documentoMantieneTipo = useCallback(
+    (documento) => !esEdicion || esRuc(documento) === documentoEdicionRuc,
+    [documentoEdicionRuc, esEdicion]
+  );
   const tituloBoleto = esEdicion
     ? modalEditarTitulo
     : draft.asiento
@@ -231,6 +304,13 @@ export default function TrBoletoModal({
     if (!documento) {
       setError("Indica DNI/RUC del pasajero.");
       documentoRef.current?.focus();
+      return;
+    }
+
+    if (esEdicion && !documentoMantieneTipo(documento)) {
+      setError(documentoEdicionRuc ? "Este boleto es factura: solo puedes cambiar por otro RUC." : "Este boleto es boleta: solo puedes cambiar por otro DNI.");
+      documentoRef.current?.focus();
+      documentoRef.current?.select?.();
       return;
     }
 
@@ -281,7 +361,7 @@ export default function TrBoletoModal({
     } finally {
       setBuscandoPasajero(false);
     }
-  }, [back_host, draft.cliente_documento]);
+  }, [back_host, documentoEdicionRuc, documentoMantieneTipo, draft.cliente_documento, esEdicion]);
 
   const buscarPasajeroReferencia = useCallback(async () => {
     const documento = String(draft.ref_pasajero_dni || "").trim();
@@ -334,11 +414,20 @@ export default function TrBoletoModal({
     }
   }, [back_host, draft.ref_pasajero_dni]);
 
-  // El total se LEE de la ruta elegida. No se edita y no se envia: el backend toma
-  // el precio de mve_transruta.precio_pasaje, asi que escribir un total aqui no
-  // cambiaria lo que se guarda.
   const precioPasaje = Number(rutaSeleccionada?.precio_pasaje || 0);
-  const precioLabel = rutaSeleccionada ? `S/ ${precioPasaje.toFixed(2)}` : "S/ 0.00";
+  const precioLabel = draft.ticket_precio ? `S/ ${numeroMonto(draft.ticket_precio).toFixed(2)}` : (rutaSeleccionada ? `S/ ${precioPasaje.toFixed(2)}` : "S/ 0.00");
+
+  useEffect(() => {
+    if (!open || !rutaSeleccionada) return;
+
+    const datosRuta = datosImpresionDesde(null, rutaSeleccionada);
+    setDraft((prev) => ({
+      ...prev,
+      ticket_origen: prev.ticket_origen || datosRuta.ticket_origen,
+      ticket_destino: prev.ticket_destino || datosRuta.ticket_destino,
+      ticket_precio: prev.ticket_precio || datosRuta.ticket_precio,
+    }));
+  }, [open, rutaSeleccionada]);
 
   const handleSubmit = async () => {
     if (guardando) {
@@ -347,6 +436,13 @@ export default function TrBoletoModal({
 
     if (!draft.cliente_documento || !draft.cliente) {
       setError(facturaRuc ? "Indica RUC y razon social." : "Indica documento y nombres del pasajero.");
+      return;
+    }
+
+    if (!documentoMantieneTipo(draft.cliente_documento)) {
+      setError(documentoEdicionRuc ? "Este boleto es factura: solo puedes cambiar por otro RUC." : "Este boleto es boleta: solo puedes cambiar por otro DNI.");
+      documentoRef.current?.focus();
+      documentoRef.current?.select?.();
       return;
     }
 
@@ -367,6 +463,21 @@ export default function TrBoletoModal({
       return;
     }
 
+    const descripcionBoleto = descripcionDesdeDraft(draft);
+    if (!descripcionBoleto) {
+      setError("Indica origen y destino del boleto.");
+      (!draft.ticket_origen ? origenRef : destinoRef).current?.focus();
+      return;
+    }
+
+    const precioBoleto = numeroMonto(draft.ticket_precio);
+    if (!(precioBoleto > 0)) {
+      setError("Indica el precio del boleto.");
+      precioRef.current?.focus();
+      precioRef.current?.select?.();
+      return;
+    }
+
     // El asiento NO se pide: lo asigna la funcion como correlativo de los boletos
     // sueltos del mismo viaje (COUNT(manifiesto_id IS NULL) + 1). Si lo pidiera
     // aca, dos agentes grabando en el mismo momento podrian elegir el mismo.
@@ -379,6 +490,11 @@ export default function TrBoletoModal({
 
     const boletoGuardado = await onSubmit({
       ...draft,
+      descripcion: descripcionBoleto,
+      precio_unitario: precioBoleto,
+      precio_neto: precioBoleto,
+      r_exonerado: precioBoleto,
+      r_monto_total: precioBoleto,
       r_cod: facturaRuc ? "01" : "03",
       r_serie: facturaRuc ? "F001" : "B001",
       id_documento: facturaRuc ? "6" : documentoTipoDesdeNumero(draft.cliente_documento),
@@ -439,7 +555,7 @@ export default function TrBoletoModal({
 
     try {
       const pdfUrl = await crearTicketBoletoPdfUrl({
-        boleto: boletoConDatosRuta(operacion),
+        boleto: boletoConDatosRuta({ ...operacion, ...draft }),
         empresa,
         anchoMm,
       });
@@ -463,7 +579,7 @@ export default function TrBoletoModal({
       return;
     }
 
-    await onTicket?.(operacion, 80, { modo: "whatsapp" });
+    await onTicket?.({ ...operacion, ...draft }, 80, { modo: "whatsapp" });
   };
 
   useEffect(() => {
@@ -516,6 +632,12 @@ export default function TrBoletoModal({
           const documento = extraerDocumentoDesdeCodigo(codes?.[0]?.rawValue);
 
           if (documento) {
+            if (esEdicion && !documentoMantieneTipo(documento)) {
+              setError(documentoEdicionRuc ? "Este boleto es factura: solo puedes escanear otro RUC." : "Este boleto es boleta: solo puedes escanear otro DNI.");
+              setScannerOpen(false);
+              cerrarStream();
+              return;
+            }
             setDraft((prev) => ({
               ...prev,
               cliente_documento: documento,
@@ -577,7 +699,7 @@ export default function TrBoletoModal({
       cancelado = true;
       cerrarStream();
     };
-  }, [buscarPasajero, scannerOpen]);
+  }, [buscarPasajero, documentoEdicionRuc, documentoMantieneTipo, esEdicion, scannerOpen]);
 
   // Vertical y angosto, como el modal de encomienda: los datos son simples
   // (documento, nombre, telefono, destino, asiento y total) y entran comodos en
@@ -641,6 +763,44 @@ export default function TrBoletoModal({
         </Box>
         <Grid container spacing={0.85}>
           <Grid item xs={12}>
+            <Field label="Origen">
+              <CaptureInput
+                value={draft.ticket_origen}
+                onChange={(value) => updateDraft("ticket_origen", value.toUpperCase())}
+                inputRef={origenRef}
+                nextRef={destinoRef}
+                placeholder="Origen"
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="Destino">
+              <CaptureInput
+                value={draft.ticket_destino}
+                onChange={(value) => updateDraft("ticket_destino", value.toUpperCase())}
+                inputRef={destinoRef}
+                prevRef={origenRef}
+                nextRef={precioRef}
+                placeholder="Destino"
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
+            <Field label="Precio">
+              <CaptureInput
+                value={draft.ticket_precio}
+                onChange={(value) => updateDraft("ticket_precio", normalizarMonto(value))}
+                inputRef={precioRef}
+                prevRef={destinoRef}
+                nextRef={documentoRef}
+                placeholder="0.00"
+                type="tel"
+                inputMode="decimal"
+                align="right"
+              />
+            </Field>
+          </Grid>
+          <Grid item xs={12}>
             <Field label="DNI/RUC">
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.4, minWidth: 0 }}>
                 <IconButton
@@ -656,18 +816,30 @@ export default function TrBoletoModal({
                   value={draft.cliente_documento}
                   onChange={(value) => {
                     const limpio = soloDigitos(value);
+                    if (esEdicion && !documentoEdicionRuc && limpio.length > 8) {
+                      setError("Este boleto es boleta: solo puedes cambiar por otro DNI.");
+                      return;
+                    }
+                    if (esEdicion && documentoEdicionRuc && limpio.length > 11) {
+                      return;
+                    }
+                    setError("");
                     updateDraft("cliente_documento", limpio);
                     updateDraft("id_documento", documentoTipoDesdeNumero(limpio));
-                    updateDraft("r_cod", esRuc(limpio) ? "01" : "03");
-                    updateDraft("r_serie", esRuc(limpio) ? "F001" : "B001");
+                    if (!esEdicion) {
+                      updateDraft("r_cod", esRuc(limpio) ? "01" : "03");
+                      updateDraft("r_serie", esRuc(limpio) ? "F001" : "B001");
+                    }
                   }}
                   inputRef={documentoRef}
+                  prevRef={precioRef}
                   nextRef={draft.cliente ? (esRuc(draft.cliente_documento) ? direccionFactRef : telefonoRef) : nombreRef}
                   placeholder="Documento"
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   align="right"
+                  fontSize="16px"
                   onPlus={() => buscarPasajero()}
                 />
                 <IconButton
@@ -720,7 +892,7 @@ export default function TrBoletoModal({
                     >
                       <Search size={15} />
                     </IconButton>
-                    <CaptureInput value={draft.ref_pasajero_dni} onChange={(value) => updateDraft("ref_pasajero_dni", soloDigitos(value))} inputRef={pasajeroDniRef} prevRef={direccionFactRef} nextRef={pasajeroNombreRef} placeholder="DNI pasajero" type="tel" inputMode="numeric" pattern="[0-9]*" align="right" onPlus={buscarPasajeroReferencia} />
+                    <CaptureInput value={draft.ref_pasajero_dni} onChange={(value) => updateDraft("ref_pasajero_dni", soloDigitos(value))} inputRef={pasajeroDniRef} prevRef={direccionFactRef} nextRef={pasajeroNombreRef} placeholder="DNI pasajero" type="tel" inputMode="numeric" pattern="[0-9]*" align="right" fontSize="16px" onPlus={buscarPasajeroReferencia} />
                   </Box>
                 </Field>
               </Grid>
