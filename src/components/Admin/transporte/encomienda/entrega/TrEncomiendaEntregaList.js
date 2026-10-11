@@ -1699,9 +1699,17 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
               </IconButton>
             </Tooltip>
             <Box data-tag="allowRowEvents" sx={{ minWidth: 0 }}>
-              <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900, fontSize: "13px", lineHeight: 1.12, minWidth: 0 }} noWrap>
-                {numeroOperacion(row)}
-              </Typography>
+              <Box data-tag="allowRowEvents" sx={{ display: "flex", alignItems: "center", gap: 0.65, minWidth: 0 }}>
+                <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontWeight: 900, fontSize: "13px", lineHeight: 1.12, minWidth: 0 }} noWrap>
+                  {numeroOperacion(row)}
+                </Typography>
+                <Box data-tag="allowRowEvents" sx={{ display: "inline-flex", alignItems: "center", gap: 0.25, color: palette.muted, flexShrink: 0 }}>
+                  <Calendar data-tag="allowRowEvents" size={12} />
+                  <Typography data-tag="allowRowEvents" sx={{ fontSize: "10.5px", fontWeight: 800, lineHeight: 1, whiteSpace: "nowrap" }}>
+                    {formatFecha(row.r_fecemi)}
+                  </Typography>
+                </Box>
+              </Box>
               {row.descripcion && (
                 <Typography data-tag="allowRowEvents" sx={{ color: palette.muted, fontSize: "10.5px", fontWeight: 600, lineHeight: 1.1, opacity: 0.78, mt: 0.15 }} noWrap>
                   {row.descripcion}
@@ -1957,19 +1965,6 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
           <MapPin data-tag="allowRowEvents" size={13} />
           <Typography data-tag="allowRowEvents" sx={{ fontSize: "12px" }} noWrap>
             {nombreOrigenRuta(row)}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      name: "Fecha",
-      width: "110px",
-      selector: (row) => row.r_fecemi || "",
-      cell: (row) => (
-        <Box data-tag="allowRowEvents" sx={{ display: "flex", alignItems: "center", gap: 0.45, color: palette.muted, whiteSpace: "nowrap" }}>
-          <Calendar data-tag="allowRowEvents" size={13} />
-          <Typography data-tag="allowRowEvents" sx={{ fontSize: "12px" }}>
-            {formatFecha(row.r_fecemi)}
           </Typography>
         </Box>
       ),

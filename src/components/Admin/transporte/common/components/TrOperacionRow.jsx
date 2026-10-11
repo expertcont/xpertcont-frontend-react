@@ -812,7 +812,7 @@ function TrOperacionRow({
             </>
           )}
 
-          <Typography sx={{ color: palette.text, fontWeight: "1000 !important", WebkitTextStroke: "0.25px currentColor", fontSize: "16px" }}>
+          <Typography sx={{ color: esPorCobrar ? palette.porCobrar : palette.text, fontWeight: "1000 !important", WebkitTextStroke: "0.25px currentColor", fontSize: "16px" }}>
             {row.numero}
           </Typography>
 
