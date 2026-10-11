@@ -19,6 +19,7 @@ export default function useTrOperaciones({
 }) {
   const [registros, setRegistros] = useState([]);
   const [tablaBase, setTablaBase] = useState([]);
+  const [cantidadAnuladas, setCantidadAnuladas] = useState(0);
   const [valorBusqueda, setValorBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -49,30 +50,45 @@ export default function useTrOperaciones({
     if (!periodoTrabajo || !contabilidadTrabajo) {
       setRegistros([]);
       setTablaBase([]);
+      setCantidadAnuladas(0);
       return;
     }
 
     setLoading(true);
     try {
-      const estadoQuery = mostrarAnuladas ? "?estado=anulados" : "";
       const url = puntoVentaTrabajo
         ? `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}/${puntoVentaTrabajo}`
         : `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}`;
-      const response = await fetch(`${url}${estadoQuery}`);
-      const result = await response.json();
-      const rows = (Array.isArray(result?.data) ? result.data : [])
-        .filter((item) => item.tipo_operacion === tipoOperacionFijo);
-      const rowsPorPunto = filtrarPorPuntoVenta(rows, puntoVentaTrabajo)
-        .map((item) => ({
-          ...item,
-          _textoBusqueda: crearIndiceBusqueda(item),
-        }));
+
+      const cargarRows = async (estadoQuery = "") => {
+        const response = await fetch(`${url}${estadoQuery}`);
+        const result = await response.json();
+        const rows = (Array.isArray(result?.data) ? result.data : [])
+          .filter((item) => item.tipo_operacion === tipoOperacionFijo);
+
+        return filtrarPorPuntoVenta(rows, puntoVentaTrabajo)
+          .map((item) => ({
+            ...item,
+            _textoBusqueda: crearIndiceBusqueda(item),
+          }));
+      };
+
+      const estadoQuery = mostrarAnuladas ? "?estado=anulados" : "";
+      const rowsPorPunto = await cargarRows(estadoQuery);
       setTablaBase(rowsPorPunto);
       setRegistros(rowsPorPunto);
+
+      if (tipoOperacionFijo === "E") {
+        const anuladas = mostrarAnuladas ? rowsPorPunto : await cargarRows("?estado=anulados");
+        setCantidadAnuladas(anuladas.filter((item) => Number(item.registrado ?? 1) === 0).length);
+      } else {
+        setCantidadAnuladas(0);
+      }
     } catch (error) {
       console.log("Error cargando operaciones de transporte:", error);
       setRegistros([]);
       setTablaBase([]);
+      setCantidadAnuladas(0);
     } finally {
       setLoading(false);
     }
@@ -100,6 +116,7 @@ export default function useTrOperaciones({
     valorBusqueda,
     setValorBusqueda,
     loading,
+    cantidadAnuladas,
     cargarRegistros,
     aplicarBusquedaLocal,
     quitarOperacionLocal,

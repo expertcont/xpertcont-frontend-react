@@ -512,11 +512,11 @@ function DeliveryStatusBadge({ entregada, fechaEntrega, usuarioEntrega }) {
   );
 }
 
-function PersonaOperacionLine({ icon, label, documento }) {
+function PersonaOperacionLine({ icon, label, documento, color = palette.muted }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
       {icon}
-      <Typography sx={{ fontSize: "13px", color: palette.muted }} noWrap>
+      <Typography sx={{ fontSize: "13px", color }} noWrap>
         {label}
         {documento ? ` - ${documento}` : ""}
       </Typography>
@@ -842,9 +842,10 @@ function TrOperacionRow({
                   />
                   <Box sx={{ minWidth: 0, flex: "1 1 180px" }}>
                     <PersonaOperacionLine
-                      icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
+                      icon={<UserRound size={13} style={{ flexShrink: 0, color: esPorCobrar ? palette.porCobrar : palette.muted }} />}
                       label={row.destinatario}
                       documento={row.destinatario_documento || row.destinatario_documento_id}
+                      color={esPorCobrar ? palette.porCobrar : palette.muted}
                     />
                   </Box>
                 </>
@@ -953,9 +954,10 @@ function TrOperacionRow({
             {row.destinatario ? (
               <Box sx={{ minWidth: 0, justifySelf: { xs: "start", md: "end" }, maxWidth: "100%" }}>
                 <PersonaOperacionLine
-                  icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
+                  icon={<UserRound size={13} style={{ flexShrink: 0, color: esPorCobrar ? palette.porCobrar : palette.muted }} />}
                   label={row.destinatario}
                   documento={row.destinatario_documento || row.destinatario_documento_id}
+                  color={esPorCobrar ? palette.porCobrar : palette.muted}
                 />
               </Box>
             ) : (
@@ -971,9 +973,10 @@ function TrOperacionRow({
             />
             {row.tipo_operacion === "E" && row.destinatario && (
               <PersonaOperacionLine
-                icon={<UserRound size={13} style={{ flexShrink: 0, color: palette.muted }} />}
+                icon={<UserRound size={13} style={{ flexShrink: 0, color: esPorCobrar ? palette.porCobrar : palette.muted }} />}
                 label={row.destinatario}
                 documento={row.destinatario_documento || row.destinatario_documento_id}
+                color={esPorCobrar ? palette.porCobrar : palette.muted}
               />
             )}
           </Box>

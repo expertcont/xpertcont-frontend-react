@@ -5,7 +5,7 @@ import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CloudSyncIcon from "@mui/icons-material/CloudSync";
 import SummarizeIcon from "@mui/icons-material/Summarize";
-import { Bluetooth, FileSpreadsheet, MessageCircle, Search, Ticket, Truck } from "lucide-react";
+import { Ban, Bluetooth, CheckCircle2, Clock3, FileSpreadsheet, Filter, MessageCircle, Package, Search, Ticket, Truck } from "lucide-react";
 import * as XLSX from "xlsx";
 import swal2 from "sweetalert2";
 
@@ -24,7 +24,7 @@ import useTrOperaciones from "./hooks/useTrOperaciones";
 import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
 import useMenuRuntimePermissions from "../../menu/useMenuRuntimePermissions";
 import { consultarTicketRdiSunat, normalizarRdiResponse } from "../../venta/common/rdiSunatActions";
-import { formatFecha, formatHora, normalizarTextoBusqueda } from "./utils/trUtils";
+import { formatFecha, formatHora, formatMoney, normalizarTextoBusqueda } from "./utils/trUtils";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
 // Tema oscuro propio de las tablas del modulo transporte.
@@ -108,6 +108,220 @@ const resumenSunatIconSx = {
     color: palette.warning,
   },
 };
+
+const esOperacionVigente = (row = {}) => Number(row.registrado ?? 1) !== 0;
+const esOperacionAnulada = (row = {}) => Number(row.registrado ?? 1) === 0;
+const esEncomiendaPorEntregar = (row = {}) => esOperacionVigente(row) && !row.entregada && !row.entrega_fecha;
+const esEncomiendaPorCobrar = (row = {}) => row.condicionPagoLabel === "POR_COBRAR";
+
+const esComprobantePendienteSunat = (row = {}) => {
+  const codigo = String(row.r_cod_ref || row.r_cod || "").padStart(2, "0");
+  return codigo === "01" && !row.numero_rdi && !row.r_vfirmado && esOperacionVigente(row);
+};
+
+function EncomiendaResumenCard({ item, activo, principalActivo, subActivo, onClick, onSubClick }) {
+  const Icon = item.icon;
+  const filtrable = Boolean(item.filtrable);
+  const tieneSubFiltro = Boolean(item.subFilter);
+
+  return (
+    <Box
+      role={filtrable && !tieneSubFiltro ? "button" : undefined}
+      tabIndex={filtrable && !tieneSubFiltro ? 0 : undefined}
+      onClick={filtrable && !tieneSubFiltro ? onClick : undefined}
+      onKeyDown={(event) => {
+        if (!filtrable || tieneSubFiltro || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        onClick();
+      }}
+      sx={{
+        minWidth: 0,
+        border: `1px solid ${subActivo ? palette.porCobrar : principalActivo ? item.color : palette.borderSoft}`,
+        borderRadius: palette.radius.listCard,
+        backgroundColor: palette.surface,
+        color: item.color,
+        p: tieneSubFiltro ? 0 : { xs: 0.95, sm: 1.05 },
+        py: tieneSubFiltro ? 0 : 0.75,
+        cursor: filtrable && !tieneSubFiltro ? "pointer" : "default",
+        position: "relative",
+        display: "grid",
+        gridTemplateColumns: tieneSubFiltro ? "minmax(0, 1fr) minmax(0, 1fr)" : "auto minmax(0, 1fr)",
+        alignItems: "stretch",
+        gap: tieneSubFiltro ? 0 : 0.7,
+        boxShadow: subActivo ? `0 0 0 1px ${palette.porCobrar}` : principalActivo ? `0 0 0 1px ${item.color}` : "none",
+        transition: "border-color .16s ease, background-color .16s ease, box-shadow .16s ease",
+        "&:hover": filtrable && !tieneSubFiltro ? {
+          borderColor: item.color,
+          backgroundColor: item.soft,
+        } : undefined,
+        "&:focus-visible": filtrable && !tieneSubFiltro ? {
+          outline: `2px solid ${item.color}`,
+          outlineOffset: 2,
+        } : undefined,
+      }}
+    >
+      {tieneSubFiltro ? (
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={onClick}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            onClick();
+          }}
+          sx={{
+            minWidth: 0,
+            display: "grid",
+            gridTemplateColumns: "auto minmax(0, 1fr)",
+            alignItems: "center",
+            gap: 0.65,
+            px: { xs: 0.85, sm: 1 },
+            py: 0.75,
+            borderRight: `1px solid ${palette.borderSoft}`,
+            backgroundColor: principalActivo ? item.soft : "transparent",
+            cursor: "pointer",
+            borderTopLeftRadius: palette.radius.listCard,
+            borderBottomLeftRadius: palette.radius.listCard,
+            transition: "background-color .16s ease",
+            "&:hover": {
+              backgroundColor: item.soft,
+            },
+            "&:focus-visible": {
+              outline: `2px solid ${item.color}`,
+              outlineOffset: -2,
+            },
+          }}
+        >
+          <Box sx={{
+            width: 28,
+            height: 28,
+            borderRadius: palette.radius.control,
+            display: "grid",
+            placeItems: "center",
+            backgroundColor: item.soft,
+            color: item.color,
+          }}>
+            <Icon size={15} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }} noWrap>
+              {item.label}
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
+              <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>
+                {item.value}
+              </Typography>
+              {principalActivo && (
+                <Box sx={{ width: 16, height: 16, borderRadius: "999px", backgroundColor: item.color, color: palette.onAccent, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <Filter size={9} />
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      ) : (
+        <>
+          <Box sx={{
+            width: 28,
+            height: 28,
+            borderRadius: palette.radius.control,
+            display: "grid",
+            placeItems: "center",
+            backgroundColor: item.soft,
+            color: item.color,
+            alignSelf: "center",
+          }}>
+            <Icon size={15} />
+          </Box>
+          <Box sx={{ minWidth: 0, alignSelf: "center" }}>
+            <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }} noWrap>
+              {item.label}
+            </Typography>
+            <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>
+              {item.value}
+            </Typography>
+          </Box>
+        </>
+      )}
+      {tieneSubFiltro && (
+        <Box
+          role="button"
+          tabIndex={0}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSubClick?.();
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            event.stopPropagation();
+            onSubClick?.();
+          }}
+          sx={{
+            minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            gap: 0.25,
+            width: "100%",
+            px: { xs: 0.85, sm: 1 },
+            py: 0.75,
+            borderRadius: 0,
+            backgroundColor: subActivo ? "rgba(220,68,68,0.20)" : "rgba(220,68,68,0.11)",
+            color: palette.porCobrar,
+            cursor: "pointer",
+            fontSize: "9.8px",
+            fontWeight: 950,
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            borderTopRightRadius: palette.radius.listCard,
+            borderBottomRightRadius: palette.radius.listCard,
+            transition: "border-color .16s ease, background-color .16s ease, box-shadow .16s ease",
+            "&:hover": {
+              backgroundColor: "rgba(220,68,68,0.18)",
+            },
+            "&:focus-visible": {
+              outline: `2px solid ${palette.porCobrar}`,
+              outlineOffset: -2,
+            },
+          }}
+        >
+          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.35 }}>
+            {item.subFilter.label}
+            {subActivo && (
+              <Box component="span" sx={{ width: 15, height: 15, borderRadius: "999px", backgroundColor: palette.porCobrar, color: palette.onAccent, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <Filter size={8.5} />
+              </Box>
+            )}
+          </Box>
+          <Box component="span" sx={{ color: palette.text, fontSize: "12px", lineHeight: 1.05, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {item.subFilter.value}
+          </Box>
+        </Box>
+      )}
+      {activo && !tieneSubFiltro && (
+        <Box sx={{
+          position: "absolute",
+          top: 5,
+          right: 5,
+          width: 18,
+          height: 18,
+          borderRadius: "999px",
+          backgroundColor: item.color,
+          color: palette.onAccent,
+          display: "grid",
+          placeItems: "center",
+        }}>
+          <Filter size={10} />
+        </Box>
+      )}
+    </Box>
+  );
+}
 
 const swalSobreModal = (options) => swal2.fire({
   ...options,
@@ -257,6 +471,10 @@ export default function TrModuloBase({
   const params = useParams();
   const navigate = useNavigate();
   const { confirmDialog } = useDialog();
+  const superUsuarioActual = superUsuario !== undefined && superUsuario !== null ? superUsuario : sessionStorage.getItem("super") ?? "0";
+  const supervisorUsuarioActual = supervisorUsuario !== undefined && supervisorUsuario !== null ? supervisorUsuario : sessionStorage.getItem("supervisor") ?? "0";
+  const esUsuarioAnfitrion = String(idAnfitrionSesion || params.id_anfitrion) === String(idInvitadoSesion || params.id_invitado);
+  const puedeVerMontoTotalResumen = esUsuarioAnfitrion || boolSesion(superUsuarioActual);
 
   // -----------------------------
   // Estado principal de pantalla
@@ -272,6 +490,7 @@ export default function TrModuloBase({
   const [pasosResumenEnvio, setPasosResumenEnvio] = useState([]);
   const [modalResumenOpen, setModalResumenOpen] = useState(false);
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
+  const [filtroResumenEncomienda, setFiltroResumenEncomienda] = useState("");
   const [ticketEncomiendaModo, setTicketEncomiendaModo] = useState(() => {
     if (typeof window === "undefined") return "completo";
     return normalizarModoTicketEncomienda(window.localStorage.getItem(TICKET_ENCOMIENDA_MODO_KEY));
@@ -325,6 +544,7 @@ export default function TrModuloBase({
     valorBusqueda,
     setValorBusqueda,
     loading,
+    cantidadAnuladas,
     cargarRegistros,
     aplicarBusquedaLocal,
     quitarOperacionLocal,
@@ -372,6 +592,135 @@ export default function TrModuloBase({
     }).length;
   }, [data, fechaResumenSeleccionada, pendientesResumenEmpresa]);
 
+  const dataResumenEncomienda = useMemo(() => (
+    data.filter((row) => row.tipo_operacion === "E" && esOperacionVigente(row))
+  ), [data]);
+
+  const resumenEncomienda = useMemo(() => {
+    const entregadas = dataResumenEncomienda.filter((row) => row.entregada || row.entrega_fecha).length;
+    const pendientesSunat = dataResumenEncomienda.filter(esComprobantePendienteSunat).length;
+    const porCobrar = dataResumenEncomienda.filter((row) => esEncomiendaPorEntregar(row) && esEncomiendaPorCobrar(row));
+    const montoPorCobrar = porCobrar.reduce((sum, row) => (
+      sum + Number(row.total || row.r_monto_total || row.precio_neto || 0)
+    ), 0);
+
+    return {
+      total: dataResumenEncomienda.length,
+      entregadas,
+      porEntregar: dataResumenEncomienda.length - entregadas,
+      porCobrar: porCobrar.length,
+      montoPorCobrar,
+      pendientesSunat,
+      anuladas: cantidadAnuladas,
+    };
+  }, [cantidadAnuladas, dataResumenEncomienda]);
+
+  const dataFiltradaResumen = useMemo(() => {
+    if (tipoOperacionFijo !== "E" || !filtroResumenEncomienda) {
+      return data;
+    }
+
+    return data.filter((row) => {
+      if (row.tipo_operacion !== "E") return false;
+
+      if (filtroResumenEncomienda === "total") {
+        return esOperacionVigente(row);
+      }
+
+      if (filtroResumenEncomienda === "entregadas") {
+        return esOperacionVigente(row) && Boolean(row.entregada || row.entrega_fecha);
+      }
+
+      if (filtroResumenEncomienda === "por_entregar") {
+        return esEncomiendaPorEntregar(row);
+      }
+
+      if (filtroResumenEncomienda === "por_cobrar") {
+        return esEncomiendaPorEntregar(row) && esEncomiendaPorCobrar(row);
+      }
+
+      if (filtroResumenEncomienda === "sunat_pendientes") {
+        return esComprobantePendienteSunat(row);
+      }
+
+      if (filtroResumenEncomienda === "anuladas") {
+        return esOperacionAnulada(row);
+      }
+
+      return true;
+    });
+  }, [data, filtroResumenEncomienda, tipoOperacionFijo]);
+
+  const montoTotalResumenFiltrado = useMemo(() => (
+    dataFiltradaResumen.reduce((sum, row) => (
+      sum + Number(row.total || row.r_monto_total || row.precio_neto || 0)
+    ), 0)
+  ), [dataFiltradaResumen]);
+
+  const cardsResumenEncomienda = useMemo(() => ([
+    {
+      key: "total",
+      label: "Total Encomiendas",
+      value: resumenEncomienda.total,
+      icon: Package,
+      color: palette.accent,
+      soft: palette.accentSoft,
+      filtrable: true,
+    },
+    {
+      key: "entregadas",
+      label: "Entregadas",
+      value: resumenEncomienda.entregadas,
+      icon: CheckCircle2,
+      color: palette.success,
+      soft: palette.successSoft,
+      filtrable: true,
+    },
+    {
+      key: "por_entregar",
+      label: "Por Entregar",
+      value: resumenEncomienda.porEntregar,
+      icon: Clock3,
+      color: palette.warning,
+      soft: palette.warningSoft,
+      filtrable: true,
+      subFilter: {
+        key: "por_cobrar",
+        label: "POR_COBRAR",
+        value: puedeVerMontoTotalResumen
+          ? `${resumenEncomienda.porCobrar} - ${formatMoney(resumenEncomienda.montoPorCobrar).replace(/^PEN\s*/, "S/ ")}`
+          : resumenEncomienda.porCobrar,
+      },
+    },
+    {
+      key: "sunat_pendientes",
+      label: "Fact Pendientes SUNAT",
+      value: resumenEncomienda.pendientesSunat,
+      icon: CloudSyncIcon,
+      color: "#0891b2",
+      soft: "rgba(8,145,178,0.14)",
+      filtrable: true,
+    },
+    {
+      key: "anuladas",
+      label: "Anulados",
+      value: resumenEncomienda.anuladas,
+      icon: Ban,
+      color: palette.danger,
+      soft: palette.dangerSoft,
+      filtrable: true,
+    },
+    ...(puedeVerMontoTotalResumen ? [{
+      key: "monto",
+      label: "Monto Total S/.",
+      value: formatMoney(montoTotalResumenFiltrado).replace(/^PEN\s*/, "S/ "),
+      icon: FileSpreadsheet,
+      color: palette.accent,
+      soft: palette.accentSoft,
+      filtrable: false,
+    }] : []),
+  ]), [montoTotalResumenFiltrado, puedeVerMontoTotalResumen, resumenEncomienda]);
+
   const estadosRdiAbiertos = useMemo(() => (
     ["PENDIENTE", "GENERADO", "INCIERTO", "ERROR", "RECHAZADO"]
   ), []);
@@ -415,9 +764,6 @@ export default function TrModuloBase({
   ), [colaResumenEncomiendas, estadosRdiAbiertos]);
   const totalPendienteResumen = pendientesResumen + resumenesAbiertos.length;
   const resumenDiaOk = Boolean(diaSel && diaSel !== "*") && totalPendienteResumen === 0;
-  const superUsuarioActual = superUsuario !== undefined && superUsuario !== null ? superUsuario : sessionStorage.getItem("super") ?? "0";
-  const supervisorUsuarioActual = supervisorUsuario !== undefined && supervisorUsuario !== null ? supervisorUsuario : sessionStorage.getItem("supervisor") ?? "0";
-  const esUsuarioAnfitrion = String(idAnfitrionSesion || params.id_anfitrion) === String(idInvitadoSesion || params.id_invitado);
   const puedeEliminarOperacion = esUsuarioAnfitrion || boolSesion(superUsuarioActual);
   const puedeEliminarManifiesto = esUsuarioAnfitrion || boolSesion(superUsuarioActual) || boolSesion(supervisorUsuarioActual);
   const puedeEditarMontosEncomienda = esUsuarioAnfitrion || boolSesion(superUsuarioActual) || boolSesion(supervisorUsuarioActual);
@@ -524,8 +870,21 @@ export default function TrModuloBase({
     setDiaSel(dia);
   };
 
-  const handleToggleAnuladas = () => {
-    setMostrarAnuladas((prev) => !prev);
+  const handleResumenEncomiendaClick = (key) => {
+    if (key === "anuladas") {
+      const activarAnuladas = filtroResumenEncomienda !== "anuladas";
+      setMostrarAnuladas(activarAnuladas);
+      setFiltroResumenEncomienda(activarAnuladas ? "anuladas" : "");
+      return;
+    }
+
+    if (mostrarAnuladas) {
+      setMostrarAnuladas(false);
+    }
+
+    setFiltroResumenEncomienda((actual) => {
+      return actual === key ? "" : key;
+    });
   };
 
   const handlePeriodoSelect = (periodo) => {
@@ -1309,7 +1668,7 @@ export default function TrModuloBase({
       return;
     }
 
-    if (!data.length) {
+    if (!dataFiltradaResumen.length) {
       swal2.fire({
         title: "Sin datos para exportar",
         text: "No hay encomiendas con el filtro actual.",
@@ -1325,7 +1684,7 @@ export default function TrModuloBase({
     const agenciaNombre = nombreAgenciaExport(puntoVentaSeleccionado, puntoVentaTrabajo || "Agencia");
     const agenciaArchivo = slugArchivo(agenciaNombre || puntoVentaTrabajo, "agencia");
     const tituloExcel = `CONTROL DE ENCOMIENDAS - ${String(agenciaNombre).toUpperCase()} ${periodoTrabajo}`;
-    const filas = data.map((row, index) => ({
+    const filas = dataFiltradaResumen.map((row, index) => ({
       "#": index + 1,
       Estado: Number(row.registrado ?? 1) === 0 ? "Anulada" : row.entregada ? "Entregada" : "Registrada",
       Periodo: row.periodo || periodoTrabajo,
@@ -1363,7 +1722,7 @@ export default function TrModuloBase({
 
     const worksheet = XLSX.utils.aoa_to_sheet([
       [tituloExcel],
-      [`Agencia: ${agenciaNombre}`, `Periodo: ${periodoTrabajo}`, `Filas: ${filas.length}`, normalizarTextoBusqueda(valorBusqueda).trim() ? "Filtro: aplicado" : "Filtro: todos"],
+      [`Agencia: ${agenciaNombre}`, `Periodo: ${periodoTrabajo}`, `Filas: ${filas.length}`, normalizarTextoBusqueda(valorBusqueda).trim() || filtroResumenEncomienda ? "Filtro: aplicado" : "Filtro: todos"],
       [],
     ]);
     XLSX.utils.sheet_add_json(worksheet, filas, { origin: "A4" });
@@ -1375,7 +1734,7 @@ export default function TrModuloBase({
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Encomiendas");
 
-    const filtroSuffix = normalizarTextoBusqueda(valorBusqueda).trim() ? "_filtradas" : "";
+    const filtroSuffix = normalizarTextoBusqueda(valorBusqueda).trim() || filtroResumenEncomienda ? "_filtradas" : "";
     const periodoArchivo = String(periodoTrabajo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
     XLSX.writeFile(workbook, `control_encomiendas_${agenciaArchivo}-${periodoArchivo}${filtroSuffix}.xlsx`);
 
@@ -1437,7 +1796,7 @@ export default function TrModuloBase({
       <Box sx={{ width: "100%", maxWidth: listadoMaxWidth, mx: "auto" }}>
         <TrHeader
           titulo={titulo}
-          contador={data.length}
+          contador={tipoOperacionFijo === "E" ? dataFiltradaResumen.length : data.length}
           contadorTexto={contadorTexto}
           nuevoTexto={nuevoTexto}
           buscarTexto={buscarTexto}
@@ -1514,11 +1873,39 @@ export default function TrModuloBase({
           onContabilidadSelect={handleContabilidadSelect}
           onPuntoVentaSelect={handlePuntoVentaSelect}
           mostrarAnuladas={mostrarAnuladas}
-          onToggleAnuladas={tipoOperacionFijo === "E" ? handleToggleAnuladas : undefined}
           compact={tipoOperacionFijo === "E" || panoramicMode}
         />
 
         <DaySelector period={periodoTrabajo || params.periodo} onDaySelect={handleDayFilter} />
+
+        {tipoOperacionFijo === "E" && (
+          <Box
+            sx={{
+              mt: 1.15,
+              mb: 1.1,
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(3, minmax(0, 1fr))",
+                xl: `repeat(${cardsResumenEncomienda.length}, minmax(0, 1fr))`,
+              },
+              gap: 0.65,
+            }}
+          >
+            {cardsResumenEncomienda.map((item) => (
+              <EncomiendaResumenCard
+                key={item.key}
+                item={item}
+                activo={filtroResumenEncomienda === item.key || filtroResumenEncomienda === item.subFilter?.key}
+                principalActivo={filtroResumenEncomienda === item.key}
+                subActivo={filtroResumenEncomienda === item.subFilter?.key}
+                onClick={() => handleResumenEncomiendaClick(item.key)}
+                onSubClick={() => handleResumenEncomiendaClick(item.subFilter?.key)}
+              />
+            ))}
+          </Box>
+        )}
 
         {tipoOperacionFijo === "B" ? (
           <TrManifiestoMinivanPanel
@@ -1572,7 +1959,7 @@ export default function TrModuloBase({
               },
               mostrarAnuladas,
             })}
-            data={data}
+            data={dataFiltradaResumen}
             progressPending={loading}
             pagination
             paginationPerPage={100}
