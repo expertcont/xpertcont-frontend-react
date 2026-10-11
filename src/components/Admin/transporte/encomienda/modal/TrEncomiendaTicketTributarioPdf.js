@@ -290,8 +290,8 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   );
   const content = encomienda.descripcion || jsonTicket.items?.[0]?.producto || "SERVICIO DE TRANSPORTE DE ENCOMIENDA";
 
-  const originBlockFontSize = 8.1;
-  const originBlockDataFontSize = 9.2;
+  const originBlockFontSize = 8.7;
+  const originBlockDataFontSize = 9.8;
   const originOptionalLineHeight = 10.6;
   const senderZoneLines = senderOriginZone ? wrap(senderOriginZone, regular, originBlockDataFontSize, CW - 73, 2) : [];
   const senderBillingAddressLines = isInvoice && senderBillingAddress
@@ -365,7 +365,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
 
   drawIcon(page, ICONS.place, M - 5, originY(448), 14, ICON_MUTED);
   text(page, "ORIGEN", M + 8, originY(440), 8.1, semibold, MUTED, 34);
-  text(page, String(origin).toUpperCase(), mainValueX, originY(439.6), 12.4, regular, INK, W - M - mainValueX);
+  text(page, String(origin).toUpperCase(), mainValueX, originY(439.6), 13.2, regular, INK, W - M - mainValueX);
   text(page, "REMITENTE:", M + 8, originY(429.8), originBlockFontSize, semibold, MUTED, 41);
   text(page, senderName, personValueX, originY(429.2), originBlockDataFontSize, regular, INK, W - M - personValueX);
   text(page, "DOC:", M + 8, originY(418.8), originBlockFontSize, semibold, MUTED, 20);
@@ -391,7 +391,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
 
   drawIcon(page, ICONS.place, M - 5, afterOriginY(353), 14, ICON_MUTED);
   text(page, "DEST.", M + 8, afterOriginY(341.6), 8.1, semibold, MUTED, 34);
-  text(page, String(destination).toUpperCase(), mainValueX, afterOriginY(341.6), 12.4, regular, INK, W - M - mainValueX);
+  text(page, String(destination).toUpperCase(), mainValueX, afterOriginY(341.6), 13.2, regular, INK, W - M - mainValueX);
   text(page, "DESTIN.:", M + 8, afterOriginY(331.4), originBlockFontSize, semibold, MUTED, 41);
   text(page, receiverName, personValueX, afterOriginY(330.8), originBlockDataFontSize, regular, INK, W - M - personValueX);
   text(page, "DNI:", M + 8, afterOriginY(320.8), originBlockFontSize, semibold, MUTED, 20);
