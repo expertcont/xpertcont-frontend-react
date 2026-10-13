@@ -412,6 +412,7 @@ export default function TrManifiestoMinivanPanel({
   documentoId,
   periodoTrabajo,
   fechaOperacion,
+  fechaFiltro = "",
   puntoVentaTrabajo,
   rutasDisponibles = [],
   placasDisponibles = [],
@@ -464,6 +465,7 @@ export default function TrManifiestoMinivanPanel({
         documento_id: documentoId,
         periodo: periodoTrabajo,
       });
+      if (fechaFiltro) query.set("fecha", fechaFiltro);
       if (puntoVentaTrabajo) query.set("id_punto_venta", puntoVentaTrabajo);
 
       const response = await fetch(`${backHost}/mve_transmanifiesto?${query.toString()}`);
@@ -492,7 +494,7 @@ export default function TrManifiestoMinivanPanel({
     } finally {
       setCargando(false);
     }
-  }, [backHost, documentoId, idAnfitrion, periodoTrabajo, puntoVentaTrabajo]);
+  }, [backHost, documentoId, fechaFiltro, idAnfitrion, periodoTrabajo, puntoVentaTrabajo]);
 
   useEffect(() => {
     cargarManifiestos();

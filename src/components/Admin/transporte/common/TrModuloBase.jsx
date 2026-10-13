@@ -1915,6 +1915,7 @@ export default function TrModuloBase({
             documentoId={contabilidadTrabajo}
             periodoTrabajo={periodoTrabajo}
             fechaOperacion={fechaOperacion}
+            fechaFiltro={fechaResumenSeleccionada}
             puntoVentaTrabajo={puntoVentaTrabajo}
             rutasDisponibles={rutasDisponibles}
             placasDisponibles={placasDisponibles}

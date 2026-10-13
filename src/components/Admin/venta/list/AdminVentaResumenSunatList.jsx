@@ -146,6 +146,17 @@ const rdiOrigenLabel = (origen) => {
   return value || "RDI";
 };
 
+const normalizarOrigenesRdi = (origen) => {
+  if (Array.isArray(origen)) {
+    return origen.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+
+  return String(origen || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 const rdiReprocesadoLabel = (row) => (
   row?.rdi_reproceso_numero
     ? row.rdi_reproceso_numero
@@ -180,6 +191,8 @@ export default function AdminVentaResumenSunatList({
   const [filaRespuestaAbierta, setFilaRespuestaAbierta] = useState("");
   const esTransporte = modo === "transporte";
   const resumenEndpoint = esTransporte ? "mve_transventa/cpe/resumen" : "ad_ventacpe/resumen";
+  const origenesResumen = useMemo(() => normalizarOrigenesRdi(origen), [origen]);
+  const origenResumenTexto = useMemo(() => origenesResumen.map(rdiOrigenLabel).join(" + "), [origenesResumen]);
 
   const contabilidadNombre = useMemo(() => {
     const seleccion = contabilidades.find((item) => String(item.documento_id) === String(contabilidadTrabajo));
@@ -209,11 +222,21 @@ export default function AdminVentaResumenSunatList({
 
     setCargando(true);
     try {
-      const response = await axios.get(
-        `${backHost}/${resumenEndpoint}/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}`,
-        { params: { origen } }
+      const responses = await Promise.all(
+        origenesResumen.map((origenItem) => (
+          axios.get(
+            `${backHost}/${resumenEndpoint}/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}`,
+            { params: { origen: origenItem } }
+          )
+        ))
       );
-      const data = response.data?.data || [];
+      const data = responses
+        .flatMap((response) => response.data?.data || [])
+        .sort((a, b) => {
+          const fechaCompare = String(b.fecha || "").localeCompare(String(a.fecha || ""));
+          if (fechaCompare !== 0) return fechaCompare;
+          return Number(b.secuencia || 0) - Number(a.secuencia || 0);
+        });
       setResumenes(data);
       setTablaBase(data);
     } catch (error) {
@@ -226,7 +249,7 @@ export default function AdminVentaResumenSunatList({
     } finally {
       setCargando(false);
     }
-  }, [confirmDialog, contabilidadTrabajo, origen, params.id_anfitrion, periodoTrabajo, resumenEndpoint]);
+  }, [confirmDialog, contabilidadTrabajo, origenesResumen, params.id_anfitrion, periodoTrabajo, resumenEndpoint]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.email) return;
@@ -338,6 +361,7 @@ export default function AdminVentaResumenSunatList({
 
     setProcesando(row.numero_rdi);
     try {
+      const origenFila = row.origen || origenesResumen[0] || "VENTA_COMERCIAL";
       const response = await axios.post(`${backHost}/${resumenEndpoint}`, {
         periodo: periodoTrabajo,
         id_anfitrion: params.id_anfitrion,
@@ -345,8 +369,8 @@ export default function AdminVentaResumenSunatList({
         documento_id: contabilidadTrabajo,
         numero_rdi: row.numero_rdi,
         fecha_documentos: row.fecha,
-        origen,
-        tipo_operacion: origen === "TRANS_BOLETO" ? "B" : origen === "TRANS_ENCOMIENDA" ? "E" : undefined,
+        origen: origenFila,
+        tipo_operacion: origenFila === "TRANS_BOLETO" ? "B" : origenFila === "TRANS_ENCOMIENDA" ? "E" : undefined,
         solo_payload: false,
       });
 
@@ -761,7 +785,7 @@ export default function AdminVentaResumenSunatList({
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: palette.muted }}>
           <SummarizeIcon sx={{ fontSize: 18 }} />
-          <Typography sx={{ fontSize: 12 }}>{origen}</Typography>
+          <Typography sx={{ fontSize: 12 }}>{origenResumenTexto}</Typography>
         </Box>
       </Box>
 
