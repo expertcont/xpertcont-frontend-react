@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Grid, Button,useMediaQuery,Select, MenuItem} from "@mui/material";
+import { Grid, Button,useMediaQuery,Select, MenuItem, Box} from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import FindIcon from '@mui/icons-material/FindInPage';
 import UpdateIcon from '@mui/icons-material/UpdateSharp';
@@ -759,13 +759,31 @@ export default function SireComparacionForm() {
 
   </Grid>
 
+  <Box
+      // La tabla de comparacion tiene muchas columnas (SIRE contra XPERT), asi
+      // que hay que desplazarse a la derecha para leerlas. Con el pie de pagina
+      // repartido con space-between, los controles de pagina quedan en el medio
+      // del ancho total y habia que llegar hasta alla para cambiar de pagina.
+      // Se alinean todos a la izquierda, igual que hace el reporte SIRE
+      // (TrReporteSireList.jsx).
+      sx={{
+        "& .rdt_Pagination": {
+          width: "100%",
+          minWidth: 0,
+          justifyContent: "flex-start",
+          gap: 1,
+          paddingLeft: 1,
+          paddingRight: 1,
+        },
+      }}
+  >
   <Datatable
       title="SIRE Comparativo"
       theme="solarized"
       columns={columnas}
       data={registrosdet}
       //selectableRows
-      //selectableRowsSingle 
+      //selectableRowsSingle
       //contextActions={contextActions}
       //actions={actions}
       onSelectedRowsChange={handleRowSelected}
@@ -775,11 +793,12 @@ export default function SireComparacionForm() {
       paginationRowsPerPageOptions={[15, 50, 100]}
 
       selectableRowsComponent={Checkbox} // Pass the function only
-      sortIcon={<ArrowDownward />}  
+      sortIcon={<ArrowDownward />}
       dense={true}
-      conditionalRowStyles={conditionalRowStyles} 
+      conditionalRowStyles={conditionalRowStyles}
   >
   </Datatable>
+  </Box>
 
   </>
   );
