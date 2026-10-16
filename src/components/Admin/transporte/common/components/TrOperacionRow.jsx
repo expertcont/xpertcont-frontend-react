@@ -512,14 +512,28 @@ function DeliveryStatusBadge({ entregada, fechaEntrega, usuarioEntrega }) {
   );
 }
 
-function PersonaOperacionLine({ icon, label, documento, color = palette.muted }) {
+function PersonaOperacionLine({ icon, label, documento, color = palette.muted, recortarNombre = false }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0 }}>
       {icon}
-      <Typography sx={{ fontSize: "13px", color }} noWrap>
+      <Typography
+        title={recortarNombre ? label : undefined}
+        sx={{
+          fontSize: "13px",
+          color,
+          minWidth: 0,
+          maxWidth: recortarNombre ? { xs: "20ch", md: "28ch" } : undefined,
+        }}
+        noWrap
+      >
         {label}
-        {documento ? ` - ${documento}` : ""}
+        {!recortarNombre && documento ? ` - ${documento}` : ""}
       </Typography>
+      {recortarNombre && documento && (
+        <Typography sx={{ fontSize: "13px", color, flexShrink: 0 }} noWrap>
+          - {documento}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -831,6 +845,7 @@ function TrOperacionRow({
                   icon={<User size={13} style={{ flexShrink: 0, color: palette.accent }} />}
                   label={row.clienteLabel}
                   documento={row.cliente_documento || row.cliente_documento_id}
+                  recortarNombre
                 />
               </Box>
               {row.destinatario && (

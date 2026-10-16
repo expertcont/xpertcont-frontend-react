@@ -62,6 +62,7 @@ import AdminPuntoVentaList from "./components/Admin/AdminPuntoVentaList";
 import TrRutaList from "./components/Admin/transporte/TrRutaList";
 import TrEncomiendaDashboardMockup from "./components/Admin/transporte/dashboard/TrEncomiendaDashboardMockup";
 import TrCajaMovimientoList from "./components/Admin/transporte/caja/TrCajaMovimientoList";
+import TrReporteSireList from "./components/Admin/transporte/sunat/TrReporteSireList";
 import AdminMenuConfigList from "./components/Admin/menu/AdminMenuConfigList";
 import AdminMenuPermisosList from "./components/Admin/menu/AdminMenuPermisosList";
 import palette from "./theme/palette";
@@ -201,7 +202,8 @@ function AppLayout(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList idAnfitrion={props.idAnfitrion} idInvitado={props.idInvitado} super={props.super} supervisor={props.supervisor} panoramicMode={panoramicMode} />} />
-              <Route path="/ad_transporterdiencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaResumenSunatList modo="transporte" origen={["TRANS_ENCOMIENDA", "TRANS_BOLETO"]} titulo="RDI SUNAT - Encomiendas - Boletos" rutaBase="/ad_transporterdiencomienda" />} />
+              <Route path="/ad_transportesire/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrReporteSireList />} />
+              <Route path="/ad_transporterdiencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaResumenSunatList modo="transporte" origen={["TRANS_ENCOMIENDA", "TRANS_BOLETO"]} titulo="Historial RDI y CDR - Encomiendas - Boletos" rutaBase="/ad_transporterdiencomienda" />} />
               <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList panoramicMode={panoramicMode} />} />
               <Route path="/ad_transporte/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList idAnfitrion={props.idAnfitrion} idInvitado={props.idInvitado} super={props.super} supervisor={props.supervisor} panoramicMode={panoramicMode} />} />
               <Route path="/ad_transportedashboard/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaDashboardMockup />} />

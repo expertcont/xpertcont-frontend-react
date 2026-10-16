@@ -22,6 +22,7 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
@@ -414,15 +415,6 @@ export default function NavSideBar(props) {
     enabled: esRubroTransporte,
   });
   const puedeMenuTransporte = permisosTransporte.puedeItem;
-  const puedeVerOperacionesTransporte = permisosTransporte.puedeAlguno([
-    'transporte.dashboard',
-    'transporte.encomiendas',
-    'transporte.grem',
-    'transporte.entregas',
-    'transporte.caja',
-    'transporte.boletos',
-    'transporte.sunat.rdi',
-  ]);
   const etiquetaPuntosVenta = esRubroTransporte ? 'Agencias' : 'Puntos venta';
   const subtituloRubro = esRubroTransporte
     ? 'Gestion transportes'
@@ -806,7 +798,7 @@ export default function NavSideBar(props) {
           </>
         )}
 
-        {accesoAdmin && esRubroTransporte && puedeVerOperacionesTransporte && (
+        {accesoAdmin && esRubroTransporte && (
           <>
             <MenuItem
               icon={<SummarizeIcon />}
@@ -908,18 +900,28 @@ export default function NavSideBar(props) {
                     }}
                   />
                 )}
-                {puedeMenuTransporte('transporte.sunat.rdi') && (
-                  <SubMenuItem
-                    icon={renderSunatMenuIcon(selectedButton === 'icono11-rdi')}
-                    label="RDI SUNAT"
-                    menuId="transporte.sunat.rdi"
-                    isActive={selectedButton === 'icono11-rdi'}
-                    onClick={() => {
-                      navigate(`/ad_transporterdiencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                      handleClick('icono11-rdi');
-                    }}
-                  />
-                )}
+                <SubMenuItem
+                  icon={<ReceiptLongIcon />}
+                  label="REPORTE SIRE"
+                  menuId="transporte.sunat.rdi"
+                  isActive={selectedButton === 'icono11-sire'}
+                  onClick={() => {
+                    navigate(`/ad_transportesire/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-sire');
+                  }}
+                />
+
+                <SubMenuItem
+                  icon={renderSunatMenuIcon(selectedButton === 'icono11-rdi')}
+                  label="HISTORIAL RDI y CDR"
+                  menuId="transporte.sunat.bajas"
+                  isActive={selectedButton === 'icono11-rdi'}
+                  onClick={() => {
+                    navigate(`/ad_transporterdiencomienda/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                    handleClick('icono11-rdi');
+                  }}
+                />
+
               </List>
             </Collapse>
           </>

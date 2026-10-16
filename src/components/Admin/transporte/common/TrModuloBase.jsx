@@ -425,12 +425,10 @@ const porCobrarRowStyles = [
   {
     when: (row) => row.tipo_operacion === "E" && row.condicionPagoLabel === "POR_COBRAR",
     style: {
-      backgroundColor: palette.porCobrarSoft,
       color: palette.text,
       borderColor: "rgba(220, 68, 68, 0.34)",
       borderLeft: `4px solid ${palette.porCobrar}`,
       "&:hover": {
-        backgroundColor: "rgba(220, 68, 68, 0.16)",
         color: palette.text,
       },
     },

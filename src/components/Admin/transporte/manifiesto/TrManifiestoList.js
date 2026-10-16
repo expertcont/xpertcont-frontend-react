@@ -49,7 +49,13 @@ const textoVacioSx = {
 
 const COLS = "70px 110px minmax(150px, 2fr) minmax(110px, 1fr) 96px 88px 74px";
 
-const fechaHoy = () => new Date().toISOString().slice(0, 10);
+const fechaHoy = () => {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const obtener = (tipo) => partes.find((parte) => parte.type === tipo)?.value || "";
+  return `${obtener("year")}-${obtener("month")}-${obtener("day")}`;
+};
 
 export default function TrManifiestoList() {
   const [manifiestos, setManifiestos] = useState([]);
