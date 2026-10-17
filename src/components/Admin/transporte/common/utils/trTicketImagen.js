@@ -49,6 +49,47 @@ const withTimeout = (promise, timeoutMs, message) => new Promise((resolve, rejec
   promise.then(resolve).catch(reject).finally(() => window.clearTimeout(timer));
 });
 
+// Para reportes, incluir todas las paginas en una imagen continua.
+export const pdfReporteToPngBlob = async (pdfBlob) => {
+  const pdf = await pdfjsLib.getDocument({ data: await pdfBlob.arrayBuffer() }).promise;
+  try {
+    const paginas = [];
+    let altoTotal = 0;
+    let anchoMaximo = 0;
+    for (let numero = 1; numero <= pdf.numPages; numero += 1) {
+      const page = await pdf.getPage(numero);
+      const viewport = page.getViewport({ scale: 1 });
+      paginas.push({ page, viewport });
+      altoTotal += viewport.height;
+      anchoMaximo = Math.max(anchoMaximo, viewport.width);
+    }
+    const escala = Math.min(1.7, 16000 / altoTotal, 4000 / anchoMaximo);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(anchoMaximo * escala);
+    canvas.height = Math.ceil(altoTotal * escala);
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    let y = 0;
+    for (const { page } of paginas) {
+      const viewport = page.getViewport({ scale: escala });
+      const paginaCanvas = document.createElement("canvas");
+      paginaCanvas.width = Math.ceil(viewport.width);
+      paginaCanvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: paginaCanvas.getContext("2d"), viewport }).promise;
+      context.drawImage(paginaCanvas, 0, y);
+      y += viewport.height;
+      paginaCanvas.width = 0;
+      paginaCanvas.height = 0;
+    }
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("No se pudo preparar la imagen del reporte.")), "image/png");
+    });
+  } finally {
+    await pdf.destroy();
+  }
+};
+
 export const pdfBlobToPngBlob = async (pdfBlob, { selloEmpresaDocumentoId } = {}) => {
   const pdfData = await pdfBlob.arrayBuffer();
   const pdf = await withTimeout(

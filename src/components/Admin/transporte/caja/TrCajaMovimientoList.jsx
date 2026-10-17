@@ -15,6 +15,7 @@ import TrHeaderMenuPicker from "../common/components/TrHeaderMenuPicker";
 import useTrCatalogos from "../common/hooks/useTrCatalogos";
 import useMenuRuntimePermissions from "../../menu/useMenuRuntimePermissions";
 import crearCierreCajaMovimientoPdf from "./TrCajaMovimientoCierrePdf";
+import TrCajaReporteArchivoDialog from "./TrCajaReporteArchivoDialog";
 
 import "../common/trDataTableTheme";
 
@@ -1069,6 +1070,10 @@ export default function TrCajaMovimientoList() {
   const [draft, setDraft] = useState(emptyDraft);
   const [guardando, setGuardando] = useState(false);
   const [imprimiendoCierre, setImprimiendoCierre] = useState(false);
+  const [archivoCierre, setArchivoCierre] = useState(null);
+  useEffect(() => () => {
+    if (archivoCierre) URL.revokeObjectURL(archivoCierre.url);
+  }, [archivoCierre]);
   const guardandoRef = useRef(false);
 
   const {
@@ -1266,11 +1271,10 @@ export default function TrCajaMovimientoList() {
       return;
     }
 
-    const cierreWindow = window.open("about:blank", "_blank");
+    let cierrePdfUrl = "";
     setImprimiendoCierre(true);
 
     try {
-      cierreWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:#111827">Generando cierre de caja...</p>`);
       const ingresos = await obtenerIngresosCaja();
       const ingresosManualesQuery = armarQuery({ tipoMovimiento: "I", incluirMotivo: false });
       const ingresosManualesResponse = await fetch(`${back_host}/mve_transcaja/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?${ingresosManualesQuery}`);
@@ -1303,13 +1307,15 @@ export default function TrCajaMovimientoList() {
         },
       });
 
-      if (cierreWindow) {
-        cierreWindow.location.href = pdfUrl;
-      } else {
-        window.open(pdfUrl, "_blank", "noopener,noreferrer");
-      }
+      cierrePdfUrl = pdfUrl;
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const correoArchivo = usuarioTrabajo || (muestraFiltroUsuario ? "todos" : params.id_invitado);
+      const usuarioArchivo = String(correoArchivo || "usuario").replace(/[^a-zA-Z0-9@._+-]/g, "-");
+      const file = new File([blob], `Reporte de caja usuario ${usuarioArchivo}.pdf`, { type: "application/pdf" });
+      setArchivoCierre({ url: pdfUrl, file });
     } catch (error) {
-      cierreWindow?.close();
+      if (cierrePdfUrl) URL.revokeObjectURL(cierrePdfUrl);
       swal2.fire({
         title: "No se pudo generar el cierre",
         text: error.message || "Revisa los datos de caja e intenta nuevamente.",
@@ -1888,6 +1894,8 @@ export default function TrCajaMovimientoList() {
         onClose={cerrarModal}
         onSubmit={guardarCajaMovimiento}
       />
+
+      <TrCajaReporteArchivoDialog archivo={archivoCierre} onClose={() => setArchivoCierre(null)} />
 
       <IngresosModal
         open={ingresosModalOpen}
