@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { Layers, Plus, ReceiptText, ShieldCheck } from "lucide-react";
+import { Layers, MessageCircle, Plus, ReceiptText, ShieldCheck } from "lucide-react";
 
 import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
@@ -28,6 +28,7 @@ export default function TrHeader({
     { value: "completo", label: "Completo", icon: Layers },
     { value: "admin", label: "Paquete", icon: ShieldCheck },
     { value: "cliente", label: "Cliente", icon: ReceiptText },
+    { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
   ];
 
   const controlButtonSx = compactControles
@@ -74,7 +75,7 @@ export default function TrHeader({
                   component="button"
                   type="button"
                   onClick={() => onTicketModoChange(value)}
-                  title={`Imprimir por defecto: Ticket ${label}`}
+                  title={value === "whatsapp" ? "Enviar ticket por WhatsApp al grabar" : `Imprimir por defecto: Ticket ${label}`}
                   sx={{
                     height: 25,
                     display: "inline-flex",

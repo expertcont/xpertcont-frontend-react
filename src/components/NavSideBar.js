@@ -233,6 +233,7 @@ export default function NavSideBar(props) {
   const [openStocks, setOpenStocks] = useState(false);
   const [openVentas, setOpenVentas] = useState(false);
   const [openTransportes, setOpenTransportes] = useState(false);
+  const [openSire, setOpenSire] = useState(false);
   const [openContable, setOpenContable] = useState(false);
   
   const handleClick = (buttonId) => {
@@ -926,6 +927,16 @@ export default function NavSideBar(props) {
             </Collapse>
           </>
         )}
+
+        <MenuItem icon={<ReceiptLongIcon />} label="SIRE" onClick={() => setOpenSire(v => !v)} hasSubmenu={true} isSubmenuOpen={openSire} />
+        <Collapse in={openSire} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <SubMenuItem icon={<ReceiptLongIcon />} label="Compras" isActive={selectedButton === 'sire-compras'} onClick={() => {
+              navigate(`/sire/compras/${[props.idAnfitrion, props.idInvitado, periodo_trabajo || '-', contabilidad_trabajo || '-'].map(encodeURIComponent).join('/')}`);
+              handleClick('sire-compras');
+            }} />
+          </List>
+        </Collapse>
 
         {accesoAdmin && esRubroProyectos && (
           <MenuItem

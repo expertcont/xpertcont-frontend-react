@@ -5,8 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Popover, Typography } from "@mui/material";
 import { CheckCircle, ClipboardCopy, MessageCircle, Package, Save, Ticket, X } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
-import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
+import { pdfBlobToPngBlob } from "../../common/utils/trTicketImagen";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -32,8 +31,6 @@ import {
 } from "./trEncomiendaModalUtils";
 
 const DESCARGAS_TICKET_BASE_URL = "https://xpertcont-backend-js-production-50e6.up.railway.app/descargas/";
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const swalSobreModal = (options) => swal2.fire({
   ...options,
@@ -67,45 +64,6 @@ const direccionEmpresa = (datos = {}) => (
   datos.direccion_completa ||
   ""
 );
-
-const withTimeout = (promise, timeoutMs, message) => new Promise((resolve, reject) => {
-  const timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
-  promise
-    .then(resolve)
-    .catch(reject)
-    .finally(() => window.clearTimeout(timer));
-});
-
-const pdfBlobToPngBlob = async (pdfBlob) => {
-  const pdfData = await pdfBlob.arrayBuffer();
-  const pdf = await withTimeout(
-    pdfjsLib.getDocument({ data: pdfData }).promise,
-    8000,
-    "No se pudo leer el PDF del ticket."
-  );
-  const page = await pdf.getPage(1);
-  const viewport = page.getViewport({ scale: 2.5 });
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-
-  canvas.width = Math.ceil(viewport.width);
-  canvas.height = Math.ceil(viewport.height);
-  await withTimeout(
-    page.render({ canvasContext: context, viewport }).promise,
-    8000,
-    "No se pudo convertir el ticket a imagen."
-  );
-
-  return withTimeout(new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(blob);
-        return;
-      }
-      reject(new Error("No se pudo convertir el ticket a imagen."));
-    }, "image/png");
-  }), 8000, "No se pudo preparar la imagen del ticket.");
-};
 
 const combinarTicketsParaCorte = async (ticketUrl, ticketAdminUrl) => {
   const [ticketBytes, adminBytes] = await Promise.all([
@@ -913,7 +871,7 @@ export default function TrEncomiendaModal({
     const clienteDireccionFinal = entregaRemitenteEnOficina ? "" : draft.remitente_direccion;
     const destinatarioDireccionFinal = entregaDestinatarioEnOficina ? "" : draft.destinatario_direccion;
 
-    const ticketAdminWindow = !esEdicion ? window.open("about:blank", "_blank") : null;
+    const ticketAdminWindow = !esEdicion && ticketPredeterminado !== "whatsapp" ? window.open("about:blank", "_blank") : null;
     ticketAdminWindow?.document?.write(`<p style="font-family:Arial,sans-serif;color:${palette.text}">Grabando encomienda...</p>`);
 
     const operacionGuardadaResponse = await onSubmit({
@@ -970,11 +928,20 @@ export default function TrEncomiendaModal({
       remitente_direccion: operacionGuardadaResponse.remitente_direccion || operacionGuardadaResponse.cliente_direccion || prev.remitente_direccion,
     }));
 
-    // Despues de grabar queda listo el ticket; por defecto imprime el formato completo.
+    // Despues de grabar se usa el formato o envio predeterminado.
     const numeroRemitente = draft.cliente_telefono || "";
     setWhatsappEncomienda({ ...draft, ...operacionGuardadaResponse });
     whatsappNumeroInicialRef.current = numeroRemitente;
     setWhatsappNumero(numeroRemitente);
+
+    if (ticketPredeterminado === "whatsapp") {
+      const enviado = await copiarTicketPngEnvioRapido({
+        encomiendaBase: { ...draft, ...operacionGuardadaResponse },
+        numero: operacionGuardadaResponse.cliente_telefono || numeroRemitente,
+      });
+      if (!enviado) setWhatsappModalOpen(true);
+      return;
+    }
 
     await imprimirTicketModelo({
       modo: ticketPredeterminado,
@@ -1163,12 +1130,13 @@ export default function TrEncomiendaModal({
     }
   };
 
-  const copiarTicketPngEnvioRapido = async () => {
-    if (guardando || copiandoEnvioRapido || !puedeGenerarTicket) {
-      return;
+  const copiarTicketPngEnvioRapido = async ({ encomiendaBase: encomiendaParam, numero: numeroParam } = {}) => {
+    const encomiendaBase = encomiendaParam || { ...draft, ...(operacion || operacionGuardada || {}) };
+    if (guardando || copiandoEnvioRapido || !encomiendaBase.r_cod || !encomiendaBase.r_serie || !encomiendaBase.r_numero) {
+      return false;
     }
 
-    const telefono = normalizarTelefonoWhatsapp(whatsappNumero);
+    const telefono = normalizarTelefonoWhatsapp(numeroParam ?? whatsappNumero);
 
     if (!telefono) {
       swalSobreModal({
@@ -1179,7 +1147,7 @@ export default function TrEncomiendaModal({
         color: palette.text,
         background: palette.surface,
       });
-      return;
+      return false;
     }
 
     if (!navigator.clipboard?.write || typeof window.ClipboardItem === "undefined") {
@@ -1189,10 +1157,9 @@ export default function TrEncomiendaModal({
         icon: "warning",
         confirmButtonColor: palette.accent,
       });
-      return;
+      return false;
     }
 
-    const encomiendaBase = { ...draft, ...(operacion || operacionGuardada || {}) };
     let ticketUrl = "";
 
     setCopiandoEnvioRapido(true);
@@ -1207,7 +1174,9 @@ export default function TrEncomiendaModal({
       setEnvioRapidoEstado("Convirtiendo...");
       const response = await fetch(ticketUrl);
       const pdfBlob = await response.blob();
-      const pngBlob = await pdfBlobToPngBlob(pdfBlob);
+      const pngBlob = await pdfBlobToPngBlob(pdfBlob, {
+        selloEmpresaDocumentoId: documentoId || empresaCompleta.ruc || empresaCompleta.documento_id,
+      });
 
       setEnvioRapidoEstado("Copiando...");
       await navigator.clipboard.write([
@@ -1224,6 +1193,7 @@ export default function TrEncomiendaModal({
 
       abrirWhatsappNativo(telefono, mensaje);
       cerrarFlujoWhatsapp();
+      return true;
     } catch (error) {
       swalSobreModal({
         title: "No se pudo copiar",
@@ -1233,6 +1203,7 @@ export default function TrEncomiendaModal({
         background: palette.surface,
         color: palette.text,
       });
+      return false;
     } finally {
       if (ticketUrl.startsWith("blob:")) {
         URL.revokeObjectURL(ticketUrl);

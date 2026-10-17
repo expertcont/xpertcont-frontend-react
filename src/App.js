@@ -15,6 +15,7 @@ import ContabilidadForm from './components/ContabilidadForm';
 import CuentaList from './components/CuentaList';
 import CuentaForm from './components/CuentaForm';
 import SireComparacionForm from "./components/SireComparacionForm";
+import SireComprasPage from "./modules/sire/compras";
 import SeguridadContabilidad from "./components/SeguridadContabilidad";
 import AsientoListPrev from "./components/AsientoListPrev";
 import AsientoDetalleList from "./components/AsientoDetalleList";
@@ -202,6 +203,7 @@ function AppLayout(props) {
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/edit" element={<AdminVentaPresupuestoNuevoForm />} />
               <Route path="/ad_ventapresupuesto/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaPresupuestoForm />} />
               <Route path="/ad_transportesencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrEncomiendaList idAnfitrion={props.idAnfitrion} idInvitado={props.idInvitado} super={props.super} supervisor={props.supervisor} panoramicMode={panoramicMode} />} />
+              <Route path="/sire/compras/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<SireComprasPage />} />
               <Route path="/ad_transportesire/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrReporteSireList />} />
               <Route path="/ad_transporterdiencomienda/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaResumenSunatList modo="transporte" origen={["TRANS_ENCOMIENDA", "TRANS_BOLETO"]} titulo="Historial RDI y CDR - Encomiendas - Boletos" rutaBase="/ad_transporterdiencomienda" />} />
               <Route path="/ad_transportegrem/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<TrGremEncomiendaList panoramicMode={panoramicMode} />} />

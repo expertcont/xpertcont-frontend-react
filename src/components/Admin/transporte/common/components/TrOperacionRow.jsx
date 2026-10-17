@@ -10,6 +10,7 @@ import {
   Ban,
   MapPin,
   MapPinCheck,
+  MessageCircle,
   Package,
   Pencil,
   Ticket,
@@ -764,6 +765,7 @@ function TrOperacionRow({
                       ["completo", "Ticket completo", "Cliente + paquete en un solo corte"],
                       ["admin", "Ticket Paquete", "Copia interna para adherir al paquete"],
                       ["cliente", "Ticket cliente", "Comprobante para entregar o reenviar"],
+                      ["whatsapp", "WhatsApp Cliente", "Copiar imagen y abrir WhatsApp del remitente"],
                     ].map(([modo, label, descripcion]) => (
                       <Box
                         key={modo}
@@ -808,7 +810,7 @@ function TrOperacionRow({
                             color: "inherit",
                           }}
                         >
-                          <Ticket size={14} />
+                          {modo === "whatsapp" ? <MessageCircle size={14} /> : <Ticket size={14} />}
                         </Box>
                         <Box sx={{ minWidth: 0 }}>
                           <Typography sx={{ color: "inherit", fontSize: "12.6px", fontWeight: 900, lineHeight: 1.15 }}>

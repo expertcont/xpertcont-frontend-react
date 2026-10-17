@@ -361,7 +361,7 @@ const resolverFechaOperacion = (periodoTrabajo, diaSel) => {
 
 const TICKET_ENCOMIENDA_MODO_KEY = "xpertcont.transporte.encomienda.ticketPredeterminado";
 const normalizarModoTicketEncomienda = (value) => (
-  ["completo", "admin", "cliente"].includes(value) ? value : "completo"
+  ["completo", "admin", "cliente", "whatsapp"].includes(value) ? value : "completo"
 );
 const TICKET_BOLETO_MODO_KEY = "xpertcont.transporte.boleto.ticketPredeterminado";
 const normalizarModoTicketBoleto = (value) => (
@@ -491,7 +491,10 @@ export default function TrModuloBase({
   const [filtroResumenEncomienda, setFiltroResumenEncomienda] = useState("");
   const [ticketEncomiendaModo, setTicketEncomiendaModo] = useState(() => {
     if (typeof window === "undefined") return "completo";
-    return normalizarModoTicketEncomienda(window.localStorage.getItem(TICKET_ENCOMIENDA_MODO_KEY));
+    const modoGuardado = window.localStorage.getItem(TICKET_ENCOMIENDA_MODO_KEY);
+    if (modoGuardado) return normalizarModoTicketEncomienda(modoGuardado);
+    const pantallaCelular = window.matchMedia?.("(max-width: 767px)").matches;
+    return pantallaCelular ? "whatsapp" : "completo";
   });
   const [ticketBoletoModo, setTicketBoletoModo] = useState(() => {
     if (typeof window === "undefined") return "ticket";

@@ -4,6 +4,7 @@ import { PDFDocument, rgb } from "pdf-lib";
 import palette from "../../../../../theme/palette";
 import crearTicketEncomiendaPdf from "../../encomienda/modal/TrEncomiendaTicketPdf";
 import crearTicketEncomiendaTributarioPdf from "../../encomienda/modal/TrEncomiendaTicketTributarioPdf";
+import { pdfBlobToPngBlob } from "./trTicketImagen";
 
 const DESCARGAS_TICKET_BASE_URL = "https://xpertcont-backend-js-production-50e6.up.railway.app/descargas/";
 
@@ -194,6 +195,11 @@ export const imprimirTicketEncomienda = async ({
   ticketWindow: ticketWindowParam,
   ...opciones
 } = {}) => {
+  if (modo === "whatsapp") {
+    await compartirTicketEncomiendaWhatsapp(opciones);
+    return;
+  }
+
   const modoImpresion = ["completo", "admin", "cliente"].includes(modo) ? modo : "completo";
   const esAdmin = modoImpresion === "admin";
   const esCliente = modoImpresion === "cliente";
@@ -223,5 +229,49 @@ export const imprimirTicketEncomienda = async ({
   } catch (error) {
     ticketWindow?.close();
     throw error;
+  }
+};
+
+const compartirTicketEncomiendaWhatsapp = async (opciones) => {
+  const encomienda = opciones.encomiendaBase || {};
+  const digits = String(encomienda.cliente_telefono || "").replace(/\D/g, "");
+  const telefono = digits.length === 9 ? `51${digits}` : digits;
+  if (!telefono) {
+    throw new Error("La encomienda no tiene celular del remitente. Agregalo en el formulario para enviar el ticket por WhatsApp.");
+  }
+  if (!navigator.clipboard?.write || typeof window.ClipboardItem === "undefined") {
+    throw new Error("Tu navegador no permite copiar imagenes al portapapeles. Prueba en Chrome o Edge con HTTPS/localhost.");
+  }
+
+  let ticketUrl = "";
+  try {
+    ticketUrl = await generarTicketEncomiendaPdfUrl({ ...opciones, admin: false, local: true, cacheBust: false });
+    const response = await fetch(ticketUrl);
+    const pngBlob = await pdfBlobToPngBlob(await response.blob(), {
+      selloEmpresaDocumentoId: opciones.documentoId || opciones.empresa?.ruc || opciones.empresa?.documento_id,
+    });
+    await navigator.clipboard.write([
+      new window.ClipboardItem({ "image/png": pngBlob }),
+    ]);
+
+    const numero = [encomienda.r_serie, encomienda.r_numero].filter(Boolean).join("-");
+    const ruta = (opciones.rutasDisponibles || []).find((item) => String(item.id_ruta) === String(encomienda.id_ruta));
+    const destino = encomienda.punto_venta_dest_nombre || encomienda.punto_venta_destino_nombre || encomienda.destino_nombre ||
+      ruta?.punto_venta_dest_nombre || ruta?.punto_venta_destino_nombre || ruta?.destino_nombre || "";
+    const mensaje = [
+      `Hola, te comparto el ticket de tu encomienda${numero ? ` ${numero}` : ""}.`,
+      destino ? `Destino: ${destino}.` : "",
+      "Imagen del ticket.",
+    ].filter(Boolean).join("\n");
+    const link = document.createElement("a");
+    link.href = `whatsapp://send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
+    link.target = "_self";
+    link.rel = "noopener noreferrer";
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    window.setTimeout(() => link.remove(), 0);
+  } finally {
+    if (ticketUrl.startsWith("blob:")) URL.revokeObjectURL(ticketUrl);
   }
 };
