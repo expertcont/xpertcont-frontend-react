@@ -6,6 +6,7 @@ import { Box, Dialog, DialogContent, DialogTitle, IconButton, InputBase, Popover
 import { CheckCircle, ClipboardCopy, MessageCircle, Package, Save, Ticket, X } from "lucide-react";
 import { PDFDocument, rgb } from "pdf-lib";
 import { pdfBlobToPngBlob } from "../../common/utils/trTicketImagen";
+import useTrVisualViewport from "../../common/hooks/useTrVisualViewport";
 import swal2 from "sweetalert2";
 
 import AppButton from "../../../../ui/AppButton";
@@ -149,6 +150,7 @@ export default function TrEncomiendaModal({
   guardando = false,
   guardarActionId,
 }) {
+  const visualViewport = useTrVisualViewport(open);
   const esEdicion = Boolean(operacion);
   const puedeEditarMontosFinal = esPermisoActivo(puedeEditarMontosEncomienda);
   const montosBloqueados = esEdicion && !puedeEditarMontosFinal;
@@ -442,7 +444,7 @@ export default function TrEncomiendaModal({
   const textoBotonGuardarCorto = esEdicion ? "Guardar" : encomiendaGrabada ? "Grabada" : esFactura ? "Grabar" : "Guardar";
   const accionSecundariaSx = {
     height: 42,
-    minWidth: 44,
+    minWidth: { xs: 0, sm: 44 },
     px: 1,
     borderRadius: palette.radius.control,
     color: palette.muted,
@@ -457,7 +459,7 @@ export default function TrEncomiendaModal({
   };
   const accionPrincipalSx = {
     height: 42,
-    minWidth: 132,
+    minWidth: { xs: 0, sm: 132 },
     px: 1.4,
     borderRadius: palette.radius.control,
     backgroundColor: palette.accent,
@@ -1218,6 +1220,21 @@ export default function TrEncomiendaModal({
       open={open}
       onClose={onClose}
       maxWidth={false}
+      sx={{
+        "@media (max-width: 767px), (pointer: coarse)": {
+          top: visualViewport ? `${visualViewport.top}px` : 0,
+          bottom: "auto",
+          height: visualViewport ? `${visualViewport.height}px` : "100dvh",
+          "& .MuiDialog-container": {
+            height: "100%",
+            boxSizing: "border-box",
+            pt: "max(8px, env(safe-area-inset-top, 0px))",
+            pb: "max(12px, env(safe-area-inset-bottom, 0px))",
+            pl: "max(6px, env(safe-area-inset-left, 0px))",
+            pr: "max(6px, env(safe-area-inset-right, 0px))",
+          },
+        },
+      }}
       PaperProps={{
         sx: {
           position: "relative",
@@ -1230,6 +1247,13 @@ export default function TrEncomiendaModal({
           border: `1px solid ${palette.border}`,
           borderRadius: palette.radius.modal,
           maxHeight: "calc(100vh - 16px)",
+          "@media (max-width: 767px), (pointer: coarse)": {
+            m: 0,
+            width: "100%",
+            maxWidth: 430,
+            maxHeight: "100%",
+            minHeight: 0,
+          },
           overflow: "hidden",
           scrollbarWidth: "thin",
           scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
@@ -1343,7 +1367,7 @@ export default function TrEncomiendaModal({
         </Box>
       )}
 
-      <Box sx={{ position: "relative", pb: 0.8, minHeight: 0, flex: 1, display: "flex", flexDirection: "column" }}>
+      <Box sx={{ position: "relative", pb: 0.8, minHeight: 0, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TrEncomiendaModalSections
           draft={draft}
           error={error}
@@ -1394,7 +1418,7 @@ export default function TrEncomiendaModal({
           pt: 0.7,
           flexShrink: 0,
           display: "grid",
-          gridTemplateColumns: "auto auto 1fr auto auto",
+          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "auto auto 1fr auto auto" },
           gap: 0.65,
           alignItems: "center",
           borderTop: `1px solid ${palette.borderSoft}`,
@@ -1404,16 +1428,16 @@ export default function TrEncomiendaModal({
               WhatsApp
             </AppButton>
           )}
-          {!(esEdicion || encomiendaGrabada) && <Box />}
+          {!(esEdicion || encomiendaGrabada) && <Box sx={{ display: { xs: "none", sm: "block" } }} />}
           <AppButton icon={<X size={18} />} onClick={onClose} disabled={guardando} sx={accionSecundariaSx}>
             Cerrar
           </AppButton>
-          <Box />
+          <Box sx={{ display: { xs: "none", sm: "block" } }} />
           <AppButton buttonRef={ticketButtonRef} icon={<Ticket size={18} />} onClick={() => setTicketPickerOpen(true)} disabled={guardando || imprimiendoTicket || imprimiendoTicketAdmin || !puedeGenerarTicket} sx={accionSecundariaSx}>
             Ticket
           </AppButton>
           {!soloLectura && (
-            <AppButton data-action-id={guardarActionId} buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ ...accionPrincipalSx, justifySelf: "end" }}>
+            <AppButton data-action-id={guardarActionId} buttonRef={grabarRef} icon={<Save size={16} />} onClick={handleSubmit} disabled={guardando || enviandoWhatsapp || copiandoEnvioRapido || encomiendaGrabada} sx={{ ...accionPrincipalSx, justifySelf: { xs: "stretch", sm: "end" } }}>
               {guardando ? "Guardando..." : textoBotonGuardarCorto}
             </AppButton>
           )}

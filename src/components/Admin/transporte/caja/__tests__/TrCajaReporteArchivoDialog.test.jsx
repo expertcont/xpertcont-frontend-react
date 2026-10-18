@@ -28,11 +28,12 @@ test("ofrece compartir PDF, descarga y vista", () => {
 
 test("WhatsApp recibe el PDF real con su nombre, sin abrir un chat vacio", async () => {
   const clickLink = jest.spyOn(HTMLAnchorElement.prototype, "click");
-  render(<TrCajaReporteArchivoDialog archivo={archivo} onClose={jest.fn()} />);
+  const onClose = jest.fn();
+  render(<TrCajaReporteArchivoDialog archivo={archivo} onClose={onClose} />);
   fireEvent.click(screen.getByRole("button", { name: "Compartir PDF" }));
   expect(navigator.share).toHaveBeenCalledWith({ files: [archivo.file], title: archivo.file.name });
   expect(clickLink).not.toHaveBeenCalled();
-  await waitFor(() => expect(screen.getByRole("status").textContent).toContain("PDF entregado"));
+  await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
 });
 
 test("si no se pueden compartir archivos muestra como adjuntar el PDF sin abrir WhatsApp vacio", () => {
@@ -47,10 +48,36 @@ test("si no se pueden compartir archivos muestra como adjuntar el PDF sin abrir 
 
 test("cancelar el selector permite reintentar sin mostrar error", async () => {
   navigator.share.mockRejectedValue(new DOMException("Cancelado", "AbortError"));
-  render(<TrCajaReporteArchivoDialog archivo={archivo} onClose={jest.fn()} />);
+  const onClose = jest.fn();
+  render(<TrCajaReporteArchivoDialog archivo={archivo} onClose={onClose} />);
   fireEvent.click(screen.getByRole("button", { name: "Compartir PDF" }));
   await waitFor(() => expect(screen.queryByText("Preparando reporte...")).toBeNull());
   expect(screen.queryByRole("alert")).toBeNull();
+  expect(onClose).not.toHaveBeenCalled();
+});
+
+test("descargar inicia la descarga con el nombre del PDF y cierra el dialogo", () => {
+  const onClose = jest.fn();
+  const clickLink = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+    expect(this.href).toBe(archivo.url);
+    expect(this.download).toBe(archivo.file.name);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+  render(<TrCajaReporteArchivoDialog archivo={archivo} onClose={onClose} />);
+  fireEvent.click(screen.getByRole("button", { name: "Descargar PDF" }));
+  expect(clickLink).toHaveBeenCalledTimes(1);
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("ver PDF abre el archivo antes de cerrar el dialogo", () => {
+  const onClose = jest.fn();
+  const open = jest.spyOn(window, "open").mockImplementation(() => {
+    expect(onClose).not.toHaveBeenCalled();
+  });
+  render(<TrCajaReporteArchivoDialog archivo={archivo} onClose={onClose} />);
+  fireEvent.click(screen.getByRole("button", { name: "Ver PDF" }));
+  expect(open).toHaveBeenCalledWith(archivo.url, "_blank", "noopener,noreferrer");
+  expect(onClose).toHaveBeenCalledTimes(1);
 });
 
 test("el boton inferior permite cerrar el reporte", () => {

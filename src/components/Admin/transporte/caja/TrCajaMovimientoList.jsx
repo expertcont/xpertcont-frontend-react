@@ -1071,6 +1071,9 @@ export default function TrCajaMovimientoList() {
   const [guardando, setGuardando] = useState(false);
   const [imprimiendoCierre, setImprimiendoCierre] = useState(false);
   const [archivoCierre, setArchivoCierre] = useState(null);
+  const [archivoCierreOpen, setArchivoCierreOpen] = useState(false);
+  // Conservar el blob al cerrar el dialogo para que el visor o la descarga lo lean.
+  // Se libera al reemplazar el reporte o salir del formulario.
   useEffect(() => () => {
     if (archivoCierre) URL.revokeObjectURL(archivoCierre.url);
   }, [archivoCierre]);
@@ -1312,8 +1315,10 @@ export default function TrCajaMovimientoList() {
       const blob = await response.blob();
       const correoArchivo = usuarioTrabajo || (muestraFiltroUsuario ? "todos" : params.id_invitado);
       const usuarioArchivo = String(correoArchivo || "usuario").replace(/[^a-zA-Z0-9@._+-]/g, "-");
-      const file = new File([blob], `Reporte de caja usuario ${usuarioArchivo}.pdf`, { type: "application/pdf" });
+      const fechaArchivo = fechaFiltro || periodoTrabajo;
+      const file = new File([blob], `Reporte de caja usuario ${usuarioArchivo} ${fechaArchivo}.pdf`, { type: "application/pdf" });
       setArchivoCierre({ url: pdfUrl, file });
+      setArchivoCierreOpen(true);
     } catch (error) {
       if (cierrePdfUrl) URL.revokeObjectURL(cierrePdfUrl);
       swal2.fire({
@@ -1895,7 +1900,7 @@ export default function TrCajaMovimientoList() {
         onSubmit={guardarCajaMovimiento}
       />
 
-      <TrCajaReporteArchivoDialog archivo={archivoCierre} onClose={() => setArchivoCierre(null)} />
+      <TrCajaReporteArchivoDialog archivo={archivoCierreOpen ? archivoCierre : null} onClose={() => setArchivoCierreOpen(false)} />
 
       <IngresosModal
         open={ingresosModalOpen}
