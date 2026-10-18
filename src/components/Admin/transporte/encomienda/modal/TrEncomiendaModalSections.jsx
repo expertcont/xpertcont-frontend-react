@@ -79,6 +79,10 @@ export default function TrEncomiendaModalSections({
         overflowY: "auto",
         overscrollBehaviorY: "contain",
         scrollPaddingBlock: "12px",
+        "@media (max-width: 767px), (pointer: coarse)": {
+          flex: "0 0 auto",
+          overflowY: "visible",
+        },
         scrollbarWidth: "thin",
         scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
         "&::-webkit-scrollbar": {

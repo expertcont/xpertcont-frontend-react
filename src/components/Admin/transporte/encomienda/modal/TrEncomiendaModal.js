@@ -1367,7 +1367,22 @@ export default function TrEncomiendaModal({
         </Box>
       )}
 
-      <Box sx={{ position: "relative", pb: 0.8, minHeight: 0, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <Box sx={{
+        position: "relative",
+        pb: 0.8,
+        minHeight: 0,
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        "@media (max-width: 767px), (pointer: coarse)": {
+          overflowY: "auto",
+          overscrollBehaviorY: "contain",
+          scrollPaddingBlock: "12px",
+          scrollbarWidth: "thin",
+          scrollbarColor: `${palette.border} ${palette.overlaySoft}`,
+        },
+      }}>
         <TrEncomiendaModalSections
           draft={draft}
           error={error}
