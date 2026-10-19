@@ -55,7 +55,8 @@ function Main() {
         authorizationParams={{
           //redirect_uri: "http://localhost:3000"
           //redirect_uri: "https://expertcont.up.railway.app/"
-          direct_uri: "https://expertcont.pe/"  //VERSION WEB FINAL
+          //verifica conexion
+          redirect_uri: "https://expertcont.pe/"  //VERSION WEB FINAL
         }}
       >
         {/* Renderiza la pantalla de bienvenida o la aplicación principal según el estado */}
