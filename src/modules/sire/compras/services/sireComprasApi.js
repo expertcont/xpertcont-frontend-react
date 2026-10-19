@@ -2,6 +2,11 @@ import axios from "axios";
 const backHost = process.env.REACT_APP_BACK_HOST || process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
 const endpoint = backHost + "/sire/compras/propuesta";
 export const sireComprasApi = {
+  recuperarPresentacion: contexto => axios.get(backHost + '/sire/compras/presentacion/' + contexto),
+  presentar: (accion,payload) => axios.post(backHost + '/sire/compras/presentacion/' + accion,payload,{timeout:120000}),
+  descargarReemplazo: (id,contexto) => axios.get(backHost + '/sire/compras/presentacion/reemplazo/archivo/' + encodeURIComponent(id) + '/' + contexto,{responseType:'blob'}),
+  revisarConciliacion: (ticket, contexto) => axios.get(backHost + '/sire/compras/personalizada/conciliacion/' + encodeURIComponent(ticket) + '/' + contexto),
+  confirmarConciliacion: (ticket, payload) => axios.post(backHost + '/sire/compras/personalizada/conciliar/' + encodeURIComponent(ticket), payload),
   listarPersonalizada: contexto => axios.get(backHost + '/sire/compras/personalizada/' + contexto),
   importarPersonalizada: payload => axios.post(backHost + '/sire/compras/personalizada/importar', payload),
   crearPersonalizada: payload => axios.post(backHost + '/sire/compras/personalizada', payload),

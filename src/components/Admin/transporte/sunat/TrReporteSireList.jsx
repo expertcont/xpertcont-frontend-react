@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, CircularProgress, LinearProgress, Tab, Tabs, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, LinearProgress, Tab, Tabs, Typography } from "@mui/material";
 import ArrowDownward from "@mui/icons-material/ArrowDownward";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import DataTable from "react-data-table-component";
@@ -195,6 +195,7 @@ export default function TrReporteSireList() {
   const [observaciones, setObservaciones] = useState([]);
   const [resumen, setResumen] = useState({});
   const [comparacion, setComparacion] = useState([]);
+  const [comparacionRealizada, setComparacionRealizada] = useState(false);
   const [resumenComparacion, setResumenComparacion] = useState({});
   const [busqueda, setBusqueda] = useState("");
   const [diaSel, setDiaSel] = useState("*");
@@ -257,10 +258,13 @@ export default function TrReporteSireList() {
     if (!periodoTrabajo || !contabilidadTrabajo || contabilidadTrabajo === "-") return;
 
     setCargandoComparacion(true);
+    setComparacionRealizada(false);
     try {
       const response = await axios.get(`${backHost}/mve_transventa/cpe/comparacion-sire/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}?id_libro=014`);
+      if (!Array.isArray(response.data?.data)) throw new Error("No se recibió un resultado válido de la comparación.");
       setComparacion(response.data?.data || []);
       setResumenComparacion(response.data?.resumen || {});
+      setComparacionRealizada(true);
     } catch (error) {
       await confirmDialog({
         title: "No se pudo comparar SIRe",
@@ -290,6 +294,9 @@ export default function TrReporteSireList() {
 
   useEffect(() => {
     let vigente = true;
+    setComparacionRealizada(false);
+    setComparacion([]);
+    setResumenComparacion({});
     setSireSunat({
       ticket: "", fechaGeneracion: null, nombreArchivo: "", reutilizado: false, importacion: null,
       cargandoGuardado: true, errorGuardado: "",
@@ -325,6 +332,7 @@ export default function TrReporteSireList() {
   }, [contabilidadTrabajo, params.id_anfitrion, periodoTrabajo]);
 
   const actualizarTrasReemplazo = useCallback(async () => {
+    setComparacionRealizada(false);
     setComparacion([]);
     setResumenComparacion({});
     setSireSunat((prev) => ({ ...prev, ticket: '', nombreArchivo: '', importacion: null }));
@@ -501,6 +509,9 @@ export default function TrReporteSireList() {
     setSireSunat((prev) => ({ ...prev, cargandoTicket: true }));
     try {
       const response = await axios.post(`${backHost}/transporte/sire/propuesta/ticket`, { ...payloadSireSunat(), reutilizar_existente: false });
+      setComparacionRealizada(false);
+      setComparacion([]);
+      setResumenComparacion({});
       setSireSunat((prev) => ({
         ...prev,
         ticket: response.data?.ticket || "",
@@ -948,7 +959,11 @@ export default function TrReporteSireList() {
                 <Typography sx={{ color: palette.muted, fontSize: 12.5, mt: 0.25 }}>
                   {comparacion.length > 0
                     ? `${dataVisible.length} visibles de ${comparacion.length} hallazgos`
-                    : "Importa la propuesta SUNAT y ejecuta la comparacion del periodo."}
+                    : cargandoComparacion
+                      ? "Comparando la propuesta SUNAT con los registros del sistema…"
+                      : comparacionRealizada
+                        ? "Comparación completada: 0 hallazgos."
+                        : "Importa la propuesta SUNAT y ejecuta la comparacion del periodo."}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
@@ -970,6 +985,15 @@ export default function TrReporteSireList() {
                 </Button>
               </Box>
             </Box>
+
+            {comparacionRealizada && !cargandoComparacion && comparacion.length === 0 && (
+              <Alert severity="success" role="status" sx={{ backgroundColor: palette.successSoft, color: palette.success }}>
+                <Typography sx={{ fontWeight: 800, fontSize: 13 }}>Comparación completada sin diferencias.</Typography>
+                <Typography sx={{ fontSize: 12.5 }}>
+                  No se encontraron diferencias entre la propuesta SUNAT y los registros del sistema para la empresa y el período seleccionados.
+                </Typography>
+              </Alert>
+            )}
 
             <Box
               sx={{
@@ -1012,6 +1036,13 @@ export default function TrReporteSireList() {
                   theme="solarized"
                   columns={comparacionColumns}
                   data={dataVisible}
+                  noDataComponent={
+                    <Box sx={{ p: 2, color: palette.muted, fontSize: 12.5 }}>
+                      {comparacionRealizada
+                        ? comparacion.length === 0 ? "Sin diferencias." : "No hay hallazgos para los filtros seleccionados."
+                        : "Ejecuta la comparación para ver el resultado."}
+                    </Box>
+                  }
                   customStyles={{
                     ...tableStyles,
                     pagination: {

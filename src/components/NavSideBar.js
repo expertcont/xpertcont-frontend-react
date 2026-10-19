@@ -902,17 +902,6 @@ export default function NavSideBar(props) {
                   />
                 )}
                 <SubMenuItem
-                  icon={<ReceiptLongIcon />}
-                  label="REPORTE SIRE"
-                  menuId="transporte.sunat.rdi"
-                  isActive={selectedButton === 'icono11-sire'}
-                  onClick={() => {
-                    navigate(`/ad_transportesire/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
-                    handleClick('icono11-sire');
-                  }}
-                />
-
-                <SubMenuItem
                   icon={renderSunatMenuIcon(selectedButton === 'icono11-rdi')}
                   label="HISTORIAL RDI y CDR"
                   menuId="transporte.sunat.bajas"
@@ -931,6 +920,16 @@ export default function NavSideBar(props) {
         <MenuItem icon={<ReceiptLongIcon />} label="SIRE" onClick={() => setOpenSire(v => !v)} hasSubmenu={true} isSubmenuOpen={openSire} />
         <Collapse in={openSire} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
+            <SubMenuItem
+              icon={<ReceiptLongIcon />}
+              label="Ventas"
+              menuId="transporte.sunat.rdi"
+              isActive={selectedButton === 'icono11-sire'}
+              onClick={() => {
+                navigate(`/ad_transportesire/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                handleClick('icono11-sire');
+              }}
+            />
             <SubMenuItem icon={<ReceiptLongIcon />} label="Compras" isActive={selectedButton === 'sire-compras'} onClick={() => {
               navigate(`/sire/compras/${[props.idAnfitrion, props.idInvitado, periodo_trabajo || '-', contabilidad_trabajo || '-'].map(encodeURIComponent).join('/')}`);
               handleClick('sire-compras');

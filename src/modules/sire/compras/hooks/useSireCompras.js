@@ -16,6 +16,7 @@ export default function useSireCompras() {
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [recarga, setRecarga] = useState(0);
+  const [revision, setRevision] = useState(0);
   const periodo = normalizarPeriodo(params.periodo);
   const documentoId = /^\d{11}$/.test(params.documento_id || "") ? params.documento_id : "";
   const contexto = JSON.stringify([params.id_anfitrion, params.id_invitado, periodo, documentoId]);
@@ -54,7 +55,7 @@ export default function useSireCompras() {
     if (!valido || !isAuthenticated) { setCargando(false); return undefined; }
     setCargando(true);
     sireComprasApi.recuperar(urlContexto)
-      .then(({ data }) => { if (vigente) setDatos(data); })
+      .then(({ data }) => { if (vigente) { setDatos(data); setRevision(v=>v+1); } })
       .catch(err => { if (vigente) setError(err.response?.data?.message || "No se pudo recuperar SIRE Compras."); })
       .finally(() => { if (vigente) setCargando(false); });
     return () => { vigente = false; };
@@ -91,6 +92,7 @@ export default function useSireCompras() {
           const current = await sireComprasApi.recuperar(urlContexto);
           if (contextoActual.current !== origen) return;
           setDatos(current.data);
+          setRevision(v=>v+1);
         }
         setMensaje(response.data.message || "Ticket de compras guardado. Consulta su estado para recuperar la propuesta.");
       }
@@ -102,7 +104,7 @@ export default function useSireCompras() {
     }
   };
   return {
-    datos, cargando, accion, ocupado, error, mensaje, valido, contexto,
+    datos, cargando, accion, ocupado, error, mensaje, valido, contexto, revision,
     idAnfitrion: params.id_anfitrion, periodo, documentoId, periodos, empresas, ejecutar,
     actualizar: () => setRecarga(v => v + 1),
     cambiarPeriodo: v => navigate(ruta(normalizarPeriodo(v), documentoId)),
