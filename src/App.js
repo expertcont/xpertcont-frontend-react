@@ -76,7 +76,8 @@ function AppLayout(props) {
   const isGremRoute = location.pathname.startsWith("/ad_transportegrem");
   const isBoletosRoute = location.pathname.startsWith("/ad_transportesboletos");
   const isCajaRoute = location.pathname.startsWith("/ad_transportecaja");
-  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isGremRoute || isBoletosRoute || isCajaRoute;
+  const isVentaRoute = location.pathname.startsWith("/ad_venta/");
+  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isGremRoute || isBoletosRoute || isCajaRoute || isVentaRoute;
   const [panoramicMode, setPanoramicMode] = useState(() => (
     typeof window !== "undefined" && (
       window.location.pathname.startsWith("/ad_transporteentregas") ||
@@ -84,12 +85,14 @@ function AppLayout(props) {
       window.location.pathname.startsWith("/ad_transporte/") ||
       window.location.pathname.startsWith("/ad_transportegrem") ||
       window.location.pathname.startsWith("/ad_transportesboletos") ||
-      window.location.pathname.startsWith("/ad_transportecaja")
+      window.location.pathname.startsWith("/ad_transportecaja") ||
+      window.location.pathname.startsWith("/ad_venta/")
     )
   ));
 
   const previousPanoramicRoute = useRef(isPanoramicRoute);
   const claveMenuPanoramico = (pathname) => {
+    if (pathname.startsWith("/ad_venta/")) return "ventas";
     if (pathname.startsWith("/ad_transporteentregas")) return "entregas";
     if (pathname.startsWith("/ad_transportesencomienda") || pathname.startsWith("/ad_transporte/")) return "encomiendas";
     if (pathname.startsWith("/ad_transportegrem")) return "grem";
@@ -250,7 +253,7 @@ function AppLayout(props) {
               <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/:id_invitado_grupo/edit" element={<AdminPuntoVentaUsuarioForm />} />
 
               <Route path="/ad_ventarepdet/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepDet />} />
-              <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList />} />
+              <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList panoramicMode={panoramicMode} />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaForm />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/:comprobante_ref" element={<AdminVentaForm />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaForm />} />

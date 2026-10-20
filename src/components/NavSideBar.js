@@ -749,9 +749,12 @@ export default function NavSideBar(props) {
                 <SubMenuItem
                   icon={<CropFreeIcon />}
                   label="Registros"
+                  iconTone="encomiendas"
                   isActive={selectedButton === 'icono02-1'}
                   onClick={() => {
-                  //navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
+                  if (typeof props.onNavigatePanoramic === 'function') {
+                    props.onNavigatePanoramic('ventas');
+                  }
                   navigate(`/ad_venta/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/-`);
                   handleClick('icono02-1');
                   }}

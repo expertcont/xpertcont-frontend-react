@@ -23,6 +23,7 @@ export default function TrHeader({
   compactControles = false,
   headerExtra = null,
   nuevoActionId,
+  sx = {},
 }) {
   const ticketOptions = ticketOpciones || [
     { value: "completo", label: "Completo", icon: Layers },
@@ -52,6 +53,7 @@ export default function TrHeader({
         alignItems: { xs: "flex-start", sm: "center" },
         gap: compactControles ? { xs: 0.5, sm: 0.75 } : { xs: 1, sm: 2 },
         mb: compactControles ? { xs: 0.5, md: 0.5 } : { xs: 1.25, md: 3 },
+        ...sx,
       }}
     >
       <Box>
