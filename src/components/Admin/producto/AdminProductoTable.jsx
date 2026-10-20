@@ -64,7 +64,7 @@ const customStyles = {
 };
 
 // Tabla del catalogo: concentra configuracion visual y mantiene limpia la pantalla contenedora.
-export default function AdminProductoTable({ columns, data, onSelectedRowsChange, clearSelectedRows }) {
+export default function AdminProductoTable({ columns, data, onSelectedRowsChange, clearSelectedRows, loading = false, onRowClicked, keyField = 'id_producto' }) {
   return (
     <Box
       sx={{
@@ -77,7 +77,14 @@ export default function AdminProductoTable({ columns, data, onSelectedRowsChange
       <DataTable
         theme="productoDark"
         columns={columns}
-        data={data}
+        data={keyField === '_key' ? data.map(row => ({ ...row, _key: `${row.id_producto}:${row.unidades ?? row.descripcion}` })) : data}
+        keyField={keyField}
+        progressPending={loading}
+        progressComponent={<Box sx={{ py: 5, color: palette.muted }}>Cargando productos…</Box>}
+        noDataComponent={<Box sx={{ py: 5, color: palette.muted }}>No hay resultados para los filtros seleccionados.</Box>}
+        onRowClicked={onRowClicked}
+        pointerOnHover={Boolean(onRowClicked)}
+        paginationComponentOptions={{ rowsPerPageText: 'Filas por página:', rangeSeparatorText: 'de' }}
         customStyles={customStyles}
         highlightOnHover
         onSelectedRowsChange={onSelectedRowsChange}

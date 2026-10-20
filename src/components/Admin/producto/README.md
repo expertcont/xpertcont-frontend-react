@@ -2,6 +2,21 @@
 
 Esta carpeta agrupa las pantallas y piezas reutilizables del mantenimiento de productos.
 
+## Gestión integrada de productos
+
+`AdminProductoList.js` abre `AdminProductoCatalogo.jsx`: catálogo con búsqueda por código/nombre, filtros de estado/clase/subclase y editor lateral. Conserva las rutas públicas de los formularios, importación, exportación y clonado.
+
+El estilo sigue los mantenimientos de transporte (por ejemplo `TrZonaList`): paleta compartida, etiquetas superiores, campos compactos, iconos Lucide y acciones `AppButton`.
+
+- `ProductoEditor.jsx`: editor compartido para el panel y las rutas de mantenimiento, con datos, precios y clasificación/transformación.
+- `ProductoFields.jsx`: campos y superficies del mantenimiento.
+- `ProductoRangosEditor.jsx`: tabla editable y simulador de cantidades enteras.
+- `productoMantenimiento.js`: peticiones, presentación monetaria y validación de rangos.
+
+Con `precio_factor = '1'` se muestran rangos; en otro caso se edita el precio único del producto. Los rangos deben comenzar en 1, ser consecutivos, tener referencias únicas y conservar una referencia de una unidad (requerida por el selector de ventas actual). El precio por unidad conserva su precisión de cálculo y el simulador presenta el importe con dos decimales.
+
+El backend incorpora `POST /ad_productomantenimiento/:id_anfitrion/:documento_id` y `PUT /ad_productomantenimiento/:id_anfitrion/:documento_id/:id_producto`. Valida y guarda el producto y sus rangos en una sola transacción. Requiere desplegar ambos proyectos para utilizar este guardado; no requiere modificar las tablas.
+
 ## Archivos
 
 - `AdminProductoList.js`: listado principal del catalogo. Permite alternar entre productos y rangos de precios, filtrar, importar Excel, descargar plantilla, clonar y eliminar.

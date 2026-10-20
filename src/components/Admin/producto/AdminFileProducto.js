@@ -7,6 +7,7 @@ import SystemUpdateAltIcon from '@mui/icons-material/SystemUpdateAlt';
 import TaskIcon from '@mui/icons-material/Task';
 import Swal from 'sweetalert2';
 import Tooltip from '@mui/material/Tooltip';
+import Alert from '@mui/material/Alert';
 import palette from '../../../theme/palette';
 
 const uploadBoxSx = {
@@ -56,6 +57,8 @@ const AdminFileProducto = ({ datosCarga, onActualizaImportaOK, urlApiDestino }) 
   const back_host = process.env.BACK_HOST || 'https://xpertcont-backend-js-production-50e6.up.railway.app';
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileType, setSelectedFileType] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
 
   const handleDelete = () => {
@@ -91,6 +94,7 @@ const AdminFileProducto = ({ datosCarga, onActualizaImportaOK, urlApiDestino }) 
   };
 
   const handleUpload = async () => {
+    if (uploading) return;
     if (!selectedFile) {
       console.log('No se ha seleccionado ningun archivo.');
       return;
@@ -100,23 +104,31 @@ const AdminFileProducto = ({ datosCarga, onActualizaImportaOK, urlApiDestino }) 
     formData.append('archivoExcel', selectedFile);
     formData.append('datosCarga', JSON.stringify(datosCarga));
 
+    setUploading(true);
+    setUploadError('');
     try {
-      await fetch(`${back_host}${urlApiDestino}`, {
+      const response = await fetch(`${back_host}${urlApiDestino}`, {
         method: 'POST',
         body: formData,
       });
-
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.message || result.error || 'No se pudo importar el archivo.');
+      }
       onActualizaImportaOK();
     } catch (error) {
-      console.error('Error al enviar la solicitud a la API:', error);
-    }
+      setUploadError(error.message || 'No se pudo importar el archivo.');
+    } finally { setUploading(false); }
   };
 
   const handleClick = () => {
+    if (uploading) return;
     fileInputRef.current?.click();
   };
 
   return (
+    <Box>
+    {uploadError && <Alert severity="error" sx={{ mb: 1 }}>{uploadError}</Alert>}
     <Box sx={uploadBoxSx} onClick={handleClick}>
       <input
         type="file"
@@ -132,6 +144,7 @@ const AdminFileProducto = ({ datosCarga, onActualizaImportaOK, urlApiDestino }) 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, minWidth: 0 }}>
             <IconButton
               sx={dangerIconSx}
+              disabled={uploading}
               onClick={(event) => {
                 event.stopPropagation();
                 handleDelete();
@@ -152,6 +165,7 @@ const AdminFileProducto = ({ datosCarga, onActualizaImportaOK, urlApiDestino }) 
           <Tooltip title={selectedFileType === 'xlsx' ? 'Importar XLSX' : 'Importar XLS'}>
             <IconButton
               sx={uploadIconSx}
+              disabled={uploading}
               onClick={(event) => {
                 event.stopPropagation();
                 handleUpload();
@@ -172,6 +186,8 @@ const AdminFileProducto = ({ datosCarga, onActualizaImportaOK, urlApiDestino }) 
           </Typography>
         </Box>
       )}
+    </Box>
+    {uploading && <Typography sx={{ color: palette.muted, fontSize: 12, mt: 1 }}>Importando archivo…</Typography>}
     </Box>
   );
 };
