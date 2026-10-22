@@ -37,6 +37,7 @@ import logo from '../Logo04small-retocado-teal.png';
 import palette from '../theme/palette';
 import SunatMenuIcon from '../assets/images/sunat0.png';
 import useMenuRuntimePermissions from './Admin/menu/useMenuRuntimePermissions';
+import useProductoGruposHabilitado from './Admin/producto/useProductoGruposHabilitado';
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 80;
@@ -407,6 +408,9 @@ export default function NavSideBar(props) {
   const esRubroProyectos = rubroTrabajo === 'PROYECTO' || rubroTrabajo === 'PROYECTOS';
   const esRubroContable = rubroTrabajo === 'CONTABLE' || rubroTrabajo === 'CONTABILIDAD';
   const esRubroComercial = !esRubroTransporte && !esRubroProyectos && !esRubroContable;
+  // Grupos Color: el menú aporta rubro/acceso; el hook consulta SKU por empresa.
+  // Esta condición solo controla visibilidad; el nuevo backend valida el acceso.
+  const gruposSkuHabilitados = useProductoGruposHabilitado(back_host, props.idAnfitrion, contabilidad_trabajo, accesoAdmin && rubroTrabajo === 'COMERCIAL');
   const puedeConfigurarMenus = props.idAnfitrion === props.idInvitado || props.super === true || String(props.super) === '1';
   const permisosTransporte = useMenuRuntimePermissions({
     backHost: back_host,
@@ -1062,6 +1066,18 @@ export default function NavSideBar(props) {
             onClick={() => {
               navigate(`/ad_producto/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
               handleClick('icono03');
+            }}
+          />
+        )}
+
+        {gruposSkuHabilitados && (
+          <MenuItem
+            icon={<QrCodeIcon />}
+            label="Grupos Color"
+            isActive={selectedButton === 'icono-producto-grupo'}
+            onClick={() => {
+              navigate(`/ad_productogrupo/${props.idAnfitrion}/${props.idInvitado}/${contabilidad_trabajo}`);
+              handleClick('icono-producto-grupo');
             }}
           />
         )}

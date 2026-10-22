@@ -25,6 +25,7 @@ import AsientoGenericoForm from "./components/AsientoGenericoForm";
 
 import AdminVentaList from "./components/Admin/venta/list/AdminVentaList";
 import AdminProductoList from "./components/Admin/producto/AdminProductoList";
+import AdminProductoGrupoList from "./components/Admin/producto/AdminProductoGrupoList";
 import AdminProductoForm from "./components/Admin/producto/AdminProductoForm";
 import AdminVentaForm from "./components/Admin/venta/form/AdminVentaForm";
 import AdminEquipoList from "./components/Admin/AdminEquipoList";
@@ -258,7 +259,8 @@ function AppLayout(props) {
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/:comprobante_ref" element={<AdminVentaForm />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/view" element={<AdminVentaForm />} />
 
-              <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoList />} />          
+              <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoList />} />
+              <Route path="/ad_productogrupo/:id_anfitrion/:id_invitado/:documento_id" element={<AdminProductoGrupoList />} />
               <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/new" element={<AdminProductoForm />} />          
               <Route path="/ad_producto/:id_anfitrion/:id_invitado/:documento_id/:id_producto/edit" element={<AdminProductoForm />} />
               <Route path="/ad_productoprecio/:id_anfitrion/:id_invitado/:documento_id/:id_producto/:unidades/:accion" element={<AdminProductoFormPrecio />} />

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { Box, Dialog, IconButton, MenuItem, Select, Tooltip, Typography } from "@mui/material";
-import { Calendar, CalendarPlus, Camera, Check, FileSpreadsheet, Lock, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, X } from "lucide-react";
+import { Calendar, CalendarPlus, Camera, Check, Clock, FileSpreadsheet, Lock, MapPin, MapPinCheck, MessageCircle, Mic, Package, Phone, Printer, Search, TriangleAlert, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
   generarConstanciaEntregaPdfBlob,
@@ -12,6 +12,7 @@ import {
   pdfBlobToPngBlob,
 } from "./TrEncomiendaEntregaConstanciaPdf";
 import swal2 from "sweetalert2";
+import { esLlegadaDiaSiguiente, estadoTiempoEncomienda, formatoHoraNatural, llegadaPrevista, tiempoServidor } from "./tiemposEncomienda";
 
 import AppButton from "../../../../ui/AppButton";
 import AppSearch from "../../../../ui/AppSearch";
@@ -168,8 +169,8 @@ const construirMensajeLlegadaWhatsapp = (item = {}) => {
   const numero = numeroOperacion(item) || "registrada";
   return [
     `Hola${destinatario ? ` ${destinatario}` : ""},`,
-    `su encomienda ${numero} ya llegó y se encuentra pendiente de entrega.`,
-    "Le enviamos el ticket correspondiente.",
+    `tu encomienda ${numero} ya llegó`,
+    "Puedes pasar a recogerla en nuestra agencia. ¡Te esperamos!",
   ].join("\n");
 };
 
@@ -477,6 +478,15 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
   const [puntoVentaTrabajo, setPuntoVentaTrabajo] = useState("");
   const [tablaBase, setTablaBase] = useState([]);
   const [llegadasLocales, setLlegadasLocales] = useState(() => new Set());
+  const [ahora, setAhora] = useState(null);
+  const relojServidorRef = useRef(null);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const ancla = relojServidorRef.current;
+      setAhora(ancla ? tiempoServidor(ancla.hora, performance.now() - ancla.contador) : null);
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [valorBusqueda, setValorBusqueda] = useState("");
   const [periodosBusqueda, setPeriodosBusqueda] = useState(3);
   const [mostrarEntregadas, setMostrarEntregadas] = useState(false);
@@ -590,6 +600,10 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
       });
       const response = await fetch(`${back_host}/mve_transventa/encomienda/por-entregar/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${puntoVentaTrabajo}?${query.toString()}`);
       const result = await response.json();
+      const horaServidor = result?.meta?.hora_servidor;
+      relojServidorRef.current = tiempoServidor(horaServidor) === null
+        ? null : { hora: horaServidor, contador: performance.now() };
+      setAhora(tiempoServidor(horaServidor));
       const rows = Array.isArray(result?.data) ? result.data : [];
       const rowsActivas = rows.filter((item) => Number(item.registrado ?? 1) !== 0);
       setTablaBase(rowsActivas.map((item) => ({
@@ -619,6 +633,19 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
   useEffect(() => {
     cargarPendientes();
   }, [cargarPendientes, updateTrigger]);
+
+  useEffect(() => {
+    // Resincronizar tambien al volver de suspension o de otra pestaña.
+    const alVolver = () => {
+      if (document.visibilityState === "visible") cargarPendientes();
+    };
+    const timer = window.setInterval(cargarPendientes, 300000);
+    document.addEventListener("visibilitychange", alVolver);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", alVolver);
+    };
+  }, [cargarPendientes]);
 
   useEffect(() => () => {
     speechRecognitionRef.current?.abort?.();
@@ -827,6 +854,9 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
       "Precio chofer": Number(row.precio_chofer || 0),
       "Protegida con clave": String(row.contra || "").trim() ? "Si" : "No",
       "Llegada chofer": row.llegada_real ? formatFechaHoraMinuto(row.llegada_real) : "",
+      "Hora registrada": formatoHoraNatural(row.ctrl_crea),
+      "Llegada prevista": llegadaPrevista(row) ? formatFechaHoraMinuto(llegadaPrevista(row)) : "",
+      "Espera / estado llegada": estadoTiempoEncomienda(row, ahora).texto,
       "Fecha entrega": row.entrega_fecha ? formatFechaHoraEntrega(row.entrega_fecha) : "",
       "Usuario entrega": row.entrega_ctrl_us || "",
     }));
@@ -1903,26 +1933,54 @@ export default function TrEncomiendaEntregaList({ panoramicMode = false, supervi
       },
     },
     {
+      name: "HORARIO",
+      width: "170px",
+      selector: (row) => row.ctrl_crea || "",
+      cell: (row) => (
+        <Box data-tag="allowRowEvents" sx={{ display: "grid", gridTemplateColumns: "auto auto", columnGap: 0.75, rowGap: 0.25, alignItems: "baseline", fontVariantNumeric: "tabular-nums" }}>
+          <Typography data-tag="allowRowEvents" sx={{ color: palette.muted, fontSize: "11px", lineHeight: 1.2 }}>Registrado:</Typography>
+          <Typography data-tag="allowRowEvents" sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 800, lineHeight: 1.2, whiteSpace: "nowrap" }}>{formatoHoraNatural(row.ctrl_crea)}</Typography>
+          <Typography data-tag="allowRowEvents" title={esLlegadaDiaSiguiente(row) ? "Llegada prevista para el día siguiente a la emisión" : "Llegada prevista para el día de emisión"} sx={{ color: palette.muted, fontSize: "11px", lineHeight: 1.2, whiteSpace: "nowrap" }}>{esLlegadaDiaSiguiente(row) ? "Previsto +1d:" : "Previsto:"}</Typography>
+          <Typography data-tag="allowRowEvents" title={llegadaPrevista(row) ? formatFechaHoraMinuto(llegadaPrevista(row)) : "Sin hora prevista"} sx={{ color: palette.text, fontSize: "12.5px", fontWeight: 800, lineHeight: 1.2, whiteSpace: "nowrap" }}>{formatoHoraNatural(row.llegada_aprox)}</Typography>
+        </Box>
+      ),
+    },
+    {
       name: "LLEGADA CHOFER",
-      width: "154px",
+      width: "240px",
       selector: (row) => row.llegada_real || "",
       cell: (row) => {
         const fechaLlegada = fechaLlegadaVisible(row);
         const sinLlegada = !tieneLlegadaReal(row);
+        const estado = estadoTiempoEncomienda(row, ahora);
+        const alerta = estado.tipo === "warning";
+        const colorEstado = alerta ? palette.danger : palette[estado.tipo] || palette.muted;
+        const IconoEstado = alerta ? TriangleAlert : Clock;
 
         return (
-          <Box data-tag="allowRowEvents" sx={{ minWidth: 0, color: sinLlegada ? palette.muted : palette.success }}>
+          <Box data-tag="allowRowEvents" sx={{ minWidth: 0, width: "100%", pl: 0.65, borderLeft: `2px solid ${alerta ? palette.danger : palette.borderSoft}`, color: sinLlegada ? palette.text : palette.success,
+            "@keyframes entregaAvisoRetraso": { "0%, 100%": { transform: "translateX(0)" }, "25%, 75%": { transform: "translateX(-2px)" }, "50%": { transform: "translateX(2px)" } },
+            "&:hover .entrega-estado": alerta ? { animation: "entregaAvisoRetraso 320ms ease-in-out 2" } : {},
+            "@media (prefers-reduced-motion: reduce)": { "&:hover .entrega-estado": { animation: "none" } },
+          }}>
             <Typography
               data-tag="allowRowEvents"
               sx={{
-                fontSize: sinLlegada ? "11.5px" : "12px",
-                fontWeight: 900,
-                lineHeight: 1.15,
+                fontSize: "12.5px",
+                fontWeight: 800,
+                lineHeight: 1.1,
+                fontVariantNumeric: "tabular-nums",
                 whiteSpace: "nowrap",
               }}
             >
-              {sinLlegada ? "Sin marcar" : fechaLlegada}
+              {sinLlegada ? "Sin llegada registrada" : fechaLlegada}
             </Typography>
+            <Box className="entrega-estado" data-tag="allowRowEvents" role={alerta ? "status" : undefined} title={estado.texto} sx={{ display: "flex", alignItems: "center", gap: 0.4, color: colorEstado, mt: 0.4, minWidth: 0 }}>
+              <IconoEstado data-tag="allowRowEvents" size={12} aria-hidden="true" style={{ flexShrink: 0 }} />
+              <Typography data-tag="allowRowEvents" noWrap sx={{ fontSize: "11.5px", fontWeight: 900, lineHeight: 1.2, fontVariantNumeric: "tabular-nums" }}>
+                {estado.texto}
+              </Typography>
+            </Box>
           </Box>
         );
       },

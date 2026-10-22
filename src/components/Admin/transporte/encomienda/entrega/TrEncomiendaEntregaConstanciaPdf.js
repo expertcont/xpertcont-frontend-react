@@ -18,10 +18,10 @@ const PENDING_LOGO_MAX_WIDTH_MM = 46;
 const PENDING_LOGO_MAX_HEIGHT_MM = 16;
 const PENDING_LOGO_GAP_MM = 4; // reserva de alto en el respaldo, no separa el logo del estado
 const PENDING_STATUS_BLOCK_GAP_MM = 2;
-// Sin holgura entre "PENDIENTE DE ENTREGA" y el logo: solo la altura de la linea.
-const PENDING_STATUS_TO_LOGO_MM = 3;
+// Espacio entre el cierre de bienvenida y el logo.
+const PENDING_STATUS_TO_LOGO_MM = 5;
 // En el render de canvas el texto se dibuja en px de canvas (1 mm = 9 px).
-const PENDING_STATUS_TO_LOGO_CANVAS_MM = 20 / 9;
+const PENDING_STATUS_TO_LOGO_CANVAS_MM = 5;
 const PENDING_LOGO_FALLBACK_HEIGHT_MM = 6;
 const DESTINO_ICON_PATH = "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z";
 
@@ -34,6 +34,7 @@ const COLORS = {
   muted: rgb(0.40, 0.45, 0.50),
   accent: rgb(0.20, 0.36, 0.46),
   success: rgb(0.10, 0.48, 0.32),
+  welcome: rgb(0.91, 0.97, 0.94),
   pending: rgb(0.68, 0.45, 0.12),
 };
 
@@ -208,8 +209,8 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
   const pdfDoc = await PDFDocument.create();
   const headerText = ticketPendienteEntrega ? "LLEGO TU ENCOMIENDA" : "ENCOMIENDA";
   const headerSize = ticketPendienteEntrega ? 11.5 : 14;
-  const statusText = ticketPendienteEntrega ? "PENDIENTE DE ENTREGA" : "RECIBIDO CONFORME";
-  const statusColor = ticketPendienteEntrega ? COLORS.pending : COLORS.success;
+  const statusText = ticketPendienteEntrega ? "Te esperamos" : "RECIBIDO CONFORME";
+  const statusColor = COLORS.success;
   pdfDoc.setTitle(`Constancia de entrega ${numeroOperacion(encomienda)}`);
   pdfDoc.setSubject("Constancia de entrega de encomienda");
   pdfDoc.setCreator("Xpertcont");
@@ -235,6 +236,9 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
   const estimatedEntregaTop = estimatedRucTop + 2.5;
   const estimarDestinatario = (fechaEntrega) => {
     estimatedCursor += (countLines(formatFechaHoraEntrega(fechaEntrega), regular, 9, 72, 1) * 4) + 1;
+    if (ticketPendienteEntrega) {
+      estimatedCursor += (countLines(encomienda.descripcion || "-", regular, 9, 72, 3) * 3.8) + 5;
+    }
     estimatedCursor += (countLines(encomienda.destinatario || "-", bold, 12, 72, 3) * 4.2) + 1;
     estimatedCursor += (countLines(dniEntrega(encomienda), bold, 10.5, 72, 2) * 4) + 2;
     if (ticketPendienteEntrega) {
@@ -248,6 +252,10 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
     estimatedCursor += 6;
     estimatedCursor += (countLines(encomienda.cliente || "-", bold, 9.2, 72, 3) * 3.8) + 1.5;
     estimatedCursor += 10;
+    if (ticketPendienteEntrega) {
+      estimatedCursor += 5;
+      return;
+    }
     estimatedCursor += 6;
     estimatedCursor += (countLines(encomienda.descripcion || "-", regular, 8.5, 72, 3) * 3.8) + 5;
   };
@@ -395,6 +403,13 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
       align: "center",
     });
     cursor += (arrivalLineCount * 4) + 1;
+    if (ticketPendienteEntrega) {
+      const lineasDescripcion = drawWrappedText(encomienda.descripcion || "-", 40, cursor, {
+        font: regular, size: 9, color: COLORS.ink, maxWidth: 72,
+        maxLines: 3, lineHeightMm: 3.8, align: "center",
+      });
+      cursor += (lineasDescripcion * 3.8) + 5;
+    }
     const destinatarioLineCount = drawWrappedText(encomienda.destinatario || "-", 40, cursor, {
       font: bold,
       size: 12,
@@ -460,6 +475,7 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
       align: "center",
     });
     cursor += 5;
+    if (ticketPendienteEntrega) return cursor + 5;
     drawSectionTitle("Descripción de la encomienda", cursor);
     cursor += 6;
     const descripcionLineCount = drawWrappedText(encomienda.descripcion || "-", 40, cursor, {
@@ -507,14 +523,12 @@ export async function generarConstanciaEntregaPdfBlob(encomienda = {}, { pendien
     cursor = drawRecipientBlock(cursor, encomienda.llegada_real);
     cursor += 4;
 
-    // El estado va pegado justo arriba del logo.
+    // Franja de bienvenida a todo el ancho del papel, sin icono de ubicacion.
     cursor += PENDING_STATUS_BLOCK_GAP_MM;
     cursor += 6;
+    drawRectangle(3, cursor - 6, 74, 9, { color: COLORS.welcome, borderWidth: 0 });
     drawText(statusText, 40, cursor, {
-      font: bold,
-      size: 9.8,
-      color: statusColor,
-      align: "center",
+      font: bold, size: 12, color: statusColor, align: "center",
     });
     cursor += PENDING_STATUS_TO_LOGO_MM;
 
@@ -645,6 +659,7 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
       muted: "#68737d",
       accent: "#345c75",
       success: "#1a7a52",
+      welcome: "#e8f7ef",
       pending: "#ad7320",
     };
 
@@ -780,6 +795,11 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
       context.font = "500 18px Arial";
       const arrivalLineCount = wrapCanvasText(formatFechaHoraEntrega(dateValue), width / 2, px(cursor), px(72), 20, 1, "center");
       cursor += (arrivalLineCount * 4) + 1;
+      if (ticketPendienteEntrega) {
+        context.font = "500 18px Arial";
+        const lineasDescripcion = wrapCanvasText(encomienda.descripcion || "-", width / 2, px(cursor), px(72), 18, 3, "center");
+        cursor += (lineasDescripcion * 3.8) + 5;
+      }
       context.font = "900 26px Arial";
       const destinatarioLineCount = wrapCanvasText(encomienda.destinatario || "-", width / 2, px(cursor), px(72), 25, 3, "center");
       cursor += (destinatarioLineCount * 4.2) + 1;
@@ -822,6 +842,7 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
       wrapCanvasText(formatComprobante(encomienda), width / 2, px(cursor), px(72), 20, 1, "center");
       cursor += 5;
 
+      if (ticketPendienteEntrega) return cursor + 5;
       sectionTitle("Descripción de la encomienda", cursor);
       cursor += 6;
       context.fillStyle = colors.ink;
@@ -880,13 +901,15 @@ export async function generarConstanciaEntregaPngFallback(encomienda = {}, pageH
       cursor = drawRecipientBlock(cursor, encomienda.llegada_real);
       cursor += 4;
 
-      // El estado va pegado justo arriba del logo.
+      // Mismo cierre de bienvenida que en el PDF.
       cursor += PENDING_STATUS_BLOCK_GAP_MM;
       cursor += 6;
+      context.fillStyle = colors.welcome;
+      context.fillRect(px(3), px(cursor - 6), px(74), px(9));
+      context.font = "900 24px Arial";
       context.textAlign = "center";
-      context.fillStyle = colors.pending;
-      context.font = "900 19px Arial";
-      context.fillText("PENDIENTE DE ENTREGA", width / 2, px(cursor));
+      context.fillStyle = colors.success;
+      context.fillText("Te esperamos", width / 2, px(cursor));
       cursor += PENDING_STATUS_TO_LOGO_CANVAS_MM;
 
       const logoTop = cursor;
