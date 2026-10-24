@@ -53,7 +53,7 @@ function Main() {
         domain={domain}
         clientId={clientId}
         authorizationParams={{
-          //redirect_uri: "http://localhost:3000"
+         //redirect_uri: "http://localhost:3000"
           //redirect_uri: "https://expertcont.up.railway.app/"
           //verifica conexion
           redirect_uri: "https://expertcont.pe/"  //VERSION WEB FINAL
