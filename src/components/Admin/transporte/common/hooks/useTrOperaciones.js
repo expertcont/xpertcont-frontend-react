@@ -16,14 +16,21 @@ export default function useTrOperaciones({
   puntoVentaTrabajo,
   tipoOperacionFijo,
   mostrarAnuladas = false,
+  destinoTrabajo = "",
 }) {
   const [registros, setRegistros] = useState([]);
   const [tablaBase, setTablaBase] = useState([]);
-  const [cantidadAnuladas, setCantidadAnuladas] = useState(0);
+  const [anuladasBase, setAnuladasBase] = useState([]);
   const [valorBusqueda, setValorBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
+  const [destinosPeriodo, setDestinosPeriodo] = useState([]);
+  const cantidadAnuladas = anuladasBase.filter((item) => (
+    !destinoTrabajo || String(item.id_punto_venta_dest ?? "") === destinoTrabajo
+  )).length;
 
-  const data = useMemo(() => registros.map(normalizarOperacion), [registros]);
+  const data = useMemo(() => registros
+    .filter((item) => !destinoTrabajo || String(item.id_punto_venta_dest ?? "") === destinoTrabajo)
+    .map(normalizarOperacion), [registros, destinoTrabajo]);
 
   const filtrarPorPuntoVenta = useCallback((rows, puntoVenta) => {
     if (!puntoVenta) {
@@ -50,7 +57,8 @@ export default function useTrOperaciones({
     if (!periodoTrabajo || !contabilidadTrabajo) {
       setRegistros([]);
       setTablaBase([]);
-      setCantidadAnuladas(0);
+      setAnuladasBase([]);
+      setDestinosPeriodo([]);
       return;
     }
 
@@ -60,9 +68,13 @@ export default function useTrOperaciones({
         ? `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}/${puntoVentaTrabajo}`
         : `${back_host}/mve_transventa/${periodoTrabajo}/${params.id_anfitrion}/${contabilidadTrabajo}/${diaSel}`;
 
-      const cargarRows = async (estadoQuery = "") => {
-        const response = await fetch(`${url}${estadoQuery}`);
+      const cargarRows = async (estadoQuery = "", incluirDestinos = false) => {
+        const query = new URLSearchParams(estadoQuery.replace(/^\?/, ""));
+        if (incluirDestinos && tipoOperacionFijo === "E") query.set("destinos_periodo", "1");
+        const queryTexto = query.toString();
+        const response = await fetch(`${url}${queryTexto ? `?${queryTexto}` : ""}`);
         const result = await response.json();
+        if (incluirDestinos) setDestinosPeriodo(Array.isArray(result?.meta?.destinos_periodo) ? result.meta.destinos_periodo : []);
         const rows = (Array.isArray(result?.data) ? result.data : [])
           .filter((item) => item.tipo_operacion === tipoOperacionFijo);
 
@@ -74,21 +86,22 @@ export default function useTrOperaciones({
       };
 
       const estadoQuery = mostrarAnuladas ? "?estado=anulados" : "";
-      const rowsPorPunto = await cargarRows(estadoQuery);
+      const rowsPorPunto = await cargarRows(estadoQuery, true);
       setTablaBase(rowsPorPunto);
       setRegistros(rowsPorPunto);
 
       if (tipoOperacionFijo === "E") {
         const anuladas = mostrarAnuladas ? rowsPorPunto : await cargarRows("?estado=anulados");
-        setCantidadAnuladas(anuladas.filter((item) => Number(item.registrado ?? 1) === 0).length);
+        setAnuladasBase(anuladas.filter((item) => Number(item.registrado ?? 1) === 0));
       } else {
-        setCantidadAnuladas(0);
+        setAnuladasBase([]);
       }
     } catch (error) {
       console.log("Error cargando operaciones de transporte:", error);
       setRegistros([]);
       setTablaBase([]);
-      setCantidadAnuladas(0);
+      setAnuladasBase([]);
+      setDestinosPeriodo([]);
     } finally {
       setLoading(false);
     }
@@ -113,6 +126,7 @@ export default function useTrOperaciones({
   return {
     registros,
     data,
+    destinosPeriodo,
     valorBusqueda,
     setValorBusqueda,
     loading,

@@ -17,6 +17,7 @@ import TrEncomiendaModal from "../encomienda/modal/TrEncomiendaModal";
 import TrManifiestoMinivanPanel from "../manifiesto/TrManifiestoMinivanPanel";
 import TrHeader from "./components/TrHeader";
 import TrFiltros from "./components/TrFiltros";
+import TrHeaderMenuPicker from "./components/TrHeaderMenuPicker";
 import TrRdiProgresoModal from "./TrRdiProgresoModal";
 import { createColumns, customStylesEncomienda, customStylesEncomiendaPanoramica, operacionProtegidaSunat } from "./components/TrOperacionRow";
 import useTrCatalogos from "./hooks/useTrCatalogos";
@@ -24,7 +25,7 @@ import useTrOperaciones from "./hooks/useTrOperaciones";
 import { imprimirTicketEncomienda } from "./utils/trEncomiendaTicketPrint";
 import useMenuRuntimePermissions from "../../menu/useMenuRuntimePermissions";
 import { consultarTicketRdiSunat, normalizarRdiResponse } from "../../venta/common/rdiSunatActions";
-import { formatFecha, formatHora, formatMoney, normalizarTextoBusqueda } from "./utils/trUtils";
+import { formatFecha, formatHora, formatMoney } from "./utils/trUtils";
 import SunatResumenIcon from "../../../../assets/images/sunat0.png";
 
 // Tema oscuro propio de las tablas del modulo transporte.
@@ -489,6 +490,7 @@ export default function TrModuloBase({
   const [modalResumenOpen, setModalResumenOpen] = useState(false);
   const [mostrarAnuladas, setMostrarAnuladas] = useState(false);
   const [filtroResumenEncomienda, setFiltroResumenEncomienda] = useState("");
+  const [destinoTrabajo, setDestinoTrabajo] = useState("");
   const [ticketEncomiendaModo, setTicketEncomiendaModo] = useState(() => {
     if (typeof window === "undefined") return "completo";
     const modoGuardado = window.localStorage.getItem(TICKET_ENCOMIENDA_MODO_KEY);
@@ -542,6 +544,7 @@ export default function TrModuloBase({
 
   const {
     data,
+    destinosPeriodo,
     valorBusqueda,
     setValorBusqueda,
     loading,
@@ -558,7 +561,12 @@ export default function TrModuloBase({
     puntoVentaTrabajo,
     tipoOperacionFijo,
     mostrarAnuladas,
+    destinoTrabajo: tipoOperacionFijo === "E" ? destinoTrabajo : "",
   });
+
+  useEffect(() => {
+    setDestinoTrabajo("");
+  }, [periodoTrabajo, contabilidadTrabajo, puntoVentaTrabajo]);
 
   // Fecha enviada al modal. Si el filtro esta en "todos", usa hoy cuando pertenece al periodo.
   const fechaOperacion = useMemo(() => {
@@ -1684,6 +1692,14 @@ export default function TrModuloBase({
     const puntoVentaSeleccionado = puntosVentaAsignados.find((item) => item.id_punto_venta === puntoVentaTrabajo) || {};
     const agenciaNombre = nombreAgenciaExport(puntoVentaSeleccionado, puntoVentaTrabajo || "Agencia");
     const agenciaArchivo = slugArchivo(agenciaNombre || puntoVentaTrabajo, "agencia");
+    const filtroTexto = String(valorBusqueda || "").trim();
+    const destinoSeleccionado = destinosPeriodo.find((item) => String(item.id_punto_venta_dest) === destinoTrabajo);
+    const destinoExportado = destinoTrabajo ? `${destinoSeleccionado?.nombre || destinoTrabajo} (${destinoTrabajo})` : "Todos";
+    const filtroEstado = cardsResumenEncomienda
+      .flatMap((item) => [item, item.subFilter].filter(Boolean))
+      .find((item) => item.key === filtroResumenEncomienda)?.label || filtroResumenEncomienda;
+    const diaExportado = diaSel && diaSel !== "*"
+      ? `${periodoTrabajo}-${String(diaSel).padStart(2, "0")}` : "Todos los días del periodo";
     const tituloExcel = `CONTROL DE ENCOMIENDAS - ${String(agenciaNombre).toUpperCase()} ${periodoTrabajo}`;
     const filas = dataFiltradaResumen.map((row, index) => ({
       "#": index + 1,
@@ -1723,19 +1739,27 @@ export default function TrModuloBase({
 
     const worksheet = XLSX.utils.aoa_to_sheet([
       [tituloExcel],
-      [`Agencia: ${agenciaNombre}`, `Periodo: ${periodoTrabajo}`, `Filas: ${filas.length}`, normalizarTextoBusqueda(valorBusqueda).trim() || filtroResumenEncomienda ? "Filtro: aplicado" : "Filtro: todos"],
+      [`Agencia: ${agenciaNombre} | Periodo: ${periodoTrabajo} | Día: ${diaExportado} | Filas: ${filas.length}`],
+      [`Filtro de texto: ${filtroTexto || "Sin filtro"}`],
+      [`Estado: ${filtroEstado || (mostrarAnuladas ? "Anuladas" : "Todos")} | Destino: ${destinoExportado}`],
       [],
     ]);
-    XLSX.utils.sheet_add_json(worksheet, filas, { origin: "A4" });
+    XLSX.utils.sheet_add_json(worksheet, filas, { origin: "A6" });
     worksheet["!cols"] = Object.keys(filas[0]).map((key) => ({
       wch: Math.min(Math.max(key.length + 2, ...filas.map((fila) => String(fila[key] ?? "").length + 2)), 42),
     }));
-    worksheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(Object.keys(filas[0]).length - 1, 0) } }];
+    worksheet["!merges"] = [0, 1, 2, 3].map((r) => ({
+      s: { r, c: 0 }, e: { r, c: Math.max(Object.keys(filas[0]).length - 1, 0) },
+    }));
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Encomiendas");
 
-    const filtroSuffix = normalizarTextoBusqueda(valorBusqueda).trim() || filtroResumenEncomienda ? "_filtradas" : "";
+    const filtroSuffix = [
+      filtroTexto ? `filtro-${slugArchivo(filtroTexto, "texto").slice(0, 80)}` : "",
+      filtroEstado ? `estado-${slugArchivo(filtroEstado)}` : "",
+      destinoTrabajo ? `destino-${slugArchivo(destinoExportado).slice(0, 80)}` : "",
+    ].filter(Boolean).map((parte) => `_${parte}`).join("");
     const periodoArchivo = String(periodoTrabajo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
     XLSX.writeFile(workbook, `control_encomiendas_${agenciaArchivo}-${periodoArchivo}${filtroSuffix}.xlsx`);
 
@@ -1874,6 +1898,25 @@ export default function TrModuloBase({
           onContabilidadSelect={handleContabilidadSelect}
           onPuntoVentaSelect={handlePuntoVentaSelect}
           mostrarAnuladas={mostrarAnuladas}
+          filtroDerechaPuntoVenta={tipoOperacionFijo === "E" ? (
+            <Box sx={{ width: "100%", minWidth: 0 }}>
+              <TrHeaderMenuPicker
+                label="Destino"
+                value={destinoTrabajo}
+                displayValue={destinosPeriodo.find((destino) => String(destino.id_punto_venta_dest) === destinoTrabajo)?.nombre || destinoTrabajo || "Todos"}
+                minWidth="100%"
+                compact
+                options={[
+                  { value: "", label: "Todos" },
+                  ...destinosPeriodo.map((destino) => ({
+                    value: String(destino.id_punto_venta_dest),
+                    label: `${destino.nombre} (${destino.id_punto_venta_dest})`,
+                  })),
+                ]}
+                onSelect={(value) => setDestinoTrabajo(String(value))}
+              />
+            </Box>
+          ) : null}
           compact={tipoOperacionFijo === "E" || panoramicMode}
         />
 

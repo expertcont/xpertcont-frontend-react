@@ -3,7 +3,7 @@ import { Box, Button, CircularProgress, LinearProgress, Typography } from "@mui/
 import palette from "../../../../theme/palette";
 import { fechaTicket } from "../utils/comprasView";
 
-export default function SireComprasTicket({ datos, valido, ocupado, accion, onGenerar, onConsultar, onDescargar }) {
+export default function SireComprasTicket({ datos, valido, ocupado, accion, token, onGenerar, onConsultar, onDescargar, onToken }) {
   const cardSx = { border: `1px solid ${palette.borderSoft}`, borderRadius: 1, p: 1, bgcolor: palette.surfaceAlt, minWidth: 0 };
   const labelSx = { color: palette.muted, fontSize: 11, fontWeight: 900, textTransform: "uppercase" };
   return (
@@ -20,8 +20,17 @@ export default function SireComprasTicket({ datos, valido, ocupado, accion, onGe
         <Button variant="contained" disabled={!valido || ocupado} onClick={onGenerar} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>{datos.ticket ? "Generar nuevo ticket" : "Generar ticket"}</Button>
         <Button variant="outlined" disabled={!datos.ticket || ocupado} onClick={onConsultar} startIcon={accion === "consultar" ? <CircularProgress size={15} color="inherit" /> : null} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Consultar estado</Button>
         <Button variant="outlined" disabled={!datos.propuesta || ocupado} onClick={onDescargar} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Descargar ZIP</Button>
+        <Button variant="outlined" disabled={!valido || ocupado} onClick={onToken} startIcon={accion === "token" ? <CircularProgress size={15} color="inherit" /> : null} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Generar Token</Button>
       </Box>
-      {ocupado && <Box role="status" sx={{ ...cardSx, display: "grid", gap: 0.7 }}><Typography sx={{ fontSize: 13, fontWeight: 800 }}>{accion === "consultar" ? "Consultando e importando propuesta…" : accion === "ticket" ? "Generando ticket…" : accion === "archivo" ? "Descargando archivo…" : "Recuperando información…"}</Typography><LinearProgress sx={{ height: 8, borderRadius: 1, bgcolor: palette.borderSoft }} /></Box>}
+      {token?.token && <Box sx={{ ...cardSx, display: "grid", gap: 0.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 0.75, flexWrap: "wrap" }}>
+          <Typography sx={labelSx}>Token SUNAT ({token.longitud || token.token.length} caracteres)</Typography>
+          <Button size="small" onClick={() => { navigator.clipboard?.writeText(token.token).catch(() => {}); }} sx={{ textTransform: "none", fontWeight: 800, fontSize: 11 }}>Copiar</Button>
+        </Box>
+        <Typography component="code" sx={{ fontFamily: "monospace", fontSize: 11, wordBreak: "break-all", color: palette.muted, userSelect: "all" }}>{token.token}</Typography>
+        <Typography sx={{ color: palette.muted, fontSize: 11 }}>Scope: {token.scope}. Token de diagnostico: no se guarda ni se reutiliza.</Typography>
+      </Box>}
+      {ocupado && <Box role="status" sx={{ ...cardSx, display: "grid", gap: 0.7 }}><Typography sx={{ fontSize: 13, fontWeight: 800 }}>{accion === "consultar" ? "Consultando e importando propuesta…" : accion === "ticket" ? "Generando ticket…" : accion === "archivo" ? "Descargando archivo…" : accion === "token" ? "Generando token SUNAT…" : "Recuperando información…"}</Typography><LinearProgress sx={{ height: 8, borderRadius: 1, bgcolor: palette.borderSoft }} /></Box>}
     </Box>
   );
 }

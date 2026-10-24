@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, LinearProgress, MenuItem, TextField, Tooltip, Typography } from '@mui/material';
-import { FileText, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
+import { FileDown, FileText, Pencil, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import DataTable from 'react-data-table-component';
 import usePersonalizada from '../hooks/usePersonalizada';
 import { columnasCompras, filtrarCompras, money } from '../utils/comprasView';
@@ -18,7 +18,7 @@ const siguiente=periodo=>{
   const [ano,mes]=periodo.split('-').map(Number);
   return mes===12 ? String(ano+1)+'-01' : String(ano)+'-'+String(mes+1).padStart(2,'0');
 };
-export default function SireComprasPersonalizada({idAnfitrion,documentoId,periodo,valido,filtros,revision,onCambio}) {
+export default function SireComprasPersonalizada({idAnfitrion,documentoId,periodo,valido,filtros,revision,onCambio,onDescargarXml,xmlOcupado}) {
   const gestion=usePersonalizada({idAnfitrion,documentoId,periodo,valido,revision,onCambio});
   const [estado,setEstado]=useState('');
   const [editor,setEditor]=useState(null);
@@ -44,14 +44,16 @@ export default function SireComprasPersonalizada({idAnfitrion,documentoId,period
   };
   const recuperar=r=>gestion.ejecutar('editar',{id_compra:r.id_compra,version:r.version,comprobante:r.comprobante,estado:'DECLARAR',motivo:''});
   const columnas=[
-    {name:'',width:'78px',ignoreRowClick:true,allowOverflow:true,cell:r=>{
+    {name:'',width:'100px',ignoreRowClick:true,allowOverflow:true,cell:r=>{
       const asignado=r.estado==='DECLARAR' && r.periodo_destino!==periodo;
+      const bloqueadoXml=Boolean(xmlOcupado);
       const botonSx={width:28,height:28,p:0,border:`1px solid ${palette.border}`,borderRadius:palette.radius.control,color:palette.muted,'&:hover':{bgcolor:palette.accentSoft,color:palette.accent,borderColor:palette.accent},'&.Mui-disabled':{borderColor:palette.border}};
       return <Box sx={{display:'flex',gap:0.5,alignItems:'center'}}>
-        <Tooltip title={asignado?'Asignado a otro período':'Editar comprobante'}><span><IconButton aria-label="Editar comprobante" size="small" disabled={gestion.ocupado || asignado} sx={botonSx} onClick={()=>editar(r)}><Pencil size={14} /></IconButton></span></Tooltip>
+        <Tooltip title={asignado?'Asignado a otro período':'Editar comprobante'}><span><IconButton aria-label="Editar comprobante" size="small" disabled={gestion.ocupado || asignado || bloqueadoXml} sx={botonSx} onClick={()=>editar(r)}><Pencil size={14} /></IconButton></span></Tooltip>
+        {r.origen==='SUNAT' && <Tooltip title={bloqueadoXml?'Descargando XML…':'Descargar XML desde SUNAT'}><span><IconButton aria-label="Descargar XML de SUNAT" size="small" disabled={bloqueadoXml || !r.tipo_comprobante || !r.serie || !r.numero} sx={botonSx} onClick={()=>onDescargarXml?.(r)}><FileDown size={14} /></IconButton></span></Tooltip>}
         {r.estado==='DECLARAR'
-          ? <Tooltip title={asignado?'Asignado a otro período':'Excluir comprobante'}><span><IconButton aria-label="Excluir comprobante" size="small" disabled={gestion.ocupado || asignado} sx={{...botonSx,'&:hover':{bgcolor:palette.warningSoft,color:palette.warning,borderColor:palette.warning}}} onClick={()=>editar(r,true)}><Trash2 size={14} /></IconButton></span></Tooltip>
-          : <Tooltip title={`Incluir en ${periodo}`}><span><IconButton aria-label={`Incluir en ${periodo}`} size="small" disabled={gestion.ocupado} sx={botonSx} onClick={()=>recuperar(r)}><RotateCcw size={14} /></IconButton></span></Tooltip>}
+          ? <Tooltip title={asignado?'Asignado a otro período':'Excluir comprobante'}><span><IconButton aria-label="Excluir comprobante" size="small" disabled={gestion.ocupado || asignado || bloqueadoXml} sx={{...botonSx,'&:hover':{bgcolor:palette.warningSoft,color:palette.warning,borderColor:palette.warning}}} onClick={()=>editar(r,true)}><Trash2 size={14} /></IconButton></span></Tooltip>
+          : <Tooltip title={`Incluir en ${periodo}`}><span><IconButton aria-label={`Incluir en ${periodo}`} size="small" disabled={gestion.ocupado || bloqueadoXml} sx={botonSx} onClick={()=>recuperar(r)}><RotateCcw size={14} /></IconButton></span></Tooltip>}
       </Box>;
     }},
     {name:'Estado',minWidth:'165px',cell:r=><Box sx={{py:0.25}}><Chip size="small" label={r.estado==='DECLARAR' && r.periodo_destino!==periodo ? 'Asignado a '+r.periodo_destino : estados[r.estado]} color={r.estado==='PENDIENTE'?'warning':r.estado==='EXCLUIDO'?'default':'success'} /><Typography sx={{fontSize:10.5,lineHeight:1.25,mt:0.25}}>{r.motivo}</Typography></Box>,wrap:true},

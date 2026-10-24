@@ -15,6 +15,8 @@ export default function useSireCompras() {
   const [accion, setAccion] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [tokenSunat, setTokenSunat] = useState(null);
+  const [xmlEnCurso, setXmlEnCurso] = useState(null);
   const [recarga, setRecarga] = useState(0);
   const [revision, setRevision] = useState(0);
   const periodo = normalizarPeriodo(params.periodo);
@@ -78,6 +80,12 @@ export default function useSireCompras() {
         link.download = (datos.propuesta?.nombre_archivo || `compras_${documentoId}_${periodo}.zip`).split(/[\\/]/).pop();
         document.body.appendChild(link); link.click(); link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else if (tipo === "token") {
+        const response = await sireComprasApi.generarToken(payload);
+        if (contextoActual.current !== origen) return;
+        console.log("[SireCompras] generarToken ok", response?.data);
+        setTokenSunat(response.data || null);
+        setMensaje(`Token SUNAT generado (${response.data?.longitud || 0} caracteres).`);
       } else {
         const response = await sireComprasApi.ejecutar(tipo, {
           ...payload, ticket: datos.ticket, reutilizar_existente: !datos.ticket,
@@ -97,15 +105,55 @@ export default function useSireCompras() {
         setMensaje(response.data.message || "Ticket de compras guardado. Consulta su estado para recuperar la propuesta.");
       }
     } catch (err) {
+      console.log("[SireCompras] ejecutar error", tipo, err?.response?.status, err?.response?.data?.message);
       if (contextoActual.current === origen) setError(err.response?.data?.message || "No se pudo completar la operacion de SIRE Compras.");
     } finally {
       accionActiva.current = false;
       setAccion("");
     }
   };
+  // Descarga el XML de un comprobante SUNAT individual. El token vive solo en el
+  // backend: aqui solo se envian tipo/serie/numero y se recibe el archivo.
+  const descargarXml = async (registro) => {
+    if (accionActiva.current || !valido || !registro) return;
+    const clave = `${registro.tipo_comprobante || ""}-${registro.serie || ""}-${registro.numero || ""}`;
+    const origen = contexto;
+    accionActiva.current = true;
+    setAccion(`xml:${clave}`);
+    setXmlEnCurso(clave);
+    setError("");
+    setMensaje("");
+    try {
+      const response = await sireComprasApi.descargarXml({
+        ...payload,
+        tipo_comprobante: registro.tipo_comprobante,
+        serie: registro.serie,
+        numero: registro.numero,
+      });
+      if (contextoActual.current !== origen) return;
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `CPE_${clave.replace(/^-+|-+$/g, "") || "comprobante"}.xml`;
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMensaje(`XML del comprobante ${clave} descargado.`);
+    } catch (err) {
+      console.log("[SireCompras] descargarXml error", clave, err?.response?.status, err?.response?.data?.message);
+      let texto = err.response?.data?.message;
+      if (!texto && err.response?.data instanceof Blob) {
+        try { texto = JSON.parse(await err.response.data.text()).message; } catch { texto = ""; }
+      }
+      if (contextoActual.current === origen) setError(texto || "No se pudo descargar el XML del comprobante.");
+    } finally {
+      accionActiva.current = false;
+      setAccion("");
+      setXmlEnCurso(null);
+    }
+  };
   return {
-    datos, cargando, accion, ocupado, error, mensaje, valido, contexto, revision,
-    idAnfitrion: params.id_anfitrion, periodo, documentoId, periodos, empresas, ejecutar,
+    datos, cargando, accion, ocupado, error, mensaje, valido, contexto, revision, tokenSunat,
+    idAnfitrion: params.id_anfitrion, periodo, documentoId, periodos, empresas, ejecutar, descargarXml, xmlEnCurso,
     actualizar: () => setRecarga(v => v + 1),
     cambiarPeriodo: v => navigate(ruta(normalizarPeriodo(v), documentoId)),
     cambiarEmpresa: v => navigate(ruta(periodo, /^\d{11}$/.test(v) ? v : "")),

@@ -18,5 +18,7 @@ export const sireComprasApi = {
   ]),
   recuperar: contexto => axios.get(endpoint + "/" + contexto),
   ejecutar: (accion, payload) => axios.post(endpoint + "/" + (accion === "ticket" ? "ticket" : "consultar"), payload),
+  generarToken: payload => axios.post(endpoint + "/token", payload),
+  descargarXml: payload => axios.post(endpoint + "/xml", payload, { responseType: "blob" }),
   descargar: contexto => axios.get(endpoint + "/archivo/" + contexto, { responseType: "blob" }),
 };

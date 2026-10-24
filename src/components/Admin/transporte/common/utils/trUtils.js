@@ -82,6 +82,7 @@ export const crearIndiceBusqueda = (item) => [
   item.destinatario,
   item.destinatario_documento,
   item.destinatario_documento_id,
+  item.nombre_ruta,
   item.descripcion,
   item.condicion_pago,
   item.placa,
