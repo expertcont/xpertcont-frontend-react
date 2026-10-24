@@ -126,6 +126,7 @@ export default function useSireCompras() {
     try {
       const response = await sireComprasApi.descargarXml({
         ...payload,
+        ruc_emisor: String(registro.documento_proveedor || registro.ruc_proveedor || "").replace(/\D/g, ""),
         tipo_comprobante: registro.tipo_comprobante,
         serie: registro.serie,
         numero: registro.numero,
