@@ -18,7 +18,7 @@ const originalFetch = global.fetch;
 beforeEach(() => {
   global.fetch = jest.fn(async (url) => ({ json: async () => ({
     data: String(url).includes("estado=anulados") ? rows.map((row) => ({ ...row, registrado: 0 })) : rows,
-    meta: { destinos_periodo: destinos },
+    meta: { destinos_periodo: String(url).includes("/23/") ? [destinos[1]] : destinos },
   }) }));
 });
 afterEach(() => { global.fetch = originalFetch; });
@@ -35,7 +35,7 @@ test("Todos conserva ambos registros y el destino exacto excluye apellidos coinc
   expect(result.current.data).toHaveLength(2);
 });
 
-test("combina busqueda general y destino sin reducir las opciones del periodo", async () => {
+test("la busqueda no reduce opciones y el calendario carga los destinos del dia", async () => {
   const { result, rerender } = renderHook((values) => useTrOperaciones(values), { initialProps: props });
   await act(async () => { await result.current.cargarRegistros(); });
   act(() => result.current.setValorBusqueda("JUAN VITOR"));
@@ -46,6 +46,6 @@ test("combina busqueda general y destino sin reducir las opciones del periodo", 
   expect(result.current.destinosPeriodo).toEqual(destinos);
   rerender({ ...props, destinoTrabajo: "L", diaSel: "23" });
   await act(async () => { await result.current.cargarRegistros(); });
-  expect(result.current.destinosPeriodo).toEqual(destinos);
+  expect(result.current.destinosPeriodo).toEqual([destinos[1]]);
   expect(global.fetch.mock.calls[2][0]).toContain("/23/ORIGEN?destinos_periodo=1");
 });

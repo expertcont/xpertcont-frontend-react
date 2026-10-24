@@ -566,7 +566,7 @@ export default function TrModuloBase({
 
   useEffect(() => {
     setDestinoTrabajo("");
-  }, [periodoTrabajo, contabilidadTrabajo, puntoVentaTrabajo]);
+  }, [periodoTrabajo, contabilidadTrabajo, puntoVentaTrabajo, diaSel]);
 
   // Fecha enviada al modal. Si el filtro esta en "todos", usa hoy cuando pertenece al periodo.
   const fechaOperacion = useMemo(() => {
