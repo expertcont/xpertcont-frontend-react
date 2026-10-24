@@ -139,11 +139,11 @@ export default function useSireCompras() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       setMensaje(`XML del comprobante ${clave} descargado.`);
     } catch (err) {
-      console.log("[SireCompras] descargarXml error", clave, err?.response?.status, err?.response?.data?.message);
       let texto = err.response?.data?.message;
       if (!texto && err.response?.data instanceof Blob) {
         try { texto = JSON.parse(await err.response.data.text()).message; } catch { texto = ""; }
       }
+      console.log("[SireCompras] descargarXml error", clave, err?.response?.status, texto, err?.message);
       if (contextoActual.current === origen) setError(texto || "No se pudo descargar el XML del comprobante.");
     } finally {
       accionActiva.current = false;
