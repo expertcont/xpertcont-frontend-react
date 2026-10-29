@@ -65,6 +65,7 @@ export default function ClonarTrabajoModal({
   onClose,
   onConfirm,
   loading = false,
+  modoPresupuesto = false,
 }) {
   const presupuesto = trabajoInfo?.presupuesto;
   const trabajo = trabajoInfo?.trabajo;
@@ -128,10 +129,10 @@ export default function ClonarTrabajoModal({
         <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, mb: 2 }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography sx={{ color: palette.accent, fontSize: "12px", fontWeight: 800, textTransform: "uppercase" }}>
-              Clonar trabajo
+              {modoPresupuesto ? "Clonar presupuesto" : "Clonar trabajo"}
             </Typography>
             <Typography sx={{ color: palette.text, fontSize: "19px", fontWeight: 800, mt: 0.35, lineHeight: 1.15 }} noWrap>
-              {trabajo?.descripcion || `Servicio ${trabajo?.servicio || ""}`}
+              {modoPresupuesto ? numeroPresupuesto(presupuesto) : (trabajo?.descripcion || `Servicio ${trabajo?.servicio || ""}`)}
             </Typography>
             <Typography sx={{ color: palette.muted, fontSize: "12.5px", mt: 0.65 }} noWrap>
               Origen: {numeroPresupuesto(presupuesto)}
@@ -180,7 +181,7 @@ export default function ClonarTrabajoModal({
             </Select>
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "0.72fr 1.28fr" }, gap: 1 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: modoPresupuesto ? "1fr" : { xs: "1fr", sm: "0.72fr 1.28fr" }, gap: 1 }}>
             <Box sx={{ minWidth: 0 }}>
               <FieldLabel>Periodo</FieldLabel>
               <Select
@@ -199,7 +200,7 @@ export default function ClonarTrabajoModal({
               </Select>
             </Box>
 
-            <Box sx={{ minWidth: 0 }}>
+            {!modoPresupuesto && <Box sx={{ minWidth: 0 }}>
               <FieldLabel>Presupuesto destino</FieldLabel>
               <Box sx={{ ...fieldSx, flexWrap: "nowrap" }}>
                 <Typography sx={{ color: palette.muted, fontSize: "12px", fontWeight: 800, mr: 0.75, whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -212,7 +213,7 @@ export default function ClonarTrabajoModal({
                   sx={{ color: palette.text, fontSize: "13px", flex: 1, minWidth: 0 }}
                 />
               </Box>
-            </Box>
+            </Box>}
           </Box>
         </Box>
 
@@ -226,7 +227,9 @@ export default function ClonarTrabajoModal({
           }}
         >
           <Typography sx={{ color: palette.muted, fontSize: "12px", lineHeight: 1.45 }}>
-            Se copiara el trabajo completo con sus materiales, operarios, servicios y costos hacia el presupuesto destino.
+            {modoPresupuesto
+              ? "Se creara un presupuesto nuevo en la empresa y periodo seleccionados, copiando sus datos generales y todos los trabajos, materiales, operarios, servicios y costos."
+              : "Se copiara el trabajo completo con sus materiales, operarios, servicios y costos hacia el presupuesto destino."}
           </Typography>
         </Box>
 
@@ -253,7 +256,7 @@ export default function ClonarTrabajoModal({
               pointerEvents: loading ? "none" : "auto",
             }}
           >
-            {loading ? "Clonando..." : "Clonar"}
+            {loading ? "Clonando..." : (modoPresupuesto ? "Clonar presupuesto" : "Clonar")}
           </AppButton>
         </Box>
       </Box>

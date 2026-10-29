@@ -19,6 +19,11 @@ export const sireComprasApi = {
   recuperar: contexto => axios.get(endpoint + "/" + contexto),
   ejecutar: (accion, payload) => axios.post(endpoint + "/" + (accion === "ticket" ? "ticket" : "consultar"), payload),
   generarToken: payload => axios.post(endpoint + "/token", payload),
+  generarTokenSire: payload => axios.post(endpoint + "/token-sire", payload),
+  // Token via LOGIN PORTAL (declara el recurso consultacpe en el aud).
+  // Puede tardar ~15 s la primera vez (login headless en SUNAT); luego
+  // el backend lo reutiliza de cache por ~1 h (ver vigencia.segundosRestantes).
+  generarTokenPortal: payload => axios.post(endpoint + "/token-portal", payload, { timeout: 120000 }),
   descargarXml: payload => axios.post(endpoint + "/xml", payload, { responseType: "blob" }),
   descargar: contexto => axios.get(endpoint + "/archivo/" + contexto, { responseType: "blob" }),
 };

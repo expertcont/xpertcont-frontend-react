@@ -1184,10 +1184,10 @@ export default function AdminVentaPresupuestoNuevoForm() {
       sx={{
         minHeight: "100vh",
         backgroundColor: palette.bg,
-        p: { xs: 2, md: 4 },
+        p: { xs: 1, md: 1.5 },
       }}
     >
-      <Box sx={{ maxWidth: 1100, mx: "auto" }}>
+      <Box sx={{ width: "100%", minWidth: 0 }}>
         <Box
           sx={{
             display: "flex",
@@ -1331,7 +1331,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
             border: `1px solid ${palette.border}`,
           }}
         >
-          <Grid container spacing={{ xs: 1, md: 2 }}>
+          <Grid container spacing={1}>
             <Grid item xs={12} md={3}>
               <Box sx={headerFieldSx}>
                 <FileText size={15} color={palette.muted} />
@@ -1439,7 +1439,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 </Tooltip>
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={5}>
               <Box sx={headerFieldSx}>
                 <Building2 size={15} color={palette.muted} />
                 <HeaderInlineLabel>Cliente</HeaderInlineLabel>
@@ -1451,7 +1451,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 />
               </Box>
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={4}>
               <Box sx={headerFieldSx}>
                 <UserRound size={15} color={palette.muted} />
                 <HeaderInlineLabel>Contacto</HeaderInlineLabel>
@@ -1475,7 +1475,7 @@ export default function AdminVentaPresupuestoNuevoForm() {
                 />
               </Box>
             </Grid>
-            <Grid item xs={12} md={8}>
+            <Grid item xs={12} md={5}>
               <Box sx={headerFieldSx}>
                 <MapPin size={15} color={palette.muted} />
                 <HeaderInlineLabel>Direccion</HeaderInlineLabel>

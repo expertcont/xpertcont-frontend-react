@@ -55,7 +55,7 @@ export default function SireComprasPage() {
             {interno && <Tab value="comparacion" label="Comparación" />}
           </Tabs>
           {['declarar','sunat'].includes(tab) && <Box sx={{p:1,display:'grid',gap:1}}>
-            <SireComprasTicket datos={compras.datos} valido={compras.valido} ocupado={compras.ocupado} accion={compras.accion} token={compras.tokenSunat} onGenerar={solicitarTicket} onConsultar={()=>compras.ejecutar('consultar')} onDescargar={()=>compras.ejecutar('archivo')} onToken={()=>compras.ejecutar('token')} />
+            <SireComprasTicket datos={compras.datos} valido={compras.valido} ocupado={compras.ocupado} accion={compras.accion} token={compras.tokenSunat} tokenSire={compras.tokenSire} onGenerar={solicitarTicket} onConsultar={()=>compras.ejecutar('consultar')} onDescargar={()=>compras.ejecutar('archivo')} onToken={()=>compras.ejecutar('token')} onTokenSire={()=>compras.ejecutar('tokenSire')} />
             <SireComprasConciliacion key={compras.contexto+compras.datos.propuesta?.ticket} {...contextoGestion} datos={compras.datos} ocupado={compras.ocupado} onCambio={compras.actualizar} />
           </Box>}
           {tab==='declarar' ? <SireComprasPersonalizada key={compras.contexto} {...contextoGestion} filtros={filtros} onCambio={compras.actualizar} onDescargarXml={compras.descargarXml} xmlOcupado={compras.xmlEnCurso} />

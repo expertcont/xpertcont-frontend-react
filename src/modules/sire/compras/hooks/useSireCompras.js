@@ -16,6 +16,7 @@ export default function useSireCompras() {
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [tokenSunat, setTokenSunat] = useState(null);
+  const [tokenSire, setTokenSire] = useState(null);
   const [xmlEnCurso, setXmlEnCurso] = useState(null);
   const [recarga, setRecarga] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -81,11 +82,32 @@ export default function useSireCompras() {
         document.body.appendChild(link); link.click(); link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else if (tipo === "token") {
-        const response = await sireComprasApi.generarToken(payload);
+        // Boton "Token Portal": pide el token del LOGIN PORTAL,
+        // el unico que declara el recurso consultacpe (aud). El backend
+        // cachea por empresa ~1 h (vigencia exp del JWT menos 5 min).
+        const response = await sireComprasApi.generarTokenPortal(payload);
         if (contextoActual.current !== origen) return;
-        console.log("[SireCompras] generarToken ok", response?.data);
+        console.log("[SireCompras] generarTokenPortal ok", response?.data?.diagnostico);
         setTokenSunat(response.data || null);
-        setMensaje(`Token SUNAT generado (${response.data?.longitud || 0} caracteres).`);
+        const met = response.data?.diagnostico?.viaPortalMetodo || "portal";
+        const mins = response.data?.vigencia ? Math.floor(response.data.vigencia.segundosRestantes / 60) : null;
+        setMensaje(`Token portal SUNAT generado via ${met}${mins !== null ? ` - vigencia ${mins} min` : ""}. Este es el token con consultacpe usado por las descargas XML.`);
+      } else if (tipo === "tokenSire") {
+        // Boton "Token SIRE": prueba del password grant con las credenciales
+        // de la empresa. El backend devuelve solo el resumen del JWT
+        // (vigencia + migeigvDeclarado): si migeigvDeclarado es false, el
+        // fallo en autenticacion viene del registro de la app (alcance/URI
+        // del SIRE), no de la clave SOL ni del codigo.
+        const response = await sireComprasApi.generarTokenSire(payload);
+        if (contextoActual.current !== origen) return;
+        console.log("[SireCompras] generarTokenSire ok", response?.data);
+        setTokenSire(response.data || null);
+        const mins = response.data?.vigencia ? Math.floor(response.data.vigencia.segundosRestantes / 60) : null;
+        const declarado = response.data?.migeigvDeclarado;
+        let pista = "";
+        if (declarado === false) pista = " NO declara los recursos migiegv: el registro de la app en Credenciales API SUNAT necesita la URI del SIRE o el alcance Desktop (como los RUC que funcionan).";
+        else if (declarado === true) pista = " declara recursos migiegv correctamente.";
+        setMensaje(`Token SIRE generado${mins !== null ? ` - vigencia ${mins} min` : ""}.${pista}`);
       } else {
         const response = await sireComprasApi.ejecutar(tipo, {
           ...payload, ticket: datos.ticket, reutilizar_existente: !datos.ticket,
@@ -138,7 +160,7 @@ export default function useSireCompras() {
       link.download = `CPE_${clave.replace(/^-+|-+$/g, "") || "comprobante"}.xml`;
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMensaje(`XML del comprobante ${clave} descargado.`);
+      setMensaje(`RUC ${documentoId}: SUNAT autorizo la descarga del XML del comprobante ${clave}.`);
     } catch (err) {
       let texto = err.response?.data?.message;
       if (!texto && err.response?.data instanceof Blob) {
@@ -153,7 +175,7 @@ export default function useSireCompras() {
     }
   };
   return {
-    datos, cargando, accion, ocupado, error, mensaje, valido, contexto, revision, tokenSunat,
+    datos, cargando, accion, ocupado, error, mensaje, valido, contexto, revision, tokenSunat, tokenSire,
     idAnfitrion: params.id_anfitrion, periodo, documentoId, periodos, empresas, ejecutar, descargarXml, xmlEnCurso,
     actualizar: () => setRecarga(v => v + 1),
     cambiarPeriodo: v => navigate(ruta(normalizarPeriodo(v), documentoId)),

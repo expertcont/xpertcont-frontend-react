@@ -21,7 +21,7 @@ const getTodayLimaParts = () => {
   };
 };
 
-const AdminDias = ({ period, onDaySelect }) => {
+const AdminDias = ({ period, onDaySelect, defaultToAll = false }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -53,11 +53,11 @@ const AdminDias = ({ period, onDaySelect }) => {
 
     // Evitar que el estado se sobrescriba con cada render
     if (!selectedDay || !dayList.includes(selectedDay)) {
-      const defaultDay = maxDay.toString();
+      const defaultDay = defaultToAll ? "*" : maxDay.toString();
       setSelectedDay(defaultDay);
       onDaySelectRef.current(defaultDay);
     }
-  }, [period, selectedDay]);
+  }, [period, selectedDay, defaultToAll]);
 
   const handleDayChange = (event, newDay) => {
     if (newDay) {

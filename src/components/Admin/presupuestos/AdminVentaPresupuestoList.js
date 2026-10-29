@@ -5,9 +5,12 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import DaySelector from "../AdminDias";
+import TrHeader from "../transporte/common/components/TrHeader";
+import TrFiltros from "../transporte/common/components/TrFiltros";
+import TrHeaderMenuPicker from "../transporte/common/components/TrHeaderMenuPicker";
 
 import { Box, Typography, InputBase, MenuItem,Select, useMediaQuery } from "@mui/material";
-import { Search, FileText, Calendar, Building2, ClipboardList, Pencil, Trash2, UserPen } from "lucide-react";
+import { Search, FileText, Calendar, Building2, ClipboardList, Pencil, Trash2, UserPen, Clock3, CheckCircle2, Filter, FileSpreadsheet, CopyPlus } from "lucide-react";
 import { Plus } from 'lucide-react';
 
 import Tooltip from '@mui/material/Tooltip';
@@ -24,6 +27,7 @@ import SunatIcon from "../../../assets/images/sunat0.png";
    PALETA (manteniendo tu dark + teal)
 ======================================================= */
 import axios from 'axios';
+import * as XLSX from "xlsx";
 import swal from 'sweetalert';
 import swal2 from 'sweetalert2'
 import AdminSunatIcon from '../AdminSunatIcon';
@@ -110,6 +114,29 @@ const normalizarPresupuestoListado = (presupuesto) => ({
   })),
 });
 
+const resumirMontosPresupuestos = (presupuestos) => {
+  const totales = new Map();
+  presupuestos.forEach((presupuesto) => {
+    const monedaRaw = String(presupuesto.r_moneda || presupuesto.moneda || "PEN").trim().toUpperCase();
+    const moneda = ["PEN", "SOL", "S/", "S"].includes(monedaRaw)
+      ? "PEN"
+      : ["USD", "US$", "$", "DOLAR", "DÓLAR", "DOLARES", "DÓLARES"].includes(monedaRaw)
+        ? "USD"
+        : monedaRaw;
+    totales.set(moneda, (totales.get(moneda) || 0) + Number(presupuesto.r_monto_total || presupuesto.total || 0));
+  });
+
+  if (!totales.size) {
+    return "S/ 0.00";
+  }
+
+  return [...totales.entries()].map(([moneda, total]) => {
+    const prefijo = moneda === "PEN" ? "S/" : moneda === "USD" ? "US$" : `${moneda} `;
+    const monto = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total);
+    return `${prefijo} ${monto}`;
+  }).join(" · ");
+};
+
 const normalizarPresupuestoFull = (presupuesto) => ({
   ...normalizarPresupuestoListado(presupuesto),
   trabajos: (presupuesto.servicios || []).map((servicio) => ({
@@ -162,11 +189,67 @@ const tieneComprobanteEnSunat = (presupuesto) => Boolean(
   presupuesto.fact_r_vfirmado || presupuesto.fact_cdr_nivel === "ACEPTADO"
 );
 
+function PresupuestoFiltroCard({ label, value, icon: Icon, color, soft, active, onClick, title }) {
+  const interactiva = typeof onClick === "function";
+  const colorSoft = soft || `${color}20`;
+  return (
+    <Box
+      role={interactiva ? "button" : undefined}
+      tabIndex={interactiva ? 0 : undefined}
+      aria-pressed={active}
+      title={title}
+      onClick={onClick}
+      onKeyDown={interactiva ? (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      } : undefined}
+      sx={{
+        minWidth: 0,
+        position: "relative",
+        p: { xs: 0.95, sm: 1.05 },
+        py: 0.75,
+        display: "grid",
+        gridTemplateColumns: "auto minmax(0, 1fr)",
+        alignItems: "stretch",
+        gap: 0.7,
+        border: `1px solid ${active ? color : palette.borderSoft}`,
+        borderRadius: palette.radius.listCard,
+        backgroundColor: palette.surface,
+        boxShadow: active ? `0 0 0 1px ${color}` : "none",
+        color,
+        cursor: interactiva ? "pointer" : "default",
+        transition: "border-color .16s ease, background-color .16s ease, box-shadow .16s ease",
+        ...(interactiva ? {
+          "&:hover": { borderColor: color, backgroundColor: colorSoft },
+          "&:focus-visible": { outline: `2px solid ${color}`, outlineOffset: 2 },
+        } : {}),
+      }}
+    >
+      <Box sx={{ width: 28, height: 28, borderRadius: palette.radius.control, display: "grid", placeItems: "center", backgroundColor: colorSoft, color, alignSelf: "center" }}>
+        <Icon size={15} />
+      </Box>
+      <Box sx={{ minWidth: 0, alignSelf: "center" }}>
+        <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, textTransform: "uppercase", letterSpacing: 0 }} noWrap>{label}</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
+          <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>{value}</Typography>
+          {active && (
+            <Box sx={{ width: 16, height: 16, borderRadius: "999px", backgroundColor: color, color: palette.onAccent, display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <Filter size={9} />
+            </Box>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 /* =======================================================
    COLUMNAS
 ======================================================= */
 
-const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerarComprobante, renderSunatComprobante, onOpenComprobanteGenerado) => [
+const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerarComprobante, renderSunatComprobante, onOpenComprobanteGenerado, onClonePresupuesto) => [
   {
     name: "",
     grow: 1,
@@ -174,7 +257,7 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
       const comprobanteGenerado = comprobanteGeneradoPresupuesto(row);
 
       return (
-      <Box sx={{ width: "100%", py: 2 }}>
+      <Box sx={{ width: "100%", py: 0.4 }}>
         {/* FILA SUPERIOR */}
         <Box
           sx={{
@@ -330,6 +413,7 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
             {[
               { title: "Editar presupuesto", icon: <Pencil size={14} />, onClick: () => onEdit(row) },
               { title: "PDF cliente", icon: <FileText size={14} />, onClick: () => onPdf(row) },
+              { title: "Clonar presupuesto", icon: <CopyPlus size={14} />, onClick: () => onClonePresupuesto(row) },
               {
                 title: (row.estado || "P") === "P" ? "Eliminar presupuesto" : "Solo pendientes",
                 icon: <Trash2 size={14} />,
@@ -392,12 +476,12 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
         {/* CLIENTE */}
         <Box
           sx={{
-            mt: 1,
+            mt: 0.45,
             display: "flex",
             alignItems: { xs: "flex-start", sm: "center" },
             justifyContent: "space-between",
             flexDirection: { xs: "column", sm: "row" },
-            gap: 0.75,
+            gap: 0.5,
             color: palette.muted,
             fontSize: "13px",
           }}
@@ -416,11 +500,11 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
         {/* TRABAJOS / USUARIO QUE GRABO */}
         <Box
           sx={{
-            mt: 1.75,
+            mt: 0.5,
             display: "flex",
             alignItems: "center",
             flexWrap: "wrap",
-            gap: 0.75,
+            gap: 0.5,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, minWidth: 0, flex: "1 1 260px" }}>
@@ -437,7 +521,7 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
               }}
             >
               <ClipboardList size={13} />
-              {row.servicios_count} trabajos
+              {row.servicios_count} trabajos · {(row.estado || "P") === "P" ? "Pendiente" : "Cerrado"}
             </Box>
 
             {row.trabajos.length > 0 ? row.trabajos.map((trabajo) => (
@@ -491,17 +575,23 @@ const customStyles = {
     style: {
       backgroundColor: palette.surface,
       color: palette.text,
-      minHeight: "104px",
-      marginBottom: "10px",
+      minHeight: "70px",
+      marginBottom: "3px",
       borderRadius: "12px",
       border: `1px solid ${palette.borderSoft}`,
-      paddingLeft: "16px",
-      paddingRight: "16px",
+      paddingLeft: "8px",
+      paddingRight: "8px",
       transition: "border-color .18s ease, background-color .18s ease",
       "&:hover": {
-        backgroundColor: palette.surfaceAlt,
+        backgroundColor: "var(--app-row-hover, #f8fafc)",
         borderColor: palette.border,
       },
+    },
+    highlightOnHoverStyle: {
+      backgroundColor: "var(--app-row-hover, #f8fafc)",
+      borderColor: palette.border,
+      color: palette.text,
+      outline: "none",
     },
   },
   pagination: {
@@ -525,7 +615,7 @@ const customStyles = {
    COMPONENTE
 ======================================================= */
 
-export default function AdminVentaPresupuestoList() {
+export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, super: superUsuarioProp = "0" }) {
   const back_host = process.env.BACK_HOST || "https://xpertcont-backend-js-production-50e6.up.railway.app";
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
@@ -535,7 +625,9 @@ export default function AdminVentaPresupuestoList() {
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
-  const data = useMemo(() => registrosdet.map(normalizarPresupuestoListado), [registrosdet]);
+  const [estadoFiltro, setEstadoFiltro] = useState("*");
+  const [cpeFiltro, setCpeFiltro] = useState("*");
+  const [paginaReset, setPaginaReset] = useState(false);
   const [navegadorMovil, setNavegadorMovil] = useState(false);
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
   const [valorVista, setValorVista] = useState("ventas");
@@ -888,27 +980,79 @@ export default function AdminVentaPresupuestoList() {
     //Para recibir parametros desde afuera
     const params = useParams();
   
-    const actualizaValorFiltro = e => {
-      setValorBusqueda(e.target.value);
-      filtrar(e.target.value);
-    }
-    const filtrar = (strBusca) => {
-      var resultadosBusqueda = tabladet.filter((elemento) => {
-        const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
-        const documentoId = elemento.r_documento_id?.toString().toLowerCase() || '';
-        const comprobante = (elemento.comprobante_key || numeroPresupuesto(elemento))?.toString().toLowerCase() || '';
-    
-        if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase())) {
-          return elemento;
-        }
-        return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
+    const actualizaValorFiltro = e => setValorBusqueda(e.target.value);
+    const data = useMemo(() => {
+      const busqueda = valorBusqueda.trim().toLocaleLowerCase("es");
+      return registrosdet.map(normalizarPresupuestoListado).filter((row) => (
+        (estadoFiltro === "*" || (row.estado || "P") === estadoFiltro) &&
+        (cpeFiltro === "*" || tieneComprobanteGenerado(row) === (cpeFiltro === "con")) &&
+        (!busqueda || [row.numero, row.cliente, row.r_documento_id, row.autor, row.glosa,
+          comprobanteGeneradoPresupuesto(row), ...row.trabajos.map(trabajo => trabajo.numero)]
+          .some(value => String(value || "").toLocaleLowerCase("es").includes(busqueda)))
+      ));
+    }, [registrosdet, valorBusqueda, estadoFiltro, cpeFiltro]);
+
+    const exportarPresupuestosExcel = () => {
+      if (!data.length) {
+        swal2.fire({
+          title: "Sin datos para exportar",
+          text: "No hay presupuestos con los filtros actuales.",
+          icon: "info",
+          confirmButtonText: "ACEPTAR",
+          color: palette.text,
+          background: palette.surface,
+        });
+        return;
+      }
+
+      const filas = data.map((presupuesto, index) => ({
+        "#": index + 1,
+        Presupuesto: presupuesto.numero,
+        Fecha: presupuesto.fecha,
+        Cliente: presupuesto.cliente,
+        "Documento cliente": presupuesto.r_documento_id || "",
+        Estado: (presupuesto.estado || "P") === "C" ? "Cerrado" : "Pendiente",
+        Moneda: presupuesto.moneda,
+        Total: presupuesto.total,
+        Servicios: presupuesto.servicios_count,
+        Autor: presupuesto.autor,
+        Glosa: presupuesto.glosa || "",
+        CPE: comprobanteGeneradoPresupuesto(presupuesto) || "",
+      }));
+      const periodoArchivo = String(periodo_trabajo || params.periodo || "periodo").replace(/[^a-zA-Z0-9-]/g, "");
+      const razonSocial = contabilidad_nombre || contabilidad_trabajo || params.documento_id || "empresa";
+      const nombreArchivo = String(razonSocial).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+      const titulo = `CONTROL DE PRESUPUESTOS - ${razonSocial} ${periodo_trabajo || params.periodo || ""}`;
+      const worksheet = XLSX.utils.aoa_to_sheet([
+        [titulo],
+        [`Periodo: ${periodo_trabajo || params.periodo || ""}`, `Presupuestos: ${filas.length}`, valorBusqueda.trim() ? "Búsqueda aplicada" : "Listado filtrado"],
+        [],
+      ]);
+      XLSX.utils.sheet_add_json(worksheet, filas, { origin: "A4" });
+      worksheet["!cols"] = Object.keys(filas[0]).map((key) => ({
+        wch: Math.min(Math.max(key.length + 2, ...filas.map((fila) => String(fila[key] ?? "").length + 2)), 42),
+      }));
+      worksheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Object.keys(filas[0]).length - 1 } }];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Presupuestos");
+      XLSX.writeFile(workbook, `control_presupuestos_${nombreArchivo}-${periodoArchivo}.xlsx`);
+
+      swal2.fire({
+        title: "Excel generado",
+        text: `${filas.length} presupuesto${filas.length === 1 ? "" : "s"} exportado${filas.length === 1 ? "" : "s"}.`,
+        icon: "success",
+        timer: 1400,
+        showConfirmButton: false,
+        color: palette.text,
+        background: palette.surface,
       });
-    
-      resultadosBusqueda = resultadosBusqueda.filter(Boolean); // Filtra los elementos nulos
-    
-      setRegistrosdet(resultadosBusqueda);
     };
-    
+
+    useEffect(() => {
+      setPaginaReset(value => !value);
+    }, [valorBusqueda, estadoFiltro, cpeFiltro, diaSel, periodo_trabajo, contabilidad_trabajo]);
+
     const cargaPermisosMenuComando = async(idMenu)=>{
       if (params.id_anfitrion === params.id_invitado){
         setPVenta0101(true); //nuevo
@@ -1447,16 +1591,39 @@ export default function AdminVentaPresupuestoList() {
     
   const [totalVentas, setTotalVentas] = useState(0);
   const [isSuper, setIsSuper] = useState(false);
-  const fetchTotalVentas = async () => {
+  const superDesdeBienvenida = [superUsuarioProp, sessionStorage.getItem("super")].some((value) => (
+    ["1", "true", "t", "s", "si", "sí", "yes", "y"].includes(String(value || "0").trim().toLowerCase())
+  ));
+  const coincideId = (anfitrion, invitado) => Boolean(anfitrion && invitado) && (
+    String(anfitrion).trim().toLowerCase() === String(invitado).trim().toLowerCase()
+  );
+  const esAnfitrion = (
+    coincideId(params.id_anfitrion, params.id_invitado) ||
+    coincideId(idAnfitrion, idInvitado)
+  );
+  const puedeVerTotalPresupuestos = esAnfitrion || isSuper || superDesdeBienvenida;
+  const fetchTotalVentas = async (signal) => {
       try {
-        const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${params.documento_id}/${diaSel}`);
-        console.log('Tottales ventas: ', res.data);
+        const res = await axios.get(`${back_host}/ad_ventatotal/${periodo_trabajo}/${params.id_anfitrion}/${params.id_invitado}/${contabilidad_trabajo}/${diaSel}`, { signal });
+        if (signal?.aborted) return;
         setTotalVentas(res.data.total);
         setIsSuper(res.data.super);
       } catch (error) {
+        if (signal?.aborted) return;
         console.error('Error al obtener total de ventas', error);
       }
   }; 
+
+  useEffect(() => {
+    if (!periodo_trabajo || !contabilidad_trabajo) {
+      setIsSuper(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    fetchTotalVentas(controller.signal);
+    return () => controller.abort();
+  }, [periodo_trabajo, contabilidad_trabajo, diaSel, params.id_anfitrion, params.id_invitado]);
   const [recaudaciones, setRecaudaciones] = useState([]);
   const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
   const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
@@ -1811,6 +1978,40 @@ export default function AdminVentaPresupuestoList() {
       setClonarTrabajoInfo(info);
     };
 
+    const handleOpenClonarPresupuesto = async (presupuesto) => {
+      const documentoOrigen = presupuesto.documento_id || contabilidad_trabajo || params.documento_id;
+      const periodoOrigen = presupuesto.periodo || periodo_trabajo || params.periodo;
+
+      try {
+        const response = await fetch(`${back_host}/ad_presupuestoserv/${periodoOrigen}/${params.id_anfitrion}/${documentoOrigen}/${presupuesto.r_cod || "NV"}/${presupuesto.r_serie || "0001"}/${presupuesto.r_numero}/${presupuesto.elemento || 1}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "No se pudieron cargar los trabajos del presupuesto.");
+        }
+
+        const trabajos = (data.data || []).map((item) => ({
+          ...item,
+          id: item.servicio,
+          numero: item.descripcion || `Servicio ${item.servicio || ""}`,
+        }));
+
+        if (!trabajos.length) {
+          alert("Este presupuesto no tiene trabajos para clonar.");
+          return;
+        }
+
+        setClonarTrabajoInfo({
+          presupuesto: { ...presupuesto, documento_id: documentoOrigen, periodo: periodoOrigen },
+          trabajos,
+          modoPresupuesto: true,
+        });
+      } catch (error) {
+        console.log("Error cargando presupuesto para clonacion:", error);
+        alert(error.message || "No se pudieron cargar los trabajos del presupuesto.");
+      }
+    };
+
     const handleCloseClonarTrabajo = () => {
       if (clonandoTrabajo) {
         return;
@@ -1822,73 +2023,152 @@ export default function AdminVentaPresupuestoList() {
     const handleConfirmClonarTrabajo = async (destino) => {
       const presupuestoOrigen = clonarTrabajoInfo?.presupuesto;
       const trabajoOrigen = clonarTrabajoInfo?.trabajo;
+      const clonarPresupuestoCompleto = Boolean(clonarTrabajoInfo?.modoPresupuesto);
+      const trabajosOrigen = clonarPresupuestoCompleto ? (clonarTrabajoInfo?.trabajos || []) : [trabajoOrigen];
 
-      if (!presupuestoOrigen || !trabajoOrigen) {
+      if (!presupuestoOrigen || !trabajosOrigen.length || (!clonarPresupuestoCompleto && !trabajoOrigen)) {
         return;
       }
 
-      if (!destino?.documento_id || !destino?.periodo || !destino?.r_numero) {
-        alert("Indica empresa, periodo y numero de presupuesto destino.");
+      if (!destino?.documento_id || !destino?.periodo || (!clonarPresupuestoCompleto && !destino?.r_numero)) {
+        alert(clonarPresupuestoCompleto ? "Indica la empresa y el periodo de destino." : "Indica empresa, periodo y numero de presupuesto destino.");
         return;
       }
 
       setClonandoTrabajo(true);
+      let trabajosClonados = 0;
+      let presupuestoDestinoCreado = null;
 
       try {
-        const payload = {
-          id_anfitrion: params.id_anfitrion,
-          id_invitado: params.id_invitado,
-          origen: {
-            documento_id: presupuestoOrigen.documento_id || contabilidad_trabajo || params.documento_id,
-            periodo: presupuestoOrigen.periodo || periodo_trabajo || params.periodo,
-            r_cod: presupuestoOrigen.r_cod || "NV",
-            r_serie: presupuestoOrigen.r_serie || "0001",
-            r_numero: presupuestoOrigen.r_numero,
-            elemento: presupuestoOrigen.elemento || 1,
-            servicio: trabajoOrigen.servicio,
-          },
-          destino: {
+        const clonarUrl = `${back_host}/ad_presupuestoserv/clonar`;
+        let presupuestoDestino = destino;
+
+        if (clonarPresupuestoCompleto) {
+          const fechaDestino = `${destino.periodo}-01`;
+          const crearResponse = await fetch(`${back_host}/ad_presupuesto`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id_anfitrion: params.id_anfitrion,
+              documento_id: destino.documento_id,
+              periodo: destino.periodo,
+              id_invitado: params.id_invitado,
+              fecha: fechaDestino,
+            }),
+          });
+          const crearData = await crearResponse.json();
+
+          if (!crearResponse.ok || !crearData.success) {
+            throw new Error(crearData.message || "No se pudo crear el presupuesto destino.");
+          }
+
+          const numeroDestino = extraerNumeroPresupuestoCreado(crearData);
+          if (!numeroDestino) {
+            throw new Error("El presupuesto destino se creo, pero no se recibio su numero.");
+          }
+
+          presupuestoDestino = {
             documento_id: destino.documento_id,
             periodo: destino.periodo,
-            r_cod: destino.r_cod || "NV",
-            r_serie: destino.r_serie || "0001",
-            r_numero: destino.r_numero,
-            elemento: destino.elemento || 1,
-          },
-        };
+            r_cod: "NV",
+            r_serie: "0001",
+            r_numero: numeroDestino,
+            elemento: 1,
+          };
+          presupuestoDestinoCreado = presupuestoDestino;
 
-        const clonarUrl = `${back_host}/ad_presupuestoserv/clonar`;
-        const response = await fetch(clonarUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const responseText = await response.text();
-        let data = {};
-
-        try {
-          data = responseText ? JSON.parse(responseText) : {};
-        } catch (parseError) {
-          console.log("Respuesta no JSON al clonar trabajo:", {
-            url: clonarUrl,
-            status: response.status,
-            body: responseText,
-            parseError,
+          const actualizarResponse = await fetch(`${back_host}/ad_presupuesto`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              periodo: destino.periodo,
+              id_anfitrion: params.id_anfitrion,
+              documento_id: destino.documento_id,
+              ...presupuestoDestino,
+              r_fecemi: fechaDestino,
+              r_fecvcto: fechaDestino,
+              r_id_doc: presupuestoOrigen.r_id_doc || "6",
+              r_documento_id: presupuestoOrigen.r_documento_id,
+              r_razon_social: presupuestoOrigen.r_razon_social,
+              r_direccion: presupuestoOrigen.r_direccion,
+              contacto_nombre: presupuestoOrigen.contacto_nombre,
+              contacto_celular: presupuestoOrigen.contacto_celular,
+              glosa: presupuestoOrigen.glosa,
+              r_moneda: presupuestoOrigen.r_moneda || "PEN",
+              r_tc: Number(presupuestoOrigen.r_tc || 1),
+              r_forma_pago_id: presupuestoOrigen.r_forma_pago_id,
+              estado: "P",
+              ctrl_mod_us: params.id_invitado,
+            }),
           });
-          throw new Error(`El backend no devolvio JSON para ${clonarUrl}. Revisa que la ruta de clonado este activa.`);
+          const actualizarData = await actualizarResponse.json();
+
+          if (!actualizarResponse.ok || !actualizarData.success) {
+            throw new Error(actualizarData.message || `Se creo el presupuesto ${numeroDestino}, pero no se copiaron sus datos generales.`);
+          }
         }
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "No se pudo clonar el trabajo.");
+        for (const trabajo of trabajosOrigen) {
+          const payload = {
+            id_anfitrion: params.id_anfitrion,
+            id_invitado: params.id_invitado,
+            origen: {
+              documento_id: presupuestoOrigen.documento_id || contabilidad_trabajo || params.documento_id,
+              periodo: presupuestoOrigen.periodo || periodo_trabajo || params.periodo,
+              r_cod: presupuestoOrigen.r_cod || "NV",
+              r_serie: presupuestoOrigen.r_serie || "0001",
+              r_numero: presupuestoOrigen.r_numero,
+              elemento: presupuestoOrigen.elemento || 1,
+              servicio: trabajo.servicio,
+            },
+            destino: {
+              documento_id: presupuestoDestino.documento_id,
+              periodo: presupuestoDestino.periodo,
+              r_cod: presupuestoDestino.r_cod || "NV",
+              r_serie: presupuestoDestino.r_serie || "0001",
+              r_numero: presupuestoDestino.r_numero,
+              elemento: presupuestoDestino.elemento || 1,
+            },
+          };
+          const response = await fetch(clonarUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const responseText = await response.text();
+          let data = {};
+
+          try {
+            data = responseText ? JSON.parse(responseText) : {};
+          } catch (parseError) {
+            console.log("Respuesta no JSON al clonar trabajo:", { url: clonarUrl, status: response.status, body: responseText, parseError });
+            throw new Error(`El backend no devolvio JSON para ${clonarUrl}.`);
+          }
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || `No se pudo clonar el trabajo ${trabajo.servicio}.`);
+          }
+          trabajosClonados += 1;
         }
 
-        alert(data.data?.mensaje || "Trabajo clonado correctamente.");
+        if (clonarPresupuestoCompleto) {
+          alert(`Presupuesto clonado correctamente: ${numeroPresupuesto(presupuestoDestino)} (${trabajosClonados} trabajos).`);
+          navigate(`/ad_ventapresupuesto/${params.id_anfitrion}/${params.id_invitado}/${presupuestoDestino.periodo}/${presupuestoDestino.documento_id}/${presupuestoDestino.r_numero}/edit`);
+        } else {
+          alert("Trabajo clonado correctamente.");
+        }
         setClonarTrabajoInfo(null);
         setTrabajoInfo(null);
         setUpdateTrigger({});
       } catch (error) {
         console.log("Error clonando trabajo:", error);
-        alert(error.message || "No se pudo clonar el trabajo.");
+        const progreso = clonarPresupuestoCompleto && presupuestoDestinoCreado
+          ? ` Se creo ${numeroPresupuesto(presupuestoDestinoCreado)} y se copiaron ${trabajosClonados} de ${trabajosOrigen.length} trabajos; revisa ese presupuesto antes de volver a intentarlo.`
+          : "";
+        if (clonarPresupuestoCompleto && presupuestoDestinoCreado) {
+          setClonarTrabajoInfo(null);
+        }
+        alert(`${error.message || "No se pudo clonar."}${progreso}`);
       } finally {
         setClonandoTrabajo(false);
       }
@@ -1940,177 +2220,57 @@ export default function AdminVentaPresupuestoList() {
       sx={{
         minHeight: "100vh",
         backgroundColor: palette.bg,
-        p: { xs: 2, md: 4 },
+        p: { xs: 1, md: 1.5 },
       }}
     >
-      <Box sx={{ maxWidth: 980, mx: "auto" }}>
+      <Box sx={{ width: "100%", minWidth: 0 }}>
 
 
-        {/* HEADER */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            alignItems: { xs: "flex-start", sm: "center" },
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          <Box>
-            <Typography
-              sx={{
-                color: palette.text,
-                fontWeight: 700,
-                fontSize: "22px",
-                lineHeight: 1.2,
-              }}
-            >
-              Control de Presupuestos
-            </Typography>
-            <Typography sx={{ color: palette.muted, fontSize: "13px", mt: 0.5 }}>
-              {data.length} presupuestos registrados
-            </Typography>
-          </Box>
+        <TrHeader
+          titulo="Control de Presupuestos"
+          contador={data.length}
+          contadorTexto={`de ${registrosdet.length} presupuestos`}
+          nuevoTexto="Nuevo presupuesto"
+          buscarTexto="Buscar número, cliente, documento..."
+          valorBusqueda={valorBusqueda}
+          onBuscar={actualizaValorFiltro}
+          onNuevo={handleNuevoPresupuesto}
+          compactControles
+          headerExtra={(
+            <Tooltip title="Exportar Excel" arrow>
+              <Box>
+                <AppButton
+                  icon={<FileSpreadsheet size={17} />}
+                  onClick={exportarPresupuestosExcel}
+                  disabled={!data.length}
+                  sx={{ width: 40, height: 40, minWidth: 40, p: 0, color: palette.success }}
+                />
+              </Box>
+            </Tooltip>
+          )}
+        />
+        <TrFiltros
+          periodoTrabajo={periodo_trabajo || params.periodo}
+          periodoSelect={periodo_select}
+          contabilidadTrabajo={contabilidad_trabajo || params.documento_id}
+          contabilidadSelect={contabilidad_select}
+          puntosVentaAsignados={[]}
+          onPeriodoSelect={value => handleChange({ target: { name: "periodo", value } })}
+          onContabilidadSelect={value => handleChange({ target: { name: "contabilidad", value } })}
+          compact
+        />
 
-          <AppButton
-            icon={<Plus size={18} />}
-            onClick={handleNuevoPresupuesto}
-          >
-            Nuevo presupuesto
-          </AppButton>
-          {/* BUSCADOR */}
+        <DaySelector key={periodo_trabajo || params.periodo} period={periodo_trabajo || params.periodo} onDaySelect={handleDayFilter} defaultToAll />
 
-          <AppSearch
-            placeholder="Buscar presupuesto..."
-            value={valorBusqueda}
-            //onChange={(e) => setBuscar(e.target.value)}
-            onChange={actualizaValorFiltro}
-          />          
+        <Box sx={{ mt: 1.15, mb: 1.1, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))", xl: "repeat(6, minmax(0, 1fr))" }, gap: 0.65 }}>
+          <PresupuestoFiltroCard label="Total presupuestos" value={registrosdet.length} icon={ClipboardList} color={palette.accent} soft={palette.accentSoft} active={estadoFiltro === "*" && cpeFiltro === "*"} onClick={() => { setEstadoFiltro("*"); setCpeFiltro("*"); }} />
+          <PresupuestoFiltroCard label="Pendientes" value={registrosdet.filter(row => (row.estado || "P") === "P").length} icon={Clock3} color={palette.warning} soft={palette.warningSoft} active={estadoFiltro === "P"} onClick={() => setEstadoFiltro(actual => actual === "P" ? "*" : "P")} />
+          <PresupuestoFiltroCard label="Cerrados" value={registrosdet.filter(row => (row.estado || "P") === "C").length} icon={CheckCircle2} color={palette.success} soft={palette.successSoft} active={estadoFiltro === "C"} onClick={() => setEstadoFiltro(actual => actual === "C" ? "*" : "C")} />
+          <PresupuestoFiltroCard label="CPE generado" value={registrosdet.filter(tieneComprobanteGenerado).length} icon={FileText} color="#0891b2" soft="rgba(8,145,178,0.14)" active={cpeFiltro === "con"} onClick={() => setCpeFiltro(actual => actual === "con" ? "*" : "con")} />
+          <PresupuestoFiltroCard label="Sin CPE" value={registrosdet.filter(row => !tieneComprobanteGenerado(row)).length} icon={FileText} color={palette.danger} soft={palette.dangerSoft} active={cpeFiltro === "sin"} onClick={() => setCpeFiltro(actual => actual === "sin" ? "*" : "sin")} />
+          <PresupuestoFiltroCard label="Monto total" value={resumirMontosPresupuestos(registrosdet)} icon={FileSpreadsheet} color={palette.accent} soft={palette.accentSoft} title={resumirMontosPresupuestos(registrosdet)} />
         </Box>
 
-        {/* HEADER00 */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: {
-              xs: "column",
-              md: "row",
-            },
-            gap: 2,
-            alignItems: {
-              xs: "stretch",
-              md: "end",
-            },
-            mb: 2,
-            p: 2,
-            borderRadius: 3,
-            backgroundColor: palette.surface,
-            border: `1px solid ${palette.border}`,
-          }}
-        >
-          {/* PERIODO */}
-          <Box sx={{ minWidth: { xs: "100%", md: 140 } }}>
-
-            <Select
-              fullWidth
-              size="small"
-              value={periodo_trabajo}
-              name="periodo"
-              sx={{
-                display: 'block',
-                margin: '.1rem 0', 
-                color: palette.accent, 
-                //¿backgroundColor: palette.surface, //new
-                fontSize: '13px' 
-              }}
-              onChange={handleChange}
-              // 👇 AQUÍ agregas los estilos para el menú desplegable
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    //backgroundColor: '#f0f0f0', // <-- Cambia este color por el que quieras
-                    bgcolor: palette.surface,
-                    // 💡 EXTRA: También puedes cambiar el color cuando pasas el mouse (hover)
-                    '& .MuiMenuItem-root': {
-                      '&:hover': {
-                        //backgroundColor: '#e0e0e0', // Color de hover
-                        backgroundColor: palette.accent, // Color de hover
-                      },
-                      // Si quieres cambiar el color del texto de las opciones también:
-                      //color: '#333', 
-                      color: palette.text, 
-                    }
-                  }
-                }
-              }}
-            >
-              <MenuItem value="default">
-                SELECCIONA
-              </MenuItem>
-
-              {periodo_select.map((elemento) => (
-                <MenuItem
-                  key={elemento.periodo}
-                  value={elemento.periodo}
-                >
-                  {elemento.periodo}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          {/* EMPRESA */}
-          <Box sx={{ flex: 1 }}>
-            <Select
-              fullWidth
-              size="small"
-              value={contabilidad_trabajo}
-              name="contabilidad"
-              sx={{display:'block',
-                margin:'.1rem 0', color:palette.accent, fontSize: '13px' }}
-              onChange={handleChange}
-              // 👇 AQUÍ agregas los estilos para el menú desplegable
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    //backgroundColor: '#f0f0f0', // <-- Cambia este color por el que quieras
-                    bgcolor: palette.surface,
-                    // 💡 EXTRA: También puedes cambiar el color cuando pasas el mouse (hover)
-                    '& .MuiMenuItem-root': {
-                      '&:hover': {
-                        //backgroundColor: '#e0e0e0', // Color de hover
-                        backgroundColor: palette.accent, // Color de hover
-                      },
-                      // Si quieres cambiar el color del texto de las opciones también:
-                      //color: '#333', 
-                      color: palette.text, 
-                    }
-                  }
-                }
-              }}
-
-            >
-              <MenuItem value="default">
-                SELECCIONA
-              </MenuItem>
-
-              {contabilidad_select.map((elemento) => (
-                <MenuItem
-                  key={elemento.documento_id}
-                  value={elemento.documento_id}
-                >
-                  {elemento.razon_social}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          {/* TOTAL */}
-        </Box>
-
-
-        <DaySelector period={periodo_trabajo || params.periodo} onDaySelect={handleDayFilter} />
         
         {/* TABLA */}
         <DataTable
@@ -2123,11 +2283,14 @@ export default function AdminVentaPresupuestoList() {
             handleDeletePresupuesto,
             handleGenerarComprobantePresupuesto,
             renderSunatComprobantePresupuesto,
-            handleOpenComprobanteGenerado
+            handleOpenComprobanteGenerado,
+            handleOpenClonarPresupuesto
           )}
           data={data}
           pagination
           paginationPerPage={10}
+          paginationResetDefaultPage={paginaReset}
+          noDataComponent={<Box sx={{ p: 4, color: palette.muted }}>Sin presupuestos para los filtros seleccionados</Box>}
           highlightOnHover
           responsive
           customStyles={customStyles}
@@ -2150,6 +2313,7 @@ export default function AdminVentaPresupuestoList() {
           onClose={handleCloseClonarTrabajo}
           onConfirm={handleConfirmClonarTrabajo}
           loading={clonandoTrabajo}
+          modoPresupuesto={Boolean(clonarTrabajoInfo?.modoPresupuesto)}
         />
 
       </Box>

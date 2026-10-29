@@ -950,6 +950,9 @@ export default function NavSideBar(props) {
             label="Proyectos y Servicios"
             isActive={selectedButton === 'icono02-4'}
             onClick={() => {
+              if (typeof props.onNavigatePanoramic === 'function') {
+                props.onNavigatePanoramic('presupuestos');
+              }
               navigate(`/ad_ventapresupuesto/${props.idAnfitrion}/${props.idInvitado}/${periodo_trabajo}/${contabilidad_trabajo}`);
               handleClick('icono02-4');
             }}
