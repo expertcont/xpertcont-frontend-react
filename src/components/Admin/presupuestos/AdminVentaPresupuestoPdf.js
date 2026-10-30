@@ -20,6 +20,32 @@ const colors = {
   white: rgb(1, 1, 1),
 };
 
+const logosPresupuesto = require.context("../../../assets/images", false, /-logo\.png$/);
+
+async function cargarLogoPresupuesto(pdfDoc, documentoId) {
+  if (!documentoId) {
+    return null;
+  }
+
+  const logoKey = `./${String(documentoId).trim()}-logo.png`;
+  if (!logosPresupuesto.keys().includes(logoKey)) {
+    return null;
+  }
+
+  try {
+    const logoModule = logosPresupuesto(logoKey);
+    const logoUrl = typeof logoModule === "string" ? logoModule : logoModule.default;
+    const response = await fetch(logoUrl);
+    if (!response.ok) {
+      return null;
+    }
+    return await pdfDoc.embedPng(await response.arrayBuffer());
+  } catch (error) {
+    console.warn(`No se pudo cargar el logo del documento ${documentoId}:`, error);
+    return null;
+  }
+}
+
 const formatMoney = (value) => Number(value || 0).toLocaleString("es-PE", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -72,6 +98,7 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
   const { modo = "interno" } = options;
   const esCliente = modo === "cliente";
   const pdfDoc = await PDFDocument.create();
+  const logo = await cargarLogoPresupuesto(pdfDoc, presupuesto.documento_id || options.documentoId);
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
@@ -109,18 +136,35 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
     color: colors.dark,
   });
 
-  page.drawRectangle({
-    x: margin,
-    y: 773,
-    width: 44,
-    height: 44,
-    color: colors.teal,
-  });
-  drawText(page, "XP", { x: margin + 11, y: 789, size: 15, font: bold, color: colors.white });
+  if (logo) {
+    const logoSize = logo.scale(1);
+    const logoScale = Math.min(110 / logoSize.width, 86 / logoSize.height);
+    const logoWidth = logoSize.width * logoScale;
+    const logoHeight = logoSize.height * logoScale;
+    page.drawImage(logo, {
+      x: margin + ((110 - logoWidth) / 2),
+      y: 756 + ((86 - logoHeight) / 2),
+      width: logoWidth,
+      height: logoHeight,
+    });
+  } else {
+    page.drawRectangle({
+      x: margin,
+      y: 756,
+      width: 86,
+      height: 86,
+      color: colors.teal,
+    });
+    drawText(page, "XP", { x: margin + 28, y: 782, size: 28, font: bold, color: colors.white });
+  }
 
-  drawText(page, esCliente ? "COTIZACION" : "PRESUPUESTO", { x: margin + 60, y: 803, size: 22, font: bold, color: colors.white });
+  const tituloPresupuesto = esCliente ? "PROFORMA" : "PRESUPUESTO";
+  const tituloPresupuestoSize = 20;
+  const tituloPresupuestoX = (pageSize[0] - bold.widthOfTextAtSize(tituloPresupuesto, tituloPresupuestoSize)) / 2;
+  drawText(page, tituloPresupuesto, { x: tituloPresupuestoX, y: 803, size: tituloPresupuestoSize, font: bold, color: colors.white });
   const numero = numeroPresupuesto(presupuesto);
-  drawText(page, esCliente ? `${numero} - vista cliente` : numero, { x: margin + 60, y: 784, size: 11, font: regular, color: colors.tealSoft });
+  const numeroPresupuestoX = (pageSize[0] - regular.widthOfTextAtSize(cleanText(numero), 11)) / 2;
+  drawText(page, numero, { x: numeroPresupuestoX, y: 784, size: 11, font: regular, color: colors.tealSoft });
 
   const total = totalPresupuesto(presupuesto);
   const subtotal = subtotalPresupuesto(presupuesto);
@@ -128,14 +172,14 @@ async function createPresupuestoPdf(presupuesto, options = {}) {
 
   drawText(page, `${presupuesto.r_moneda} ${formatMoney(total)}`, {
     x: pageSize[0] - margin - 150,
-    y: 797,
+    y: 803,
     size: 18,
     font: bold,
     color: colors.white,
   });
   drawText(page, "Total incluido IGV", {
     x: pageSize[0] - margin - 150,
-    y: 779,
+    y: 784,
     size: 9,
     font: regular,
     color: colors.tealSoft,

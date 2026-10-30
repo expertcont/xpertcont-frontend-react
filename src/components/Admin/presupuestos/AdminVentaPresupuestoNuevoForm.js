@@ -1152,12 +1152,12 @@ export default function AdminVentaPresupuestoNuevoForm() {
   };
 
   const handlePrevioPdf = async () => {
-    const url = await createPresupuestoPdf(presupuesto);
+    const url = await createPresupuestoPdf(presupuesto, { documentoId: params.documento_id });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handlePdfCliente = async () => {
-    const url = await createPresupuestoPdf(presupuesto, { modo: "cliente" });
+    const url = await createPresupuestoPdf(presupuesto, { modo: "cliente", documentoId: params.documento_id });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 

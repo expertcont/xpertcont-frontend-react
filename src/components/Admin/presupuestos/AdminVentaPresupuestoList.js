@@ -10,7 +10,7 @@ import TrFiltros from "../transporte/common/components/TrFiltros";
 import TrHeaderMenuPicker from "../transporte/common/components/TrHeaderMenuPicker";
 
 import { Box, Typography, InputBase, MenuItem,Select, useMediaQuery } from "@mui/material";
-import { Search, FileText, Calendar, Building2, ClipboardList, Pencil, Trash2, UserPen, Clock3, CheckCircle2, Filter, FileSpreadsheet, CopyPlus } from "lucide-react";
+import { Search, FileText, Calendar, ClipboardList, Pencil, Trash2, UserPen, Clock3, CheckCircle2, Filter, FileSpreadsheet, CopyPlus } from "lucide-react";
 import { Plus } from 'lucide-react';
 
 import Tooltip from '@mui/material/Tooltip';
@@ -270,25 +270,31 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexWrap: "wrap" }}>
 
-            <Box
-              sx={{
-                width: { xs: 40, sm: 30 },
-                height: { xs: 40, sm: 30 },
-                borderRadius: { xs: 2, sm: 1.5 },
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: palette.accentSoft,
-                color: palette.accent,
-                flexShrink: 0,
-                "& svg": {
-                  width: { xs: 20, sm: 16 },
-                  height: { xs: 20, sm: 16 },
-                },
-              }}
-            >
-              <FileText size={16} />
-            </Box>
+            <Tooltip title="PDF cliente" arrow>
+              <Box
+                onClick={() => onPdf(row)}
+                sx={{
+                  width: { xs: 40, sm: 30 },
+                  height: { xs: 40, sm: 30 },
+                  borderRadius: { xs: 2, sm: 1.5 },
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: palette.accentSoft,
+                  color: palette.accent,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  transition: "all .18s ease",
+                  "&:hover": { backgroundColor: palette.accent, color: "#ffffff" },
+                  "& svg": {
+                    width: { xs: 20, sm: 16 },
+                    height: { xs: 20, sm: 16 },
+                  },
+                }}
+              >
+                <FileText size={16} />
+              </Box>
+            </Tooltip>
 
             <Typography
               sx={{
@@ -412,7 +418,6 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
 
             {[
               { title: "Editar presupuesto", icon: <Pencil size={14} />, onClick: () => onEdit(row) },
-              { title: "PDF cliente", icon: <FileText size={14} />, onClick: () => onPdf(row) },
               { title: "Clonar presupuesto", icon: <CopyPlus size={14} />, onClick: () => onClonePresupuesto(row) },
               {
                 title: (row.estado || "P") === "P" ? "Eliminar presupuesto" : "Solo pendientes",
@@ -487,7 +492,6 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0, width: { xs: "100%", sm: "auto" } }}>
-            <Building2 size={13} style={{ flexShrink: 0 }} />
             <Typography sx={{ fontSize: "13px", color: palette.muted }} noWrap>
               {row.cliente}
             </Typography>
@@ -1718,7 +1722,10 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
           throw new Error(data.message || "No se pudo cargar el presupuesto para PDF.");
         }
 
-        const url = await createPresupuestoPdf(normalizarPresupuestoFull(data.data), { modo: "cliente" });
+        const url = await createPresupuestoPdf(normalizarPresupuestoFull(data.data), {
+          modo: "cliente",
+          documentoId: contabilidad_trabajo || params.documento_id,
+        });
         window.open(url, "_blank", "noopener,noreferrer");
       } catch (error) {
         console.log("Error generando PDF de presupuesto:", error);
