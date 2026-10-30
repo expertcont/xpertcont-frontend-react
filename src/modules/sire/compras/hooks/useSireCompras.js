@@ -100,7 +100,7 @@ export default function useSireCompras() {
         setTokenSunat(response.data || null);
         const met = response.data?.diagnostico?.viaPortalMetodo || "portal";
         const mins = response.data?.vigencia ? Math.floor(response.data.vigencia.segundosRestantes / 60) : null;
-        setMensaje(`Token portal SUNAT generado via ${met}${mins !== null ? ` - vigencia ${mins} min` : ""}. Este es el token con consultacpe usado por las descargas XML.`);
+        setMensaje(`Token portal SUNAT generado via ${met}${mins !== null ? ` - vigencia ${mins} min` : ""}. Declara consultacpe; úsalo solo con el botón XML con token portal.`);
       } else if (tipo === "tokenLegacy") {
         const response = await sireComprasApi.generarTokenLegacy(payload);
         if (contextoActual.current !== origen) return;
@@ -147,7 +147,7 @@ export default function useSireCompras() {
   };
   // Descarga el XML de un comprobante SUNAT individual. El token vive solo en el
   // backend: aqui solo se envian tipo/serie/numero y se recibe el archivo.
-  const descargarXml = async (registro) => {
+  const descargarXml = async (registro, usarTokenPortal = false) => {
     if (accionActiva.current || !valido || !registro) return;
     const clave = `${registro.tipo_comprobante || ""}-${registro.serie || ""}-${registro.numero || ""}`;
     const origen = contexto;
@@ -157,7 +157,7 @@ export default function useSireCompras() {
     setError("");
     setMensaje("");
     try {
-      const response = await sireComprasApi.descargarXml({
+      const response = await (usarTokenPortal ? sireComprasApi.descargarXmlPortal : sireComprasApi.descargarXml)({
         ...payload,
         ruc_emisor: String(registro.documento_proveedor || registro.ruc_proveedor || "").replace(/\D/g, ""),
         tipo_comprobante: registro.tipo_comprobante,
@@ -171,7 +171,7 @@ export default function useSireCompras() {
       link.download = `CPE_${clave.replace(/^-+|-+$/g, "") || "comprobante"}.xml`;
       document.body.appendChild(link); link.click(); link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMensaje(`RUC ${documentoId}: SUNAT autorizo la descarga del XML del comprobante ${clave}.`);
+      setMensaje(`RUC ${documentoId}: SUNAT autorizo la descarga del XML del comprobante ${clave}${usarTokenPortal ? ' usando el token portal vigente' : ''}.`);
     } catch (err) {
       let texto = err.response?.data?.message;
       if (!texto && err.response?.data instanceof Blob) {
@@ -187,7 +187,7 @@ export default function useSireCompras() {
   };
   return {
     datos, cargando, accion, ocupado, error, mensaje, valido, contexto, revision, tokenSunat, tokenSire,
-    idAnfitrion: params.id_anfitrion, periodo, documentoId, periodos, empresas, ejecutar, descargarXml, xmlEnCurso,
+    idAnfitrion: params.id_anfitrion, periodo, documentoId, periodos, empresas, ejecutar, descargarXml, descargarXmlPortal: registro => descargarXml(registro, true), xmlEnCurso,
     actualizar: () => setRecarga(v => v + 1),
     cambiarPeriodo: v => navigate(ruta(normalizarPeriodo(v), documentoId)),
     cambiarEmpresa: v => navigate(ruta(periodo, /^\d{11}$/.test(v) ? v : "")),

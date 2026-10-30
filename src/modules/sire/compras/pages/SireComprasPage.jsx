@@ -58,7 +58,7 @@ export default function SireComprasPage() {
             <SireComprasTicket datos={compras.datos} valido={compras.valido} ocupado={compras.ocupado} accion={compras.accion} token={compras.tokenSunat} tokenSire={compras.tokenSire} onGenerar={solicitarTicket} onConsultar={()=>compras.ejecutar('consultar')} onDescargar={()=>compras.ejecutar('archivo')} onToken={()=>compras.ejecutar('token')} onTokenSire={()=>compras.ejecutar('tokenSire')} onTokenSireSecundario={()=>compras.ejecutar('tokenSireSecundario')} onTokenLegacy={()=>compras.ejecutar('tokenLegacy')} />
             <SireComprasConciliacion key={compras.contexto+compras.datos.propuesta?.ticket} {...contextoGestion} datos={compras.datos} ocupado={compras.ocupado} onCambio={compras.actualizar} />
           </Box>}
-          {tab==='declarar' ? <SireComprasPersonalizada key={compras.contexto} {...contextoGestion} filtros={filtros} onCambio={compras.actualizar} onDescargarXml={compras.descargarXml} xmlOcupado={compras.xmlEnCurso} />
+          {tab==='declarar' ? <SireComprasPersonalizada key={compras.contexto} {...contextoGestion} filtros={filtros} onCambio={compras.actualizar} onDescargarXml={compras.descargarXml} onDescargarXmlPortal={compras.descargarXmlPortal} xmlOcupado={compras.xmlEnCurso} />
             : tab==='presentacion' ? <SireComprasPresentacion key={compras.contexto} {...contextoGestion} datos={compras.datos} onCambio={compras.actualizar} />
             : <SireComprasResultados datos={compras.datos} rows={rows} tab={tab==='registro'?0:tab==='comparacion'?2:1} filtros={filtros} cambiarResultado={resultado=>cambiarFiltro({resultado})} cargando={compras.cargando} ocupado={compras.ocupado} documentoId={compras.documentoId} periodo={compras.periodo} />}
 
