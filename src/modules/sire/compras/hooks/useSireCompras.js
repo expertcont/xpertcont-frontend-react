@@ -33,6 +33,11 @@ export default function useSireCompras() {
   const ruta = (p, d) => `/sire/compras/${[params.id_anfitrion, params.id_invitado, p || "-", d || "-"].map(encodeURIComponent).join("/")}`;
 
   useEffect(() => {
+    setTokenSunat(null);
+    setTokenSire(null);
+  }, [contexto]);
+
+  useEffect(() => {
     if (!isAuthenticated) return undefined;
     let vigente = true;
     sireComprasApi.catalogos({ id_anfitrion: params.id_anfitrion, id_invitado: params.id_invitado }).then(([p, e]) => {
@@ -71,6 +76,10 @@ export default function useSireCompras() {
     setAccion(tipo);
     setError("");
     setMensaje("");
+    if (["token", "tokenSire", "tokenSireSecundario", "tokenLegacy"].includes(tipo)) {
+      setTokenSunat(null);
+      setTokenSire(null);
+    }
     try {
       if (tipo === "archivo") {
         const response = await sireComprasApi.descargar(urlContexto);
@@ -92,22 +101,24 @@ export default function useSireCompras() {
         const met = response.data?.diagnostico?.viaPortalMetodo || "portal";
         const mins = response.data?.vigencia ? Math.floor(response.data.vigencia.segundosRestantes / 60) : null;
         setMensaje(`Token portal SUNAT generado via ${met}${mins !== null ? ` - vigencia ${mins} min` : ""}. Este es el token con consultacpe usado por las descargas XML.`);
-      } else if (tipo === "tokenSire") {
-        // Boton "Token SIRE": prueba del password grant con las credenciales
-        // de la empresa. El backend devuelve solo el resumen del JWT
-        // (vigencia + migeigvDeclarado): si migeigvDeclarado es false, el
-        // fallo en autenticacion viene del registro de la app (alcance/URI
-        // del SIRE), no de la clave SOL ni del codigo.
-        const response = await sireComprasApi.generarTokenSire(payload);
+      } else if (tipo === "tokenLegacy") {
+        const response = await sireComprasApi.generarTokenLegacy(payload);
+        if (contextoActual.current !== origen) return;
+        setTokenSire(response.data || null);
+        setMensaje(`Token legacy generado para ${documentoId}, usando únicamente sire_sol / sire_solpwd.`);
+      } else if (tipo === "tokenSire" || tipo === "tokenSireSecundario") {
+        // Cada boton prueba exclusivamente su pareja con lectura nueva de BD.
+        const parejaSol = tipo === "tokenSire" ? "principal" : "secundario";
+        const response = await sireComprasApi.generarTokenSire({ ...payload, pareja_sol: parejaSol });
         if (contextoActual.current !== origen) return;
         console.log("[SireCompras] generarTokenSire ok", response?.data);
         setTokenSire(response.data || null);
         const mins = response.data?.vigencia ? Math.floor(response.data.vigencia.segundosRestantes / 60) : null;
         const declarado = response.data?.migeigvDeclarado;
         let pista = "";
-        if (declarado === false) pista = " NO declara los recursos migiegv: el registro de la app en Credenciales API SUNAT necesita la URI del SIRE o el alcance Desktop (como los RUC que funcionan).";
+        if (declarado === false) pista = " El token no declara recursos migeigv; falta confirmar su acceso a SIRE.";
         else if (declarado === true) pista = " declara recursos migiegv correctamente.";
-        setMensaje(`Token SIRE generado${mins !== null ? ` - vigencia ${mins} min` : ""}.${pista}`);
+        setMensaje(`Token SIRE ${parejaSol === "principal" ? "primario" : "secundario"} generado para ${documentoId}${mins !== null ? ` - vigencia ${mins} min` : ""}.${pista}`);
       } else {
         const response = await sireComprasApi.ejecutar(tipo, {
           ...payload, ticket: datos.ticket, reutilizar_existente: !datos.ticket,
