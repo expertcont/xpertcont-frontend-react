@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate,useParams,useLocation } from "react-router-dom";
 import DataTable, { createTheme } from "react-data-table-component";
 import DaySelector from "../AdminDias";
 import TrHeader from "../transporte/common/components/TrHeader";
 import TrFiltros from "../transporte/common/components/TrFiltros";
 import TrHeaderMenuPicker from "../transporte/common/components/TrHeaderMenuPicker";
+import { customStylesEncomienda } from "../transporte/common/components/TrOperacionRow";
 
 import { Box, Typography, InputBase, MenuItem,Select, useMediaQuery } from "@mui/material";
 import { Search, FileText, Calendar, ClipboardList, Pencil, Trash2, UserPen, Clock3, CheckCircle2, Filter, FileSpreadsheet, CopyPlus } from "lucide-react";
@@ -245,6 +246,116 @@ function PresupuestoFiltroCard({ label, value, icon: Icon, color, soft, active, 
   );
 }
 
+function IndicadorFiltroSeleccionado({ active, color }) {
+  if (!active) return null;
+  return (
+    <Box sx={{ width: 16, height: 16, borderRadius: "999px", backgroundColor: color, color: palette.onAccent, display: "grid", placeItems: "center", flexShrink: 0 }}>
+      <Filter size={9} />
+    </Box>
+  );
+}
+
+function PresupuestoEstadoFiltroCard({ pendientes, cerrados, estadoFiltro, onFilter }) {
+  const pendienteActivo = estadoFiltro === "P";
+  const cerradoActivo = estadoFiltro === "C";
+  const colorActivo = pendienteActivo ? palette.warning : cerradoActivo ? palette.success : palette.borderSoft;
+  const manejarTeclado = (event, estado) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onFilter(estado);
+  };
+
+  return (
+    <Box sx={{ minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", border: `1px solid ${colorActivo}`, borderRadius: palette.radius.listCard, backgroundColor: palette.surface, boxShadow: pendienteActivo ? `0 0 0 1px ${palette.warning}` : cerradoActivo ? `0 0 0 1px ${palette.success}` : "none", overflow: "hidden", transition: "border-color .16s ease, box-shadow .16s ease" }}>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-pressed={pendienteActivo}
+        onClick={() => onFilter("P")}
+        onKeyDown={(event) => manejarTeclado(event, "P")}
+        sx={{ minWidth: 0, display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", alignItems: "center", gap: 0.65, px: { xs: 0.85, sm: 1 }, py: 0.75, borderRight: `1px solid ${palette.borderSoft}`, backgroundColor: pendienteActivo ? palette.warningSoft : "transparent", color: palette.warning, cursor: "pointer", borderTopLeftRadius: palette.radius.listCard, borderBottomLeftRadius: palette.radius.listCard, transition: "background-color .16s ease", "&:hover": { backgroundColor: palette.warningSoft }, "&:focus-visible": { outline: `2px solid ${palette.warning}`, outlineOffset: -2 } }}
+      >
+        <Box sx={{ width: 28, height: 28, borderRadius: palette.radius.control, display: "grid", placeItems: "center", backgroundColor: palette.warningSoft, color: palette.warning }}>
+          <Clock3 size={15} />
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, textTransform: "uppercase", lineHeight: 1.15 }} noWrap>Pendientes</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
+            <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>{pendientes}</Typography>
+            <IndicadorFiltroSeleccionado active={pendienteActivo} color={palette.warning} />
+          </Box>
+        </Box>
+      </Box>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-pressed={cerradoActivo}
+        onClick={() => onFilter("C")}
+        onKeyDown={(event) => manejarTeclado(event, "C")}
+        sx={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 0.25, px: { xs: 0.85, sm: 1 }, py: 0.75, backgroundColor: palette.successSoft, color: palette.success, cursor: "pointer", borderTopRightRadius: palette.radius.listCard, borderBottomRightRadius: palette.radius.listCard, transition: "background-color .16s ease", "&:hover": { backgroundColor: palette.successSoft }, "&:focus-visible": { outline: `2px solid ${palette.success}`, outlineOffset: -2 } }}
+      >
+        <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, lineHeight: 1.15, textTransform: "uppercase" }} noWrap>Cerrados</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.45, minWidth: 0 }}>
+          <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>{cerrados}</Typography>
+          <IndicadorFiltroSeleccionado active={cerradoActivo} color={palette.success} />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function PresupuestoCpeFiltroCard({ generados, sinCpe, cpeFiltro, onFilter }) {
+  const generadoActivo = cpeFiltro === "con";
+  const sinCpeActivo = cpeFiltro === "sin";
+  const colorActivo = generadoActivo ? "#0891b2" : sinCpeActivo ? palette.danger : palette.borderSoft;
+
+  return (
+    <Box sx={{ minWidth: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", border: `1px solid ${colorActivo}`, borderRadius: palette.radius.listCard, backgroundColor: palette.surface, boxShadow: generadoActivo ? "0 0 0 1px #0891b2" : sinCpeActivo ? `0 0 0 1px ${palette.danger}` : "none", overflow: "hidden", transition: "border-color .16s ease, box-shadow .16s ease" }}>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-pressed={generadoActivo}
+        onClick={() => onFilter("con")}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          onFilter("con");
+        }}
+        sx={{ minWidth: 0, display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", alignItems: "center", gap: 0.65, px: { xs: 0.85, sm: 1 }, py: 0.75, borderRight: `1px solid ${palette.borderSoft}`, backgroundColor: generadoActivo ? "rgba(8,145,178,0.14)" : "transparent", color: "#0891b2", cursor: "pointer", borderTopLeftRadius: palette.radius.listCard, borderBottomLeftRadius: palette.radius.listCard, transition: "background-color .16s ease", "&:hover": { backgroundColor: "rgba(8,145,178,0.14)" }, "&:focus-visible": { outline: "2px solid #0891b2", outlineOffset: -2 } }}
+      >
+        <Box sx={{ width: 28, height: 28, borderRadius: palette.radius.control, display: "grid", placeItems: "center", backgroundColor: "rgba(8,145,178,0.14)", color: "#0891b2" }}>
+          <FileText size={15} />
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, textTransform: "uppercase", lineHeight: 1.15 }} noWrap>CPE generado</Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.45, minWidth: 0 }}>
+            <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>{generados}</Typography>
+            <IndicadorFiltroSeleccionado active={generadoActivo} color="#0891b2" />
+          </Box>
+        </Box>
+      </Box>
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-pressed={sinCpeActivo}
+        onClick={() => onFilter("sin")}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          onFilter("sin");
+        }}
+        sx={{ minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 0.25, px: { xs: 0.85, sm: 1 }, py: 0.75, backgroundColor: palette.dangerSoft, color: palette.danger, cursor: "pointer", borderTopRightRadius: palette.radius.listCard, borderBottomRightRadius: palette.radius.listCard, transition: "background-color .16s ease", "&:hover": { backgroundColor: palette.dangerSoft }, "&:focus-visible": { outline: `2px solid ${palette.danger}`, outlineOffset: -2 } }}
+      >
+        <Typography sx={{ color: palette.muted, fontSize: "9.5px", fontWeight: 900, lineHeight: 1.15, textTransform: "uppercase" }} noWrap>Sin CPE</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.45, minWidth: 0 }}>
+          <Typography sx={{ color: palette.text, fontSize: "16px", lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: "0.16px currentColor" }} noWrap>{sinCpe}</Typography>
+          <IndicadorFiltroSeleccionado active={sinCpeActivo} color={palette.danger} />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 /* =======================================================
    COLUMNAS
 ======================================================= */
@@ -253,11 +364,14 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
   {
     name: "",
     grow: 1,
+    minWidth: "0px",
+    maxWidth: "100%",
     cell: (row) => {
       const comprobanteGenerado = comprobanteGeneradoPresupuesto(row);
+      const presupuestoPendiente = (row.estado || "P") === "P";
 
       return (
-      <Box sx={{ width: "100%", py: 0.4 }}>
+      <Box sx={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", py: 0.4 }}>
         {/* FILA SUPERIOR */}
         <Box
           sx={{
@@ -296,52 +410,59 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
               </Box>
             </Tooltip>
 
+            {comprobanteGenerado && (
+              <Tooltip title="Abrir comprobante generado" arrow>
+                <Typography
+                  component="span"
+                  onClick={() => onOpenComprobanteGenerado(row)}
+                  sx={{
+                    color: palette.text,
+                    fontWeight: 700,
+                    fontSize: "15px",
+                    letterSpacing: "0.3px",
+                    whiteSpace: "nowrap",
+                    cursor: "pointer",
+                    "&:hover": { textDecoration: "underline" },
+                  }}
+                >
+                  {comprobanteGenerado}
+                </Typography>
+              </Tooltip>
+            )}
+
             <Typography
               sx={{
                 color: palette.text,
                 fontWeight: 700,
                 fontSize: "15px",
                 letterSpacing: "0.3px",
+                whiteSpace: "nowrap",
               }}
             >
-              {row.numero}
+              Proforma: {row.numero}
             </Typography>
 
-            {comprobanteGenerado && (
-              <Tooltip title="Abrir comprobante generado" arrow>
-                <Box
-                  onClick={() => onOpenComprobanteGenerado(row)}
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.5,
-                    minHeight: { xs: 28, sm: 24 },
-                    px: 0.9,
-                    borderRadius: 1.25,
-                    backgroundColor: "rgba(42,161,152,0.14)",
-                    border: `1px solid ${palette.accent}`,
-                    color: palette.accent,
-                    cursor: "pointer",
-                    fontSize: "11.5px",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    whiteSpace: "nowrap",
-                    transition: "all .18s ease",
-                    "&:hover": {
-                      backgroundColor: palette.accent,
-                      color: "#ffffff",
-                    },
-                    "& svg": {
-                      width: 13,
-                      height: 13,
-                    },
-                  }}
-                >
-                  <FileText size={13} />
-                  CPE {comprobanteGenerado}
-                </Box>
-              </Tooltip>
-            )}
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                px: 0.85,
+                py: 0.4,
+                borderRadius: 1.25,
+                border: `1px solid ${presupuestoPendiente ? palette.warning : palette.border}`,
+                borderLeft: presupuestoPendiente ? `3px solid ${palette.warning}` : undefined,
+                color: presupuestoPendiente ? palette.warning : palette.muted,
+                fontSize: "10.5px",
+                fontWeight: presupuestoPendiente ? 700 : 500,
+                textTransform: "uppercase",
+                letterSpacing: "0.35px",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              {presupuestoPendiente ? "Pendiente" : "Cerrado"}
+            </Box>
+
           </Box>
 
           <Box
@@ -478,25 +599,11 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
           </Box>
         </Box>
 
-        {/* CLIENTE */}
-        <Box
-          sx={{
-            mt: 0.45,
-            display: "flex",
-            alignItems: { xs: "flex-start", sm: "center" },
-            justifyContent: "space-between",
-            flexDirection: { xs: "column", sm: "row" },
-            gap: 0.5,
-            color: palette.muted,
-            fontSize: "13px",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0, width: { xs: "100%", sm: "auto" } }}>
-            <Typography sx={{ fontSize: "13px", color: palette.muted }} noWrap>
-              {row.cliente}
-            </Typography>
-          </Box>
-          <Typography sx={{ color: palette.text, fontSize: "14px", fontWeight: 800, whiteSpace: "nowrap", ml: { xs: 2.5, sm: 1 } }}>
+        <Box sx={{ mt: 0.25, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, minWidth: 0, width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
+          <Typography sx={{ color: palette.muted, fontSize: "13px", minWidth: 0 }} noWrap>
+            {row.cliente}
+          </Typography>
+          <Typography sx={{ color: palette.text, fontSize: { xs: "14px", sm: "16px" }, lineHeight: 1.05, fontWeight: "1000 !important", WebkitTextStroke: { xs: "0.2px currentColor", sm: "0.32px currentColor" }, whiteSpace: "nowrap", flexShrink: 0 }}>
             {formatMoney(row.moneda, row.total)}
           </Typography>
         </Box>
@@ -511,34 +618,29 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
             gap: 0.5,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, minWidth: 0, flex: "1 1 260px" }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.5,
-                color: palette.muted,
-                fontSize: "11px",
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                mr: 0.5,
-              }}
-            >
-              <ClipboardList size={13} />
-              {row.servicios_count} trabajos · {(row.estado || "P") === "P" ? "Pendiente" : "Cerrado"}
-            </Box>
+          <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.75, minWidth: 0, width: { xs: "100%", sm: "auto" }, maxWidth: "100%", flex: "1 1 260px", boxSizing: "border-box" }}>
+            {row.trabajos.length > 0 ? row.trabajos.map((trabajo, index) => {
+              const descripcion = trabajo.descripcion || trabajo.numero || `Servicio ${trabajo.servicio || ""}`;
+              const descripcionCorta = descripcion.length > 15 ? `${descripcion.slice(0, 15)}...` : descripcion;
+              const codigoTrabajo = `T${String(index + 1).padStart(2, "0")}: ${descripcionCorta}`;
 
-            {row.trabajos.length > 0 ? row.trabajos.map((trabajo) => (
-              <AppChip
-                key={trabajo.id}
-                onClick={() => onTrabajoInfo(row, trabajo)}
-              >
-                {trabajo.numero}
-              </AppChip>            
-            )) : row.servicios_count > 0 && (
-              <AppChip onClick={() => onTrabajoInfo(row)}>
-                Ver trabajos
-              </AppChip>
+              return (
+                <Tooltip key={trabajo.id} title={descripcion} arrow>
+                  <AppChip
+                    onClick={() => onTrabajoInfo(row, trabajo)}
+                    sx={{ width: { xs: "100%", sm: "28ch" }, maxWidth: "100%", px: { xs: 1.5, sm: 0.75 }, boxSizing: "border-box", flexShrink: { xs: 1, sm: 0 }, justifyContent: "flex-start", overflow: "hidden", whiteSpace: "nowrap" }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, minWidth: 0, width: "100%", overflow: "hidden" }}>
+                      <ClipboardList size={13} style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{codigoTrabajo}</span>
+                    </Box>
+                  </AppChip>
+                </Tooltip>
+              );
+            }) : row.servicios_count > 0 && (
+              <Typography sx={{ color: palette.muted, fontSize: "12px" }}>
+                Sin detalle de trabajos disponible
+              </Typography>
             )}
           </Box>
 
@@ -573,43 +675,25 @@ const createColumns = (onEdit, onView, onPdf, onTrabajoInfo, onDelete, onGenerar
 ======================================================= */
 
 const customStyles = {
-  table: { style: { backgroundColor: "transparent" } },
-  headRow: { style: { display: "none" } },
-  rows: {
-    style: {
-      backgroundColor: palette.surface,
-      color: palette.text,
-      minHeight: "70px",
-      marginBottom: "3px",
-      borderRadius: "12px",
-      border: `1px solid ${palette.borderSoft}`,
-      paddingLeft: "8px",
-      paddingRight: "8px",
-      transition: "border-color .18s ease, background-color .18s ease",
-      "&:hover": {
-        backgroundColor: "var(--app-row-hover, #f8fafc)",
-        borderColor: palette.border,
-      },
-    },
-    highlightOnHoverStyle: {
-      backgroundColor: "var(--app-row-hover, #f8fafc)",
-      borderColor: palette.border,
-      color: palette.text,
-      outline: "none",
-    },
+  ...customStylesEncomienda,
+  table: {
+    ...customStylesEncomienda.table,
+    style: { ...customStylesEncomienda.table.style, width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box" },
   },
-  pagination: {
+  rows: {
+    ...customStylesEncomienda.rows,
     style: {
-      backgroundColor: "transparent",
-      color: palette.muted,
-      borderTop: `1px solid ${palette.borderSoft}`,
-      marginTop: "8px",
-    },
-    pageButtonsStyle: {
-      color: palette.muted,
-      fill: palette.muted,
-      "&:hover:not(:disabled)": { backgroundColor: palette.accentSoft },
-      "&:disabled": { color: palette.border, fill: palette.border },
+      ...customStylesEncomienda.rows.style,
+      width: "100%",
+      maxWidth: "100%",
+      minWidth: 0,
+      boxSizing: "border-box",
+      "@media (max-width: 600px)": {
+        width: "90%",
+        maxWidth: "90%",
+        marginLeft: 0,
+        marginRight: "auto",
+      },
     },
   },
 };
@@ -628,6 +712,7 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
   const [toggleCleared, setToggleCleared] = useState(false);
 	//const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
+  const cargaRegistroSeq = useRef(0);
   const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
   const [estadoFiltro, setEstadoFiltro] = useState("*");
   const [cpeFiltro, setCpeFiltro] = useState("*");
@@ -851,6 +936,7 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
       const periodoConsulta = strHistorialPeriodo || periodo_trabajo || params.periodo;
       const documentoConsulta = strHistorialContabilidad || contabilidad_trabajo || params.documento_id;
       const diaConsulta = sDia || "*";
+      const cargaId = ++cargaRegistroSeq.current;
 
       if (!periodoConsulta || !documentoConsulta) {
         setRegistrosdet([]);
@@ -863,9 +949,15 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
         const result = await response.json();
         const registros = Array.isArray(result?.data) ? result.data : [];
         const registrosConReferencias = await completarReferenciasComprobante(registros, periodoConsulta, documentoConsulta);
+        if (cargaId !== cargaRegistroSeq.current) {
+          return;
+        }
         setRegistrosdet(registrosConReferencias);
         setTabladet(registrosConReferencias);
       } catch (error) {
+        if (cargaId !== cargaRegistroSeq.current) {
+          return;
+        }
         console.log("Error cargando presupuestos:", error);
         setRegistrosdet([]);
         setTabladet([]);
@@ -991,7 +1083,7 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
         (estadoFiltro === "*" || (row.estado || "P") === estadoFiltro) &&
         (cpeFiltro === "*" || tieneComprobanteGenerado(row) === (cpeFiltro === "con")) &&
         (!busqueda || [row.numero, row.cliente, row.r_documento_id, row.autor, row.glosa,
-          comprobanteGeneradoPresupuesto(row), ...row.trabajos.map(trabajo => trabajo.numero)]
+          comprobanteGeneradoPresupuesto(row), row.trabajos_busqueda, ...row.trabajos.flatMap(trabajo => [trabajo.numero, trabajo.descripcion])]
           .some(value => String(value || "").toLocaleLowerCase("es").includes(busqueda)))
       ));
     }, [registrosdet, valorBusqueda, estadoFiltro, cpeFiltro]);
@@ -2226,7 +2318,12 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: palette.bg,
+        width: "100%",
+        maxWidth: "100vw",
+        minWidth: 0,
+        boxSizing: "border-box",
+        overflowX: "hidden",
+        backgroundColor: "transparent",
         p: { xs: 1, md: 1.5 },
       }}
     >
@@ -2269,17 +2366,57 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
 
         <DaySelector key={periodo_trabajo || params.periodo} period={periodo_trabajo || params.periodo} onDaySelect={handleDayFilter} defaultToAll />
 
-        <Box sx={{ mt: 1.15, mb: 1.1, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))", xl: "repeat(6, minmax(0, 1fr))" }, gap: 0.65 }}>
+        <Box sx={{ mt: 1.15, mb: 1.1, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" }, gap: 0.65 }}>
           <PresupuestoFiltroCard label="Total presupuestos" value={registrosdet.length} icon={ClipboardList} color={palette.accent} soft={palette.accentSoft} active={estadoFiltro === "*" && cpeFiltro === "*"} onClick={() => { setEstadoFiltro("*"); setCpeFiltro("*"); }} />
-          <PresupuestoFiltroCard label="Pendientes" value={registrosdet.filter(row => (row.estado || "P") === "P").length} icon={Clock3} color={palette.warning} soft={palette.warningSoft} active={estadoFiltro === "P"} onClick={() => setEstadoFiltro(actual => actual === "P" ? "*" : "P")} />
-          <PresupuestoFiltroCard label="Cerrados" value={registrosdet.filter(row => (row.estado || "P") === "C").length} icon={CheckCircle2} color={palette.success} soft={palette.successSoft} active={estadoFiltro === "C"} onClick={() => setEstadoFiltro(actual => actual === "C" ? "*" : "C")} />
-          <PresupuestoFiltroCard label="CPE generado" value={registrosdet.filter(tieneComprobanteGenerado).length} icon={FileText} color="#0891b2" soft="rgba(8,145,178,0.14)" active={cpeFiltro === "con"} onClick={() => setCpeFiltro(actual => actual === "con" ? "*" : "con")} />
-          <PresupuestoFiltroCard label="Sin CPE" value={registrosdet.filter(row => !tieneComprobanteGenerado(row)).length} icon={FileText} color={palette.danger} soft={palette.dangerSoft} active={cpeFiltro === "sin"} onClick={() => setCpeFiltro(actual => actual === "sin" ? "*" : "sin")} />
+          <PresupuestoEstadoFiltroCard
+            pendientes={registrosdet.filter(row => (row.estado || "P") === "P").length}
+            cerrados={registrosdet.filter(row => (row.estado || "P") === "C").length}
+            estadoFiltro={estadoFiltro}
+            onFilter={(estado) => setEstadoFiltro(actual => actual === estado ? "*" : estado)}
+          />
+          <PresupuestoCpeFiltroCard
+            generados={registrosdet.filter(tieneComprobanteGenerado).length}
+            sinCpe={registrosdet.filter(row => !tieneComprobanteGenerado(row)).length}
+            cpeFiltro={cpeFiltro}
+            onFilter={(filtro) => setCpeFiltro(actual => actual === filtro ? "*" : filtro)}
+          />
           <PresupuestoFiltroCard label="Monto total" value={resumirMontosPresupuestos(registrosdet)} icon={FileSpreadsheet} color={palette.accent} soft={palette.accentSoft} title={resumirMontosPresupuestos(registrosdet)} />
         </Box>
 
         
         {/* TABLA */}
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: "100%",
+            minWidth: 0,
+            boxSizing: "border-box",
+            overflowX: "hidden",
+            "& .rdt_Table, & .rdt_TableWrapper, & .rdt_TableBody": {
+              width: "100% !important",
+              maxWidth: "100% !important",
+              minWidth: "0 !important",
+              boxSizing: "border-box",
+            },
+            "& .rdt_TableRow": {
+              width: "100% !important",
+              maxWidth: "100% !important",
+              minWidth: "0 !important",
+              boxSizing: "border-box",
+              "@media (max-width: 600px)": {
+                width: "90% !important",
+                maxWidth: "90% !important",
+                marginLeft: "0 !important",
+                marginRight: "auto !important",
+              },
+            },
+            "& .rdt_TableCell": {
+              minWidth: "0 !important",
+              maxWidth: "100% !important",
+              boxSizing: "border-box",
+            },
+          }}
+        >
         <DataTable
           theme="solarized"
           columns={createColumns(
@@ -2301,7 +2438,17 @@ export default function AdminVentaPresupuestoList({ idAnfitrion, idInvitado, sup
           highlightOnHover
           responsive
           customStyles={customStyles}
+          conditionalRowStyles={[
+            {
+              when: row => (row.estado || "P") === "P",
+              style: {
+                border: `1px solid ${palette.warning}`,
+                borderLeft: `4px solid ${palette.warning}`,
+              },
+            },
+          ]}
         />
+        </Box>
 
         <TrabajoInfoModal
           trabajoInfo={trabajoInfo}

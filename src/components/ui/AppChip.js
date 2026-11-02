@@ -6,6 +6,7 @@ import palette from "../../theme/palette";
 export default function AppChip({
   children,
   onClick,
+  sx = {},
 }) {
   return (
     <Box
@@ -31,6 +32,7 @@ export default function AppChip({
           color: palette.onAccent,
           transform: "translateY(-1px)",
         },
+        ...sx,
       }}
     >
       {children}
