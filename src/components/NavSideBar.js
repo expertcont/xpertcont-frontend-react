@@ -806,6 +806,19 @@ export default function NavSideBar(props) {
           </>
         )}
 
+        {accesoAdmin && esRubroComercial && (
+          <MenuItem
+            icon={<ReceiptLongIcon />}
+            label="Guías de remisión"
+            isActive={selectedButton === 'guias-comercial'}
+            onClick={() => {
+              if (typeof props.onNavigatePanoramic === 'function') props.onNavigatePanoramic('guias-comercial');
+              navigate(`/ad_guiasremision/${[props.idAnfitrion, props.idInvitado, periodo_trabajo || '-', contabilidad_trabajo || '-'].map(encodeURIComponent).join('/')}`);
+              handleClick('guias-comercial');
+            }}
+          />
+        )}
+
         {accesoAdmin && esRubroTransporte && (
           <>
             <MenuItem

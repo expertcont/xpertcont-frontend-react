@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, concatTransformationMatrix, popGraphicsState, pushGraphicsState, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 
 const W = 226.77;
@@ -11,31 +11,16 @@ const LAYOUT = {
     maxWidth: 170,
     maxHeight: 56,
     topMargin: 12,
-    issuerGap: 8,
-  },
-  issuer: {
-    fallbackTopGap: 18,
-    fallbackIssuerGap: 8,
-    razonSize: 7.8,
-    razonLineHeight: 5.8,
-    rucGap: 12,
-    rucSize: 9.2,
-    addressGap: 18,
-    addressSize: 6.5,
-    addressLineHeight: 7.2,
-    cpeGap: 32,
+    cpeGap: 12,
   },
   cpe: {
+    topMargin: 18,
     titleGap: 8,
     titleSize: 10.4,
     numberGap: 23,
     numberSize: 16.8,
-    // Las etiquetas FECHA/HORA se dibujan en la misma linea base que su valor
-    // (mismo gap). Antes iban 3pt mas arriba y se leian flotando al lado del dato.
-    dateLabelGap: 33,
-    dateLabelSize: 7.4,
-    dateValueGap: 33,
-    dateValueSize: 9.2,
+    registeredGap: 33,
+    registeredSize: 10,
   },
   delivery: {
     topGap: 42,
@@ -60,23 +45,11 @@ const LAYOUT = {
     nameGap: 24,
     nameSize: 12.4,
     nameLineHeight: 11.8,
-    phoneGap: 1.8,
     phoneSize: 9.2,
-    phoneLineHeight: 10,
     descriptionGap: 4,
     descriptionSize: 7.8,
     descriptionLineHeight: 9.2,
     descriptionMaxLines: 2,
-  },
-  qr: {
-    size: 111,
-    minBottom: 58,
-    preferredBottom: 74,
-    minSize: 86,
-    preferredY: 118,
-    gapAbove: 0,
-    emailGap: 9,
-    emailSize: 6.8,
   },
 };
 
@@ -95,10 +68,6 @@ const money = (value) => Number(value || 0).toLocaleString("es-PE", {
 const ticketPayloadDesdeFormulario = ({ encomienda = {}, empresa = {} }) => ({
   empresa: {
     ruc: empresa.ruc || empresa.documento_id || encomienda.documento_id || "",
-    razon_social: empresa.razon_social || empresa.nombre || empresa.nombre_comercial || "TRANSPORTE DE ENCOMIENDAS",
-    nombre_comercial: empresa.nombre_comercial || empresa.razon_social || empresa.nombre || "TRANSPORTE DE ENCOMIENDAS",
-    domicilio_fiscal: empresa.domicilio_fiscal || empresa.direccion || "",
-    direccion: empresa.direccion || empresa.domicilio_fiscal || "",
   },
   venta: {
     codigo: encomienda.r_cod || "03",
@@ -176,27 +145,30 @@ const wrap = (value, font, size, maxWidth, maxLines = 2) => {
   return lines;
 };
 
-const base64ToUint8Array = (base64) => {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return bytes;
-};
-
 const text = (page, value, x, y, size, font, color = INK, maxWidth = null) => {
   page.drawText(maxWidth ? fit(value, font, size, maxWidth) : clean(value), { x, y, size, font, color });
 };
 
-const centered = (page, value, y, size, font, color = INK, maxWidth = CW) => {
+const centered = (page, value, y, size, font, color = INK, maxWidth = CW, centerX = W / 2) => {
   const label = fit(value, font, size, maxWidth);
   const width = font.widthOfTextAtSize(label, size);
-  page.drawText(label, { x: (W - width) / 2, y, size, font, color });
+  page.drawText(label, { x: centerX - width / 2, y, size, font, color });
 };
 
-const line = (page, y, x1 = M, x2 = W - M, thickness = 0.55, color = LINE) => {
-  page.drawLine({ start: { x: x1, y }, end: { x: x2, y }, thickness, color });
+const centeredContact = (page, label, phone, y, font) => {
+  const { labelSize, phoneSize } = LAYOUT.recipient;
+  if (!phone) {
+    centered(page, label, y, labelSize, font, MUTED);
+    return;
+  }
+
+  const prefix = `${label}  ·  `;
+  const prefixWidth = font.widthOfTextAtSize(prefix, labelSize);
+  const phoneLabel = fit(`TEL: ${phone}`, font, phoneSize, CW - prefixWidth);
+  const phoneWidth = font.widthOfTextAtSize(phoneLabel, phoneSize);
+  const x = (W - prefixWidth - phoneWidth) / 2;
+  page.drawText(prefix, { x, y, size: labelSize, font, color: MUTED });
+  text(page, phoneLabel, x + prefixWidth, y, phoneSize, font);
 };
 
 const dotted = (page, y, x1 = M, x2 = W - M) => {
@@ -215,13 +187,13 @@ const drawTrackingText = (page, value, x, y, size, font, color = INK, tracking =
   }
 };
 
-const centeredTracking = (page, value, y, size, font, color = INK, tracking = 0.5, maxWidth = CW) => {
+const centeredTracking = (page, value, y, size, font, color = INK, tracking = 0.5, maxWidth = CW, centerX = W / 2) => {
   const label = fit(value, font, size, maxWidth);
   const width = label
     .split("")
     .reduce((total, character) => total + font.widthOfTextAtSize(character, size) + tracking, 0) - tracking;
 
-  drawTrackingText(page, label, (W - width) / 2, y, size, font, color, tracking);
+  drawTrackingText(page, label, centerX - width / 2, y, size, font, color, tracking);
 };
 
 const drawIcon = (page, pathData, x, y, size = 12, color = ICON_MUTED) => {
@@ -238,7 +210,6 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const semibold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  const empresa = jsonTicket.empresa || {};
   const venta = jsonTicket.venta || {};
   const encomienda = jsonTicket.encomienda || {};
   const code = venta.codigo || encomienda.r_cod || "03";
@@ -277,45 +248,42 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   const receiverNameLines = wrap(String(receiverName).toUpperCase(), semibold, 15.2, CW - 16, 2);
   const receiverZoneLines = receiverArrivalZone ? wrap(receiverArrivalZone.toUpperCase(), semibold, 12.4, CW - 16, 2) : [];
   const receiverAddressLines = receiverAddress ? wrap(receiverAddress.toUpperCase(), semibold, 12.4, CW - 16, 4) : [];
-  const qrText = displayNumber || [code, serie, number].filter(Boolean).join("-");
-  const qrDataUrl = await QRCode.toDataURL(qrText || displayNumber || empresa.ruc || "XPERTCONT");
-  const qrImage = await pdfDoc.embedPng(base64ToUint8Array(qrDataUrl.split(",")[1]));
+  const qrText = displayNumber || jsonTicket.empresa?.ruc || "XPERTCONT";
+  const qrDataUrl = await QRCode.toDataURL(qrText, { width: 192 });
+  const qrImage = await pdfDoc.embedPng(qrDataUrl);
 
-  let issuerTopY = H - 74;
+  let cpeTopY = H - LAYOUT.cpe.topMargin;
   if (logo) {
     const scale = Math.min(LAYOUT.logo.maxWidth / logo.width, LAYOUT.logo.maxHeight / logo.height);
     const logoWidth = logo.width * scale;
     const logoHeight = logo.height * scale;
     const logoX = (W - logoWidth) / 2;
     const logoY = H - logoHeight - LAYOUT.logo.topMargin;
-    issuerTopY = logoY - LAYOUT.logo.issuerGap;
+    cpeTopY = logoY - LAYOUT.logo.cpeGap;
     page.drawImage(logo, {
       x: logoX,
       y: logoY,
       width: logoWidth,
       height: logoHeight,
     });
-  } else {
-    issuerTopY = H - LAYOUT.issuer.fallbackTopGap - LAYOUT.issuer.fallbackIssuerGap;
   }
 
-  const cpeTopY = issuerTopY - LAYOUT.issuer.cpeGap;
-  const issuerAddress = empresa.domicilio_fiscal || empresa.direccion || empresa.direccion_fiscal || empresa.domicilio || empresa.direccion_completa || "";
-
-  wrap(empresa.razon_social || empresa.nombre_comercial || "TRANSPORTE DE ENCOMIENDAS", regular, 7.8, CW, 2)
-    .forEach((item, index) => centered(page, item, issuerTopY - (index * LAYOUT.issuer.razonLineHeight), LAYOUT.issuer.razonSize, regular));
-  centered(page, `RUC ${empresa.ruc || ""}`, issuerTopY - LAYOUT.issuer.rucGap, LAYOUT.issuer.rucSize, regular);
-  wrap(issuerAddress, regular, LAYOUT.issuer.addressSize, CW, 2)
-    .forEach((item, index) => centered(page, item, issuerTopY - LAYOUT.issuer.addressGap - (index * LAYOUT.issuer.addressLineHeight), LAYOUT.issuer.addressSize, regular, MUTED));
-
   dotted(page, cpeTopY + 5);
-  centered(page, "DATOS DE ENTREGA", cpeTopY - LAYOUT.cpe.titleGap, LAYOUT.cpe.titleSize, semibold);
-  centeredTracking(page, displayNumber || "MODELO", cpeTopY - LAYOUT.cpe.numberGap, LAYOUT.cpe.numberSize, regular, INK, 0.55, CW - 8);
-  text(page, "FECHA", 39, cpeTopY - LAYOUT.cpe.dateLabelGap, LAYOUT.cpe.dateLabelSize, regular, MUTED, 29);
-  text(page, datePe(issueDate), 68, cpeTopY - LAYOUT.cpe.dateValueGap, LAYOUT.cpe.dateValueSize, regular, INK, 52);
-  line(page, cpeTopY - 40, 113, 113, 0.45);
-  text(page, "HORA", 126, cpeTopY - LAYOUT.cpe.dateLabelGap, LAYOUT.cpe.dateLabelSize, regular, MUTED, 26);
-  text(page, timePe(issueTime), 152, cpeTopY - LAYOUT.cpe.dateValueGap, LAYOUT.cpe.dateValueSize, regular, INK, 58);
+  const qrSize = 38;
+  page.drawImage(qrImage, { x: M, y: cpeTopY + 3 - qrSize, width: qrSize, height: qrSize });
+  const headerX = M + qrSize + 6;
+  const headerWidth = W - M - headerX;
+  const headerCenterX = headerX + headerWidth / 2;
+  centered(page, "DATOS DE ENTREGA", cpeTopY - LAYOUT.cpe.titleGap, LAYOUT.cpe.titleSize, semibold, INK, headerWidth, headerCenterX);
+  const numberLabel = displayNumber || "MODELO";
+  const numberTracking = 0.55;
+  const numberTextWidth = headerWidth - (numberLabel.length - 1) * numberTracking;
+  const numberSize = Math.min(LAYOUT.cpe.numberSize, numberTextWidth / regular.widthOfTextAtSize(numberLabel, 1));
+  centeredTracking(page, numberLabel, cpeTopY - LAYOUT.cpe.numberGap, numberSize, regular, INK, numberTracking, headerWidth, headerCenterX);
+  const registeredY = cpeTopY - LAYOUT.cpe.registeredGap;
+  const registeredSize = LAYOUT.cpe.registeredSize;
+  const registeredAt = `REG: ${datePe(issueDate)} · ${timePe(issueTime)}`;
+  centered(page, registeredAt, registeredY, registeredSize, regular, MUTED, headerWidth, headerCenterX);
 
   const deliveryTopY = cpeTopY - LAYOUT.delivery.topGap;
   drawIcon(page, ICONS.place, LAYOUT.delivery.iconX - 5, deliveryTopY - LAYOUT.delivery.iconGap + 10, LAYOUT.delivery.iconSize, ICON_MUTED);
@@ -334,19 +302,45 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
   });
 
   cursorY -= receiverZoneLines.length || receiverAddressLines.length ? LAYOUT.delivery.detailsAfterGap : 0;
+  const paymentY = cursorY - 17;
+  if (isPaymentPending) {
+    const paymentSize = 18.5;
+    const currency = "S/";
+    const currencySize = 11;
+    const labelGap = 8;
+    const currencyGap = 4;
+    const labelWidth = semibold.widthOfTextAtSize(paymentLabel, paymentSize);
+    const currencyWidth = regular.widthOfTextAtSize(currency, currencySize);
+    const amount = money(total);
+    const amountWidth = semibold.widthOfTextAtSize(amount, paymentSize);
+    const prefixWidth = labelWidth + labelGap + currencyWidth + currencyGap;
+    const visibleAmountWidth = Math.min(amountWidth, CW - prefixWidth);
+    const labelX = (W - prefixWidth - visibleAmountWidth) / 2;
+    const currencyX = labelX + labelWidth + labelGap;
+
+    text(page, paymentLabel, labelX, paymentY, paymentSize, semibold, ALERT);
+    text(page, currency, currencyX, paymentY + 2.5, currencySize, regular, ALERT);
+    // Ajusta el ancho de importes largos sin cortar cifras ni cambiar la altura.
+    page.pushOperators(
+      pushGraphicsState(),
+      concatTransformationMatrix(visibleAmountWidth / amountWidth, 0, 0, 1, labelX + prefixWidth, paymentY),
+    );
+    text(page, amount, 0, 0, paymentSize, semibold, ALERT);
+    page.pushOperators(popGraphicsState());
+  } else {
+    centered(page, paymentLabel, paymentY, 16.5, semibold);
+  }
+  const arrivalY = paymentY - 16;
+  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, arrivalY, 8.8, semibold);
+
+  cursorY = arrivalY - 12;
   dotted(page, cursorY + LAYOUT.recipient.separatorYOffset);
-  centered(page, "DESTINATARIO", cursorY - LAYOUT.recipient.labelGap, LAYOUT.recipient.labelSize, semibold, MUTED);
+  centeredContact(page, "DESTINATARIO", receiverPhone, cursorY - LAYOUT.recipient.labelGap, semibold);
   cursorY -= LAYOUT.recipient.nameGap;
   receiverNameLines.forEach((item) => {
     centered(page, item, cursorY, LAYOUT.recipient.nameSize, regular, INK, CW - 16);
     cursorY -= LAYOUT.recipient.nameLineHeight;
   });
-  if (receiverPhone) {
-    cursorY -= LAYOUT.recipient.phoneGap;
-    centered(page, `TEL: ${receiverPhone}`, cursorY, LAYOUT.recipient.phoneSize, semibold, INK, CW - 16);
-    cursorY -= LAYOUT.recipient.phoneLineHeight;
-  }
-
   if (receiverDescription) {
     cursorY -= LAYOUT.recipient.descriptionGap;
     const descriptionLines = wrap(
@@ -370,26 +364,19 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
     cursorY -= descriptionLines.length * LAYOUT.recipient.descriptionLineHeight;
   }
 
-  const qrAvailableHeight = cursorY - LAYOUT.qr.gapAbove - LAYOUT.qr.preferredBottom;
-  const qrSize = Math.max(LAYOUT.qr.minSize, Math.min(LAYOUT.qr.size, qrAvailableHeight));
-  const qrY = Math.max(
-    LAYOUT.qr.minBottom,
-    Math.min(LAYOUT.qr.preferredY, cursorY - LAYOUT.qr.gapAbove - qrSize)
-  );
-  page.drawImage(qrImage, { x: (W - qrSize) / 2, y: qrY, width: qrSize, height: qrSize });
-  centered(page, `REM: ${senderName}`, qrY - 8, 7.5, regular, MUTED, CW - 12);
-  centered(page, `TEL: ${senderPhone || "-"}`, qrY - 18, 9, semibold, INK, CW - 12);
-  if (isPaymentPending) {
-    text(page, paymentLabel, M + 17, qrY - 33.5, 18.5, semibold, ALERT, 116);
-    text(page, "S/", 147, qrY - 30.5, 9.5, semibold, ALERT, 16);
-    text(page, money(total), 164, qrY - 35.5, 24, semibold, ALERT, W - 170);
-  } else {
-    centered(page, paymentLabel, qrY - 33, 16.5, semibold, INK, CW);
-  }
-  centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, qrY - 49, 8.8, semibold, INK, CW);
+  const footerY = cursorY;
+  dotted(page, footerY + 3);
+  centeredContact(page, "REMITENTE", senderPhone || "-", footerY - 8, semibold);
+  const senderNameY = footerY - 22;
+  centered(page, senderName, senderNameY, 9, regular, INK, CW - 12);
+  const lastLineY = registeredByEmail ? senderNameY - 12 : senderNameY;
   if (registeredByEmail) {
-    centered(page, `REGISTRADO POR: ${registeredByEmail}`, qrY - 58, 6.8, regular, MUTED, CW);
+    centered(page, `REGISTRADO POR: ${registeredByEmail}`, lastLineY, 6.8, regular, MUTED, CW);
   }
+
+  const bottom = lastLineY - 12;
+  page.translateContent(0, -bottom);
+  page.setHeight(H - bottom);
 
   return pdfDoc.save();
 };

@@ -81,13 +81,17 @@ export default function useSireCompras() {
       setTokenSire(null);
     }
     try {
-      if (tipo === "archivo") {
-        const response = await sireComprasApi.descargar(urlContexto);
+      if (tipo === "archivo" || tipo === "archivoCrudo") {
+        const response = tipo === "archivo"
+          ? await sireComprasApi.descargar(urlContexto)
+          : await sireComprasApi.descargarArchivoCrudo(payload);
         if (contextoActual.current !== origen) return;
         const url = URL.createObjectURL(response.data);
         const link = document.createElement("a");
         link.href = url;
-        link.download = (datos.propuesta?.nombre_archivo || `compras_${documentoId}_${periodo}.zip`).split(/[\\/]/).pop();
+        link.download = (tipo === "archivo"
+          ? datos.propuesta?.nombre_archivo || `compras_${documentoId}_${periodo}.zip`
+          : `propuesta_sunat_original_${documentoId}_${periodo}.zip`).split(/[\\/]/).pop();
         document.body.appendChild(link); link.click(); link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else if (tipo === "token") {

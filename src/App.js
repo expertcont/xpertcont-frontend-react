@@ -24,6 +24,7 @@ import ReportesList from "./components/ReportesList";
 import AsientoGenericoForm from "./components/AsientoGenericoForm";
 
 import AdminVentaList from "./components/Admin/venta/list/AdminVentaList";
+import AdminGreList from "./components/Admin/gre/AdminGreList";
 import AdminProductoList from "./components/Admin/producto/AdminProductoList";
 import AdminProductoGrupoList from "./components/Admin/producto/AdminProductoGrupoList";
 import AdminProductoForm from "./components/Admin/producto/AdminProductoForm";
@@ -78,8 +79,9 @@ function AppLayout(props) {
   const isBoletosRoute = location.pathname.startsWith("/ad_transportesboletos");
   const isCajaRoute = location.pathname.startsWith("/ad_transportecaja");
   const isVentaRoute = location.pathname.startsWith("/ad_venta/");
+  const isGreComercialRoute = location.pathname.startsWith("/ad_guiasremision/");
   const isPresupuestoRoute = location.pathname.startsWith("/ad_ventapresupuesto/");
-  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isGremRoute || isBoletosRoute || isCajaRoute || isVentaRoute || isPresupuestoRoute;
+  const isPanoramicRoute = isEntregasRoute || isEncomiendaRoute || isGremRoute || isBoletosRoute || isCajaRoute || isVentaRoute || isPresupuestoRoute || isGreComercialRoute;
   const [panoramicMode, setPanoramicMode] = useState(() => (
     typeof window !== "undefined" && (
       window.location.pathname.startsWith("/ad_transporteentregas") ||
@@ -89,12 +91,14 @@ function AppLayout(props) {
       window.location.pathname.startsWith("/ad_transportesboletos") ||
       window.location.pathname.startsWith("/ad_transportecaja") ||
       window.location.pathname.startsWith("/ad_venta/") ||
+      window.location.pathname.startsWith("/ad_guiasremision/") ||
       window.location.pathname.startsWith("/ad_ventapresupuesto/")
     )
   ));
 
   const previousPanoramicRoute = useRef(isPanoramicRoute);
   const claveMenuPanoramico = (pathname) => {
+    if (pathname.startsWith("/ad_guiasremision/")) return "guias-comercial";
     if (pathname.startsWith("/ad_ventapresupuesto/")) return "presupuestos";
     if (pathname.startsWith("/ad_venta/")) return "ventas";
     if (pathname.startsWith("/ad_transporteentregas")) return "entregas";
@@ -257,6 +261,7 @@ function AppLayout(props) {
               <Route path="/ad_usuariogrupo/:id_anfitrion/:id_invitado/:id_invitado_grupo/edit" element={<AdminPuntoVentaUsuarioForm />} />
 
               <Route path="/ad_ventarepdet/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaRepDet />} />
+              <Route path="/ad_guiasremision/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminGreList panoramicMode={panoramicMode} />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id" element={<AdminVentaList panoramicMode={panoramicMode} />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/new" element={<AdminVentaForm />} />
               <Route path="/ad_venta/:id_anfitrion/:id_invitado/:periodo/:documento_id/:comprobante/:comprobante_ref" element={<AdminVentaForm />} />

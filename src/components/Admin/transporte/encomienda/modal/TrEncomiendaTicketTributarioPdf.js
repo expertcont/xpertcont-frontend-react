@@ -14,6 +14,7 @@ const CW = W - (M * 2);
 // TERMINOS Y CONDICIONES, GRACIAS POR CONFIAR, HORA LLEGADA y REGISTRADO POR.
 const TICKET_TRAILING_MARGIN = 10;
 const INK = rgb(0.03, 0.035, 0.045);
+const WHATSAPP_GREEN = rgb(7 / 255, 94 / 255, 84 / 255);
 const MUTED = rgb(0.34, 0.35, 0.37);
 const LINE = rgb(0.7, 0.71, 0.73);
 const LIGHT_LINE = rgb(0.82, 0.83, 0.85);
@@ -182,6 +183,7 @@ const drawIcon = (page, pathData, x, y, size = 12, color = ICON_MUTED) => {
 };
 
 const ICONS = {
+  whatsapp: "M20.52 3.49A10 10 0 0 0 3.9 14.55L2.5 21.5l6.82-1.6A10 10 0 0 0 20.52 3.49zM12 20a8 8 0 0 1-4.07-1.12l-.29-.17-3.05.72.64-3.12-.18-.3A8 8 0 1 1 12 20zm4.44-5.74c-.24-.12-1.43-.71-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.79-.76.95-.14.16-.28.18-.52.06-.24-.12-1.01-.37-1.92-1.18-.71-.63-1.19-1.41-1.33-1.65-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.51.1.46-.07 1.43-.58 1.63-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28z",
   place: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
   package: "M20 8.69V18c0 .72-.38 1.38-1 1.73l-6 3.46c-.62.36-1.38.36-2 0l-6-3.46A2 2 0 0 1 4 18V8.69c0-.72.38-1.38 1-1.73l6-3.46c.62-.36 1.38-.36 2 0l6 3.46c.62.35 1 1.01 1 1.73zM12 5.23 6.74 8.26 12 11.29l5.26-3.03L12 5.23zm-6 4.76V18l5 2.88v-7.86L6 9.99zm12 0-5 3.03v7.86L18 18V9.99z",
 };
@@ -281,6 +283,7 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   const isPaymentPending = paymentNormalized.includes("PORCOBRAR") || paymentNormalized.includes("PORPAGAR");
   const paymentLabel = isPaymentPending ? "POR PAGAR" : "CANCELADO";
   const arrivalApprox = timePe(encomienda.llegada_aprox || venta.llegada_aprox || jsonTicket.llegada_aprox);
+  const destinationPhone = clean(encomienda.punto_venta_dest_telefono);
   const registeredBy = clean(
     encomienda.registrado_por_correo ||
     encomienda.ctrl_crea_us ||
@@ -461,18 +464,44 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
   // bloque, asi que el valor sube o baja con el contenido real y el recorte
   // nunca se lleva informacion.
   const horaLlegadaY = summaryY(termsCursor - 2);
-  const ultimaLineaY = summaryY(termsCursor - 12);
+  const ultimaLineaY = horaLlegadaY - (destinationPhone ? 30 : 10);
 
   centered(page, `HORA LLEGADA: ${arrivalApprox || "-"}`, horaLlegadaY, 8.8, semibold, INK, CW);
+  if (destinationPhone) {
+    const iconSize = 15;
+    const gap = 4;
+    const agencyMinWidth = 82;
+    const phoneMaxWidth = CW - agencyMinWidth - iconSize - (2 * gap);
+    const phoneSize = Math.min(15, phoneMaxWidth / bold.widthOfTextAtSize(destinationPhone, 1));
+    const phoneWidth = bold.widthOfTextAtSize(destinationPhone, phoneSize);
+    const agencySize = 10;
+    const contactWidth = iconSize + (2 * gap) + phoneWidth;
+    const agency = fit(`AGENCIA ${clean(destination).toUpperCase()}`, semibold, agencySize, CW - contactWidth);
+    const agencyWidth = semibold.widthOfTextAtSize(agency, agencySize);
+    const agencyX = (W - agencyWidth - contactWidth) / 2;
+    const iconX = agencyX + agencyWidth + gap;
+    const phoneX = iconX + iconSize + gap;
+    const y = horaLlegadaY - 17;
+    text(page, agency, agencyX, y, agencySize, semibold);
+    drawIcon(page, ICONS.whatsapp, iconX, y + 13, iconSize, WHATSAPP_GREEN);
+    text(page, destinationPhone, phoneX, y, phoneSize, bold, WHATSAPP_GREEN);
+  }
   centered(page, `REGISTRADO POR: ${registeredBy || "-"}`, ultimaLineaY, 6.8, regular, MUTED, CW);
+
+  const extraHeight = destinationPhone ? Math.max(0, TICKET_TRAILING_MARGIN + 2 - ultimaLineaY) : 0;
+  if (extraHeight > 0) {
+    page.setHeight(H + extraHeight);
+    page.translateContent(0, extraHeight);
+  }
 
   // Se recorta solo la cola de papel en blanco (mas el margen de aire) y se
   // devuelve una pagina mas corta. El modal apila este ticket arriba del del
   // paquete sin recortarlo.
-  const tintaInferior = ultimaLineaY - 2;
+  const pageHeight = page.getHeight();
+  const tintaInferior = ultimaLineaY + extraHeight - 2;
   const papelSinUso = Math.max(0, tintaInferior - TICKET_TRAILING_MARGIN);
 
-  if (papelSinUso < H - 120) {
+  if (papelSinUso < pageHeight - 120) {
     // OJO: el recorte se hace dentro del MISMO documento. Con un PDFDocument
     // nuevo, pdf-lib deja la pagina embebida apuntando a las fuentes del
     // documento de origen (/BarlowCondensed) y esas referencias no existen en el
@@ -481,10 +510,10 @@ const generarPdfTicketEncomiendaTributario = async (jsonTicket) => {
       left: 0,
       bottom: papelSinUso,
       right: W,
-      top: H,
+      top: pageHeight,
     });
-    const recortada = pdfDoc.addPage([W, H - papelSinUso]);
-    recortada.drawPage(embed, { x: 0, y: 0, width: W, height: H - papelSinUso });
+    const recortada = pdfDoc.addPage([W, pageHeight - papelSinUso]);
+    recortada.drawPage(embed, { x: 0, y: 0, width: W, height: pageHeight - papelSinUso });
     // La pagina original queda en la posicion 0, que es la que lee el modal al
     // unir los dos tickets, asi que se elimina.
     pdfDoc.removePage(0);

@@ -26,5 +26,6 @@ export const sireComprasApi = {
   generarTokenPortal: payload => axios.post(endpoint + "/token-portal", payload, { timeout: 120000 }),
   descargarXml: payload => axios.post(endpoint + "/xml", payload, { responseType: "blob" }),
   descargarXmlPortal: payload => axios.post(endpoint + "/xml-portal", payload, { responseType: "blob" }),
+  descargarArchivoCrudo: payload => axios.post(endpoint + "/archivo-crudo", payload, { responseType: "blob" }),
   descargar: contexto => axios.get(endpoint + "/archivo/" + contexto, { responseType: "blob" }),
 };

@@ -20,7 +20,7 @@ function ContadorVigencia({ vigencia }) {
   return <Typography sx={{ color: faltan > 300 ? "success.main" : "warning.main", fontSize: 12, fontWeight: 900 }}>vigencia {mm}:{ss}</Typography>;
 }
 
-export default function SireComprasTicket({ datos, valido, ocupado, accion, token, tokenSire, onGenerar, onConsultar, onDescargar, onToken, onTokenSire, onTokenSireSecundario, onTokenLegacy }) {
+export default function SireComprasTicket({ datos, valido, ocupado, accion, token, tokenSire, onGenerar, onConsultar, onDescargar, onDescargarCrudo, onToken, onTokenSire, onTokenSireSecundario, onTokenLegacy }) {
   const cardSx = { border: `1px solid ${palette.borderSoft}`, borderRadius: 1, p: 1, bgcolor: palette.surfaceAlt, minWidth: 0 };
   const labelSx = { color: palette.muted, fontSize: 11, fontWeight: 900, textTransform: "uppercase" };
   return (
@@ -36,7 +36,8 @@ export default function SireComprasTicket({ datos, valido, ocupado, accion, toke
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
         <Button variant="contained" disabled={!valido || ocupado} onClick={onGenerar} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>{datos.ticket ? "Generar nuevo ticket" : "Generar ticket"}</Button>
         <Button variant="outlined" disabled={!datos.ticket || ocupado} onClick={onConsultar} startIcon={accion === "consultar" ? <CircularProgress size={15} color="inherit" /> : null} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Consultar estado</Button>
-        <Button variant="outlined" disabled={!datos.propuesta || ocupado} onClick={onDescargar} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Descargar ZIP</Button>
+        <Button variant="outlined" disabled={!datos.ticket || ocupado} onClick={datos.propuesta ? onDescargar : onDescargarCrudo} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Descargar ZIP</Button>
+        <Button variant="outlined" disabled={!datos.ticket || ocupado} onClick={onDescargarCrudo} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Descargar original SUNAT</Button>
         {/* Pruebas SIRE nuevas e independientes; ninguna sustituye la pareja elegida. */}
         <Button variant="outlined" disabled={!valido || ocupado} onClick={onTokenSire} startIcon={accion === "tokenSire" ? <CircularProgress size={15} color="inherit" /> : null} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Token SIRE primario</Button>
         <Button variant="outlined" disabled={!valido || ocupado} onClick={onTokenSireSecundario} startIcon={accion === "tokenSireSecundario" ? <CircularProgress size={15} color="inherit" /> : null} sx={{ borderRadius: 1, textTransform: "none", fontWeight: 800 }}>Token SIRE secundario</Button>
