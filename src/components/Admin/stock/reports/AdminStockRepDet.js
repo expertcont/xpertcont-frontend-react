@@ -1,190 +1,14 @@
-import React from 'react';
-import { useEffect, useState, useMemo, useCallback } from "react"
-import { Box,Modal, Button,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography,InputBase} from "@mui/material";
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate,useParams } from "react-router-dom";
-import { Search } from 'lucide-react';
-//import createPdfTicket from './AdminVentaPdf';
-import DaySelector from "../../AdminDias";
-
-import Datatable from 'react-data-table-component';
-import Checkbox from '@mui/material/Checkbox';
-import ArrowDownward from '@mui/icons-material/ArrowDownward';
 import '../../../../App.css';
 import 'styled-components';
-//import axios from 'axios';
-
-//import { utils, writeFile } from 'xlsx';
-import Tooltip from '@mui/material/Tooltip';
 import axios from 'axios';
-
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelGeneral from '../../../BotonExcelGeneral';
-
-//import { AdminVentasDetColumnas } from './AdminColumnas';
 import { getColumnasDet } from '../../AdminColumnas';
-import { ensureAdminStockTableTheme } from '../common/adminStockTableTheme';
-import palette from '../../../../theme/palette';
-
-const contentRadius = palette.radius.content;
-
-const panelSx = {
-  backgroundColor: 'transparent',
-  border: '0',
-  borderRadius: contentRadius,
-  boxShadow: 'none',
-  p: 0,
-};
-
-const listContentSx = {
-  width: '100%',
-  maxWidth: '100%',
-  boxSizing: 'border-box',
-  minWidth: 0,
-  ml: 0,
-  mr: 0,
-  p: 0,
-  display: 'grid',
-  gap: 1.15,
-};
-
-const toolbarSurfaceSx = {
-  backgroundColor: '#1c252c',
-  borderRadius: contentRadius,
-  px: { xs: 1, md: 1.5 },
-  py: { xs: 0.9, md: 1.25 },
-};
-
-const selectSx = {
-  width: '100%',
-  height: 42,
-  color: palette.text,
-  backgroundColor: palette.chip,
-  border: `1px solid ${palette.border}`,
-  borderRadius: contentRadius,
-  fontSize: '13px',
-  '.MuiSelect-select': {
-    py: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-  },
-  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
-  '& .MuiSelect-icon': { color: palette.muted },
-};
-
-const selectMenuProps = {
-  PaperProps: {
-    sx: {
-      backgroundColor: palette.surface,
-      color: palette.text,
-      border: `1px solid ${palette.border}`,
-      '& .MuiMenuItem-root': { fontSize: '13px' },
-    },
-  },
-};
-
-const searchSx = {
-  flex: '1 1 280px',
-  minWidth: { xs: '100%', sm: 280 },
-  height: 42,
-  px: 1.15,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 0.85,
-  color: palette.text,
-  backgroundColor: palette.bg,
-  border: '1px solid rgba(139,154,165,0.14)',
-  borderRadius: contentRadius,
-  '&:focus-within': {
-    borderColor: 'rgba(139,154,165,0.32)',
-  },
-};
-
-const inputSx = {
-  color: palette.text,
-  fontSize: '13px',
-  width: '100%',
-  '& input': {
-    color: palette.text,
-    fontSize: '13px',
-  },
-  '& input::placeholder': {
-    color: palette.muted,
-    opacity: 1,
-  },
-};
-
-const actionButtonSx = {
-  height: 42,
-  borderRadius: contentRadius,
-  boxShadow: 'none',
-  fontSize: '12px',
-  fontWeight: 800,
-  textTransform: 'none',
-  backgroundColor: 'rgba(42,161,152,0.14)',
-  border: '1px solid rgba(42,161,152,0.34)',
-  color: palette.text,
-  px: 1.5,
-  whiteSpace: 'nowrap',
-  '&:hover': {
-    backgroundColor: palette.accent,
-    color: palette.surface,
-    boxShadow: 'none',
-  },
-};
-
-const listCardBg = '#1c252c';
-
-const dataTableStyles = {
-  table: { style: { backgroundColor: listCardBg } },
-  tableWrapper: { style: { backgroundColor: listCardBg } },
-  responsiveWrapper: { style: { backgroundColor: listCardBg } },
-  headRow: {
-    style: {
-      backgroundColor: listCardBg,
-      color: palette.muted,
-      borderBottom: `1px solid ${palette.borderSoft}`,
-      minHeight: '38px',
-    },
-  },
-  headCells: {
-    style: {
-      color: palette.muted,
-      fontSize: '11px',
-      fontWeight: 800,
-      textTransform: 'uppercase',
-    },
-  },
-  rows: {
-    style: {
-      backgroundColor: listCardBg,
-      color: palette.text,
-      borderBottom: `1px solid ${palette.borderSoft}`,
-      minHeight: '42px',
-    },
-    highlightOnHoverStyle: {
-      backgroundColor: palette.surfaceAlt,
-      color: palette.text,
-      borderBottomColor: palette.border,
-    },
-  },
-  cells: {
-    style: {
-      color: palette.text,
-      fontSize: '12.5px',
-      minWidth: 0,
-    },
-  },
-  pagination: {
-    style: {
-      backgroundColor: listCardBg,
-      color: palette.muted,
-      borderTop: `1px solid ${palette.borderSoft}`,
-    },
-  },
-};
-
+import { Layers } from 'lucide-react';
+import AppButton from '../../../ui/AppButton';
+import AdminStockReportLayout from '../common/AdminStockReportLayout';
 
 export default function AdminStockRepDet() {
   //Control de useffect en retroceso de formularios
@@ -193,7 +17,6 @@ export default function AdminStockRepDet() {
   //Seccion Dialog
   const [isDialogOpen, setDialogOpen] = useState(false);
 
-  ensureAdminStockTableTheme();
 
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
@@ -203,11 +26,8 @@ export default function AdminStockRepDet() {
   //experimento
   const [updateTrigger, setUpdateTrigger] = useState({});
 
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [toggleCleared, setToggleCleared] = useState(false);
     //const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
-  const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
   const [valorVista, setValorVista] = useState("ventas");
   const {user, isAuthenticated } = useAuth0();
@@ -240,6 +60,7 @@ export default function AdminStockRepDet() {
       
       //filtramos su nombre para historial
       const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
+      setContabilidadNombre(opcionSeleccionada);
       sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
     }
     
@@ -257,9 +78,6 @@ export default function AdminStockRepDet() {
     id_invitado: '',
   });  
 
-  const handleRowSelected = useCallback(state => {
-        setSelectedRows(state.selectedRows);
-    }, []);
 
   
   /*const procesaPDF = async (comprobante, nElem, tamaño) => {
@@ -319,7 +137,6 @@ export default function AdminStockRepDet() {
     
     const data = await response.json();
     setRegistrosdet(data);
-    setTabladet(data); //Copia para tratamiento de filtrado
   }
   //////////////////////////////////////
   
@@ -328,28 +145,12 @@ export default function AdminStockRepDet() {
   //Para recibir parametros desde afuera
   const params = useParams();
 
-  const actualizaValorFiltro = e => {
-    setValorBusqueda(e.target.value);
-    filtrar(e.target.value);
-  }
-  const filtrar = (strBusca) => {
-    var resultadosBusqueda = tabladet.filter((elemento) => {
-      //verifica nulls para evitar error de busqueda
-      const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
-      const documentoId = elemento.r_documento_id?.toString().toLowerCase() || '';
-      const comprobante = elemento.comprobante?.toString().toLowerCase() || '';
-      const descripcion = elemento.descripcion?.toString().toLowerCase() || '';
-
-      if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase()) || descripcion.includes(strBusca.toLowerCase())) {
-        return elemento;
-      }
-      return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
-    });
-  
-    resultadosBusqueda = resultadosBusqueda.filter(Boolean); // Filtra los elementos nulos
-  
-    setRegistrosdet(resultadosBusqueda);
-  };
+  const registrosVisibles = useMemo(() => {
+    const termino = valorBusqueda.trim().toLowerCase();
+    if (!termino) return registrosdet;
+    return registrosdet.filter((row) => [row.r_razon_social, row.r_documento_id, row.comprobante, row.descripcion, row.id_producto]
+      .some((value) => String(value ?? '').toLowerCase().includes(termino)));
+  }, [registrosdet, valorBusqueda]);
   
   
   //////////////////////////////////////////////////////////
@@ -451,7 +252,7 @@ export default function AdminStockRepDet() {
     setDatosCarga(prevState => ({ ...prevState, id_invitado: params.id_invitado }));
     
     //fetchTotalVentas();
-  },[valorVista, diaSel]) //Solo cuando este completo estado
+  },[valorVista, diaSel, periodo_trabajo, contabilidad_trabajo, updateTrigger]) //Solo cuando este completo estado
 
 
   //////////////////////////////////////////////////////////
@@ -524,162 +325,41 @@ const handleClickTotal = (periodo,id_anfitrion,documento_id,dia) => {
 
 };
 
- return (
-  <Box sx={listContentSx}>
-    <Box
-      sx={{
-        ...panelSx,
-        ...toolbarSurfaceSx,
-        display: 'flex',
-        alignItems: { xs: 'stretch', md: 'center' },
-        justifyContent: 'space-between',
-        gap: 1,
-        flexDirection: { xs: 'column', md: 'row' },
+  return (
+    <AdminStockReportLayout
+      titulo="Detalle de movimientos"
+      contadorTexto={`líneas visibles · ${contabilidad_nombre || contabilidad_trabajo}`}
+      buscarTexto="Comprobante, producto o RUC"
+      busqueda={valorBusqueda}
+      onBuscar={(event) => setValorBusqueda(event.target.value)}
+      columnas={columnas}
+      registros={registrosVisibles}
+      filtros={{
+        periodo: periodo_trabajo,
+        periodos: periodo_select,
+        empresa: contabilidad_trabajo,
+        empresas: contabilidad_select,
+        onChange: handleChange,
+        onDia: handleDayFilter,
       }}
-    >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
-              Detalle de movimientos
-            </Typography>
-            <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
-              {`${registrosdet.length} registros visibles`}
-              {contabilidad_nombre ? ` - ${contabilidad_nombre}` : ''}
-              {` - Dia ${diaSel === '*' ? 'Todos' : diaSel}`}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 180px) minmax(240px, 1fr)', md: '150px minmax(280px, 360px)' },
-              gap: 1,
-              alignItems: 'center',
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-              <Box sx={{ width: '100%' }}>
-                <Select
-                  labelId="periodo"
-                  size='small'
-                  value={periodo_trabajo}
-                  name="periodo"
-                  sx={{ ...selectSx, color: palette.accent }}
-                  label="Periodo Cont"
-                  onChange={handleChange}
-                  MenuProps={selectMenuProps}
-                >
-                  <MenuItem value="default">SELECCIONA </MenuItem>
-                  {periodo_select.map(elemento => (
-                    <MenuItem key={elemento.periodo} value={elemento.periodo}>
-                      {elemento.periodo}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-
-              <Box>
-                <Select
-                  labelId="contabilidad_select"
-                  size='small'
-                  value={contabilidad_trabajo}
-                  name="contabilidad"
-                  sx={selectSx}
-                  label="Contabilidad"
-                  onChange={handleChange}
-                  MenuProps={selectMenuProps}
-                >
-                  <MenuItem value="default">SELECCIONA </MenuItem>
-                  {contabilidad_select.map(elemento => (
-                    <MenuItem key={elemento.documento_id} value={elemento.documento_id}>
-                      {elemento.razon_social}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-          </Box>
-    </Box>
-
-        <Box sx={{ ...panelSx, overflowX: 'auto' }}>
-          <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
-        </Box>
-
-        <Box
-          sx={{
-            ...panelSx,
-            ...toolbarSurfaceSx,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Box sx={searchSx}>
-            <Search size={16} color={palette.muted} />
-            <InputBase
-              name="busqueda"
-              placeholder="Filtrar: RUC, razon social, comprobante o descripcion"
-              onChange={actualizaValorFiltro}
-              sx={inputSx}
-            />
-          </Box>
-
-          <Button
-            variant="contained"
-            color="primary"
+      acciones={(
+        <>
+          <AppButton
+            icon={<Layers size={16} />}
             onClick={() => handleClickTotal(periodo_trabajo, params.id_anfitrion, contabilidad_trabajo, diaSel)}
-            sx={actionButtonSx}
+            sx={{ height: 38 }}
           >
             Agrupar detalle
-          </Button>
-
-          <Box sx={{ height: 42, display: 'flex', alignItems: 'center' }}>
-            <Tooltip title='EXPORTAR XLS'>
-              <BotonExcelGeneral
-                datos={registrosdet}
-                nombreArchivo="Detalle_Stocks"
-                tituloReporte={`Detalle de Stocks:  ${contabilidad_trabajo} ${contabilidad_nombre} ${periodo_trabajo}`}
-                columnasNumericas={['ingreso','egreso','precio_neto','porc_igv']}
-                columnasExcluidas={['cod','serie','numero']}
-              />
-            </Tooltip>
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            overflow: 'hidden',
-            borderRadius: contentRadius,
-            border: 0,
-            backgroundColor: listCardBg,
-            boxShadow: 'none',
-            px: { xs: 0.25, md: 0.75 },
-            py: { xs: 0.25, md: 0.75 },
-            minWidth: 0,
-            maxWidth: '100%',
-            '& .rdt_TableWrapper': {
-              maxWidth: '100%',
-              overflowX: 'auto',
-            },
-            '& .rdt_Table': {
-              minWidth: { xs: 960, md: '100%' },
-            },
-          }}
-        >
-          <Datatable
-            theme="solarized"
-            columns={columnas}
-            data={registrosdet}
-            customStyles={dataTableStyles}
-            onSelectedRowsChange={handleRowSelected}
-            clearSelectedRows={toggleCleared}
-            pagination
-            paginationPerPage={15}
-            paginationRowsPerPageOptions={[15, 50, 100]}
-            selectableRowsComponent={Checkbox}
-            sortIcon={<ArrowDownward />}
-            dense={true}
-            highlightOnHover
+          </AppButton>
+          <BotonExcelGeneral
+            datos={registrosVisibles}
+            nombreArchivo="Detalle_Stocks"
+            tituloReporte={`Detalle de movimientos · ${contabilidad_trabajo} ${periodo_trabajo}`}
+            columnasNumericas={['ingreso', 'egreso', 'precio_neto', 'porc_igv']}
+            columnasExcluidas={['cod', 'serie', 'numero']}
           />
-        </Box>
-  </Box>
+        </>
+      )}
+    />
   );
 }

@@ -1,10 +1,9 @@
 import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from "react"
-import { Card,CardContent,Box,Modal, Button,useMediaQuery,Select, MenuItem,Dialog,DialogContent,DialogTitle,Typography,InputBase} from "@mui/material";
+import { Box, Button, useMediaQuery, Dialog, DialogTitle, IconButton } from "@mui/material";
 import { useNavigate,useParams } from "react-router-dom";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AutoDeleteIcon from '@mui/icons-material/AutoDelete';
-import { blueGrey } from '@mui/material/colors';
 //import createPdfTicket from './AdminVentaPdf';
 import DaySelector from "../../AdminDias";
 import { useDialog } from "../../AdminConfirmDialogProvider";
@@ -34,160 +33,96 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react'; //new para cargar permisos luego de verificar registro en bd
 import BotonExcelVentas from '../../../BotonExcelVentas';
 import AppButton from '../../../ui/AppButton';
-import { Plus, Search, Trash2 } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Ban, FileSpreadsheet, Layers, Package, Trash2 } from 'lucide-react';
 
 import { AdminStocksColumnas } from '../../AdminColumnas';
-import { ensureAdminStockTableTheme } from '../common/adminStockTableTheme';
+import TrHeader from '../../transporte/common/components/TrHeader';
+import TrFiltros from '../../transporte/common/components/TrFiltros';
+import { ensureAdminVentaTableTheme } from '../../venta/common/adminVentaTableTheme';
+import { crearColumnaDetalleVenta, DocumentoListadoCell, ventaDesktopTableStyles } from '../../venta/list/AdminVentaTableColumns';
+import { ResumenCard } from '../../venta/list/AdminVentaListToolbar';
+import AdminStockProductosDialog from './AdminStockProductosDialog';
 import palette from '../../../../theme/palette';
 
-const contentRadius = palette.radius.content;
+const filtrosMovimiento = [
+  { value: '', label: 'Todos', icon: Layers },
+  { value: 'entrada', label: 'Entradas', icon: ArrowDownToLine, color: palette.success, soft: palette.successSoft },
+  { value: 'salida', label: 'Salidas', icon: ArrowUpFromLine, color: palette.warning, soft: palette.warningSoft },
+  { value: 'traslado', label: 'Traslados', icon: ArrowLeftRight },
+  { value: 'anulado', label: 'Anulados', icon: Ban, color: palette.danger, soft: palette.dangerSoft },
+];
 
-const panelSx = {
-  backgroundColor: 'transparent',
-  border: '0',
-  borderRadius: contentRadius,
-  p: 0,
+function categoriaMovimiento(movimiento) {
+  return movimiento.estado === 'NULO' ? 'anulado' : movimiento.tipo_movimiento;
+}
+
+function TarjetasFiltroMovimiento({ value, counts, onSelect }) {
+  return (
+    <Box role="group" aria-label="Filtrar movimientos" sx={{
+      display: 'grid',
+      gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(5, minmax(0, 1fr))' },
+      gap: 0.65,
+      mt: 1.15,
+    }}>
+      {filtrosMovimiento.map((option) => (
+        <ResumenCard
+          key={option.value}
+          label={option.label}
+          value={counts.get(option.value) ?? 0}
+          icon={option.icon}
+          color={option.color ?? palette.accent}
+          soft={option.soft ?? palette.accentSoft}
+          filter
+          active={value === option.value}
+          onClick={() => onSelect(option.value)}
+        />
+      ))}
+    </Box>
+  );
+}
+
+const rowActionSx = {
+  width: 38,
+  height: 38,
+  flexShrink: 0,
+  borderRadius: palette.radius.control,
+  border: `1px solid ${palette.borderSoft}`,
+  backgroundColor: palette.surfaceAlt,
+  color: palette.muted,
+  transition: 'background-color 140ms ease, border-color 140ms ease, transform 140ms ease',
+  '& .MuiSvgIcon-root': { fontSize: 22 },
+  '&:hover': {
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accent,
+    color: palette.accent,
+    transform: 'scale(1.08)',
+  },
+  '&:active': { transform: 'scale(0.92)' },
 };
 
-const listContentSx = {
-  width: '100%',
-  maxWidth: '100%',
-  boxSizing: 'border-box',
-  minWidth: 0,
-  ml: 0,
-  mr: 0,
-  p: 0,
-  display: 'grid',
-  gap: 1.15,
-};
-
-const toolbarSurfaceSx = {
-  backgroundColor: '#1c252c',
-  borderRadius: contentRadius,
-  px: { xs: 1, md: 1.5 },
-  py: { xs: 0.9, md: 1.25 },
-};
-
-const selectSx = {
-  width: '100%',
+const exportButtonSx = {
+  width: 42,
   height: 42,
-  color: palette.text,
-  backgroundColor: palette.chip,
+  flexShrink: 0,
+  borderRadius: palette.radius.control,
   border: `1px solid ${palette.border}`,
-  borderRadius: contentRadius,
-  fontSize: '13px',
-  '.MuiSelect-select': {
-    py: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-  },
-  '& .MuiOutlinedInput-notchedOutline': { border: 0 },
-  '& .MuiSelect-icon': { color: palette.muted },
-};
-
-const selectMenuProps = {
-  PaperProps: {
-    sx: {
-      backgroundColor: palette.surface,
-      color: palette.text,
-      border: `1px solid ${palette.border}`,
-      '& .MuiMenuItem-root': { fontSize: '13px' },
-    },
-  },
-};
-
-const searchSx = {
-  flex: '1 1 280px',
-  minWidth: { xs: '100%', sm: 280 },
-  height: 42,
-  px: 1.15,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 0.85,
-  color: palette.text,
-  backgroundColor: palette.bg,
-  border: '1px solid rgba(139,154,165,0.14)',
-  borderRadius: contentRadius,
-  '&:focus-within': {
-    borderColor: 'rgba(139,154,165,0.32)',
-  },
-};
-
-const inputSx = {
-  color: palette.text,
-  fontSize: '13px',
-  width: '100%',
-  '& input': {
-    color: palette.text,
-    fontSize: '13px',
-  },
-  '& input::placeholder': {
-    color: palette.muted,
-    opacity: 1,
-  },
-};
-
-const listCardBg = '#1c252c';
-
-const dataTableStyles = {
-  table: { style: { backgroundColor: listCardBg } },
-  tableWrapper: { style: { backgroundColor: listCardBg } },
-  responsiveWrapper: { style: { backgroundColor: listCardBg } },
-  headRow: {
-    style: {
-      backgroundColor: listCardBg,
-      color: palette.muted,
-      borderBottom: `1px solid ${palette.borderSoft}`,
-      minHeight: '38px',
-    },
-  },
-  headCells: {
-    style: {
-      color: palette.muted,
-      fontSize: '11px',
-      fontWeight: 800,
-      textTransform: 'uppercase',
-    },
-  },
-  rows: {
-    style: {
-      backgroundColor: listCardBg,
-      color: palette.text,
-      borderBottom: `1px solid ${palette.borderSoft}`,
-      minHeight: '42px',
-    },
-    highlightOnHoverStyle: {
-      backgroundColor: palette.surfaceAlt,
-      color: palette.text,
-      borderBottomColor: palette.border,
-    },
-  },
-  cells: {
-    style: {
-      color: palette.text,
-      fontSize: '12.5px',
-      minWidth: 0,
-    },
-  },
-  pagination: {
-    style: {
-      backgroundColor: listCardBg,
-      color: palette.muted,
-      borderTop: `1px solid ${palette.borderSoft}`,
-    },
+  backgroundColor: palette.chip,
+  color: palette.success,
+  '&:hover': {
+    backgroundColor: palette.successSoft,
+    borderColor: palette.success,
+    color: palette.success,
   },
 };
 
 export default function AdminStockList() {
+  ensureAdminVentaTableTheme();
+
   //Control de useffect en retroceso de formularios
   //verificamos si es pantalla pequeña y arreglamos el grid de fechas
   const isSmallScreen = useMediaQuery('(max-width: 600px)');
   const { confirmDialog } = useDialog(); //unico dialogo
   const [fecha_clon, setFechaClon] = useState("");
-
-  ensureAdminStockTableTheme();
 
   //Seccion carga de archivos
   ////////////////////////////////////////////////////////////////////////////
@@ -201,9 +136,9 @@ export default function AdminStockList() {
   const [toggleCleared, setToggleCleared] = useState(false);
     //const [data, setData] = useState(tableDataItems);
   const [registrosdet,setRegistrosdet] = useState([]);
-  const [tabladet,setTabladet] = useState([]);  //Copia de los registros: Para tratamiento de filtrado
   const [navegadorMovil, setNavegadorMovil] = useState(false);
   const [valorBusqueda, setValorBusqueda] = useState(""); //txt: rico filtrado
+  const [filtroMovimiento, setFiltroMovimiento] = useState('');
   const [valorVista, setValorVista] = useState("ventas");
   const [id_libro, setValorLibro] = useState("014");
   const [permisosComando, setPermisosComando] = useState([]); //MenuComandos
@@ -222,35 +157,24 @@ export default function AdminStockList() {
   const [datosPopUp,setDatosPopUp] = useState([]);
   let [diaSel, setDiaSel] = useState("*");
 
-  const handleChange = e => {
-    //Para todos los demas casos ;)
-    if (e.target.name==="periodo"){
-      console.log('cambiando en periodo');
-      setPeriodoTrabajo(e.target.value);
-      //En cada cambio, actualizar ultimo periodo seleccionado 
-      sessionStorage.setItem('periodo_trabajo', e.target.value);
-      //console.log('handleChange periodo_trabajo', e.target.value);
-    }
-    if (e.target.name==="contabilidad"){
-      console.log('cambiando en contabilidad');
-      setContabilidadTrabajo(e.target.value);
-      //En cada cambio, actualizar ultima contabilidad seleccionada
-      sessionStorage.setItem('contabilidad_trabajo', e.target.value);
-      
-      //filtramos su nombre para historial
-      const opcionSeleccionada = contabilidad_select.find(opcion => opcion.documento_id === e.target.value).razon_social;
-      sessionStorage.setItem('contabilidad_nombre', opcionSeleccionada);
+  const handlePeriodoSelect = (periodo) => {
+    if (!periodo_select.some((item) => item.periodo === periodo)) return;
+    setPeriodoTrabajo(periodo);
+    sessionStorage.setItem('periodo_trabajo', periodo);
+    setUpdateTrigger(Math.random());
+  };
 
-      //Ojo olvidamos el periodo_trabajo, no olvidar
-      navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${e.target.value}`);
-    }
-    if (e.target.name==="fecha_clon"){
-      setFechaClon(e.target.value);
-    }
-    
-    setUpdateTrigger(Math.random());//experimento para actualizar el dom
-  }
-  
+  const handleContabilidadSelect = (documento) => {
+    const empresa = contabilidad_select.find((item) => item.documento_id === documento);
+    if (!empresa) return;
+    setContabilidadTrabajo(documento);
+    setContabilidadNombre(empresa.razon_social);
+    sessionStorage.setItem('contabilidad_trabajo', documento);
+    sessionStorage.setItem('contabilidad_nombre', empresa.razon_social);
+    navigate(`/ad_stock/${params.id_anfitrion}/${params.id_invitado}/${documento}`);
+    setUpdateTrigger(Math.random());
+  };
+
   // Agrega íconos al inicio de cada columna
   //let columnasComunes;
   //Permisos Nivel 01 - Menus (toggleButton)
@@ -496,7 +420,6 @@ export default function AdminStockList() {
     
     const data = await response.json();
     setRegistrosdet(data);
-    setTabladet(data); //Copia para tratamiento de filtrado
   }
   //////////////////////////////////////
   
@@ -505,10 +428,6 @@ export default function AdminStockList() {
   //Para recibir parametros desde afuera
   const params = useParams();
 
-  const actualizaValorFiltro = e => {
-    setValorBusqueda(e.target.value);
-    filtrar(e.target.value);
-  }
   const actualizaValorVista = (e) => {
     setValorVista(e.target.value);
     let idLibro;    
@@ -533,24 +452,27 @@ export default function AdminStockList() {
     //Lo dejaremos terminar el evento de cambio o change
     setUpdateTrigger(Math.random());//experimento para actualizar el dom
   }
-  const filtrar = (strBusca) => {
-    var resultadosBusqueda = tabladet.filter((elemento) => {
-      //verifica nulls para evitar error de busqueda
-      const razonSocial = elemento.r_razon_social?.toString().toLowerCase() || '';
-      const documentoId = elemento.r_documento_id?.toString().toLowerCase() || '';
-      const comprobante = elemento.comprobante?.toString().toLowerCase() || '';
-  
-      if (razonSocial.includes(strBusca.toLowerCase()) || documentoId.includes(strBusca.toLowerCase()) || comprobante.includes(strBusca.toLowerCase())) {
-        return elemento;
-      }
-      return null; // Agrega esta línea para manejar el caso en que no haya coincidencia
-    });
-  
-    resultadosBusqueda = resultadosBusqueda.filter(Boolean); // Filtra los elementos nulos
-  
-    setRegistrosdet(resultadosBusqueda);
-  };
-  
+  const movimientosBuscados = useMemo(() => {
+    const busqueda = valorBusqueda.trim().toLowerCase();
+    return registrosdet.filter((movimiento) =>
+      [movimiento.r_razon_social, movimiento.r_documento_id, movimiento.comprobante]
+        .some((valor) => String(valor ?? '').toLowerCase().includes(busqueda))
+    );
+  }, [registrosdet, valorBusqueda]);
+
+  const conteosFiltros = useMemo(() => {
+    const conteos = new Map([['', movimientosBuscados.length]]);
+    for (const movimiento of movimientosBuscados) {
+      const categoria = categoriaMovimiento(movimiento);
+      if (categoria) conteos.set(categoria, (conteos.get(categoria) ?? 0) + 1);
+    }
+    return conteos;
+  }, [movimientosBuscados]);
+
+  const movimientosVisibles = useMemo(() => filtroMovimiento
+    ? movimientosBuscados.filter((movimiento) => categoriaMovimiento(movimiento) === filtroMovimiento)
+    : movimientosBuscados, [movimientosBuscados, filtroMovimiento]);
+
   const cargaPermisosMenuComando = async(idMenu)=>{
     if (params.id_anfitrion === params.id_invitado){
       setPVenta0101(true); //nuevo
@@ -601,85 +523,82 @@ export default function AdminStockList() {
     }
   }
 
-  let columnasComunes = [
+  const accionesMovimiento = [
     {
-      name: '',
-      width: isSmallScreen ?  '40px' : '30px',
-      cell: (row) => (
-          <DriveFileRenameOutlineIcon
-            onClick={() => handleUpdate(row.comprobante,false)}
-            style={{
-              cursor: 'pointer',
-              color: 'skyblue',
-              transition: 'color 0.3s ease',
-            }}
-          />
-      ),
-      allowOverflow: true,
-      button: true,
+      label: 'Eliminar movimiento',
+      icon: DeleteIcon,
+      onClick: (row) => handleDelete(row.comprobante),
     },
     {
-      name: '',
-      width: isSmallScreen ?  '40px' : '30px',
-      cell: (row) => (
-          <DeleteIcon
-            onClick={() => handleDelete(row.comprobante)}
-            style={{
-              cursor: 'pointer',
-              color: 'orange',
-              transition: 'color 0.3s ease',
-            }}
-          />
-      ),
-      allowOverflow: true,
-      button: true,
+      label: 'Anular movimiento',
+      icon: AutoDeleteIcon,
+      onClick: (row) => handleAnula(row.comprobante),
     },
     {
-      name: '',
-      width: isSmallScreen ?  '40px' : '30px',
-      cell: (row) => (
-          <AutoDeleteIcon
-            onClick={() => {
-                handleAnula(row.comprobante); 
-              }
-            }
-            style={{
-              cursor: 'pointer',
-              color: 'gray',
-              transition: 'color 0.3s ease',
-            }}
-          />
-      ),
-      allowOverflow: true,
-      button: true,
-    },
-    {
-      name: '',
-      width: isSmallScreen ?  '40px' : '30px',
-      cell: (row) => (
-          <ContentCopyIcon
-            onClick={() => {
-                setShowModalMostrarClonar(true);
-                setValorComprobante(row.comprobante);
-                //clonarVenta(row.comprobante_ref);
-                }
-              }
-            style={{
-              cursor: 'pointer',
-              //color: 'primary',
-              transition: 'color 0.3s ease',
-            }}
-          />
-      ),
-      allowOverflow: true,
-      button: true,
+      label: 'Clonar movimiento',
+      icon: ContentCopyIcon,
+      onClick: (row) => {
+        setShowModalMostrarClonar(true);
+        setValorComprobante(row.comprobante);
+      },
     },
   ];
-
-  const columnas = useMemo(()=>{
-    //cargaColumnasComunes();
-    return [...columnasComunes, ...AdminStocksColumnas];
-  },[permisosComando, pVenta0101, diaSel, periodo_trabajo, contabilidad_trabajo, isSmallScreen]);
+  const columnasComunes = [{
+    name: 'Acciones',
+    width: '146px',
+    center: true,
+    ignoreRowClick: true,
+    allowOverflow: true,
+    cell: (row) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+        {accionesMovimiento.map(({ label, icon: Icon, onClick }) => (
+          <Tooltip key={label} title={label} arrow>
+            <IconButton aria-label={label} onClick={() => onClick(row)} sx={rowActionSx}>
+              <Icon />
+            </IconButton>
+          </Tooltip>
+        ))}
+      </Box>
+    ),
+  }];
+  const columnas = [
+    {
+      id: 'movimiento',
+      name: 'Movimiento',
+      width: '275px',
+      selector: (row) => row.comprobante || '',
+      sortable: true,
+      cell: (row) => (
+        <DocumentoListadoCell
+          numero={String(row.comprobante || '').replace(/^(IA|SA|MV)-/, '') || 'Sin número'}
+          emision={row.fecha_emision}
+          tipo={{ entrada: 'Entrada', salida: 'Salida', traslado: 'Traslado' }[row.tipo_movimiento] || 'Movimiento'}
+          onVer={() => handleUpdate(row.comprobante, true)}
+          icono={(
+            <Tooltip title="Editar movimiento" arrow>
+              <IconButton
+                aria-label="Editar movimiento"
+                onClick={() => handleUpdate(row.comprobante, false)}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: palette.radius.control,
+                  color: palette.accent,
+                  '&:hover': { backgroundColor: palette.accentSoft },
+                  '&:focus-visible': { outline: `2px solid ${palette.accent}`, outlineOffset: 2 },
+                }}
+              >
+                <DriveFileRenameOutlineIcon sx={{ fontSize: 22 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        />
+      ),
+    },
+    ...columnasComunes,
+    { ...crearColumnaDetalleVenta((row) => handleUpdate(row.comprobante, true)), name: 'Resumen de ítems' },
+    ...AdminStocksColumnas.filter(({ selector }) => !['fecha_emision', 'comprobante'].includes(selector)),
+  ];
 
   const inicializarPantalla = async () => {
     const historialPeriodo = sessionStorage.getItem("periodo_trabajo") || params.periodo;
@@ -1130,11 +1049,19 @@ const handleDayFilter = (selectedDay) => {
   setDiaSel(dia);
 };
   
-const [totalVentas, setTotalVentas] = useState(0);
-const [isSuper, setIsSuper] = useState(false);
-const [recaudaciones, setRecaudaciones] = useState([]);
-const [showModalMostrarRecaudacion, setShowModalMostrarRecaudacion] = useState(false);
+const [resumenProductos, setResumenProductos] = useState(null);
 const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
+
+const comprobantesVigentes = movimientosVisibles
+  .filter((movimiento) => movimiento.estado !== 'NULO')
+  .map((movimiento) => movimiento.comprobante);
+
+const abrirResumenProductos = () => {
+  setResumenProductos({
+    url: `${back_host}/ad_stockunidades/${periodo_trabajo}/${params.id_anfitrion}/${contabilidad_trabajo}/${diaSel}`,
+    comprobantes: comprobantesVigentes,
+  });
+};
 
  return (
   <>
@@ -1181,7 +1108,10 @@ const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
                                         type="date"
                                         //format="yyyy/MM/dd"
                                         value={fecha_clon}
-                                        onChange={handleChange}
+                                        onChange={(event) => {
+                                          setFechaClon(event.target.value);
+                                          setUpdateTrigger(Math.random());
+                                        }}
                                         inputProps={{ style:{color:'white'} }}
                                         InputLabelProps={{ style:{color:'white'} }}
                                 />
@@ -1238,271 +1168,113 @@ const [showModalMostrarClonar, setShowModalMostrarClonar] = useState(false);
                 )
               }  
 
-             { (showModalMostrarRecaudacion) ?
-                (   <>
-                            {/* Seccion para mostrar Dialog tipo Modal, para busqueda incremental cuentas */}
-                            <Dialog
-                              open={showModalMostrarRecaudacion}
-                              onClose={() => setShowModalMostrarRecaudacion(false)}
-                              maxWidth="md" // Valor predeterminado de 960px
-                              //fullWidth
-                              disableScrollLock // Evita que se modifique el overflow del body
-                              PaperProps={{
-                                style: {
-                                  top: isSmallScreen ? "-30vh" : "0vh", // Ajusta la distancia desde arriba
-                                  left: isSmallScreen ? "-25%" : "0%", // Centrado horizontal
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  marginTop: '10vh', // Ajusta este valor según tus necesidades
-                                  background: 'rgba(30, 39, 46, 0.95)', // Plomo transparencia                              
-                                  //background: 'rgba(16, 27, 61, 0.95)', // Azul transparencia                              
-                                  color:'white',
-                                  width: isSmallScreen ? ('50%') : ('30%'), // Ajusta este valor según tus necesidades
-                                  //width: isSmallScreen ? ('100%') : ('40%'), // Ajusta este valor según tus necesidades
-                                  //maxWidth: 'none' // Esto es importante para permitir que el valor de width funcione
-                                },
-                              }}
-                            >
-                            <DialogTitle>Datos - Recaudación</DialogTitle>
+      {resumenProductos && (
+        <AdminStockProductosDialog
+          {...resumenProductos}
+          onClose={() => setResumenProductos(null)}
+        />
+      )}
 
-                                {/* Listado de recaudaciones */}
-                                <Card sx={{ width: '90%', background: 'rgba(255,255,255,0.05)', color: 'white', mb: 2 }}>
-                                  <CardContent>
-                                    {recaudaciones.length > 0 ? (
-                                      recaudaciones.map((item, index) => (
-                                        <Box
-                                          key={index}
-                                          sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            mb: 1,
-                                            borderBottom: '1px solid rgba(255,255,255,0.2)',
-                                            pb: 0.5
-                                          }}
-                                        >
-                                          <Typography variant="body1">{item.recaudacion}</Typography>
-                                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                            S/ {Number(item.monto).toFixed(2)}
-                                          </Typography>
-                                        </Box>
-                                      ))
-                                    ) : (
-                                      <Typography variant="body2" sx={{ opacity: 0.7 }}>No hay recaudaciones</Typography>
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-
-                                <Button variant='contained' 
-                                            //color='warning' 
-                                            //size='small'
-                                            onClick={()=>{
-                                                  setShowModalMostrarRecaudacion(false);
-                                              }
-                                            }
-                                            sx={{display:'block',
-                                                  margin:'.5rem 0',
-                                                  width: 270, 
-                                                  backgroundColor: 'rgba(30, 39, 46)', // Plomo 
-                                                '&:hover': {
-                                                      backgroundColor: 'rgba(30, 39, 46, 0.1)', // Color de fondo en hover: Plomo transparente
-                                                    },                                                             
-                                                  mt:-0.5}}
-                                            >
-                                            ESC - CERRAR
-                                </Button>
-
-                            </Dialog>
-                    </>
-                )
-                :
-                (   
-                  <>
-                  </>
-                )
-              }  
-
-  <Box sx={listContentSx}>
-  <Box
-      sx={{
-        ...panelSx,
-        ...toolbarSurfaceSx,
-        display: 'flex',
-        alignItems: { xs: 'stretch', md: 'center' },
-        justifyContent: 'space-between',
-        gap: 1,
-        flexDirection: { xs: 'column', md: 'row' },
-      }}
-  >
-    <Box sx={{ minWidth: 0 }}>
-      <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontSize: '22px', fontWeight: 500, lineHeight: 1.2 }}>
-        Movimientos de almacen
-      </Typography>
-      <Typography sx={{ color: palette.muted, fontSize: '12px', mt: 0.35 }}>
-        {`${registrosdet.length} comprobantes visibles`}
-        {contabilidad_nombre ? ` - ${contabilidad_nombre}` : ''}
-      </Typography>
-    </Box>
-  <Box
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 180px) minmax(240px, 1fr)', md: '150px minmax(280px, 360px)' },
-        gap: 1,
-        alignItems: 'center',
-        width: { xs: '100%', md: 'auto' },
-      }}
-  >
-      <Box sx={{ width: '100%' }}>
-          <Select
-                labelId="periodo"
-                //id={periodo_select.periodo}
-                size='small'
-                value={periodo_trabajo}
-                name="periodo"
-                sx={{ ...selectSx, color: palette.accent }}
-                label="Periodo Cont"
-                onChange={handleChange}
-                MenuProps={selectMenuProps}
+      <Box sx={{ width: '100%', maxWidth: { xs: '100%', lg: 1280, xl: 1440 }, mx: 'auto', minWidth: 0, boxSizing: 'border-box', p: { xs: 1, md: 1.5, xl: 2 } }}>
+        <TrHeader
+          titulo="Movimientos de almacén"
+          contador={movimientosVisibles.length}
+          contadorTexto={`comprobantes visibles${contabilidad_nombre ? ` · ${contabilidad_nombre}` : ''}`}
+          nuevoTexto="Nuevo"
+          buscarTexto="RUC, razón social o comprobante"
+          valorBusqueda={valorBusqueda}
+          onBuscar={(event) => setValorBusqueda(event.target.value)}
+          onNuevo={generaMovimiento}
+          compactControles
+          headerExtra={(
+            <>
+              {pVenta0104 && (
+                <AppButton
+                  icon={<Trash2 size={16} />}
+                  onClick={() => handleDeleteOrigen(params.id_anfitrion, contabilidad_trabajo, periodo_trabajo, id_libro)}
+                  sx={{
+                    height: 38,
+                    whiteSpace: 'nowrap',
+                    '&:hover': {
+                      backgroundColor: palette.dangerSoft,
+                      borderColor: palette.danger,
+                      color: palette.danger,
+                    },
+                  }}
                 >
-                  <MenuItem value="default">SELECCIONA </MenuItem>
-                {   
-                    periodo_select.map(elemento => (
-                    <MenuItem key={elemento.periodo} value={elemento.periodo}>
-                      {elemento.periodo}
-                    </MenuItem>)) 
-                }
-          </Select>
-      </Box>
-      <Box>
-          <Select
-                labelId="contabilidad_select"
-                //id={contabilidad_select.documento_id}
-                size='small'
-                value={contabilidad_trabajo}
-                name="contabilidad"
-                sx={selectSx}
-                label="Contabilidad"
-                onChange={handleChange}
-                MenuProps={selectMenuProps}
-                >
-                  <MenuItem value="default">SELECCIONA </MenuItem>
-                {   
-                    contabilidad_select.map(elemento => (
-                    <MenuItem key={elemento.documento_id} value={elemento.documento_id}>
-                      {elemento.razon_social}
-                    </MenuItem>)) 
-                }
-          </Select>
-      </Box>
+                  Eliminar masivo
+                </AppButton>
+              )}
+              <BotonExcelVentas
+                registrosdet={movimientosVisibles}
+                icon={<FileSpreadsheet size={20} />}
+                sx={exportButtonSx}
+              />
+              <AppButton
+                icon={<Package size={16} />}
+                disabled={!periodo_trabajo || !contabilidad_trabajo}
+                onClick={abrirResumenProductos}
+                sx={{ height: 38, whiteSpace: 'nowrap' }}
+              >
+                Resumen de productos
+              </AppButton>
+            </>
+          )}
+        />
 
-  </Box>
-  </Box>
+        <TrFiltros
+          periodoTrabajo={periodo_trabajo}
+          periodoSelect={periodo_select}
+          contabilidadTrabajo={contabilidad_trabajo}
+          contabilidadSelect={contabilidad_select}
+          onPeriodoSelect={handlePeriodoSelect}
+          onContabilidadSelect={handleContabilidadSelect}
+          compact
+        />
 
-  
-  <Box sx={{ ...panelSx, overflowX: 'auto' }}>
-    <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
-  </Box>
-    
-  <Box
-      sx={{
-        ...panelSx,
-        ...toolbarSurfaceSx,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1,
-        flexWrap: 'wrap',
-      }}
-  >
+        <Box sx={{ width: '100%', minWidth: 0, overflowX: 'auto' }}>
+          <DaySelector period={periodo_trabajo} onDaySelect={handleDayFilter} />
+        </Box>
 
-        <Box sx={searchSx}>
-          <Search size={16} color={palette.muted} />
-          <InputBase
-            name="busqueda"
-            placeholder="Filtrar: RUC, razon social o comprobante"
-            onChange={actualizaValorFiltro}
-            sx={inputSx}
+        <TarjetasFiltroMovimiento
+          value={filtroMovimiento}
+          counts={conteosFiltros}
+          onSelect={setFiltroMovimiento}
+        />
+
+        <Box
+          sx={{
+            mt: 1.15,
+            minWidth: 0,
+            maxWidth: '100%',
+            overflow: 'hidden',
+            borderRadius: isSmallScreen ? palette.radius.content : palette.radius.listCard,
+            backgroundColor: palette.surface,
+            p: isSmallScreen ? 0.25 : 0,
+            '& .rdt_TableWrapper': { maxWidth: '100%', overflowX: 'auto' },
+            '& .rdt_Table': { minWidth: isSmallScreen ? 960 : '100%' },
+          }}
+        >
+          <Datatable
+            theme="solarized"
+            columns={columnas}
+            data={movimientosVisibles}
+            customStyles={ventaDesktopTableStyles}
+            keyField="comprobante"
+            onSelectedRowsChange={handleRowSelected}
+            clearSelectedRows={toggleCleared}
+            pagination
+            paginationPerPage={15}
+            paginationRowsPerPageOptions={[15, 50, 100]}
+            paginationComponentOptions={{ rowsPerPageText: 'Filas por página:', rangeSeparatorText: 'de' }}
+            selectableRowsComponent={Checkbox}
+            sortIcon={<ArrowDownward />}
+            highlightOnHover
+            responsive
+            noDataComponent="No hay movimientos para los filtros seleccionados"
           />
         </Box>
-
-        <AppButton icon={<Plus size={16} />} onClick={generaMovimiento}>
-          Nuevo
-        </AppButton>
-
-        {pVenta0104 && (
-          <AppButton
-            icon={<Trash2 size={16} />}
-            onClick={() => {
-              handleDeleteOrigen(params.id_anfitrion, contabilidad_trabajo, periodo_trabajo, id_libro);
-            }}
-            sx={{
-              color: blueGrey[100],
-              '&:hover': {
-                backgroundColor: '#c2410c',
-                borderColor: '#c2410c',
-                color: '#fff',
-              },
-            }}
-          >
-            Eliminar masivo
-          </AppButton>
-        )}
-
-        <Box sx={{ height: 42, display: 'flex', alignItems: 'center' }}>
-          <Tooltip title='EXPORTAR XLS' >
-              <BotonExcelVentas registrosdet={registrosdet} 
-              />
-          </Tooltip>
-        </Box>
-
-        {/* El componente del cuadro de diálogo */}
-        
-  </Box>
-
-  <Box
-      sx={{
-        overflow: 'hidden',
-        borderRadius: contentRadius,
-        border: 0,
-        backgroundColor: listCardBg,
-        boxShadow: 'none',
-        px: { xs: 0.25, md: 0.75 },
-        py: { xs: 0.25, md: 0.75 },
-        minWidth: 0,
-        maxWidth: '100%',
-        '& .rdt_TableWrapper': {
-          maxWidth: '100%',
-          overflowX: 'auto',
-        },
-        '& .rdt_Table': {
-          minWidth: { xs: 960, md: '100%' },
-        },
-      }}
-  >
-    <Datatable
-        //title="Registro - Almacen"
-        theme="solarized"
-        columns={columnas}
-        data={registrosdet}
-        customStyles={dataTableStyles}
-        //selectableRows
-        //selectableRowsSingle 
-        //contextActions={contextActions}
-        //actions={actions}
-        onSelectedRowsChange={handleRowSelected}
-        clearSelectedRows={toggleCleared}
-        pagination
-        paginationPerPage={15}
-        paginationRowsPerPageOptions={[15, 50, 100]}
-
-        selectableRowsComponent={Checkbox} // Pass the function only
-        sortIcon={<ArrowDownward />}  
-        dense={true}
-        highlightOnHover
-    >
-    </Datatable>
-  </Box>
-  </Box>
+      </Box>
 
   </>
   );

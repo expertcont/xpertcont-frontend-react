@@ -19,6 +19,7 @@ export default function TrHeader({
   ticketOpciones,
   onTicketModoChange,
   onNuevo,
+  mostrarNuevo = true,
   onBuscar,
   compactControles = false,
   headerExtra = null,
@@ -131,7 +132,7 @@ export default function TrHeader({
 
         {headerExtra}
 
-        <AppButton
+        {mostrarNuevo && <AppButton
           icon={<Plus size={18} />}
           data-action-id={nuevoActionId}
           onClick={onNuevo}
@@ -151,7 +152,7 @@ export default function TrHeader({
           }}
         >
           {nuevoTexto}
-        </AppButton>
+        </AppButton>}
       </Box>
     </Box>
   );

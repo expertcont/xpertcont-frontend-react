@@ -36,37 +36,50 @@ export const estadoSunatVenta = (row) => {
 
 export const numeroComprobanteVisible = (row) => String(row.comprobante || '').replace(/^(?:\d{2}|NV|NP)-/, '') || 'Sin número';
 
+export function DocumentoListadoCell({ numero, emision, tipo, onVer, icono, children }) {
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: '38px minmax(0, 1fr)', columnGap: 0.85, width: '100%', minWidth: 0, alignItems: 'center' }}>
+      <Box sx={{ width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: palette.radius.control, border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.surfaceAlt, color: palette.accent }}>
+        {icono || <ReceiptText size={22} />}
+      </Box>
+      <Box sx={{ minWidth: 0, display: 'grid', gap: 0.2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.65, minWidth: 0 }}>
+          <Typography component="button" type="button" onClick={onVer} title="Ver comprobante"
+            sx={{ display: 'block', minWidth: 0, maxWidth: '100%', p: 0, border: 0, background: 'transparent', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', ...textoPrincipal, fontSize: '13px', fontWeight: 900, lineHeight: 1.12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { color: palette.accent, textDecoration: 'underline' }, '&:focus-visible': { outline: `2px solid ${palette.accent}`, outlineOffset: 2 } }}>
+            {numero}
+          </Typography>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: palette.muted, flexShrink: 0 }}>
+            <Calendar size={12} />
+            <Typography sx={{ fontSize: '10.5px', fontWeight: 800, lineHeight: 1, whiteSpace: 'nowrap' }}>{fecha(emision)}</Typography>
+          </Box>
+        </Box>
+        <Typography sx={{ color: palette.muted, fontSize: '10.5px', fontWeight: 600, lineHeight: 1.1, opacity: 0.78, textTransform: 'uppercase' }}>{tipo}</Typography>
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
 function ComprobanteCell({ row, onVer, renderSunat }) {
   const nc = esNotaCredito(row);
-  const sunat = renderSunat?.(row);
   const referencia = nc
     ? (String(row.r_cod) === '07'
       ? [row.r_serie_ref, row.r_numero_ref].filter(Boolean).join('-')
       : String(row.comprobante_ref || [row.r_serie, row.r_numero].filter(Boolean).join('-')).replace(/^(?:\d{2}|NV|NP)-/, ''))
     : '';
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: '38px minmax(0, 1fr)', columnGap: 0.85, width: '100%', minWidth: 0, alignItems: 'center' }}>
-      <Box sx={{ width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: palette.radius.control, border: `1px solid ${palette.borderSoft}`, backgroundColor: palette.surfaceAlt, color: palette.accent }}>
-        {sunat || <ReceiptText size={22} />}
-      </Box>
-      <Box sx={{ minWidth: 0, display: 'grid', gap: 0.2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.65, minWidth: 0 }}>
-          <Typography component="button" type="button" onClick={() => onVer(row)} title="Ver comprobante"
-            sx={{ display: 'block', minWidth: 0, maxWidth: '100%', p: 0, border: 0, background: 'transparent', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', ...textoPrincipal, fontSize: '13px', fontWeight: 900, lineHeight: 1.12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', '&:hover': { color: palette.accent, textDecoration: 'underline' }, '&:focus-visible': { outline: `2px solid ${palette.accent}`, outlineOffset: 2 } }}>
-            {numeroComprobanteVisible(row)}
-          </Typography>
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: palette.muted, flexShrink: 0 }}>
-            <Calendar size={12} />
-            <Typography sx={{ fontSize: '10.5px', fontWeight: 800, lineHeight: 1, whiteSpace: 'nowrap' }}>{fecha(row.r_fecemi)}</Typography>
-          </Box>
-        </Box>
-        <Typography sx={{ color: palette.muted, fontSize: '10.5px', fontWeight: 600, lineHeight: 1.1, opacity: 0.78, textTransform: 'uppercase' }}>{tipos[codigoDocumento(row)] || 'Comprobante'}</Typography>
+    <DocumentoListadoCell
+      numero={numeroComprobanteVisible(row)}
+      emision={row.r_fecemi}
+      tipo={tipos[codigoDocumento(row)] || 'Comprobante'}
+      onVer={() => onVer(row)}
+      icono={renderSunat?.(row)}
+    >
         <Typography sx={{ color: nc ? palette.danger : palette.text, fontSize: '16px', fontWeight: '1000 !important', WebkitTextStroke: '0.32px currentColor', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', lineHeight: 1, mt: 0.35 }}>{numero(montoDocumento(row))} {moneda(row)}</Typography>
         {nc && <Typography sx={{ ...textoSecundario, mt: 0.35, overflowWrap: 'anywhere' }}>
           Ref: {referencia || 'Sin referencia'}{row.r_fecemi_ref ? ` · ${fecha(row.r_fecemi_ref)}` : ''}
         </Typography>}
-      </Box>
-    </Box>
+    </DocumentoListadoCell>
   );
 }
 

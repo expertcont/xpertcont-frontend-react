@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 
 const W = 226.77;
 const H = 360;
+const TOP_TAPE_SPACE = 72 / 2.54; // 1 cm en puntos PDF.
 const M = 12;
 const CW = W - (M * 2);
 
@@ -376,7 +377,7 @@ const generarPdfTicketEncomienda = async (logo, jsonTicket) => {
 
   const bottom = lastLineY - 12;
   page.translateContent(0, -bottom);
-  page.setHeight(H - bottom);
+  page.setHeight(H - bottom + TOP_TAPE_SPACE);
 
   return pdfDoc.save();
 };

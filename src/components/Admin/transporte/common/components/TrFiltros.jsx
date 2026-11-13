@@ -11,7 +11,7 @@ export default function TrFiltros({
   periodoSelect,
   contabilidadTrabajo,
   contabilidadSelect,
-  puntosVentaAsignados,
+  puntosVentaAsignados = [],
   puntoVentaTrabajo,
   onPeriodoSelect,
   onContabilidadSelect,

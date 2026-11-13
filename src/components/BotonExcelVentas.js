@@ -6,7 +6,7 @@ import ViewCompactIcon from '@mui/icons-material/ViewCompact';
 import Tooltip from '@mui/material/Tooltip';
 //import ExcelJS from "exceljs"; // Importa la biblioteca exceljs en lugar: Caso Doc Contable
 
-const BotonExcelVentas = ({ registrosdet }) => {
+const BotonExcelVentas = ({ registrosdet, icon = <ViewCompactIcon style={{ fontSize: '40px' }} />, sx }) => {
   const [loading, setLoading] = useState(false);
 
   const titulo = [{ A: "Reporte" }, {}];
@@ -111,15 +111,15 @@ const BotonExcelVentas = ({ registrosdet }) => {
         //onClick={handleDownload}>        
         //</>EXPORT
         //</Button>
-      <Tooltip title='EXPORTAR HOJA XLS' >
-        <IconButton color="success" 
-                        //style={{ padding: '0px'}}
-                        style={{ padding: '0px', color: 'green' }}
-                        onClick={() => {
-                              handleDownload();
-                        }}
+      <Tooltip title="Exportar Excel">
+        <IconButton
+          aria-label="Exportar Excel"
+          color="success"
+          style={sx ? undefined : { padding: '0px', color: 'green' }}
+          sx={sx}
+          onClick={handleDownload}
         >
-              <ViewCompactIcon style={{ fontSize: '40px' }}/>
+          {icon}
         </IconButton>
       </Tooltip>
       ) : (

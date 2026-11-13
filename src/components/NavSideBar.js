@@ -1122,7 +1122,7 @@ export default function NavSideBar(props) {
                 />
                 <SubMenuItem
                   icon={<CompareArrowsIcon />}
-                  label="Detalle"
+                  label="Detalle de movimientos"
                   watermarkIcon={<InsertChartIcon />}
                   isActive={selectedButton === 'icono10-2'}
                   onClick={() => {
@@ -1132,7 +1132,7 @@ export default function NavSideBar(props) {
                 />
                 <SubMenuItem
                   icon={<SummarizeIcon />}
-                  label="Inventarios Kardex"
+                  label="Inventarios y Kardex"
                   watermarkIcon={<InsertChartIcon />}
                   isActive={selectedButton === 'icono10-3'}
                   onClick={() => {

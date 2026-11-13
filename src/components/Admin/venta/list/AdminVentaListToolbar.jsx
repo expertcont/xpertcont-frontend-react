@@ -6,11 +6,12 @@ import TrFiltros from '../../transporte/common/components/TrFiltros';
 import DaySelector from '../../AdminDias';
 import palette from '../../../../theme/palette';
 
-function ResumenCard({ label, value, icon: Icon, color, soft, active, filter, onClick }) {
+export function ResumenCard({ label, value, icon: Icon, color, soft, active, filter, onClick, disabled = false }) {
   return (
     <Box
       component="button"
       type="button"
+      disabled={disabled}
       onClick={onClick}
       aria-pressed={filter ? active : undefined}
       sx={{
@@ -23,15 +24,16 @@ function ResumenCard({ label, value, icon: Icon, color, soft, active, filter, on
         transition: 'border-color .16s ease, background-color .16s ease, box-shadow .16s ease',
         '&:hover': { borderColor: color, backgroundColor: soft },
         '&:focus-visible': { outline: `2px solid ${color}`, outlineOffset: 2 },
+        '&:disabled': { opacity: 0.55, cursor: 'default', borderColor: palette.borderSoft, backgroundColor: palette.surface },
       }}
     >
-      <Box sx={{ width: 28, height: 28, borderRadius: palette.radius.control, display: 'grid', placeItems: 'center', backgroundColor: soft, color }}>
+      <Box component="span" sx={{ width: 28, height: 28, borderRadius: palette.radius.control, display: 'grid', placeItems: 'center', backgroundColor: soft, color }}>
         <Icon size={15} />
       </Box>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ color: palette.muted, fontSize: '9.5px', fontWeight: 900, textTransform: 'uppercase' }} noWrap>{label}</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Typography sx={{ color: palette.text, fontSize: '16px', lineHeight: 1.05, fontWeight: '1000 !important', WebkitTextStroke: '0.16px currentColor' }} noWrap>{value}</Typography>
+      <Box component="span" sx={{ minWidth: 0 }}>
+        <Typography component="span" sx={{ display: 'block', color: palette.muted, fontSize: '9.5px', fontWeight: 900, textTransform: 'uppercase' }} noWrap>{label}</Typography>
+        <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography component="span" sx={{ color: palette.text, fontSize: '16px', lineHeight: 1.05, fontWeight: '1000 !important', WebkitTextStroke: '0.16px currentColor' }} noWrap>{value}</Typography>
           {active && <Filter size={12} color={color} />}
         </Box>
       </Box>

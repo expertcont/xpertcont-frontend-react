@@ -29,12 +29,14 @@ export default function AdminVentaRecaudacionDialog({
   recaudaciones,
   modo = "recaudacion",
   onClose,
+  contenidoPersonalizado,
+  children,
 }) {
   if (!open) {
     return null;
   }
 
-  const contenido = MODOS[modo] || MODOS.recaudacion;
+  const contenido = contenidoPersonalizado || MODOS[modo] || MODOS.recaudacion;
 
   return (
     <Dialog
@@ -45,7 +47,7 @@ export default function AdminVentaRecaudacionDialog({
       PaperProps={{
         sx: {
           m: { xs: 1.5, sm: 2 },
-          width: { xs: "calc(100vw - 24px)", sm: 460 },
+          width: { xs: "calc(100vw - 24px)", sm: contenido.ancho ?? 460 },
           maxWidth: "calc(100vw - 24px)",
           maxHeight: { xs: "calc(100dvh - 24px)", sm: "80vh" },
           backgroundColor: palette.surface,
@@ -84,7 +86,7 @@ export default function AdminVentaRecaudacionDialog({
             mb: 1.5,
           }}
         >
-          {recaudaciones.length > 0 ? (
+          {children ?? (recaudaciones.length > 0 ? (
             recaudaciones.map((item, index) => (
               <Box
                 key={index}
@@ -134,7 +136,7 @@ export default function AdminVentaRecaudacionDialog({
             <Typography sx={{ color: palette.muted, fontSize: "13px", textAlign: "center", py: 2 }}>
               {contenido.vacio}
             </Typography>
-          )}
+          ))}
         </Box>
 
         <Button
